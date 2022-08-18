@@ -1,0 +1,10 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+addopts = ["--cov=bcgm_mod_manager"]
+testpaths = ["tests"]
+
+[tool.mypi]
+mypi_path = "src"

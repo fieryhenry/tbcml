@@ -1,0 +1,8 @@
+/dist
+__pycache__
+*.
+src/bcgm_mod_manager/files/APKs
+src/bcgm_mod_manager/files/Mods
+*.egg-info
+/custom_files
+pack.json
