@@ -1,1 +1,3 @@
-mod_folder: "Mods"
+mod_folder: "./src/bcgm_mod_manager/files/Mods" # Path to the folder where the mods are stored
+apk_folder: "./src/bcgm_mod_manager/files/APKs" # Path to the folder where the APKs are stored
+apk_copy_path: "" # Path to the folder where the APKs are copied to when loading the mods

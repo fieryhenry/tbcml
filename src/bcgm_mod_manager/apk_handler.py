@@ -384,3 +384,15 @@ class BC_APK:
                 file_path = os.path.abspath(os.path.join(self.packs_path, file))
                 functions.append(Process(target=self.decrypt_pack, args=(file_path, )))
         helper.run_in_parallel(functions)
+    
+    @staticmethod
+    def get_apk_folder() -> str:
+        """
+        Get the apk folder
+
+        Returns:
+            str: The apk folder
+        """        
+        folder = os.path.abspath(helper.get_config_value("apk_folder"))
+        helper.check_dir(folder)
+        return folder

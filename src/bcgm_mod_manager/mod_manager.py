@@ -124,13 +124,13 @@ def load_mods_into_game(game_version: str, is_jp: bool) -> bool:
     for bc_mod in enabled_pack.mods:
         if bc_mod.do_mod_info:
             enabled_pack.add_to_mod_info(bc_mod)
-    apk = apk_handler.BC_APK(game_version, is_jp, helper.get_file('APKs'))
+    apk = apk_handler.BC_APK(game_version, is_jp, apk_handler.BC_APK.get_apk_folder())
     if not apk.download():
         return False
     base_mod = apk.get_as_mod(["DownloadLocal"])
     enabled_pack.add_mod(base_mod)
     apk.load_mod(enabled_pack)
-    apk.copy_apk("C:\\Users\\henry\\Documents\\XuanZhi\\Pictures\\base.apk")
+    apk.copy_apk(helper.get_config_value("apk_copy_path"))
     return True
 
 def get_oldest_mod_version() -> Optional[int]:
@@ -181,7 +181,7 @@ def get_mod_folder() -> str:
         str: The path to the mod folder.
     """
 
-    mod_folder = helper.get_file(helper.get_config_value("mod_folder"))
+    mod_folder = os.path.abspath(helper.get_config_value("mod_folder"))
     helper.check_dir(mod_folder)
     return mod_folder
 

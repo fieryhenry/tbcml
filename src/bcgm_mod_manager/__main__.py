@@ -79,7 +79,7 @@ def decrypt_all_game_files() -> None:
     """    
     is_jp = helper.colored_input("Do you want to get the jp version of the game files? (&y&/&n&):") == "y"
     helper.colored_text("Loading apk...", helper.Color.GREEN)
-    apk = apk_handler.BC_APK("latest", is_jp, helper.get_file("APKs"))
+    apk = apk_handler.BC_APK("latest", is_jp, apk_handler.BC_APK.get_apk_folder())
     apk.download()
     helper.colored_text("Extracting apk...", helper.Color.GREEN)
     apk.extract()
@@ -274,7 +274,7 @@ def load_mods_into_game() -> None:
         return
 
     helper.colored_text("Successfully loaded mods into game.", helper.Color.GREEN)
-    apk_path = os.path.abspath(os.path.join(helper.get_file('APKs'), helper.gv_to_str(game_version), 'modded.apk'))
+    apk_path = os.path.abspath(os.path.join(apk_handler.BC_APK.get_apk_folder(), helper.gv_to_str(game_version), 'modded.apk'))
     helper.colored_text(
         f"The apk can be found here: &{apk_path}&",
         helper.Color.GREEN,
