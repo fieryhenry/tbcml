@@ -18,7 +18,7 @@ Join the [discord server](https://discord.gg/DvmMgvn5ZB) if you want to suggest 
 
 To get started loading mods The Battle Cats you will also need the following software:
 
-###### Download
+##### Download
 
 - [Python](https://www.python.org/downloads/)
 
@@ -26,7 +26,7 @@ To get started loading mods The Battle Cats you will also need the following sof
 
 - [Apktool](https://ibotpeaches.github.io/Apktool/install/)
 
-###### Installation
+##### Installation
 
 Run the following command:
 
@@ -36,7 +36,7 @@ python -m pip install -U bcgm_mod_manager
 
 If you are using windows you will most likely need to use `py` instead of `python`.
 
-###### Run
+##### Run
 
 Run the following command:
 
@@ -45,8 +45,6 @@ python -m bcgm_mod_manager
 ```
 
 If you are using windows you will most likely need to use `py` instead of `python`.
-
-
 
 ## Mods and Mod Packs
 
@@ -67,8 +65,6 @@ To create a mod you will need some game files. To get them you can use the `Decr
 Then you will need to modify those files, to do this you can use this tool here: [BCGM-Python](https://github.com/fieryhenry/BCGM-Python) to edit cat, enemy and stage data. In the future this will be moved into this tool as well as with the ability to edit a wider variety of game files.
 
 Once you have your modded files, use the option in the tool to `Create mod from game files`. Then input the required information and select your custom files.
-
-
 
 ##### Load Mods Into the Game
 
@@ -101,8 +97,6 @@ To create a mod pack, first enable the mods you want and disable the mods you do
 Then select the option to `Create mod pack of enabled mods`. Enter all of the required information.
 
 Once finished you can say `y` to open the containing folder. It will be called `{author}-{name}.bcmodpack`.
-
-
 
 ### Todo
 
