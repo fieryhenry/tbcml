@@ -54,7 +54,7 @@ If you are using windows you will most likely need to use `py` instead of `pytho
 
 Mods are in the format of a `.bcmod` file and can be shared and imported with the `Load mods from .bcmod files` option.
 
-You can find examples of mods here: [link]()
+You can find examples of mods [here](https://github.com/fieryhenry/bcgm_mod_manager/tree/master/example_mods)
 
 All mods are automatically enabled when they are loaded, but can be disabled with the option to `Disable mods`. These won't be loaded into the game apk.
 
