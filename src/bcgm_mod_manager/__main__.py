@@ -66,7 +66,7 @@ def extract_mod_pack() -> None:
         return
     if choice > 0 and choice <= len(mod_packs):
         mod_pack = mod_packs[choice - 1]
-        helper.colored_text("Extracting mod pack: " + mod_pack.name, helper.Color.GREEN)
+        helper.colored_text("Extracting mod pack: " + mod_pack.get_name(), helper.Color.GREEN)
         mod_manager.extract_mod_pack(mod_pack)
     else:
         helper.colored_text("Invalid choice.", helper.Color.RED)

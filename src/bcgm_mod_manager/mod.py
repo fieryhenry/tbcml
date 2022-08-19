@@ -7,7 +7,6 @@ from Cryptodome.Cipher import AES
 
 from . import helper
 
-
 class File:
     """
     File class for the bcgm_mod_manager package
@@ -253,7 +252,7 @@ class Mod:
             list[str]: File names in mod
         """
         return [file.name for file in self.files.values()]
-
+    
     def get_file_data(self) -> list[bytes]:
         """
         Get all file data in the mod
@@ -444,8 +443,17 @@ class Mod:
             path (str): Path to write mod to
         """
         helper.check_dir(path)
-        path = os.path.join(path, self.author + "-" + self.name + Mod.get_extension())
+        path = os.path.join(path, self.get_name() + Mod.get_extension())
         helper.write_file_bytes(path, self.export())
+    
+    def get_name(self) -> str:
+        """
+        Get the name of the mod
+
+        Returns:
+            str: Name of the mod
+        """        
+        return self.author + "-" + self.name
 
     def add_padding(self) -> None:
         """
@@ -740,6 +748,15 @@ class ModPack:
         if mods is not None:
             self.mods = mods
 
+    def get_name(self) -> str:
+        """
+        Gets the name of the pack
+
+        Returns:
+            str: Name of the pack
+        """
+        return self.author + " - " + self.name
+
     def format(self) -> str:
         """
         Formats the pack for output
@@ -802,7 +819,7 @@ class ModPack:
             Optional[Mod]: Mod with the given name or None if not found
         """
         for mod in self.mods:
-            if mod.name == name:
+            if mod.get_name() == name:
                 return mod
         return None
     
@@ -832,7 +849,7 @@ class ModPack:
         helper.check_dir(file_path)
 
         for mod in self.mods:
-            mod.unpack(os.path.join(file_path, mod.name))
+            mod.unpack(os.path.join(file_path, mod.get_name()))
 
     def create_game_files(self) -> dict[str, tuple[bytes, bytes]]:
         """

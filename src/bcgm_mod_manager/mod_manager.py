@@ -315,7 +315,7 @@ def create_mod(
         game_version=helper.str_to_gv(game_version),
         country_code=country_code,
     )
-    helper.colored_text(f"Creating mod: &{name}&", helper.Color.WHITE, helper.Color.GREEN)
+    helper.colored_text(f"Creating mod: &{bc_mod.get_name()}&", helper.Color.WHITE, helper.Color.GREEN)
     apk = apk_handler.BC_APK(game_version, bc_mod.is_jp(), apk_handler.BC_APK.get_apk_folder())
     apk.download()
     apk.extract()
@@ -377,7 +377,7 @@ def get_mod_name(mod: Union[mod.Mod, mod.ModPack]) -> str:
     Args:
         mod (Union[mod.Mod, mod.ModPack]): The mod.
     """
-    return mod.author + "-" + mod.name + mod.get_extension()
+    return mod.get_name() + mod.get_extension()
 
 def add_mod(mod: Union[mod.Mod, mod.ModPack]):
     mods = load_mods()
