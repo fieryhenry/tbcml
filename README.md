@@ -60,7 +60,7 @@ You can view your mods with the `Display mods` option.
 
 ##### Create a Mod
 
-To create a mod you will need some game files. To get them you can use the `Decrypt all local game files` option. At the moment, this only includes local files (Contains all game data except the majority of the images and animations).
+To create a mod you will need some game files. To get them you can use the `Decrypt all game files` option. To decrypt server files you will need to use the option to `Download server pack files` beforehand.
 
 Then you will need to modify those files, to do this you can use this tool here: [BCGM-Python](https://github.com/fieryhenry/BCGM-Python) to edit cat, enemy and stage data. In the future this will be moved into this tool as well as with the ability to edit a wider variety of game files.
 
@@ -72,7 +72,7 @@ To load your mods into the game, first select what mods you want by enabling / d
 
 Then select the option to `Load enabled mods into apk`, and say whether or not you are using the jp version of the game.
 
-You will need to wait a while for it to download the apk, extract files, encrypt mods and sign the apk.
+You will need to wait a while for it to download the apk, extract files, encrypt mods, patch the lib file, and sign the apk.
 
 Once finished you can say `y` to open the containing folder. It will be called `modded.apk`.
 
@@ -86,9 +86,9 @@ The opening text will have information about what mods are currently loaded
 
 Mod Packs are in the form of a `.bcmodpack` file and are collections of mods.
 
-They can be imported with the `Load mod packs from .bcmodpack files as mods` option and the mods will be unpacked and enabled
+They can be imported with the `Load mod packs from .bcmodpack files` option.
 
-At the moment they don't really have much functionality, but in the future they could act as a group that can be added to, removed from and show separately in the opening game text.
+They act as regular mods that can be enabled, disabled, upacked, etc.
 
 ##### Create a Mod Pack
 
@@ -96,14 +96,10 @@ To create a mod pack, first enable the mods you want and disable the mods you do
 
 Then select the option to `Create mod pack of enabled mods`. Enter all of the required information.
 
-Once finished you can say `y` to open the containing folder. It will be called `{author}-{name}.bcmodpack`.
+The mod pack will be in the mods folder.
 
 ### Todo
 
-- [ ] Download and decrypt server pack files
-
 - [ ] Ability to modify some game files
-
-- [ ] Add more functionality to mod packs
 
 - [ ] Mod browser
