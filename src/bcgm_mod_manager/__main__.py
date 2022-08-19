@@ -1,43 +1,6 @@
 import os
+from typing import Any
 from . import mod_manager, helper, mod, apk_handler
-
-
-def menu() -> None:
-    """
-    The main menu.
-    """
-    options = {
-        "Display mods": mod_manager.display_mods,
-        "Enable mods": enable_mods,
-        "Disable mods": disable_mods,
-        "Load mods from .bcmod files": add_mods,
-        "Remove mods": remove_mods,
-        "Create mod from game files": create_mod,
-        "Add game files to mod": add_file_to_mod,
-        "Extract all mods into game files": extract_all_mods,
-        "Extract mod pack into mod files": extract_mod_pack,
-        "Load enabled mods into apk": load_mods_into_game,
-        "Load mod packs from .bcmodpack files": add_mod_packs,
-        "Create mod pack of enabled mods": create_mod_pack,
-        "Open mods folder in explorer": open_mod_folder,
-        "Decrypt all game files": decrypt_all_game_files,
-        "Download server pack files" : download_server_packs,
-        "Exit": exit_manager,
-    }
-    while True:
-        print()
-        helper.colored_text("Mod Manager", helper.Color.GREEN)
-        helper.colored_list(list(options.keys()), new=helper.Color.GREEN)
-        choice = helper.get_int(input("Enter an option:"))
-        if choice is None:
-            helper.colored_text("Invalid choice.", helper.Color.RED)
-            helper.colored_text("Please try again.", helper.Color.RED)
-            continue
-        if choice > 0 and choice <= len(options):
-            list(options.values())[choice - 1]()
-        else:
-            helper.colored_text("Invalid choice.", helper.Color.RED)
-            helper.colored_text("Please try again.", helper.Color.RED)
 
 def download_server_packs():
     is_jp = helper.colored_input("Do you want to get the jp version of the game files? (&y&/&n&):") == "y"
@@ -48,6 +11,9 @@ def add_file_to_mod() -> None:
     Adds a file to a mod.
     """
     mods = mod_manager.get_enabled_mods()
+    if not mods:
+        helper.colored_text("No mods enabled.", helper.Color.RED)
+        return
     helper.colored_list(
         list(map(lambda x: mod_manager.get_mod_name(x), mods)), new=helper.Color.GREEN
     )
@@ -89,6 +55,9 @@ def extract_mod_pack() -> None:
     Extracts a mod pack.
     """
     mod_packs = mod_manager.get_mod_packs()
+    if not mod_packs:
+        helper.colored_text("No mod_packs found.", helper.Color.RED)
+        return
     helper.colored_list(list(map(lambda x: mod_manager.get_mod_name(x), mod_packs)))
     choice = helper.get_int(input("Enter an option:"))
     if choice is None:
@@ -143,6 +112,9 @@ def enable_mods() -> None:
     Enables mods.
     """
     mods = mod_manager.get_disabled_mods()
+    if not mods:
+        helper.colored_text("No mods disabled.", helper.Color.RED)
+        return
     helper.colored_list(
         list(map(lambda x: mod_manager.get_mod_name(x), mods)), new=helper.Color.GREEN
     )
@@ -172,6 +144,9 @@ def disable_mods() -> None:
     Disables mods.
     """
     mods = mod_manager.get_enabled_mods()
+    if not mods:
+        helper.colored_text("No mods enabled.", helper.Color.RED)
+        return
     helper.colored_list(
         list(map(lambda x: mod_manager.get_mod_name(x), mods)), new=helper.Color.GREEN
     )
@@ -214,6 +189,9 @@ def remove_mods() -> None:
     Removes mods from the mod list.
     """
     mods = mod_manager.load_mods()
+    if not mods:
+        helper.colored_text("No mods found.", helper.Color.RED)
+        return
     helper.colored_list(
         list(map(lambda x: mod_manager.get_mod_name(x), mods)), new=helper.Color.GREEN
     )
@@ -341,6 +319,81 @@ def load_mods_into_game() -> None:
         os.startfile(os.path.dirname(apk_path))
     helper.colored_text("Please re-install the game", helper.Color.GREEN)
 
+OPTIONS: dict[str, Any] = {
+    "Display mods": mod_manager.display_mods,
+    "Load enabled mods into apk": load_mods_into_game,
+    "Mod Management" :{
+        "Enable mods": enable_mods,
+        "Disable mods": disable_mods,
+        "Add game files to mod": add_file_to_mod,
+        "Remove mods": remove_mods,
+        "Load mods from .bcmod files": add_mods,
+        "Create mod from game files": create_mod,
+        "Load enabled mods into apk": load_mods_into_game,
+        "Open mods folder in explorer": open_mod_folder,
+    },
+    "Data Decryption / Extraction / Download" : {
+        "Extract all mods into game files": extract_all_mods,
+        "Extract mod pack into mod files": extract_mod_pack,
+        "Decrypt all game files": decrypt_all_game_files,
+        "Download server pack files" : download_server_packs,
+    },
+    "Mod Packs" : {
+        "Load mod packs from .bcmodpack files": add_mod_packs,
+        "Create mod pack of enabled mods": create_mod_pack,
+    },
+    "Exit": exit_manager,
+}
+
+
+def get_feature(
+    selected_features: Any, search_string: str, results: dict[str, Any]
+) -> dict[str, Any]:
+    """Search for a feature if the feature name contains the search string"""
+
+    for feature in selected_features:
+        feature_data = selected_features[feature]
+        if isinstance(feature_data, dict):
+            feature_data = get_feature(feature_data, search_string, results)
+        if search_string.lower().replace(" ", "") in feature.lower().replace(" ", ""):
+            results[feature] = selected_features[feature]
+    return results
+
+
+def show_options(
+    features_to_use: dict[str, Any]
+) -> None:
+    """Allow the user to either enter a feature number or a feature name, and get the features that match"""
+
+    prompt = "What do you want to do ?(some options contain other features within them)"
+    prompt += "\nYou can enter a number to run a feature or a word to search for that feature (e.g entering enable mod will run the Enable Mods feature)\nYou can press enter to see a list of all of the features"
+    user_input = helper.colored_input(f"{prompt}:\n")
+    user_int = helper.get_int(user_input)
+    results = []
+    if user_int is None:
+        results = get_feature(features_to_use, user_input, {})
+    else:
+        if user_int < 1 or user_int > len(features_to_use) + 1:
+            helper.colored_text("Value out of range", helper.Color.RED)
+            return show_options(features_to_use)
+        if OPTIONS != features_to_use:
+            if user_int - 2 < 0:
+                return menu()
+            results = features_to_use[list(features_to_use)[user_int - 2]]
+        else:
+            results = features_to_use[list(features_to_use)[user_int - 1]]
+    if not isinstance(results, dict):
+        return results()
+    if len(results) == 0:
+        helper.colored_text("No feature found with that name.", helper.Color.RED)
+        return menu()
+    if len(results) == 1 and isinstance(list(results.values())[0], dict):
+        results = results[list(results)[0]]
+    if len(results) == 1:
+        return results[list(results)[0]]()
+
+    helper.colored_list(["Go Back"] + list(results))
+    return show_options(results)
 
 def main() -> None:
     """
@@ -348,6 +401,14 @@ def main() -> None:
     """
     menu()
 
+def menu() -> None:
+    """
+    The main menu.
+    """
+    while True:
+        helper.colored_text("\nMod Manager", helper.Color.GREEN)
+        helper.colored_list(list(OPTIONS))
+        show_options(OPTIONS)
 
 if __name__ == "__main__":
     try:
