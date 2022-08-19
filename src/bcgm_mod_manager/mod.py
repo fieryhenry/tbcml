@@ -4,6 +4,7 @@ import shutil
 import struct
 from typing import Any, Optional
 from Cryptodome.Cipher import AES
+
 from . import helper
 
 
@@ -578,6 +579,26 @@ class Mod:
         return mod
 
     @staticmethod
+    def get_list_data(list_path: str) -> bytes:
+        """
+        Gets the list data from a list file
+
+        Args:
+            list_path (str): Path to list file
+
+        Returns:
+            bytes: List data
+        """
+        data = helper.read_file_bytes(list_path)
+        key = helper.get_md5("pack")[:16].encode("utf-8")
+        cipher = AES.new(key, AES.MODE_ECB)  # type: ignore
+        try:
+            data = cipher.decrypt(data)
+        except ValueError:
+            raise Exception(f"Invalid list file: {list_path}")
+        return data
+
+    @staticmethod
     def load_from_pack(
         pack_file_path: str,
         is_jp: bool,
@@ -607,17 +628,11 @@ class Mod:
             Mod: Loaded mod
         """
         helper.colored_text(
-            f"Loading pack from file: &{pack_file_path}&",
+            f"Loading pack from file: &{os.path.basename(pack_file_path)}&",
             helper.Color.WHITE,
             helper.Color.GREEN,
         )
-        list_path = pack_file_path.strip(".pack") + ".list"
-        data = helper.read_file_bytes(list_path)
-        key = helper.get_md5("pack")[:16].encode("utf-8")
-        cipher = AES.new(key, AES.MODE_ECB)  # type: ignore
-        data = cipher.decrypt(data)
-
-        ls_data = helper.parse_csv(file_data=data)
+        ls_data = helper.parse_csv(file_data=Mod.get_list_data(pack_file_path.replace(".pack", ".list")))
         pack_data = helper.read_file_bytes(pack_file_path)
         base_name = os.path.basename(pack_file_path.strip(".pack"))
         if not pack_name:
@@ -648,20 +663,24 @@ class Mod:
             mod.add_file_from_bytes(file.data, file.name, file.packname, exlude_all)
         return mod
 
-    def format(self) -> str:
+    def format(self, indent: bool = False) -> str:
         """
-        Formats the mod for output
+        Formats the mod for printing
+
+        Args:
+            indent (bool, optional): If True, the mod will be indented. Defaults to False.
 
         Returns:
             str: Formatted mod
-        """
-        output = ""
-        output += f"Name: &{self.name}&\n"
-        output += f"Author: &{self.author}&\n"
-        output += f"Description: &{self.description}&\n"
-        output += f"Game Version: &{self.game_version}&\n"
-        output += f"Country Code: &{self.country_code}&\n"
-        output += f"Files: &{len(self.files)}&\n"
+        """        
+        indent_text = "    " if indent else ""
+        output = f"{indent_text}&Mod&\n"
+        output += f"{indent_text}Name: &{self.name}&\n"
+        output += f"{indent_text}Author: &{self.author}&\n"
+        output += f"{indent_text}Description: &{self.description}&\n"
+        output += f"{indent_text}Game Version: &{self.game_version}&\n"
+        output += f"{indent_text}Country Code: &{self.country_code}&\n"
+        output += f"{indent_text}Files: &{len(self.files)}&\n"
         return output
 
     @staticmethod
@@ -693,6 +712,11 @@ class ModPack:
     def __init__(
         self,
         is_jp: bool,
+        name: str,
+        author: str,
+        description: str,
+        game_version: int,
+        do_mod_info: bool = True,
         mods: Optional[list[Mod]] = None,
     ) -> None:
         """
@@ -700,85 +724,51 @@ class ModPack:
 
         Args:
             is_jp (bool): Is the pack for the jp version?
+            name (str): Name of the pack
+            author (str): Author of the pack
+            description (str): Description of the pack
+            game_version (int): Game version of the pack
             mods (Optional[list[Mod]], optional): Mods to add to the pack. Defaults to None.
         """
         self.is_jp = is_jp
+        self.name = name
+        self.author = author
+        self.description = description
+        self.game_version = game_version
+        self.do_mod_info = do_mod_info
         self.mods: list[Mod] = []
-        self.mod_log = f"Mods:{self.get_str_sep()}\n"
         if mods is not None:
             self.mods = mods
-    
-    def get_str_sep(self) -> str:
-        if self.is_jp:
-            return ","
-        return "|"
 
-    def add_to_mod_info(self, mod: Mod) -> None:
+    def format(self) -> str:
         """
-        Adds mod info to the mod log
-
-        Args:
-            mod (Mod): Mod to add to the mod log
-        """
-        self.mod_log += f"{mod.name} by {mod.author}"
-        if len(mod.files) < 10:
-            self.mod_log += f"{self.get_str_sep()}\n{mod.description}{self.get_str_sep()}\nFiles:{self.get_str_sep()}\n"
-            for file in mod.files.values():
-                self.mod_log += f"-Loaded {file.name} from {file.packname}{self.get_str_sep()}\n"
-        self.mod_log += f"{self.get_str_sep()}\n"
-        self.write_mod_log()
-
-    def get_mod_log_file_name(self) -> str:
-        """
-        Gets the name of the mod log file
+        Formats the pack for output
 
         Returns:
-            str: Name of the mod log file
+            str: Formatted pack
         """
-        if self.is_jp:
-            return "OP_ja.csv"
-        return "OP_en.csv"
+        output = "&Mod Pack&\n"
+        output += f"Name: &{self.name}&\n"
+        output += f"Author: &{self.author}&\n"
+        output += f"Description: &{self.description}&\n"
+        output += f"Game Version: &{self.game_version}&\n"
+        output += f"Mods: &{len(self.mods)}&\n"
+        for mod in self.mods:
+            output += mod.format(indent=True)
+        return output
 
-
-    def write_mod_log(self) -> None:
-        """
-        Writes the mod log to OP_%s.csv
-        """
-        mod_log_mod = self.get_mod_by_name("mod_log")
-        if mod_log_mod is not None:
-            mod_log = mod_log_mod.get_file_by_name(self.get_mod_log_file_name())
-            if mod_log is not None:
-                mod_log.write(self.mod_log.encode("utf-8"))
-            else:
-                mod_log = File(
-                    self.get_mod_log_file_name(),
-                    self.mod_log.encode("utf-8"),
-                    "DownloadLocal",
-                    True,
-                )
-                mod_log_mod.add_file_from_bytes(
-                    mod_log.data, mod_log.name, mod_log.packname, True
-                )
-        else:
-            mod_log = File(
-                self.get_mod_log_file_name(),
-                self.mod_log.encode("utf-8"),
-                "DownloadLocal",
-                True,
-            )
-            mod_log_mod = Mod("mod_log", "", "", 0, "", create_mod_info=False)
-            mod_log_mod.add_file_from_bytes(
-                mod_log.data, mod_log.name, mod_log.packname, True
-            )
-            self.mods.append(mod_log_mod)
-
-    def add_mod(self, mod: Mod) -> None:
+    def add_mod(self, mod: Mod, replace: bool = True) -> None:
         """
         Adds a mod to the mod pack
 
         Args:
             mod (Mod): Mod to add to the mod pack
+            replace (bool, optional): If True, the files in the mod will be replaced if it already exists. Defaults to True.
         """
+        for file_name in mod.files:
+            for current_mod in self.mods:
+                if file_name in current_mod.get_files() and not replace:
+                    mod.files[file_name].data = current_mod.files[file_name].data
         self.mods.append(mod)
 
     def add_mods(self, mods: list[Mod]) -> None:
@@ -789,6 +779,16 @@ class ModPack:
             mods (list[Mod]): Mods to add to the mod pack
         """
         for mod in mods:
+            self.add_mod(mod)
+
+    def insert_mod_pack(self, mod_pack: "ModPack"):
+        """
+        Inserts a mod pack into the mod pack
+
+        Args:
+            mod_pack (ModPack): Mod pack to insert into the mod pack
+        """
+        for mod in mod_pack.mods:
             self.add_mod(mod)
 
     def get_mod_by_name(self, name: str) -> Optional[Mod]:
@@ -805,6 +805,20 @@ class ModPack:
             if mod.name == name:
                 return mod
         return None
+    
+    def get_all_unique_pack_names(self) -> list[str]:
+        """
+        Get all unique pack names in the mod
+
+        Returns:
+            list[str]: Unique pack names in mod
+        """
+        all_pack_names: list[str] = []
+        for mod in self.mods:
+            for file in mod.files.values():
+                if file.packname not in all_pack_names:
+                    all_pack_names.append(file.packname)
+        return all_pack_names
 
     def unpack(self, file_path: str) -> None:
         """
@@ -865,6 +879,11 @@ class ModPack:
         json_data = {
             "mod_count": len(self.mods),
             "is_jp": self.is_jp,
+            "name": self.name,
+            "author": self.author,
+            "description": self.description,
+            "game_version": self.game_version,
+            "do_mod_info": self.do_mod_info,
         }
         data = ModPack.get_valid_str().encode("utf-8")
         js_data = json.dumps(json_data).encode("utf-8")
@@ -919,6 +938,11 @@ class ModPack:
 
         mod_count = json_data["mod_count"]
         is_jp = json_data["is_jp"]
+        name = json_data["name"]
+        author = json_data["author"]
+        description = json_data["description"]
+        game_version = json_data["game_version"]
+        do_mod_info = json_data["do_mod_info"]
 
         mods: list[Mod] = []
         offset = 4 + len_json
@@ -926,7 +950,7 @@ class ModPack:
             len_mod = struct.unpack("<I", data[offset : offset + 4])[0]
             mods.append(Mod.load_from_bytes(data[offset + 4 : offset + len_mod]))
             offset += len_mod + 4
-        mod_pack = ModPack(is_jp)
+        mod_pack = ModPack(is_jp, name, author, description, game_version, do_mod_info)
         mod_pack.add_mods(mods)
         return mod_pack
 
@@ -941,3 +965,123 @@ class ModPack:
             if mod.is_jp() != self.is_jp:
                 return True
         return False
+
+
+def generate_mod_info(mods: list[Mod], is_jp: bool, mod_log: str) -> str:
+    """
+    Generates mod info for the given mods
+
+    Args:
+        mods (list[Mod]): Mods to generate mod info for
+        is_jp (bool): True if the mods are for jp
+        mod_log (str, optional): Mod log to append to
+
+    Returns:
+        str: Mod info
+    """
+    mod_log += f"Total mods: {len(mods)}{get_str_sep(is_jp)}\n"
+    mod_log += f"Mods:{get_str_sep(is_jp)}\n"
+    for mod in mods:
+        if mod.do_mod_info:
+            mod_log = add_mod_to_mod_info(mod_log, mod)
+    return mod_log
+
+
+def add_mod_pack_to_mod_info(mod_log: str, mod_pack: ModPack) -> str:
+    """
+    Adds a mod pack to the mod info
+
+    Args:
+        mod_log (str): Mod log
+        mod_pack (ModPack): Mod pack to add to the mod info
+
+    Returns:
+        str: Mod log with the mod pack added
+    """
+    if not mod_pack.do_mod_info:
+        return mod_log
+    mod_log += (
+        f"Mod Pack: {mod_pack.name} by {mod_pack.author}{get_str_sep(mod_pack.is_jp)}\n"
+    )
+    mod_log += f"{mod_pack.description}{get_str_sep(mod_pack.is_jp)}\n"
+    mod_log = generate_mod_info(mod_pack.mods, mod_pack.is_jp, mod_log)
+    return mod_log
+
+
+def add_mod_to_mod_info(mod_log: str, mod: Mod) -> str:
+    """
+    Adds a mod to the mod log
+
+    Args:
+        mod_log (str): Mod log
+        mod (Mod): Mod to add to the mod log
+
+    Returns:
+        str: Mod log with the mod added
+    """
+    mod_log += f"Mod: {mod.name} by {mod.author}"
+    if len(mod.files) < 10:
+        mod_log += f"{get_str_sep(mod.is_jp())}\n{mod.description}{get_str_sep(mod.is_jp())}\nFiles:{get_str_sep(mod.is_jp())}\n"
+        for file in mod.files.values():
+            mod_log += (
+                f"File: {file.name} from {file.packname}{get_str_sep(mod.is_jp())}\n"
+            )
+    mod_log += f"{get_str_sep(mod.is_jp())}\n"
+    return mod_log
+
+
+def get_mod_log_file_name(is_jp: bool) -> str:
+    """
+    Gets the mod log file name for the given is_jp
+
+    Args:
+        is_jp (bool): Is jp
+
+    Returns:
+        str: Mod log file name
+    """
+    if is_jp:
+        return "OP_ja.csv"
+    return "OP_en.csv"
+
+
+def write_mod_log(mod_log: str, is_jp: bool) -> Mod:
+    """
+    Writes the mod log to the mod log file
+
+    Args:
+        mod_log (str): Mod log
+        is_jp (bool): Is jp
+
+    Returns:
+        Mod: Mod
+    """
+    mod_log_file = File(
+        get_mod_log_file_name(is_jp),
+        mod_log.encode("utf-8"),
+        "resLocal",
+        True,
+    )
+    country_code = "en"
+    if is_jp:
+        country_code = "jp"
+    mod_log_mod = Mod("mod_log", "", "", 0, country_code, create_mod_info=False)
+    mod_log_mod.add_file_from_bytes(
+        mod_log_file.data, mod_log_file.name, mod_log_file.packname, True
+    )
+    return mod_log_mod
+
+
+def get_str_sep(is_jp: bool) -> str:
+    """
+    Gets the string separator for the given is_jp
+
+    Args:
+        is_jp (bool): Is jp
+
+    Returns:
+        str: String separator
+    """
+    if is_jp:
+        return ","
+    return "|"
