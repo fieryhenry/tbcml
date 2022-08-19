@@ -2,12 +2,14 @@ from enum import Enum
 from multiprocessing import Process
 import os
 from typing import Any, Optional
+import zipfile
 from Cryptodome.Cipher import AES
 import hashlib
 import yaml
 import colored  # type: ignore
 
 from tkinter import filedialog, Tk
+import requests
 
 
 class Color(Enum):
@@ -246,6 +248,40 @@ def check_dir(dir_path: str) -> None:
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
 
+def download_file(url: str, file_path: str, headers: dict[str, Any], percentage: bool):
+    """
+    Download a file from a url to a file path
+
+    Args:
+        url (str): URL to download from
+        file_path (str): Path to file to download to
+        percentage (bool): Whether or not to print a percentage of the download progress
+    """
+    if headers:
+        res = requests.get(url, stream=True, headers=headers)
+    else:
+        res = requests.get(url, stream=True)
+    total_size = int(res.headers.get("content-length", 0))
+    block_size = 1024
+    wrote = 0
+    with open(file_path, "wb") as f:
+        for data in res.iter_content(block_size):
+            wrote += len(data)
+            f.write(data)
+            if percentage:
+                print("\rDownloaded: {}%".format(int(100 * wrote / total_size)), end="")
+    print("\n")
+
+def unzip_file(file_path: str, destination: str) -> None:
+    """
+    Unzip a file to a destination
+
+    Args:
+        file_path (str): Path to file to unzip
+        destination (str): Path to unzip to
+    """
+    with zipfile.ZipFile(file_path, "r") as zip_ref:
+        zip_ref.extractall(destination)
 
 def parse_csv(
     file_path: Optional[str] = None,
@@ -388,7 +424,7 @@ def check_int(value: str) -> bool:
         return False
 
 
-def str_to_gv(game_version: str) -> str:
+def str_to_gv(game_version: str) -> int:
     """
     Turn a game version with semantic versioning to integer representation
 
@@ -411,7 +447,7 @@ def str_to_gv(game_version: str) -> str:
     if not check_int(final):
         raise ValueError("Invalid game version")
 
-    return final.lstrip("0")
+    return int(final.lstrip("0"))
 
 
 def gv_to_str(game_version: int) -> str:
