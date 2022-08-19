@@ -16,7 +16,7 @@ Join the [discord server](https://discord.gg/DvmMgvn5ZB) if you want to suggest 
 
 #### Prerequisites
 
-To get started loading mods The Battle Cats you will also need the following software:
+To get started loading mods into The Battle Cats you will also need the following software:
 
 ##### Download
 
@@ -28,7 +28,7 @@ To get started loading mods The Battle Cats you will also need the following sof
 
 ##### Installation
 
-Run the following command:
+To install the tool, run the following command:
 
 ```batch
 python -m pip install -U bcgm_mod_manager
@@ -38,7 +38,7 @@ If you are using windows you will most likely need to use `py` instead of `pytho
 
 ##### Run
 
-Run the following command:
+To start the tool, run the following command:
 
 ```batch
 python -m bcgm_mod_manager
