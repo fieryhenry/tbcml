@@ -5,7 +5,7 @@ from . import mod_manager, helper, mod, apk_handler
 def menu() -> None:
     """
     The main menu.
-    """    
+    """
     options = {
         "Display mods": mod_manager.display_mods,
         "Enable mods": enable_mods,
@@ -15,11 +15,13 @@ def menu() -> None:
         "Create mod from game files": create_mod,
         "Add game files to mod": add_file_to_mod,
         "Extract all mods into game files": extract_all_mods,
+        "Extract mod pack into mod files": extract_mod_pack,
         "Load enabled mods into apk": load_mods_into_game,
-        "Load mod packs from .bcmodpack files as mods": add_mod_packs,
+        "Load mod packs from .bcmodpack files": add_mod_packs,
         "Create mod pack of enabled mods": create_mod_pack,
         "Open mods folder in explorer": open_mod_folder,
-        "Decrypt all local game files": decrypt_all_game_files,
+        "Decrypt all game files": decrypt_all_game_files,
+        "Download server pack files" : download_server_packs,
         "Exit": exit_manager,
     }
     while True:
@@ -37,10 +39,14 @@ def menu() -> None:
             helper.colored_text("Invalid choice.", helper.Color.RED)
             helper.colored_text("Please try again.", helper.Color.RED)
 
+def download_server_packs():
+    is_jp = helper.colored_input("Do you want to get the jp version of the game files? (&y&/&n&):") == "y"
+    apk_handler.download_server_files(is_jp)
+
 def add_file_to_mod() -> None:
     """
     Adds a file to a mod.
-    """    
+    """
     mods = mod_manager.get_enabled_mods()
     helper.colored_list(
         list(map(lambda x: mod_manager.get_mod_name(x), mods)), new=helper.Color.GREEN
@@ -52,32 +58,62 @@ def add_file_to_mod() -> None:
         return
     if choice > 0 and choice <= len(mods):
         mod_name = mod_manager.get_mod_name(mods[choice - 1])
-        helper.colored_text(
-            "Adding file to mod: " + mod_name, helper.Color.GREEN
-        )
+        helper.colored_text("Adding file to mod: " + mod_name, helper.Color.GREEN)
         mod_manager.add_files_to_mod(mod_name)
     else:
         helper.colored_text("Invalid choice.", helper.Color.RED)
         helper.colored_text("Please try again.", helper.Color.RED)
 
+
 def extract_all_mods() -> None:
     """
     Extracts all mods.
-    """    
+    """
     mods = mod_manager.load_mods()
     path = os.path.join(mod_manager.get_mod_folder(), "unpacked_mods")
     for mod in mods:
         mod_path = os.path.join(path, mod_manager.get_mod_name(mod))
         mod.unpack(mod_path)
     helper.colored_text("Mods extracted successfully.", helper.Color.GREEN)
-    if helper.colored_input("Do you want to open the folder of the content? (&y&/&n&):") == "y":
+    if (
+        helper.colored_input(
+            "Do you want to open the folder of the content? (&y&/&n&):"
+        )
+        == "y"
+    ):
         os.startfile(path)
+
+
+def extract_mod_pack() -> None:
+    """
+    Extracts a mod pack.
+    """
+    mod_packs = mod_manager.get_mod_packs()
+    helper.colored_list(list(map(lambda x: mod_manager.get_mod_name(x), mod_packs)))
+    choice = helper.get_int(input("Enter an option:"))
+    if choice is None:
+        helper.colored_text("Invalid choice.", helper.Color.RED)
+        helper.colored_text("Please try again.", helper.Color.RED)
+        return
+    if choice > 0 and choice <= len(mod_packs):
+        mod_pack = mod_packs[choice - 1]
+        helper.colored_text("Extracting mod pack: " + mod_pack.name, helper.Color.GREEN)
+        mod_manager.extract_mod_pack(mod_pack)
+    else:
+        helper.colored_text("Invalid choice.", helper.Color.RED)
+        helper.colored_text("Please try again.", helper.Color.RED)
+
 
 def decrypt_all_game_files() -> None:
     """
     Decrypts all game files.
-    """    
-    is_jp = helper.colored_input("Do you want to get the jp version of the game files? (&y&/&n&):") == "y"
+    """
+    is_jp = (
+        helper.colored_input(
+            "Do you want to get the jp version of the game files? (&y&/&n&):"
+        )
+        == "y"
+    )
     helper.colored_text("Loading apk...", helper.Color.GREEN)
     apk = apk_handler.BC_APK("latest", is_jp, apk_handler.BC_APK.get_apk_folder())
     apk.download()
@@ -85,21 +121,27 @@ def decrypt_all_game_files() -> None:
     apk.extract()
     helper.colored_text("Decrypting game files...", helper.Color.GREEN)
     apk.decrypt()
-    
-    if helper.colored_input("Do you want to open the decrypted files folder? (&y&/&n&):") == "y":
+
+    if (
+        helper.colored_input(
+            "Do you want to open the decrypted files folder? (&y&/&n&):"
+        )
+        == "y"
+    ):
         os.startfile(apk.decrypted_path)
+
 
 def open_mod_folder() -> None:
     """
     Opens the mod folder.
-    """    
+    """
     os.startfile(mod_manager.get_mod_folder())
 
 
 def enable_mods() -> None:
     """
     Enables mods.
-    """    
+    """
     mods = mod_manager.get_disabled_mods()
     helper.colored_list(
         list(map(lambda x: mod_manager.get_mod_name(x), mods)), new=helper.Color.GREEN
@@ -128,7 +170,7 @@ def enable_mods() -> None:
 def disable_mods() -> None:
     """
     Disables mods.
-    """    
+    """
     mods = mod_manager.get_enabled_mods()
     helper.colored_list(
         list(map(lambda x: mod_manager.get_mod_name(x), mods)), new=helper.Color.GREEN
@@ -213,20 +255,24 @@ def add_mod_packs() -> None:
 def create_mod_pack() -> None:
     """
     Creates a mod pack.
-    """    
+    """
     name = helper.colored_input("Enter the name of the mod pack:")
     author = helper.colored_input("Enter the author of the mod pack:")
+    description = helper.colored_input("Enter the description of the mod pack:")
+    game_version = helper.colored_input(
+        "Enter the game version of the mod pack (e.g 11.7.1):"
+    )
     is_jp = helper.colored_input("Is this for the jp version? (&y&/&n&):") == "y"
 
-    name = f"{author}-{name}{mod.ModPack.get_extension()}"
-
-    mod_manager.create_mod_pack(name, is_jp)
+    mod_manager.create_mod_pack(
+        name, author, description, helper.str_to_gv(game_version), is_jp
+    )
 
 
 def create_mod() -> None:
     """
     Creates a mod.
-    """    
+    """
     files = helper.select_files(
         title="Select files to add to the mod",
     )
@@ -254,7 +300,7 @@ def create_mod() -> None:
 def exit_manager() -> None:
     """
     Exits the mod manager.
-    """    
+    """
     helper.colored_text("\nExiting modder.", helper.Color.GREEN)
     exit()
 
@@ -262,7 +308,7 @@ def exit_manager() -> None:
 def load_mods_into_game() -> None:
     """
     Loads mods into the game.
-    """    
+    """
     game_version = mod_manager.get_newest_mod_version()
     if game_version is None:
         helper.colored_text("No mods found.", helper.Color.RED)
@@ -270,17 +316,28 @@ def load_mods_into_game() -> None:
     is_jp = helper.colored_input("Are you using a jp version? (&y&/&n&):") == "y"
 
     if not mod_manager.load_mods_into_game(helper.gv_to_str(game_version), is_jp):
-        helper.colored_text("Failed to load mods into game.", helper.Color.RED)
+        helper.colored_text("\nFailed to load mods into game.", helper.Color.RED)
         return
 
-    helper.colored_text("Successfully loaded mods into game.", helper.Color.GREEN)
-    apk_path = os.path.abspath(os.path.join(apk_handler.BC_APK.get_apk_folder(), helper.gv_to_str(game_version), 'modded.apk'))
+    helper.colored_text("\nSuccessfully loaded mods into game.", helper.Color.GREEN)
+    apk_path = os.path.abspath(
+        os.path.join(
+            apk_handler.BC_APK.get_apk_folder(),
+            helper.gv_to_str(game_version),
+            "modded.apk",
+        )
+    )
     helper.colored_text(
-        f"The apk can be found here: &{apk_path}&",
+        f"\n&The apk can be found here: &{apk_path}",
         helper.Color.GREEN,
         helper.Color.WHITE,
     )
-    if helper.colored_input("Would you like to open the folder containing the apk? (&y&/&n&):") == "y":
+    if (
+        helper.colored_input(
+            "Would you like to open the folder containing the apk? (&y&/&n&):"
+        )
+        == "y"
+    ):
         os.startfile(os.path.dirname(apk_path))
     helper.colored_text("Please re-install the game", helper.Color.GREEN)
 
@@ -288,7 +345,7 @@ def load_mods_into_game() -> None:
 def main() -> None:
     """
     Main function.
-    """    
+    """
     menu()
 
 
