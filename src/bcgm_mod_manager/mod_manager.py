@@ -19,6 +19,7 @@ def add_files_to_mod(mod_name: str):
                 if packname is not None:
                     bc_mod.add_file(file, packname[0].replace(".list", ""))
                 else:
+                    helper.colored_text("WARNING: File not found in the game files (maybe download server packs?): " + file, helper.Color.RED)
                     bc_mod.add_file(file, "DownloadLocal")
     enable_mod(mod_name)
     save_mods(mods)
@@ -322,7 +323,7 @@ def create_mod(
     for file in files:
         pack_name = apk.find_file_in_lists(os.path.basename(file), apk.get_lists())
         if pack_name is None:
-            helper.colored_text("WARNING: File not found in apk: " + file, helper.Color.RED)
+            helper.colored_text("WARNING: File not found in the game files (maybe download server packs?): " + file, helper.Color.RED)
             bc_mod.add_file(file, "DownloadLocal")
         else:
             pack_name = pack_name[0]
