@@ -64,6 +64,8 @@ class File:
         Returns:
             bytes: Data with padding
         """
+        if "imagedatalocal" in self.packname.lower():
+            return self.data
         if not self.data:
             return helper.add_pkcs7_padding(self.data)
         return helper.add_pkcs7_padding(helper.remove_pkcs7_padding(self.data))
@@ -87,8 +89,7 @@ class File:
         Returns:
             bytes: Encrypted file data
         """
-
-        if "imagedatalocal" in self.name:
+        if "imagedatalocal" in self.packname.lower():
             return self.data
         cipher = self.get_cipher(is_jp)
         return cipher.encrypt(self.add_pkcs7_padding())
@@ -100,7 +101,7 @@ class File:
         Returns:
             bytes: Decrypted file data
         """
-        if "imagedatalocal" in self.name:
+        if "imagedatalocal" in self.packname.lower():
             return self.data
         cipher = self.get_cipher(is_jp)
         return cipher.decrypt(self.data)
@@ -635,11 +636,6 @@ class Mod:
         Returns:
             Mod: Loaded mod
         """
-        helper.colored_text(
-            f"Loading pack from file: &{os.path.basename(pack_file_path)}&",
-            helper.Color.WHITE,
-            helper.Color.GREEN,
-        )
         ls_data = helper.parse_csv(file_data=Mod.get_list_data(pack_file_path.replace(".pack", ".list")))
         pack_data = helper.read_file_bytes(pack_file_path)
         base_name = os.path.basename(pack_file_path.strip(".pack"))
@@ -1037,8 +1033,9 @@ def add_mod_to_mod_info(mod_log: str, mod: Mod) -> str:
         str: Mod log with the mod added
     """
     mod_log += f"Mod: {mod.name} by {mod.author}"
+    mod_log += f"{get_str_sep(mod.is_jp())}\n{mod.description}{get_str_sep(mod.is_jp())}\n"
     if len(mod.files) < 10:
-        mod_log += f"{get_str_sep(mod.is_jp())}\n{mod.description}{get_str_sep(mod.is_jp())}\nFiles:{get_str_sep(mod.is_jp())}\n"
+        mod_log += f"Files:{get_str_sep(mod.is_jp())}\n"
         for file in mod.files.values():
             mod_log += (
                 f"File: {file.name} from {file.packname}{get_str_sep(mod.is_jp())}\n"
