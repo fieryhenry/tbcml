@@ -12,6 +12,12 @@ Join the [discord server](https://discord.gg/DvmMgvn5ZB) if you want to suggest 
 
 - EasyMoneko for the original keys for decrypting/encrypting: https://www.reddit.com/r/battlecats/comments/41e4l1/is_there_anyone_able_to_access_bc_files_your_help/
 
+- Battle Cats Ultimate for what some of the numbers mean in various csvs. https://github.com/battlecatsultimate
+
+- This resource for unit csvs: https://pastebin.com/JrCTPnUV
+
+- Vixie on discord for enemy csvs
+
 ## Getting Started
 
 #### Prerequisites
@@ -31,20 +37,20 @@ To get started loading mods into The Battle Cats you will also need the followin
 To install the tool, run the following command:
 
 ```batch
-python -m pip install -U bcgm_mod_manager
+python3 -m pip install -U bcgm_mod_manager
 ```
 
-If you are using windows you will most likely need to use `py` instead of `python`.
+If you are using windows you will most likely need to use `py` instead of `python3`.
 
 ##### Run
 
 To start the tool, run the following command:
 
 ```batch
-python -m bcgm_mod_manager
+python3 -m bcgm_mod_manager
 ```
 
-If you are using windows you will most likely need to use `py` instead of `python`.
+If you are using windows you will most likely need to use `py` instead of `python3`.
 
 ## Mods and Mod Packs
 
@@ -62,7 +68,7 @@ You can view your mods with the `Display mods` option.
 
 To create a mod you will need some game files. To get them you can use the `Data Decryption -> Decrypt all game files` option. To decrypt server files you will need to use the option to `Download -> Download server pack files` beforehand.
 
-Then you will need to modify those files, to do this you can use this tool here: [BCGM-Python](https://github.com/fieryhenry/BCGM-Python) to edit cat, enemy and stage data. In the future this will be moved into this tool as well as with the ability to edit a wider variety of game files.
+Then you will need to modify those files, to do this you can use the features in `Edit Game Files`
 
 Once you have your modded files, use the option in the tool to `Mod Management -> Create mod from game files`. Then input the required information and select your custom files.
 
@@ -100,6 +106,8 @@ The mod pack will be in the mods folder.
 
 ### Todo
 
-- [ ] Ability to modify some game files
+- [ ] Import bcu data for stages and enemies + fix crashing with some cats
+
+- [ ] Add new cats / enemies into the game
 
 - [ ] Mod browser
