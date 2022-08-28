@@ -1,12 +1,11 @@
 from multiprocessing import Process
 import os
-import random
 import shutil
 import subprocess
 from typing import Any, Optional, Union
 import requests
 import bs4
-from . import helper, mod, libhandler
+from . import helper, mod, libhandler, config_handler
 
 
 class BC_APK:
@@ -14,7 +13,7 @@ class BC_APK:
     Class for downloading the apk, extracting files and loading the mods
     """
 
-    def __init__(self, game_version: str, is_jp: bool, output_path: str):
+    def __init__(self, game_version: str, is_jp: bool, output_path: str, no_wipe: bool = False):
         """
         Initialize the class
 
@@ -22,6 +21,7 @@ class BC_APK:
             game_version (str): The game version to use. Example: 11.7.1 or latest
             is_jp (bool): If the apk is the jp version or not
             output_path (str): The path to the output folder for the apk, extracted files, and packs
+            wipe (bool): If the game files should be kept or not
 
         Raises:
             ValueError: If the game version is not valid
@@ -43,12 +43,14 @@ class BC_APK:
         self.output_path = os.path.join(
             output_path, f"{self.game_version}{self.get_jp_str()}"
         )
-        self.apk_path = os.path.join(self.output_path, f"original.apk")
         self.final_apk_path = os.path.join(self.output_path, f"modded.apk")
+        self.apk_path = os.path.join(self.output_path, f"original.apk")
         self.extracted_path = os.path.join(self.output_path, f"extracted")
-        self.packs_path = os.path.join(self.output_path, f"packs")
         self.decrypted_path = os.path.join(self.output_path, f"decrypted")
-        self.wipe()
+        self.packs_path = os.path.join(self.output_path, f"packs")
+
+        if not no_wipe:
+            self.wipe()
         self.make_dirs()
 
     def get_as_mod(self, pack_files: list[str]) -> mod.Mod:
@@ -75,7 +77,7 @@ class BC_APK:
         if self.is_jp:
             file_name = "jp"
         path = os.path.join(
-            helper.get_config_value("apk_folder"), f"{file_name}_server"
+            config_handler.get_config_setting("apk_folder"), f"{file_name}_server"
         )
         if not os.path.exists(path):
             return
@@ -179,9 +181,8 @@ class BC_APK:
         """
         Sign the apk
         """
-        password = "".join(
-            [random.choice("abcdefghijklmnopqrstuvwxyz") for _ in range(10)]
-        )
+        password = config_handler.get_config_setting("apk_password")
+
         key_store_name = "bc_keystore"
 
         # create a key
@@ -193,7 +194,7 @@ class BC_APK:
 
         # sign the apk file
         process = subprocess.Popen(
-            f"jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore {key_store_name}.keystore {self.final_apk_path} alias_name",
+            f"jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore {key_store_name}.keystore {self.final_apk_path} alias_name",
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -294,9 +295,9 @@ class BC_APK:
 
     def wipe(self) -> None:
         """
-        Wipe the extracted folder
-        """
-        paths = [self.extracted_path, self.packs_path, self.decrypted_path]
+        Wipe the output folder
+        """        
+        paths = [self.extracted_path, self.packs_path]
         for path in paths:
             if os.path.exists(path):
                 shutil.rmtree(path)
@@ -374,11 +375,11 @@ class BC_APK:
             return
         print(f"\nCopying apk file to {path}...")
         shutil.copy(self.final_apk_path, path)
-        if os.path.exists(os.path.join(os.path.dirname(path), "libs")):
-            shutil.rmtree(os.path.join(os.path.dirname(path), "libs"))
+        if os.path.exists(os.path.join(os.path.dirname(path), "lib")):
+            shutil.rmtree(os.path.join(os.path.dirname(path), "lib"))
         shutil.copytree(
             os.path.abspath(os.path.join(self.extracted_path, "lib")),
-            os.path.join(os.path.dirname(path), "libs"),
+            os.path.join(os.path.dirname(path), "lib"),
         )
 
     def decrypt_pack(self, file_path: str) -> None:
@@ -415,8 +416,15 @@ class BC_APK:
             dict[str, list[list[Any]]]: The lists
         """
         lists: dict[str, list[list[Any]]] = {}
+        for file in os.listdir(self.decrypted_path):
+            if file.endswith(".list"):
+                file_path = os.path.abspath(os.path.join(self.decrypted_path, file))
+                list_data = helper.parse_csv(file_path)
+                lists[os.path.basename(file)] = list_data
         for file in os.listdir(os.path.join(self.packs_path)):
             if file.endswith(".list"):
+                if os.path.basename(file) in lists:
+                    continue
                 file_path = os.path.abspath(os.path.join(self.packs_path, file))
                 list_data = mod.Mod.get_list_data(file_path)
                 list_data = helper.parse_csv(file_data=list_data)
@@ -424,7 +432,7 @@ class BC_APK:
         return lists
 
     def find_file_in_lists(
-        self, file_name: str, lists: dict[str, list[list[Any]]]
+        self, file_name: str, lists: dict[str, list[list[Any]]], return_server: bool = False
     ) -> Optional[tuple[str, list[list[Any]]]]:
         """
         Find the file in the lists
@@ -439,7 +447,10 @@ class BC_APK:
         for list_name in lists:
             for row in lists[list_name]:
                 if row[0] == file_name:
-                    new_list_name = self.convert_server_to_local(list_name)
+                    if not return_server:
+                        new_list_name = self.convert_server_to_local(list_name)
+                    else:
+                        new_list_name = list_name
                     return (new_list_name, lists[list_name])
         return None
 
@@ -485,7 +496,7 @@ class BC_APK:
         Returns:
             str: The apk folder
         """
-        folder = os.path.abspath(helper.get_config_value("apk_folder"))
+        folder = os.path.abspath(config_handler.get_config_setting("apk_folder"))
         helper.check_dir(folder)
         return folder
 
@@ -520,7 +531,7 @@ def download_server_files(is_jp: bool) -> None:
             urls.append(url)
 
     output_dir = os.path.join(
-        helper.get_config_value("apk_folder"), f"{file_name}_server"
+        config_handler.get_config_setting("apk_folder"), f"{file_name}_server"
     )
     helper.check_dir(output_dir)
     new_urls: list[str] = []
