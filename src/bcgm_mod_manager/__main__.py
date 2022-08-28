@@ -1,10 +1,17 @@
 import os
 from typing import Any
-from . import mod_manager, helper, mod, apk_handler
+from . import mod_manager, helper, mod, apk_handler, game_file_edits, config_handler
+
 
 def download_server_packs():
-    is_jp = helper.colored_input("Do you want to get the jp version of the game files? (&y&/&n&):") == "y"
+    is_jp = (
+        helper.colored_input(
+            "Do you want to get the jp version of the game files? (&y&/&n&):"
+        )
+        == "y"
+    )
     apk_handler.download_server_files(is_jp)
+
 
 def add_file_to_mod() -> None:
     """
@@ -66,7 +73,9 @@ def extract_mod_pack() -> None:
         return
     if choice > 0 and choice <= len(mod_packs):
         mod_pack = mod_packs[choice - 1]
-        helper.colored_text("Extracting mod pack: " + mod_pack.get_name(), helper.Color.GREEN)
+        helper.colored_text(
+            "Extracting mod pack: " + mod_pack.get_name(), helper.Color.GREEN
+        )
         mod_manager.extract_mod_pack(mod_pack)
     else:
         helper.colored_text("Invalid choice.", helper.Color.RED)
@@ -251,9 +260,6 @@ def create_mod() -> None:
     """
     Creates a mod.
     """
-    files = helper.select_files(
-        title="Select files to add to the mod",
-    )
     name = helper.colored_input("Enter the name of the mod:")
     author = helper.colored_input("Enter the author of the mod:")
     description = helper.colored_input("Enter the description of the mod:")
@@ -262,6 +268,15 @@ def create_mod() -> None:
     )
     country_code = helper.colored_input(
         "Enter the country code of the mod (e.g en, jp, kr, tw):"
+    )
+    cc = "jp" if country_code == "jp" else ""
+    files = helper.select_files(
+        title="Select files to add to the mod",
+        initial_dir=os.path.join(
+            config_handler.get_config_setting("apk_folder"),
+            game_version + cc,
+            "Modified Files",
+        ),
     )
 
     mod_manager.create_mod(
@@ -294,10 +309,10 @@ def load_mods_into_game() -> None:
     is_jp = helper.colored_input("Are you using a jp version? (&y&/&n&):") == "y"
 
     if not mod_manager.load_mods_into_game(helper.gv_to_str(game_version), is_jp):
-        helper.colored_text("\nFailed to load mods into game.", helper.Color.RED)
+        helper.colored_text("\nFailed to load mods into the apk.", helper.Color.RED)
         return
 
-    helper.colored_text("\nSuccessfully loaded mods into game.", helper.Color.GREEN)
+    helper.colored_text("\nSuccessfully loaded mods into the apk.", helper.Color.GREEN)
     apk_path = os.path.abspath(
         os.path.join(
             apk_handler.BC_APK.get_apk_folder(),
@@ -319,10 +334,11 @@ def load_mods_into_game() -> None:
         os.startfile(os.path.dirname(apk_path))
     helper.colored_text("Please re-install the game", helper.Color.GREEN)
 
+
 OPTIONS: dict[str, Any] = {
     "Display mods": mod_manager.display_mods,
     "Load enabled mods into apk": load_mods_into_game,
-    "Mod Management" :{
+    "Mod Management": {
         "Enable mods": enable_mods,
         "Disable mods": disable_mods,
         "Add game files to mod": add_file_to_mod,
@@ -332,15 +348,27 @@ OPTIONS: dict[str, Any] = {
         "Load enabled mods into apk": load_mods_into_game,
         "Open mods folder in explorer": open_mod_folder,
     },
-    "Data Decryption / Extraction / Download" : {
+    "Data Decryption / Extraction / Download": {
         "Extract all mods into game files": extract_all_mods,
         "Extract mod pack into mod files": extract_mod_pack,
         "Decrypt all game files": decrypt_all_game_files,
-        "Download server pack files" : download_server_packs,
+        "Download server pack files": download_server_packs,
     },
-    "Mod Packs" : {
+    "Mod Pack Management": {
         "Load mod packs from .bcmodpack files": add_mod_packs,
         "Create mod pack of enabled mods": create_mod_pack,
+    },
+    "Edit Game Files": {
+        "Edit cat stats (unit*.csv)": game_file_edits.unit_mod.edit_unit,
+        "Edit stage data (stage*.csv)": game_file_edits.stage_mod.edit_stage,
+        "Edit enemy data (t_unit.csv)": game_file_edits.enemy_mod.edit_enemy,
+        "Import bcu data": game_file_edits.import_from_bcu.import_from_bcu,
+        "Add enemy as cat": game_file_edits.add_enemy_as_cat.import_enemy,
+    },
+    "Set Config Settings": {
+        "Set apk folder": config_handler.set_apk_folder,
+        "Set mod folder": config_handler.set_mod_folder,
+        "Set apk copy path": config_handler.set_apk_copy_path,
     },
     "Exit": exit_manager,
 }
@@ -360,12 +388,10 @@ def get_feature(
     return results
 
 
-def show_options(
-    features_to_use: dict[str, Any]
-) -> None:
+def show_options(features_to_use: dict[str, Any]) -> None:
     """Allow the user to either enter a feature number or a feature name, and get the features that match"""
 
-    prompt = "What do you want to do ?(some options contain other features within them)"
+    prompt = "What do you want to do?(some options contain other features within them)"
     prompt += "\nYou can enter a number to run a feature or a word to search for that feature (e.g entering enable mod will run the Enable Mods feature)\nYou can press enter to see a list of all of the features"
     user_input = helper.colored_input(f"{prompt}:\n")
     user_int = helper.get_int(user_input)
@@ -395,11 +421,13 @@ def show_options(
     helper.colored_list(["Go Back"] + list(results))
     return show_options(results)
 
+
 def main() -> None:
     """
     Main function.
     """
     menu()
+
 
 def menu() -> None:
     """
@@ -409,6 +437,7 @@ def menu() -> None:
         helper.colored_text("\nMod Manager", helper.Color.GREEN)
         helper.colored_list(list(OPTIONS))
         show_options(OPTIONS)
+
 
 if __name__ == "__main__":
     try:
