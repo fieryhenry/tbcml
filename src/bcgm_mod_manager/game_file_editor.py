@@ -1,7 +1,8 @@
 import json
 import os
 from typing import Any, Optional
-from . import apk_handler, helper, config_handler
+
+from . import apk_handler, config_handler, helper
 
 
 class GameFileEditor:
@@ -28,17 +29,21 @@ class GameFileEditor:
             self.game_version,
             self.is_jp,
             config_handler.get_config_setting("apk_folder"),
-            not self.fresh_download
+            not self.fresh_download,
         )
         self.name = name
         self.load_apk()
+        self.lists = self.apk.get_lists()
+        self.files = self.apk.get_files(self.lists)
 
     def load_apk(self) -> None:
         """
         Prepare the game file editor, by downloading, extracting and decrypting the apk.
         """
         if self.fresh_download:
-            helper.colored_text("Downloading and extracting the apk...", helper.Color.GREEN)
+            helper.colored_text(
+                "Downloading and extracting the apk...", helper.Color.GREEN
+            )
             self.apk.download()
             self.apk.extract()
             helper.colored_text("Decrypting the game files...", helper.Color.GREEN)
@@ -53,7 +58,9 @@ class GameFileEditor:
         """
         return self.apk.decrypted_path
 
-    def parse_file(self, file_name: str, delimeter: str = ",", remove_empty: bool = False) -> Optional[list[list[Any]]]:
+    def parse_file(
+        self, file_name: str, delimeter: str = ",", remove_empty: bool = False
+    ) -> Optional[list[list[Any]]]:
         """
         Parse the specified file.
 
@@ -64,18 +71,20 @@ class GameFileEditor:
         Returns:
             Optional[list[list[Any]]]: The parsed file.
         """
-        file_path = self.get_file_path(file_name)
-        if file_path is None:
-            return None
-        return helper.parse_csv(file_path, delimiter=delimeter, r_empty=remove_empty)
-    
+        if not os.path.exists(file_name):
+            file_path = self.get_file_path(file_name)
+            if file_path is None:
+                return None
+            file_name = file_path
+        return helper.parse_csv(file_name, delimiter=delimeter, r_empty=remove_empty)
+
     def read_bytes(self, file_name: str) -> Optional[bytes]:
         """
         Read the specified file.
 
         Args:
             file_name (str): The name of the file.
-        
+
         Returns:
             Optional[bytes]: The data of the specified file, or None if the file does not exist.
         """
@@ -84,7 +93,14 @@ class GameFileEditor:
             return None
         return helper.read_file_bytes(file_path)
 
-    def write_csv(self, file_name: str, file_data: list[list[Any]], add_padding: bool = True, delimeter: str = ",") -> None:
+    def write_csv(
+        self,
+        file_name: str,
+        file_data: list[list[Any]],
+        add_padding: bool = True,
+        delimeter: str = ",",
+        text: bool = True,
+    ) -> None:
         """
         Write the specified file.
 
@@ -96,9 +112,15 @@ class GameFileEditor:
 
         """
         data = helper.list_to_csv(file_data, delimeter)
-        self.write_bytes(file_name, data.encode("utf-8"), add_padding)
-    
-    def write_bytes(self, file_name: str, file_data: bytes, add_padding: bool = True) -> None:
+        self.write_bytes(file_name, data.encode("utf-8"), add_padding, text)
+
+    def write_bytes(
+        self,
+        file_name: str,
+        file_data: bytes,
+        add_padding: bool = True,
+        text: bool = True,
+    ) -> None:
         """
         Write the specified file.
 
@@ -106,17 +128,26 @@ class GameFileEditor:
             file_name (str): The name of the file.
             file_data (bytes): The data to write.
             add_padding (bool): True if the file should be padded, False if not.
-        """        
-        file_path = os.path.abspath(os.path.join(self.apk.output_path, "Modified Files", os.path.basename(file_name)))
+        """
+        file_path = os.path.abspath(
+            os.path.join(
+                self.apk.output_path, "Modified Files", os.path.basename(file_name)
+            )
+        )
         helper.check_dir(os.path.dirname(file_path))
 
         if add_padding:
             file_data = helper.add_pkcs7_padding(file_data)
         helper.write_file_bytes(file_path, file_data)
-        helper.colored_text(f"Wrote {os.path.basename(file_name)} to {file_path}", helper.Color.GREEN)
-    
+        if text:
+            helper.colored_text(
+                f"Wrote {os.path.basename(file_name)} to {file_path}",
+                helper.Color.GREEN,
+            )
 
-    def get_file_path(self, file_name: str, return_server: bool = False) -> Optional[str]:
+    def get_file_path(
+        self, file_name: str, return_server: bool = False
+    ) -> Optional[str]:
         """
         Get the path to the specified file.
 
@@ -128,10 +159,14 @@ class GameFileEditor:
         """
         if os.path.exists(file_name):
             return file_name
-        list_name = self.apk.find_file_in_lists(file_name, self.apk.get_lists(), return_server)
+        list_name = self.files.get(file_name)
         if list_name is None:
             return None
-        return os.path.join(self.apk.decrypted_path, list_name[0].replace(".list", ".pack"), file_name)
+        if not return_server:
+            list_name = self.apk.convert_server_to_local(list_name)
+        return os.path.join(
+            self.apk.decrypted_path, list_name.replace(".list", ".pack"), file_name
+        )
 
     def get_directory_from_file(self, file_name: str) -> Optional[str]:
         """
