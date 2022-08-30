@@ -6,6 +6,7 @@ from typing import Any, Optional, Union
 
 import bs4
 import requests
+from alive_progress import alive_bar  # type: ignore
 
 from . import config_handler, helper, libhandler, mod
 
@@ -508,7 +509,7 @@ def download_server_files(is_jp: bool) -> None:
         is_jp (bool): If the game is japanese
     """
     helper.colored_text(
-        "Downloading server files... &(This will take a long time)&",
+        "Downloading server files... &(This might take a long time)&",
         helper.Color.WHITE,
         helper.Color.GREEN,
     )
@@ -534,24 +535,28 @@ def download_server_files(is_jp: bool) -> None:
     )
     helper.check_dir(output_dir)
     new_urls: list[str] = []
-    for i, url in enumerate(urls):
+    for url in urls:
         file_path = os.path.join(output_dir, url.split("/")[-1])
         if os.path.exists(file_path):
             continue
         new_urls.append(url)
-    for i, url in enumerate(new_urls):
-        file_path = os.path.join(output_dir, url.split("/")[-1])
-        if os.path.exists(file_path):
-            continue
-        helper.colored_text(
-            f"Downloading &{i + 1}&/&{len(new_urls)}&: &{os.path.basename(file_path)}&...",
-            helper.Color.WHITE,
-            helper.Color.GREEN,
-        )
-        res = requests.get(url)
-        if res.status_code != 200:
-            raise Exception(f"Failed to download server files: {res.status_code}")
-        helper.write_file_bytes(
-            file_path,
-            res.content,
-        )
+    with alive_bar(len(new_urls), title="Downloading Server Packs: ", calibrate=0.75) as bar:  # type: ignore
+        for url in new_urls:
+            file_path = os.path.join(output_dir, url.split("/")[-1])
+            if os.path.exists(file_path):
+                bar()
+                continue
+            res = requests.get(url)
+            if res.status_code != 200:
+                helper.colored_text(
+                    f"Failed to download &{os.path.basename(file_path)}&: &{res.status_code}&",
+                    helper.Color.RED,
+                    helper.Color.WHITE,
+                )
+                bar()
+                continue
+            helper.write_file_bytes(
+                file_path,
+                res.content,
+            )
+            bar()
