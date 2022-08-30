@@ -40,14 +40,17 @@ class GameFileEditor:
         """
         Prepare the game file editor, by downloading, extracting and decrypting the apk.
         """
-        if self.fresh_download:
-            helper.colored_text(
-                "Downloading and extracting the apk...", helper.Color.GREEN
-            )
-            self.apk.download()
-            self.apk.extract()
-            helper.colored_text("Decrypting the game files...", helper.Color.GREEN)
-            self.apk.decrypt()
+        if not self.fresh_download:
+            return
+
+        helper.colored_text(
+            "Downloading and extracting the apk...", helper.Color.GREEN
+        )
+        self.apk.download()
+        self.apk.extract()
+        helper.colored_text("Decrypting the game files...", helper.Color.GREEN)
+        self.apk.decrypt()
+        apk_handler.download_server_files(self.is_jp)
 
     def get_decrypted_path(self) -> str:
         """
