@@ -1,4 +1,5 @@
 import os
+
 from .. import game_file_editor, helper
 
 FORMS = ["First Form", "Second Form", "Third Form"]
@@ -9,12 +10,14 @@ def edit_unit() -> None:
     Edit unit files.
     """
     editor = game_file_editor.GameFileEditor("unit_mod")
-    
+
     folder = editor.get_directory_from_file("unit001.csv")
     if folder is None:
         folder = "."
-    
-    unit_file_path = helper.select_file("Select unit files to edit", [("Unit Files", "unit*.csv")], folder)
+
+    unit_file_path = helper.select_file(
+        "Select unit files to edit", [("Unit Files", "unit*.csv")], folder
+    )
     data = editor.parse_file(unit_file_path)
     if data is None:
         helper.colored_text("Error: Could not parse unit file.", helper.Color.RED)
@@ -25,7 +28,7 @@ def edit_unit() -> None:
         unit_id = int(os.path.basename(unit_file_path).split(".")[0][4:]) - 1
     except ValueError:
         unit_id = "ERROR"
-    
+
     helper.colored_text(
         f"Editing &{os.path.basename(unit_file_path)} : &cat unit &{unit_id}&",
         helper.Color.GREEN,
@@ -50,6 +53,7 @@ def edit_unit() -> None:
         data[form_id] = form_data
     editor.write_csv(unit_file_path, data)
 
+
 def set_required(form_data: list[int]) -> list[int]:
     """
     Set the required values for the unit to work correctly.
@@ -59,7 +63,7 @@ def set_required(form_data: list[int]) -> list[int]:
 
     Returns:
         list[int]: The form data with the required values set.
-    """    
+    """
 
     required_vals = [(55, -1), (57, -1), (63, 1), (66, -1)]
     for val in required_vals:

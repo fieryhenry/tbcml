@@ -1,26 +1,28 @@
-from .. import helper, game_file_editor
+from .. import game_file_editor, helper
+
 
 def edit_enemy():
     """
     Edit enemy files.
     """
     editor = game_file_editor.GameFileEditor("enemy_mod")
-    
+
     folder = editor.get_directory_from_file("t_unit.csv")
     if folder is None:
         folder = "."
-    
-    enemy_file_path = helper.select_file("Select tunit file to edit", [("Enemy File", "t_unit.csv")], folder)
+
+    enemy_file_path = helper.select_file(
+        "Select tunit file to edit", [("Enemy File", "t_unit.csv")], folder
+    )
     data = editor.parse_file(enemy_file_path)
     if data is None:
         helper.colored_text("Error: Could not parse enemy file.", helper.Color.RED)
         return
     values: list[str] = editor.get_json_info()
 
-   
     ids = editor.get_range(
         helper.colored_input(
-            "Enter enemy ids (Look up enemy release order battle cats to find ids)(You can enter &all& to get all, a range e.g &1&-&50&, or ids separate by spaces e.g &5 4 7&):"
+            "Enter enemy ids (Look up enemy release order battle cats to find ids)(You can enter a range e.g &1&-&50&, or ids separate by spaces e.g &5 4 7&):"
         ),
         len(data),
     )

@@ -1,16 +1,19 @@
 from .. import game_file_editor, helper
 
+
 def edit_stage():
     """
     Edits the stage files.
-    """    
+    """
     editor = game_file_editor.GameFileEditor("stage_mod")
-    
+
     folder = editor.get_directory_from_file("stage00.csv")
     if folder is None:
         folder = "."
-    
-    unit_file_path = helper.select_file("Select stage files to edit", [("Stage Files", "stage*.csv")], folder)
+
+    unit_file_path = helper.select_file(
+        "Select stage files to edit", [("Stage Files", "stage*.csv")], folder
+    )
     data = editor.parse_file(unit_file_path)
     if data is None:
         helper.colored_text("Error: Could not parse unit file.", helper.Color.RED)
@@ -40,7 +43,9 @@ def edit_stage():
         stage_data = editor.edit_array(values["stage"], stage_data, "Stage data")
     elif option == "2":
         full_slots = get_full_slots(enemy_slot_data)
-        ids = editor.select_options(helper.get_elements(full_slots, 0), all_at_once=False)
+        ids = editor.select_options(
+            helper.get_elements(full_slots, 0), all_at_once=False
+        )
         for id in ids:
             id = helper.check_int(str(id))
             if id is None:
@@ -57,9 +62,13 @@ def edit_stage():
             if len(enemy_slot_data[id]) < len(values["enemy"]):
                 enemy_values_trim = values["enemy"][:-1]
             helper.colored_text(f"Editing enemy slot &{id + 1}&", helper.Color.GREEN)
-            enemy_slot_data[id] = editor.edit_array(enemy_values_trim, enemy_slot_data[id], "Enemy slot data")
+            enemy_slot_data[id] = editor.edit_array(
+                enemy_values_trim, enemy_slot_data[id], "Enemy slot data"
+            )
     elif option == "3" and stage_id:
-        stage_id = helper.colored_input(f"Current stage id: &{stage_id}&\nEnter new stage id:")
+        stage_id = helper.colored_input(
+            f"Current stage id: &{stage_id}&\nEnter new stage id:"
+        )
         if not stage_id:
             helper.colored_text("No id entered.", helper.Color.RED)
             return
@@ -69,6 +78,7 @@ def edit_stage():
     new_csv_data.append(stage_data)
     new_csv_data.extend(enemy_slot_data)
     editor.write_csv(unit_file_path, new_csv_data)
+
 
 def get_full_slots(enemy_slot_data: list[list[int]]):
     full_slots: list[list[int]] = []

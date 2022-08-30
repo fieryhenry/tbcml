@@ -1,6 +1,7 @@
 import os
 from typing import Any
-from . import mod_manager, helper, mod, apk_handler, game_file_edits, config_handler
+
+from . import apk_handler, config_handler, game_file_edits, helper, mod, mod_manager
 
 
 def download_server_packs():
@@ -31,7 +32,7 @@ def add_file_to_mod() -> None:
         return
     if choice > 0 and choice <= len(mods):
         mod_name = mod_manager.get_mod_name(mods[choice - 1])
-        helper.colored_text("Adding file to mod: " + mod_name, helper.Color.GREEN)
+        helper.colored_text("Adding files to mod: " + mod_name, helper.Color.GREEN)
         mod_manager.add_files_to_mod(mod_name)
     else:
         helper.colored_text("Invalid choice.", helper.Color.RED)
@@ -363,7 +364,7 @@ OPTIONS: dict[str, Any] = {
         "Edit stage data (stage*.csv)": game_file_edits.stage_mod.edit_stage,
         "Edit enemy data (t_unit.csv)": game_file_edits.enemy_mod.edit_enemy,
         "Import bcu data": game_file_edits.import_from_bcu.import_from_bcu,
-        "Add enemy as cat": game_file_edits.add_enemy_as_cat.import_enemy,
+        "Add enemies as cats": game_file_edits.add_enemy_as_cat.import_enemy,
     },
     "Set Config Settings": {
         "Set apk folder": config_handler.set_apk_folder,

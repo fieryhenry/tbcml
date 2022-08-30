@@ -1,31 +1,44 @@
 import os
 from typing import Any
+
 import yaml
+
 from . import helper
+
 
 def set_apk_folder() -> None:
     """
     Sets the apk folder.
     """
-    apk_folder = helper.select_dir(title="Select the apk folder", default_dir=get_config_setting("apk_folder"))
+    apk_folder = helper.select_dir(
+        title="Select the apk folder", default_dir=get_config_setting("apk_folder")
+    )
     set_config_setting("apk_folder", apk_folder)
     helper.colored_text("Apk folder set successfully.", helper.Color.GREEN)
+
 
 def set_mod_folder() -> None:
     """
     Sets the mod folder.
     """
-    mod_folder = helper.select_dir(title="Select the mod folder", default_dir=get_config_setting("mod_folder"))
+    mod_folder = helper.select_dir(
+        title="Select the mod folder", default_dir=get_config_setting("mod_folder")
+    )
     set_config_setting("mod_folder", mod_folder)
     helper.colored_text("Mod folder set successfully.", helper.Color.GREEN)
+
 
 def set_apk_copy_path() -> None:
     """
     Sets the apk copy path.
     """
-    apk_copy_path = helper.select_dir(title="Select the apk copy path", default_dir=get_config_setting("apk_copy_path"))
+    apk_copy_path = helper.select_dir(
+        title="Select the apk copy path",
+        default_dir=get_config_setting("apk_copy_path"),
+    )
     set_config_setting("apk_copy_path", apk_copy_path)
     helper.colored_text("Apk copy path set successfully.", helper.Color.GREEN)
+
 
 def get_config_file() -> dict[str, Any]:
     """
@@ -69,6 +82,7 @@ def set_config_setting(setting: str, value: Any) -> None:
     with open(os.path.join(get_app_data_folder(), "config.yaml"), "w") as fh:
         yaml.safe_dump(config, fh)
 
+
 def create_config_file() -> None:
     """
     Create the config file if it doesn't exist
@@ -87,6 +101,7 @@ apk_password: "BCGM_CUSTOM_APK" # Password for signing the apk
     if not os.path.exists(config_file):
         with open(config_file, "w") as fh:
             fh.write(file_data)
+
 
 def get_app_data_folder() -> str:
     """
