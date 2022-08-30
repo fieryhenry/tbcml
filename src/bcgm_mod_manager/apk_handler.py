@@ -1,11 +1,13 @@
-from multiprocessing import Process
 import os
 import shutil
 import subprocess
+from multiprocessing import Process
 from typing import Any, Optional, Union
-import requests
+
 import bs4
-from . import helper, mod, libhandler, config_handler
+import requests
+
+from . import config_handler, helper, libhandler, mod
 
 
 class BC_APK:
@@ -13,7 +15,9 @@ class BC_APK:
     Class for downloading the apk, extracting files and loading the mods
     """
 
-    def __init__(self, game_version: str, is_jp: bool, output_path: str, no_wipe: bool = False):
+    def __init__(
+        self, game_version: str, is_jp: bool, output_path: str, no_wipe: bool = False
+    ):
         """
         Initialize the class
 
@@ -91,7 +95,7 @@ class BC_APK:
         """
         path = os.path.join(self.extracted_path, "assets")
         for file in os.listdir(self.packs_path):
-            if (file.endswith(".pack") or file.endswith(".list")):
+            if file.endswith(".pack") or file.endswith(".list"):
                 if "Server" in file:
                     continue
                 shutil.copy(os.path.join(self.packs_path, file), path)
@@ -236,6 +240,7 @@ class BC_APK:
             return True
         apk_urls = self.find_urls()
         if apk_urls is None:
+            helper.colored_text("Unable to find the apk download url", helper.Color.RED)
             return False
         if self.game_version not in apk_urls:
             print(f"Version {self.game_version} not found")
@@ -288,15 +293,15 @@ class BC_APK:
         """
         res = requests.get(apk_url)
         soup = bs4.BeautifulSoup(res.text, "html.parser")
-        link = soup.find("a", {"class": "button download"})
+        link = soup.find("button", {"class": "button download"})
         if not isinstance(link, bs4.element.Tag):
             return None
-        return str(link.get("href"))
+        return str(link.get("data-url"))
 
     def wipe(self) -> None:
         """
         Wipe the output folder
-        """        
+        """
         paths = [self.extracted_path, self.packs_path]
         for path in paths:
             if os.path.exists(path):
@@ -431,28 +436,22 @@ class BC_APK:
                 lists[os.path.basename(file)] = list_data
         return lists
 
-    def find_file_in_lists(
-        self, file_name: str, lists: dict[str, list[list[Any]]], return_server: bool = False
-    ) -> Optional[tuple[str, list[list[Any]]]]:
+    def get_files(self, lists: dict[str, list[list[Any]]]) -> dict[str, str]:
         """
-        Find the file in the lists
+        Get the files from the lists
 
         Args:
-            file_name (str): The file name
             lists (dict[str, list[list[Any]]]): The lists
 
         Returns:
-            Optional[tuple[str, list[list[Any]]]]: The file name and the lists
+            dict[str, str]: The files
         """
+        files: dict[str, str] = {}
         for list_name in lists:
             for row in lists[list_name]:
-                if row[0] == file_name:
-                    if not return_server:
-                        new_list_name = self.convert_server_to_local(list_name)
-                    else:
-                        new_list_name = list_name
-                    return (new_list_name, lists[list_name])
-        return None
+                if row[0] not in files:
+                    files[row[0]] = list_name
+        return files
 
     @staticmethod
     def convert_server_to_local(file_name: str) -> str:
