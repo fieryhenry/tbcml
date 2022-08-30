@@ -3,9 +3,12 @@ import os
 import shutil
 import struct
 from typing import Any, Optional
+
+from alive_progress import alive_bar  # type: ignore
 from Cryptodome.Cipher import AES
 
 from . import helper
+
 
 class File:
     """
@@ -183,9 +186,12 @@ class Mod:
             packname (str): Name of pack
             exlude (bool, optional): Exclude from mod log. Defaults to False.
         """
+        overwritable = self.get_file_by_name(os.path.basename(file_path))
         file_data = helper.read_file_bytes(file_path)
-        self.add_file_from_bytes(file_data, file_path, packname, exlude)
-        self.add_padding()
+        if overwritable is None:
+            self.add_file_from_bytes(file_data, file_path, packname, exlude)
+        else:
+            overwritable.data = file_data
 
     def add_files(self, file_paths: list[str], packname: str) -> None:
         """
@@ -253,7 +259,7 @@ class Mod:
             list[str]: File names in mod
         """
         return [file.name for file in self.files.values()]
-    
+
     def get_file_data(self) -> list[bytes]:
         """
         Get all file data in the mod
@@ -432,8 +438,10 @@ class Mod:
         js_data = json.dumps(json_data).encode("utf-8")
         data += struct.pack("<I", len(js_data))
         data += js_data
-        for file in self.files.values():
-            data += file.export()
+        with alive_bar(self.get_file_count(), title=f"Exporting Mod: {self.get_name()}") as bar:  # type: ignore
+            for file in self.files.values():
+                data += file.export()
+                bar()
         return data
 
     def export_to_file(self, path: str) -> None:
@@ -446,14 +454,14 @@ class Mod:
         helper.check_dir(path)
         path = os.path.join(path, self.get_name() + Mod.get_extension())
         helper.write_file_bytes(path, self.export())
-    
+
     def get_name(self) -> str:
         """
         Get the name of the mod
 
         Returns:
             str: Name of the mod
-        """        
+        """
         return self.author + "-" + self.name
 
     def add_padding(self) -> None:
@@ -636,7 +644,9 @@ class Mod:
         Returns:
             Mod: Loaded mod
         """
-        ls_data = helper.parse_csv(file_data=Mod.get_list_data(pack_file_path.replace(".pack", ".list")))
+        ls_data = helper.parse_csv(
+            file_data=Mod.get_list_data(pack_file_path.replace(".pack", ".list"))
+        )
         pack_data = helper.read_file_bytes(pack_file_path)
         base_name = os.path.basename(pack_file_path.strip(".pack"))
         if not pack_name:
@@ -676,7 +686,7 @@ class Mod:
 
         Returns:
             str: Formatted mod
-        """        
+        """
         indent_text = "    " if indent else ""
         output = f"{indent_text}&Mod&\n"
         output += f"{indent_text}Name: &{self.name}&\n"
@@ -818,7 +828,7 @@ class ModPack:
             if mod.get_name() == name:
                 return mod
         return None
-    
+
     def get_all_unique_pack_names(self) -> list[str]:
         """
         Get all unique pack names in the mod
@@ -1033,7 +1043,9 @@ def add_mod_to_mod_info(mod_log: str, mod: Mod) -> str:
         str: Mod log with the mod added
     """
     mod_log += f"Mod: {mod.name} by {mod.author}"
-    mod_log += f"{get_str_sep(mod.is_jp())}\n{mod.description}{get_str_sep(mod.is_jp())}\n"
+    mod_log += (
+        f"{get_str_sep(mod.is_jp())}\n{mod.description}{get_str_sep(mod.is_jp())}\n"
+    )
     if len(mod.files) < 10:
         mod_log += f"Files:{get_str_sep(mod.is_jp())}\n"
         for file in mod.files.values():

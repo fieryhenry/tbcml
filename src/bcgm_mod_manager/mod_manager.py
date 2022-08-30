@@ -1,7 +1,10 @@
 import json
 import os
 from typing import Any, Optional, Union
-from . import helper, mod, apk_handler, config_handler
+
+from alive_progress import alive_bar  # type: ignore
+
+from . import apk_handler, config_handler, helper, mod
 
 
 def add_files_to_mod(mod_name: str):
@@ -9,32 +12,55 @@ def add_files_to_mod(mod_name: str):
     mod_folder = get_mod_folder()
     mod_file = os.path.join(mod_folder, mod_name)
     bc_mod = mod.Mod.load_from_mod_file(mod_file)
-    mods = load_mods()
     apk = apk_handler.BC_APK(
         helper.gv_to_str(bc_mod.game_version),
         bc_mod.is_jp(),
         config_handler.get_config_setting("apk_folder"),
-        False
+        False,
     )
     apk.download()
+    helper.colored_text(f"Extracting apk...", helper.Color.GREEN)
     apk.extract()
+    bc_mod = get_mod_from_name(mod_name)
+    if bc_mod is None:
+        return
+    lists = apk.get_lists()
+    file_lists = apk.get_files(lists)
+    with alive_bar(len(files), title=f"Adding Files to Mod: {bc_mod.get_name()}") as bar:  # type: ignore
+        for file in files:
+            packname = file_lists.get(os.path.basename(file))
+            if packname is not None:
+                bc_mod.add_file(file, packname.replace(".list", ""))
+            else:
+                helper.colored_text(
+                    "WARNING: File not found in the game files (maybe download server packs?). For now this file will be included with a different pack and should still work in game: "
+                    + file,
+                    helper.Color.RED,
+                )
+                bc_mod.add_file(file, "DownloadLocal")
+            bar()
+    enable_mod(mod_name)
+    helper.colored_text(
+        "Saving mod..."
+    )
+    save_mod(bc_mod)
+
+
+def get_mod_from_name(mod_name: str) -> Optional[mod.Mod]:
+    """
+    Gets the mod from the name.
+
+    Args:
+        mod_name (str): The mod name.
+
+    Returns:
+        Optional[mod.Mod]: The mod.
+    """
+    mods = load_mods()
     for bc_mod in mods:
         if get_mod_name(bc_mod) == mod_name and isinstance(bc_mod, mod.Mod):
-            for file in files:
-                packname = apk.find_file_in_lists(
-                    os.path.basename(file), apk.get_lists()
-                )
-                if packname is not None:
-                    bc_mod.add_file(file, packname[0].replace(".list", ""))
-                else:
-                    helper.colored_text(
-                        "WARNING: File not found in the game files (maybe download server packs?). For now this file will be included with a different pack and should still work in game: "
-                        + file,
-                        helper.Color.RED,
-                    )
-                    bc_mod.add_file(file, "DownloadLocal")
-    enable_mod(mod_name)
-    save_mods(mods)
+            return bc_mod
+    return None
 
 
 def load_mods() -> list[Union[mod.Mod, mod.ModPack]]:
@@ -180,7 +206,9 @@ def load_mods_into_game(game_version: str, is_jp: bool) -> bool:
             "WARNING: The enabled mods contain both jp and non-jp mods!",
             helper.Color.RED,
         )
-    apk = apk_handler.BC_APK(game_version, is_jp, apk_handler.BC_APK.get_apk_folder(), True)
+    apk = apk_handler.BC_APK(
+        game_version, is_jp, apk_handler.BC_APK.get_apk_folder(), True
+    )
     if not apk.download():
         return False
     print("Extracting base game files...")
@@ -243,6 +271,16 @@ def save_mods(mods: list[Union[mod.Mod, mod.ModPack]]) -> None:
     for bc_mod in mods:
         data = bc_mod.export()
         helper.write_file_bytes(os.path.join(mod_folder, get_mod_name(bc_mod)), data)
+
+
+def save_mod(mod: Union[mod.Mod, mod.ModPack]) -> None:
+    """
+    Saves the mod.
+
+    Args:
+        mod (Union[mod.Mod, mod.ModPack]): The mod.
+    """
+    save_mods([mod])
 
 
 def get_mod_folder() -> str:
@@ -374,20 +412,22 @@ def create_mod(
     apk.extract()
     helper.colored_text(f"Creating mod files...")
     lists = apk.get_lists()
-    for file in files:
-        pack_name = apk.find_file_in_lists(os.path.basename(file), lists)
-        if pack_name is None:
-            helper.colored_text(
-                "WARNING: File not found in the game files (maybe download server packs?). For now this file will be included with a different pack and should still work in game: "
-                + file,
-                helper.Color.RED,
-            )
-            bc_mod.add_file(
-                file, "DownloadLocal"
-            )  # download local because no hash is tracked, has no other langs, not a server pack, and has little files already -> reduces file size + decreased encryption time
-        else:
-            pack_name = pack_name[0]
-            bc_mod.add_file(file, pack_name.replace(".list", ""))
+    file_lists = apk.get_files(lists)
+    with alive_bar(len(files)) as bar:  # type: ignore
+        for file in files:
+            pack_name = file_lists.get(os.path.basename(file))
+            if pack_name is None:
+                helper.colored_text(
+                    "WARNING: File not found in the game files (maybe download server packs?). For now this file will be included with a different pack and should still work in game: "
+                    + file,
+                    helper.Color.RED,
+                )
+                bc_mod.add_file(
+                    file, "DownloadLocal"
+                )  # download local because no hash is tracked, has no other langs, not a server pack, and has little files already -> reduces file size + decreased encryption time
+            else:
+                bc_mod.add_file(file, pack_name.replace(".list", ""))
+            bar()
     add_mod(bc_mod)
 
 
@@ -441,11 +481,20 @@ def get_mod_name(mod: Union[mod.Mod, mod.ModPack]) -> str:
     return mod.get_name() + mod.get_extension()
 
 
-def add_mod(mod: Union[mod.Mod, mod.ModPack]):
+def add_mod(mod: Union[mod.Mod, mod.ModPack]) -> None:
+    """
+    Adds a mod to the mod folder.
+
+    Args:
+        mod (Union[mod.Mod, mod.ModPack]): The mod to add.
+    """
     mods = load_mods()
     mods.append(mod)
     enable_mod(get_mod_name(mod))
-    save_mods(mods)
+    helper.colored_text(
+        "Saving mod..."
+    )
+    save_mod(mod)
 
 
 def remove_mod(mod_name: str) -> None:
