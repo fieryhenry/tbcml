@@ -1,14 +1,16 @@
+import hashlib
+import multiprocessing
+import os
+import zipfile
 from enum import Enum
 from multiprocessing import Process
-import os
-from typing import Any, Optional
-import zipfile
-from Cryptodome.Cipher import AES
-import hashlib
-import colored  # type: ignore
+from tkinter import Tk, filedialog
+from typing import Any, Generator, Optional
 
-from tkinter import filedialog, Tk
+import colored  # type: ignore
 import requests
+from alive_progress import alive_bar  # type: ignore
+from Cryptodome.Cipher import AES
 
 def get_files_in_dir(dir_path: str) -> list[str]:
     """
@@ -21,8 +23,11 @@ def get_files_in_dir(dir_path: str) -> list[str]:
         list[str]: Paths to files in directory
     """
     return [
-        os.path.join(dir_path, file) for file in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, file))
+        os.path.join(dir_path, file)
+        for file in os.listdir(dir_path)
+        if os.path.isfile(os.path.join(dir_path, file))
     ]
+
 
 def get_folders_in_dir(dir_path: str) -> list[str]:
     """
@@ -35,8 +40,11 @@ def get_folders_in_dir(dir_path: str) -> list[str]:
         list[str]: Paths to folders in directory
     """
     return [
-        os.path.join(dir_path, folder) for folder in os.listdir(dir_path) if os.path.isdir(os.path.join(dir_path, folder))
+        os.path.join(dir_path, folder)
+        for folder in os.listdir(dir_path)
+        if os.path.isdir(os.path.join(dir_path, folder))
     ]
+
 
 class Color(Enum):
     GREEN = "#008000"
@@ -245,7 +253,6 @@ def write_file_bytes(file_path: str, data: bytes) -> None:
         file_path (str): Path to file to write
         data (bytes): Bytes to write to file
     """
-    check_file_exists(os.path.dirname(file_path))
     with open(file_path, "wb") as fh:
         fh.write(data)
 
@@ -385,10 +392,9 @@ def select_dir(title: str, default_dir: str) -> str:
         str: Selected directory
     """
     root = init_tk()
-    dir_path = filedialog.askdirectory(
-        title=title, initialdir=default_dir, parent=root
-    )
+    dir_path = filedialog.askdirectory(title=title, initialdir=default_dir, parent=root)
     return dir_path
+
 
 def str_to_chars(string: str) -> list[str]:
     """
@@ -445,13 +451,12 @@ def download_file(url: str, file_path: str, headers: dict[str, Any], percentage:
         res = requests.get(url, stream=True)
     total_size = int(res.headers.get("content-length", 0))
     block_size = 1024
-    wrote = 0
     with open(file_path, "wb") as f:
-        for data in res.iter_content(block_size):
-            wrote += len(data)
-            f.write(data)
-            if percentage:
-                print("\rDownloaded: {}%".format(int(100 * wrote / total_size)), end="")
+        with alive_bar((total_size // block_size) - 1) as bar:  # type: ignore
+            for data in res.iter_content(block_size):
+                f.write(data)
+                if percentage:
+                    bar()
     print("\n")
 
 
@@ -527,7 +532,7 @@ def remove_comments(data: str) -> str:
         str: String without comments
     """
 
-    comments = ["#", "//"]
+    comments = ["//"]
     data_l = data.split("\n")
     for comment in comments:
         data_l = [line.split(comment)[0] for line in data_l]
@@ -664,7 +669,6 @@ def run_in_parallel(fns: list[Process]) -> None:
     for p in proc:
         p.join()
 
-
 def colored_text(
     text: str,
     base: Color = Color.WHITE,
@@ -729,6 +733,26 @@ def colored_list(
         final += "\n"
     final = final.rstrip("\n")
     colored_text(final, base=base, new=new)
+
+
+class Counter(object):
+    def __init__(self):
+        self.val = multiprocessing.Value("i", 0)
+
+    def increment(self, n: int = 1):
+        with self.val.get_lock():
+            self.val.value += n  # type: ignore
+
+    @property
+    def value(self) -> int:
+        return self.val.value  # type: ignore
+
+
+def chunks(lst: list[Any], chunk_len: int) -> Generator[list[Any], Any, Any]:
+    """Split list into chunks of n"""
+
+    for i in range(0, len(lst), chunk_len):
+        yield lst[i : i + chunk_len]
 
 
 def get_int(value: str) -> Optional[int]:
