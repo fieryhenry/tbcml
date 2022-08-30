@@ -23,8 +23,10 @@ setuptools.setup(
     packages=setuptools.find_packages(where="src"),
     python_requires=">=3.9",
     install_requires=[
+        "alive_progress",
         "beautifulsoup4",
 		"colored",
+        "Pillow"
         "pycryptodomex",
 		"PyYAML",
         "requests",

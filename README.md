@@ -18,6 +18,8 @@ Join the [discord server](https://discord.gg/DvmMgvn5ZB) if you want to suggest 
 
 - Vixie on discord for enemy csvs
 
+- My Gamatoto for enemy icons: https://mygamatoto.com
+
 ## Getting Started
 
 #### Prerequisites
@@ -70,7 +72,7 @@ To create a mod you will need some game files. To get them you can use the `Data
 
 Then you will need to modify those files, to do this you can use the features in `Edit Game Files`
 
-Once you have your modded files, use the option in the tool to `Mod Management -> Create mod from game files`. Then input the required information and select your custom files.
+Once you have your modded files, use the option in the tool to `Mod Management -> Create mod from game files`. Then input the required information and select your custom files. Alternatively, if you already have a mod, you can add files to it (it will overwrite duplicate files) with the `Mod Management -> Add game files to mod` option.
 
 ##### Load Mods Into the Game
 
@@ -104,10 +106,32 @@ Then select the option to `Mod Packs -> Create mod pack of enabled mods`. Enter 
 
 The mod pack will be in the mods folder.
 
+---
+
+### Import Data from Battle Cats Ultimate
+
+If you have modded bcu files that you want to put into the actual game, then use the `Edit Game Files -> Import bcu data` feature.
+
+At the moment only custom cats will be imported with the feature, but this can be expanded overtime.
+
+To get the files from bcu you will need to export the pack if you haven't already (may require a password). Then locate the bcu install folder and then the workspace folder.
+
+WARNING: Some animations may cause the game to crash when entering a stage, getting knockbacked, etc. I have no idea why this happens and hopefully it can be fixed.
+
+---
+
+### Enemies as Cats
+
+To use an enemy as a cat you will need to use the feature in `Edit Game Files -> Add enemies as cats`. Enter the enemy ids that you want from [here](https://battle-cats.fandom.com/wiki/Enemy_Release_Order). And the cat ids to replace from [here](https://battle-cats.fandom.com/wiki/Cat_Release_Order). The recharge time is set to 0 (not actually 0 in game), the cost is half the money drop and some abilities cannot be used by cats (e.g burrow, barrier / shield) and so aren't imported. The icons in the upgrade menu are low quality because that's the quality of the images that My Gamatoto uses. The icons in battle are auto-generated and so may look strange / offset.
+
 ### Todo
 
-- [ ] Import bcu data for stages and enemies + fix crashing with some cats
+- [ ] Ability to import bcu data for stages and enemies + fix crashing with some cats
 
-- [ ] Add new cats / enemies into the game
+- [ ] Ability to add new cats / enemies into the game
 
 - [ ] Mod browser
+
+- [ ] Optimization
+
+- [ ] Mobile app / gui
