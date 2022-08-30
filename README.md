@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The battle cats mod manager is a tool for easily loading and managing mods into The Battle Cats APK.
+The battle cats mod manager is a tool for easily loading and managing mods into The Battle Cats.
 
 Join the [discord server](https://discord.gg/DvmMgvn5ZB) if you want to suggest new features, report bugs or get help on how to use the modding tool (please read the below tutorials first before asking for help).
 
@@ -24,7 +24,7 @@ Join the [discord server](https://discord.gg/DvmMgvn5ZB) if you want to suggest 
 
 #### Prerequisites
 
-To get started loading mods into The Battle Cats you will also need the following software:
+To get started loading mods into the game you will also need the following software:
 
 ##### Download
 
