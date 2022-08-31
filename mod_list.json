@@ -1,0 +1,9 @@
+{
+    "test-mod" : {
+        "name" : "test-mod",
+        "game_version" : "11.7.1",
+        "description" : "test mod",
+        "author" : "test",
+        "country_code" : "en"
+    }
+}
