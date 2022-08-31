@@ -1,14 +1,14 @@
 import io
 import os
 import shutil
-import uuid
 from multiprocessing import Process
-from typing import Any, Optional
+from typing import Optional
 
 import bs4
 import requests
 from bs4 import BeautifulSoup
 from PIL import Image
+from alive_progress import alive_bar # type: ignore
 
 from .. import game_file_editor, helper
 from . import import_from_bcu
@@ -50,7 +50,7 @@ def mirror(
     editor.write_csv(cat_mamodel_path, mamodel_data, False, text=False)
 
 
-def convert_imgcut(imgcut_path: str, cat_id: int) -> list[list[Any]]:
+def convert_imgcut(imgcut_path: str, cat_id: int) -> str:
     """
     Convert an enemy imgcut to a unit one
 
@@ -58,11 +58,11 @@ def convert_imgcut(imgcut_path: str, cat_id: int) -> list[list[Any]]:
         imgcut_path (str): the path to the imgcut
 
     Returns:
-        list[list[Any]]: the converted imgcut data
+        str: the converted imgcut data
     """
     cat_id_str = str(cat_id).zfill(3)
-    imgcut_data = helper.parse_csv(imgcut_path)
-    imgcut_data[2][0] = cat_id_str + "_f.png"
+    imgcut_data = helper.read_file_str(imgcut_path).splitlines()
+    imgcut_data = helper.write_val_in_csv(helper.read_file_str(imgcut_path), 2, 0, cat_id_str + "_f.png")
     return imgcut_data
 
 
@@ -86,11 +86,9 @@ def save_image(image: Image.Image) -> bytes:
     Args:
         image (Image.Image): the image
     """
-    path = os.path.join("temp_images", uuid.uuid4().hex + ".png")
-    helper.check_dir("temp_images")
-    image.save(path)
-    data = helper.read_file_bytes(path)
-    os.remove(path)
+    with io.BytesIO() as output:
+        image.save(output, format="PNG")
+        data = output.getvalue()
     return data
 
 
@@ -218,14 +216,14 @@ def import_icon_battle(
 
     if cat_icon_path is None:
         helper.colored_text(
-            f"\nCould not find icon file for cat {cat_id}",
+            f"Could not find icon file for cat {cat_id}",
             helper.Color.RED,
             helper.Color.WHITE,
         )
         return
     if enemy_icon_path is None:
         helper.colored_text(
-            f"\nCould not find icon file for enemy {enemy_id}",
+            f"Could not find icon file for enemy {enemy_id}",
             helper.Color.RED,
             helper.Color.WHITE,
         )
@@ -250,14 +248,14 @@ def set_nyanko_picture_book(
     unit_buy_data = editor.parse_file("unitbuy.csv")
     if picture_book_data is None:
         helper.colored_text(
-            "\nCould not find nyankoPictureBookData.csv",
+            "Could not find nyankoPictureBookData.csv",
             helper.Color.RED,
             helper.Color.WHITE,
         )
         return
     if unit_buy_data is None:
         helper.colored_text(
-            "\nCould not find unitbuy.csv",
+            "Could not find unitbuy.csv",
             helper.Color.RED,
             helper.Color.WHITE,
         )
@@ -290,35 +288,35 @@ def import_enemy_anims(
 
     if imgcut_path is None:
         helper.colored_text(
-            f"\nCould not find imgcut for enemy {enemy_id}",
+            f"Could not find imgcut for enemy {enemy_id}",
             helper.Color.RED,
             helper.Color.WHITE,
         )
         return
     if cat_imgcut_path is None:
         helper.colored_text(
-            f"\nCould not find imgcut for cat {cat_id}",
+            f"Could not find imgcut for cat {cat_id}",
             helper.Color.RED,
             helper.Color.WHITE,
         )
         return
 
     imgcut_data = convert_imgcut(imgcut_path, cat_id)
-    editor.write_csv(cat_imgcut_path, imgcut_data, False, text=False)
+    editor.write_bytes(cat_imgcut_path, imgcut_data.encode("utf-8"), False, text=False)
 
     mamodel_path = editor.get_file_path(f"{enemy_id_str}_e.mamodel", True)
     cat_mamodel_path = editor.get_file_path(f"{unit_id_str}_f.mamodel")
 
     if mamodel_path is None:
         helper.colored_text(
-            f"\nCould not find mamodel for enemy {enemy_id}",
+            f"Could not find mamodel for enemy {enemy_id}",
             helper.Color.RED,
             helper.Color.WHITE,
         )
         return
     if cat_mamodel_path is None:
         helper.colored_text(
-            f"\nCould not find mamodel for cat {cat_id}",
+            f"Could not find mamodel for cat {cat_id}",
             helper.Color.RED,
             helper.Color.WHITE,
         )
@@ -335,14 +333,14 @@ def import_enemy_anims(
         )
         if maanim_path is None:
             helper.colored_text(
-                f"\nCould not find maanim for enemy {enemy_id}",
+                f"Could not find maanim for enemy {enemy_id}",
                 helper.Color.RED,
                 helper.Color.WHITE,
             )
             return
         if cat_maanim_path is None:
             helper.colored_text(
-                f"\nCould not find maanim for cat {cat_id}",
+                f"Could not find maanim for cat {cat_id}",
                 helper.Color.RED,
                 helper.Color.WHITE,
             )
@@ -359,14 +357,14 @@ def import_enemy_anims(
     cat_png_path = editor.get_file_path(f"{unit_id_str}_f.png")
     if png_path is None:
         helper.colored_text(
-            f"\nCould not find png for enemy {enemy_id}",
+            f"Could not find png for enemy {enemy_id}",
             helper.Color.RED,
             helper.Color.WHITE,
         )
         return
     if cat_png_path is None:
         helper.colored_text(
-            f"\nCould not find png for cat {cat_id}",
+            f"Could not find png for cat {cat_id}",
             helper.Color.RED,
             helper.Color.WHITE,
         )
@@ -412,34 +410,6 @@ def import_enemy_data(
     import_icon(editor, enemy_id, cat_id)
 
 
-def import_enemy_data_mult(
-    editor: game_file_editor.GameFileEditor,
-    enemy_ids: list[int],
-    cat_ids: list[int],
-    enemy_names: list[str],
-    counter: helper.Counter,
-    total: int,
-):
-    """
-    Import enemy data as cats
-
-    Args:
-        editor (game_file_editor.GameFileEditor): the game file editor
-        enemy_ids (list[int]): the enemy ids to be imported
-        cat_ids (list[int]): the cat ids to be replaced
-        enemy_names (list[str]): the enemy names
-    """
-    for enemy_id, cat_id in zip(enemy_ids, cat_ids):
-        import_enemy_data(editor, enemy_id, cat_id, enemy_names[enemy_id])
-        counter.increment()
-        helper.colored_text(
-            f"\rImporting enemy data as cats: {counter.value}/{total}",
-            helper.Color.GREEN,
-            helper.Color.WHITE,
-            end="",
-        )
-
-
 def import_enemy_mult(
     editor: game_file_editor.GameFileEditor,
     enemy_ids: list[int],
@@ -457,27 +427,16 @@ def import_enemy_mult(
     enemy_names = get_enemy_names()
     get_enemy_icons(enemy_ids)
     set_nyanko_picture_book(editor, cat_ids)
-    per_process = 10
-    enemy_id_chunks = list(helper.chunks(enemy_ids, per_process))
-    cat_id_chunks = list(helper.chunks(cat_ids, per_process))
 
-    functions: list[Process] = []
-    counter = helper.Counter()
-    for enemy_id_chunk, cat_id_chunk in zip(enemy_id_chunks, cat_id_chunks):
-        functions.append(
-            Process(
-                target=import_enemy_data_mult,
-                args=(
-                    editor,
-                    enemy_id_chunk,
-                    cat_id_chunk,
-                    enemy_names,
-                    counter,
-                    len(enemy_ids),
-                ),
+    with alive_bar(len(enemy_ids), title="Importing Enemies: ") as bar: # type: ignore
+        for enemy_id, cat_id in zip(enemy_ids, cat_ids):
+            import_enemy_data(
+                editor,
+                enemy_id,
+                cat_id,
+                enemy_names[enemy_id],
             )
-        )
-    helper.run_in_parallel(functions)
+            bar()
     file_path = os.path.abspath(
         os.path.join(
             editor.apk.output_path,
@@ -508,22 +467,23 @@ def import_name(
     if editor.is_jp:
         cc = "ja"
         delimeter = ","
-    enemy_picture_book = editor.parse_file(f"EnemyPictureBook_{cc}.csv", delimeter)
-    if enemy_picture_book is None:
+    enemy_picture_book_path = editor.get_file_path(f"EnemyPictureBook_{cc}.csv")
+    if enemy_picture_book_path is None:
         helper.colored_text(
-            f"\nCan't find EnemyPictureBook file: EnemyPictureBook_{cc}.csv",
+            f"Can't find EnemyPictureBook file: EnemyPictureBook_{cc}.csv",
             helper.Color.RED,
         )
         return
-    enemy_description_data = enemy_picture_book[enemy_id - 2]
-    enemy_description = enemy_description_data[1:]
+
+    enemy_picture_book = helper.get_row_from_csv(helper.read_file_str(enemy_picture_book_path), enemy_id - 2, delimeter=delimeter)
+    enemy_description = enemy_picture_book[1:]
 
     unit_explanation = editor.parse_file(
         f"Unit_Explanation{cat_id+1}_{cc}.csv", delimeter
     )
     if unit_explanation is None:
         helper.colored_text(
-            f"\nCan't find Unit_Explanation file: Unit_Explanation{cat_id+1}_{cc}.csv",
+            f"Can't find Unit_Explanation file: Unit_Explanation{cat_id+1}_{cc}.csv",
             helper.Color.RED,
         )
         return
@@ -573,15 +533,17 @@ def import_stats(editor: game_file_editor.GameFileEditor, enemy_id: int, cat_id:
     cat_id_str = str(cat_id + 1).zfill(3)
     file_name = editor.get_file_path(f"unit{cat_id_str}.csv")
     if file_name is None:
-        helper.colored_text(f"\nCan't find unit{cat_id_str}.csv", helper.Color.RED)
+        helper.colored_text(f"Can't find unit{cat_id_str}.csv", helper.Color.RED)
         return
     cat_stats = editor.parse_file(f"unit{cat_id_str}.csv")
-    all_enemy_stats = editor.parse_file(f"t_unit.csv")
-    if cat_stats is None or all_enemy_stats is None:
-        helper.colored_text(f"\nCan't find t_unit.csv", helper.Color.RED)
+    if cat_stats is None:
+        helper.colored_text(f"Can't find unit{cat_id_str}.csv", helper.Color.RED)
         return
-
-    enemy_stats = all_enemy_stats[enemy_id]
+    t_unit_path = editor.get_file_path("t_unit.csv")
+    if t_unit_path is None:
+        helper.colored_text(f"Can't find t_unit.csv", helper.Color.RED)
+        return
+    enemy_stats = helper.str_list_to_int_list(helper.get_row_from_csv(helper.read_file_str(t_unit_path), enemy_id))
     effect_flag = 1 if has_any_effects(enemy_stats) else 0
     cat_stats_first = cat_stats[0]
     cat_stats_first = [
@@ -789,7 +751,7 @@ def get_file(url: str, output_path: str, counter: helper.Counter, total: int):
         file.write(response.content)
     counter.increment()
     helper.colored_text(
-        f"\rDownloaded icon: &{counter.value}&/&{total}&",
+        f"Downloaded icon: &{counter.value}&/&{total}&",
         helper.Color.GREEN,
         helper.Color.WHITE,
     )

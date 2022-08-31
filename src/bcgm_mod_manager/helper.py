@@ -28,6 +28,72 @@ def get_files_in_dir(dir_path: str) -> list[str]:
         if os.path.isfile(os.path.join(dir_path, file))
     ]
 
+def write_val_in_csv(csv_data: str, row: int, column: int, value: str):
+    """
+    Write a value in a CSV file
+
+    Args:
+        csv_data (str): CSV file data
+        row (int): Row to write value in
+        column (int): Column to write value in
+        value (str): Value to write
+    """
+    csv_list = csv_data.splitlines()
+    row_data = csv_list[row].split(",")
+    row_data[column] = value
+    csv_list[row] = ",".join(row_data)
+    csv_data = "\n".join(csv_list)
+    return csv_data
+
+def get_row_from_csv(csv_data: str, row: int, delimeter: str = ",") -> list[str]:
+    """
+    Get a row from a CSV file
+
+    Args:
+        csv_data (str): CSV file data
+        row (int): Row to get
+        delimeter (str, optional): Delimeter to use. Defaults to ",".
+
+    Returns:
+        list[str]: Row from CSV file
+    """
+    csv_list = csv_data.splitlines()
+    return csv_list[row].split(delimeter)
+
+
+def write_row_in_csv(csv_data: str, row: list[str], row_index: int) -> str:
+    """
+    Write a row in a CSV file
+
+    Args:
+        csv_data (str): CSV file data
+        row (list[str]): Row to write
+        row_index (int): Index to write row at
+
+    Returns:
+        str: CSV file data with row written
+    """
+    csv_list = csv_data.splitlines()
+    csv_list[row_index] = ",".join(row)
+    csv_data = "".join(csv_list)
+    return csv_data
+
+def read_val_from_csv(csv_data: str, row: int, column: int) -> str:
+    """
+    Read a value from a CSV file
+
+    Args:
+        csv_data (str): CSV file data
+        row (int): Row to read value from
+        column (int): Column to read value from
+
+    Returns:
+        str: Value from CSV file
+    """
+    csv_list = csv_data.splitlines()
+    row_data = csv_list[row].split(",")
+    return row_data[column]
+    
 
 def get_folders_in_dir(dir_path: str) -> list[str]:
     """
@@ -69,6 +135,19 @@ def read_file_bytes(file_path: str) -> bytes:
     with open(file_path, "rb") as fh:
         return fh.read()
 
+def read_file_str(file_path: str) -> str:
+    """
+    Read a file and return its contents as a string
+
+    Args:
+        file_path (str): Path to file to read
+
+    Returns:
+        str: Contents of file
+    """
+    check_file_exists(file_path)
+    with open(file_path, "r", encoding="utf-8") as fh:
+        return fh.read()
 
 def colored_input(
     message: str, base: Color = Color.WHITE, new: Color = Color.DARK_YELLOW
@@ -592,6 +671,24 @@ def parse_int_list(list_of_lists: list[list[Any]]) -> list[list[Any]]:
                 list_of_lists[i][j] = int(list_of_lists[i][j])
             except ValueError:
                 pass
+    return list_of_lists
+
+def str_list_to_int_list(list_of_lists: list[Any]) -> list[Any]:
+    """
+    Parse a list of lists to integers
+
+    Args:
+        list_of_lists (list[list[Any]]): List of lists to parse to integers
+
+    Returns:
+        list[list[Any]]: Parsed list of lists
+    """
+
+    for i in range(len(list_of_lists)):
+        try:
+            list_of_lists[i] = int(list_of_lists[i])
+        except ValueError:
+            pass
     return list_of_lists
 
 

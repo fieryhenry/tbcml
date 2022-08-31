@@ -52,7 +52,7 @@ def insert_deploy_image(deploy_path: str) -> bytes:
     transparent_data = make_image((128, 128))
     deploy_data = helper.read_file_bytes(deploy_path)
     if deploy_data is None:
-        helper.colored_text("\nCould not read deploy file")
+        helper.colored_text("Could not read deploy file")
         return transparent_data
     deploy_img = Image.open(io.BytesIO(deploy_data)).convert("RGBA", colors=2**32)
     transparent_img = Image.open(io.BytesIO(transparent_data)).convert(
@@ -84,7 +84,7 @@ def scale_height_display_file(display_path: str, sf: float = 3.5) -> Optional[by
     """
     display_data = helper.read_file_bytes(display_path)
     if display_data is None:
-        helper.colored_text("\nCould not read display file")
+        helper.colored_text("Could not read display file")
         return None
     try:
         display_img = Image.open(io.BytesIO(display_data)).convert(
@@ -92,7 +92,7 @@ def scale_height_display_file(display_path: str, sf: float = 3.5) -> Optional[by
         )
     except PIL.UnidentifiedImageError:
         helper.colored_text(
-            f"\nCould not read display file: {os.path.basename(display_path)}",
+            f"Could not read display file: {os.path.basename(display_path)}",
             helper.Color.RED,
         )
         return None
@@ -137,13 +137,13 @@ def make_deploy_file(
     """
     deploy_file = os.path.join(dir_name, "icon_deploy.png")
     if not os.path.exists(deploy_file):
-        helper.colored_text("\nDeploy file not found")
+        helper.colored_text("Deploy file not found")
         return
     cat_id_str = str(cat_id).zfill(3)
     final_deploy_file = f"uni{cat_id_str}_{get_form_str(form_id)}00.png"
     deploy_data = editor.read_bytes(deploy_file)
     if deploy_data is None:
-        helper.colored_text("\nCould not read deploy file")
+        helper.colored_text("Could not read deploy file")
         return
     deploy_data = insert_deploy_image(deploy_file)
     editor.write_bytes(final_deploy_file, deploy_data)
@@ -163,13 +163,13 @@ def make_display_file(
     """
     display_file = os.path.join(dir_name, "icon_display.png")
     if not os.path.exists(display_file):
-        helper.colored_text("\nDisplay file not found")
+        helper.colored_text("Display file not found")
         return
     cat_id_str = str(cat_id).zfill(3)
     final_display_file = f"udi{cat_id_str}_{get_form_str(form_id)}.png"
     display_data = editor.read_bytes(display_file)
     if display_data is None:
-        helper.colored_text("\nCould not read display file")
+        helper.colored_text("Could not read display file")
         return
     display_data = insert_display_image(display_file)
     if display_data is None:
@@ -192,11 +192,11 @@ def get_cat_id(
     """
     imgcut_file = os.path.join(dir_name, "imgcut.txt")
     if not os.path.exists(imgcut_file):
-        helper.colored_text("\nImgcut file not found")
+        helper.colored_text("Imgcut file not found")
         return -1, -1
     imgcut_data = editor.parse_file(imgcut_file)
     if imgcut_data is None:
-        helper.colored_text("\nCould not read imgcut file")
+        helper.colored_text("Could not read imgcut file")
         return -1, -1
     cat_id = helper.get_int(imgcut_data[2][0][:3])
     if cat_id is None:
@@ -222,13 +222,13 @@ def make_imgcut_file(
     """
     imgcut_file = os.path.join(dir_name, "imgcut.txt")
     if not os.path.exists(imgcut_file):
-        helper.colored_text("\nImgcut file not found")
+        helper.colored_text("Imgcut file not found")
         return
     cat_id_str = str(cat_id).zfill(3)
     final_imgcut_file = f"{cat_id_str}_{get_form_str(form_id)}.imgcut"
     imgcut_data = editor.read_bytes(imgcut_file)
     if imgcut_data is None:
-        helper.colored_text("\nCould not read imgcut file")
+        helper.colored_text("Could not read imgcut file")
         return
     editor.write_bytes(final_imgcut_file, imgcut_data, add_padding=False)
 
@@ -274,7 +274,7 @@ def make_maanim_files(
         maanim_str = str(maanim_index).zfill(2)
         maanim_data = editor.parse_file(os.path.join(dir_name, maanim_file))
         if maanim_data is None:
-            helper.colored_text("\nCould not read maanim file")
+            helper.colored_text("Could not read maanim file")
             return
         if maanim_index == -1:
             if "burrow" in anim_type and len(maanim_data) > 4:
@@ -304,13 +304,13 @@ def make_sprite_file(
     """
     sprite_file = os.path.join(dir_name, "sprite.png")
     if not os.path.exists(sprite_file):
-        helper.colored_text("\nSprite file not found")
+        helper.colored_text("Sprite file not found")
         return
     cat_id_str = str(cat_id).zfill(3)
     final_sprite_file = f"{cat_id_str}_{get_form_str(form_id)}.png"
     sprite_data = editor.read_bytes(sprite_file)
     if sprite_data is None:
-        helper.colored_text("\nCould not read sprite file")
+        helper.colored_text("Could not read sprite file")
         return
     editor.write_bytes(final_sprite_file, sprite_data)
 
@@ -329,18 +329,18 @@ def make_mamodel_file(
     """
     mamodel_file = os.path.join(dir_name, "mamodel.txt")
     if not os.path.exists(mamodel_file):
-        helper.colored_text("\nMamodel file not found")
+        helper.colored_text("Mamodel file not found")
         return
     cat_id_str = str(cat_id).zfill(3)
     final_mamodel_file = f"{cat_id_str}_{get_form_str(form_id)}.mamodel"
     mamodel_data = editor.read_bytes(mamodel_file)
     if mamodel_data is None:
-        helper.colored_text("\nCould not read mamodel file")
+        helper.colored_text("Could not read mamodel file")
         return
 
     mamodel_data = editor.parse_file(mamodel_file)
     if mamodel_data is None:
-        helper.colored_text("\nCould not parse mamodel file")
+        helper.colored_text("Could not parse mamodel file")
         return
     mamodel_data[0][0] = "[modelanim:model]"
     # total_models = mamodel_data[2][0]
@@ -352,7 +352,7 @@ def make_mamodel_file(
 
 def import_sprites(dir_name: str) -> None:
     if not os.path.exists(dir_name):
-        helper.colored_text("\nDirectory not found")
+        helper.colored_text("Directory not found")
         return
     editor = game_file_editor.GameFileEditor("sprite_mod")
     units = helper.get_folders_in_dir(dir_name)
@@ -385,7 +385,7 @@ def import_from_bcu():
 def import_pack_json(dir_name: str, animations_dir: str):
     file_path = os.path.join(dir_name, "pack.json")
     if not os.path.exists(file_path):
-        helper.colored_text("\npack.json not found")
+        helper.colored_text("pack.json not found")
         return
     pack_data = json.loads(helper.read_file_bytes(file_path))
     import_units(pack_data, animations_dir)
