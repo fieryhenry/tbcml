@@ -12,7 +12,7 @@ Join the [discord server](https://discord.gg/DvmMgvn5ZB) if you want to suggest 
 
 - EasyMoneko for the original keys for decrypting/encrypting: https://www.reddit.com/r/battlecats/comments/41e4l1/is_there_anyone_able_to_access_bc_files_your_help/
 
-- Battle Cats Ultimate for what some of the numbers mean in various csvs. https://github.com/battlecatsultimate
+- Battle Cats Ultimate for what some of the numbers mean in various csvs and the uni image boxes https://github.com/battlecatsultimate
 
 - This resource for unit csvs: https://pastebin.com/JrCTPnUV
 
@@ -54,9 +54,7 @@ python3 -m bcgm_mod_manager
 
 If you are using windows you will most likely need to use `py` instead of `python3`.
 
-## Mods and Mod Packs
-
-### Mods
+## Mods
 
 Mods are in the format of a `.bcmod` file and can be shared and imported with the `Load mods from .bcmod files` option.
 
@@ -87,24 +85,6 @@ Once finished you can say `y` to open the containing folder. It will be called `
 You can then install the apk like normal.
 
 The opening text will have information about what mods are currently loaded
-
----
-
-### Mod Packs
-
-Mod Packs are in the form of a `.bcmodpack` file and are collections of mods.
-
-They can be imported with the `Mod Packs -> Load mod packs from .bcmodpack files` option.
-
-They act as regular mods that can be enabled, disabled, upacked, etc.
-
-##### Create a Mod Pack
-
-To create a mod pack, first enable the mods you want and disable the mods you don't want in the mod pack with the `Mod Management -> Enable mods` and `Mod Management -> Disable mods` options.
-
-Then select the option to `Mod Packs -> Create mod pack of enabled mods`. Enter all of the required information.
-
-The mod pack will be in the mods folder.
 
 ---
 

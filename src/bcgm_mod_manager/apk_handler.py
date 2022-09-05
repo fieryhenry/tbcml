@@ -2,7 +2,7 @@ import os
 import shutil
 import subprocess
 from multiprocessing import Process
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import bs4
 import requests
@@ -131,16 +131,16 @@ class BC_APK:
                 )
         return modpack
 
-    def load_mod(self, bc_mod: Union[mod.Mod, mod.ModPack]) -> None:
+    def load_mod(self, bc_mod: mod.Mod) -> None:
         """
         Load the mod into the apk
 
         Args:
-            bc_mod (Union[mod.Mod, mod.ModPack]): The mod to load
+            bc_mod (mod.Mod): The mod to load
         """
         print("\nCreating .pack and .list files...")
-        bc_mod.write_game_files(self.packs_path)
         pack_files = bc_mod.get_all_unique_pack_names()
+        bc_mod.write_game_files(self.packs_path)
         files: list[str] = []
         for file in pack_files:
             files.append(os.path.join(self.packs_path, file + ".pack"))
@@ -407,11 +407,12 @@ class BC_APK:
             list_data,
         )
         for decrypted_file in moddata.files:
+            data = moddata.files[decrypted_file].remove_pkcs7_padding()
             helper.write_file_bytes(
                 os.path.join(
                     self.decrypted_path, os.path.basename(file_path), decrypted_file
                 ),
-                moddata.files[decrypted_file].data,
+                data,
             )
 
     def get_lists(self) -> dict[str, list[list[Any]]]:
@@ -465,18 +466,17 @@ class BC_APK:
         Returns:
             str: The local file name
         """
-        if "MapServer" in file_name:
-            file_name = "MapLocal"
-        elif "NumberServer" in file_name:
-            file_name = "NumberLocal"
-        elif "UnitServer" in file_name:
-            file_name = "UnitLocal"
-        elif "ImageServer" in file_name:
-            file_name = "ImageLocal"
-        elif "ImageDataServer" in file_name:
-            file_name = "ImageDataLocal"
+        packs = [
+            "MapServer",
+            "NumberServer",
+            "UnitServer",
+            "ImageServer",
+            "ImageDataServer",
+        ]
+        for pack in packs:
+            if pack in file_name:
+                return pack.replace("Server", "Local")
         return file_name
-
     def decrypt(self) -> None:
         """
         Decrypt the pack files in the extracted folder
@@ -499,6 +499,23 @@ class BC_APK:
         folder = os.path.abspath(config_handler.get_config_setting("apk_folder"))
         helper.check_dir(folder)
         return folder
+    
+    def copy_decrypt_server_files(self):
+        """
+        Copy the server files to the packs folder and decrypt them
+        """        
+        if self.is_jp:
+            cc = "jp"
+        else:
+            cc = "en"
+        print("Decrypting server files...")
+        server_packs_path = os.path.join(os.path.dirname(self.output_path), f"{cc}_server")
+        helper.check_dir(server_packs_path)
+        for file in os.listdir(server_packs_path):
+            if file.endswith(".pack"):
+                file_path = os.path.abspath(os.path.join(server_packs_path, file))
+                self.decrypt_pack(file_path)
+                shutil.copy(file_path, self.packs_path)
 
 
 def download_server_files(is_jp: bool) -> None:
@@ -543,9 +560,6 @@ def download_server_files(is_jp: bool) -> None:
     with alive_bar(len(new_urls), title="Downloading Server Packs: ", calibrate=0.75) as bar:  # type: ignore
         for url in new_urls:
             file_path = os.path.join(output_dir, url.split("/")[-1])
-            if os.path.exists(file_path):
-                bar()
-                continue
             res = requests.get(url)
             if res.status_code != 200:
                 helper.colored_text(

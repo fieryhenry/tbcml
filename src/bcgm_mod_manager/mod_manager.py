@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 from alive_progress import alive_bar  # type: ignore
 
@@ -30,6 +30,7 @@ def add_files_to_mod(mod_name: str):
         for file in files:
             packname = file_lists.get(os.path.basename(file))
             if packname is not None:
+                packname = apk.convert_server_to_local(packname)
                 bc_mod.add_file(file, packname.replace(".list", ""))
             else:
                 helper.colored_text(
@@ -58,81 +59,51 @@ def get_mod_from_name(mod_name: str) -> Optional[mod.Mod]:
     """
     mods = load_mods()
     for bc_mod in mods:
-        if get_mod_name(bc_mod) == mod_name and isinstance(bc_mod, mod.Mod):
+        if get_mod_name(bc_mod) == mod_name:
             return bc_mod
     return None
 
 
-def load_mods() -> list[Union[mod.Mod, mod.ModPack]]:
+def load_mods() -> list[mod.Mod]:
     """
     Loads all mods from the mod folder.
 
     Returns:
-        list[Union[mod.Mod, mod.ModPack]]: List of all mods.
+        list[mod.Mod]: List of all mods.
     """
     check_mod_info()
     mod_folder = get_mod_folder()
-    mods: list[Union[mod.Mod, mod.ModPack]] = []
+    mods: list[mod.Mod] = []
     for mod_file in helper.get_files(mod_folder):
         if mod_file.endswith(mod.Mod.get_extension()):
             mods.append(mod.Mod.load_from_mod_file(mod_file))
-        elif mod_file.endswith(mod.ModPack.get_extension()):
-            mods.append(mod.ModPack.load_from_mod_pack(mod_file))
     return mods
 
 
-def get_enabled_mods() -> list[Union[mod.Mod, mod.ModPack]]:
+def get_enabled_mods() -> list[mod.Mod]:
     """
     Gets all enabled mods.
 
     Returns:
-        list[Union[mod.Mod, mod.ModPack]]: List of all enabled mods.
+        list[mod.Mod]: List of all enabled mods.
     """
     mods = load_mods()
-    enabled_mods: list[Union[mod.Mod, mod.ModPack]] = []
+    enabled_mods: list[mod.Mod] = []
     for bc_mod in mods:
         if get_mod_name(bc_mod) in get_mod_info()["enabled_mods"]:
             enabled_mods.append(bc_mod)
     return enabled_mods
 
 
-def get_mod_packs() -> list[mod.ModPack]:
-    """
-    Gets all mod packs.
-
-    Returns:
-        list[mod.ModPack]: List of all mod packs.
-    """
-    all_mods = load_mods()
-    mod_packs: list[mod.ModPack] = []
-    for bc_mod in all_mods:
-        if isinstance(bc_mod, mod.ModPack):
-            mod_packs.append(bc_mod)
-    return mod_packs
-
-
-def extract_mod_pack(mod_pack: mod.ModPack) -> None:
-    """
-    Extracts the mod pack.
-
-    Args:
-        mod_pack (mod.ModPack): The mod pack.
-    """
-    mods = mod_pack.mods
-    for mod in mods:
-        add_mod(mod)
-        disable_mod(get_mod_name(mod))
-
-
-def get_disabled_mods() -> list[Union[mod.Mod, mod.ModPack]]:
+def get_disabled_mods() -> list[mod.Mod]:
     """
     Gets all disabled mods.
 
     Returns:
-        list[Union[mod.Mod, mod.ModPack]]: List of all disabled mods.
+        list[mod.Mod]: List of all disabled mods.
     """
     mods = load_mods()
-    disabled_mods: list[Union[mod.Mod, mod.ModPack]] = []
+    disabled_mods: list[mod.Mod] = []
     for bc_mod in mods:
         if get_mod_name(bc_mod) not in get_mod_info()["enabled_mods"]:
             disabled_mods.append(bc_mod)
@@ -200,8 +171,8 @@ def load_mods_into_game(game_version: str, is_jp: bool) -> bool:
     Returns:
         bool: If the loading was successful.
     """
-    enabled_pack = pack_enabled_mods(is_jp, True, "", "", "", 0)
-    if enabled_pack.mismatch_version():
+    mods = prepare_mods(is_jp, True)
+    if mod.has_mismatched_version(mods):
         helper.colored_text(
             "WARNING: The enabled mods contain both jp and non-jp mods!",
             helper.Color.RED,
@@ -211,19 +182,15 @@ def load_mods_into_game(game_version: str, is_jp: bool) -> bool:
     )
     if not apk.download():
         return False
+    bc_mod = mod.combine_mods(mods)
     print("Extracting base game files...")
     apk.extract()
-    all_pack_names: list[str] = []
-    for bc_mod in enabled_pack.mods:
-        pack_names = bc_mod.get_all_unique_pack_names()
-        for pack_name in pack_names:
-            if pack_name not in all_pack_names:
-                all_pack_names.append(pack_name)
+    all_pack_names = mod.get_all_unique_pack_names(mods)
     print("Adding mods...")
     for pack_name in all_pack_names:
-        base_mods = apk.get_as_mod([pack_name])
-        enabled_pack.add_mod(base_mods, replace=False)
-    apk.load_mod(enabled_pack)
+        base_mod = apk.get_as_mod([pack_name])
+        bc_mod.import_mod(base_mod, overwite=False)
+    apk.load_mod(bc_mod)
     apk.copy_apk(
         os.path.join(config_handler.get_config_setting("apk_copy_path"), "base.apk")
     )
@@ -260,12 +227,12 @@ def get_newest_mod_version() -> Optional[int]:
     return newest_mod_version
 
 
-def save_mods(mods: list[Union[mod.Mod, mod.ModPack]]) -> None:
+def save_mods(mods: list[mod.Mod]) -> None:
     """
     Saves the mods.
 
     Args:
-        mods (list[Union[mod.Mod, mod.ModPack]]): The mods.
+        mods (list[mod.Mod]): The mods.
     """
     mod_folder = get_mod_folder()
     for bc_mod in mods:
@@ -273,12 +240,12 @@ def save_mods(mods: list[Union[mod.Mod, mod.ModPack]]) -> None:
         helper.write_file_bytes(os.path.join(mod_folder, get_mod_name(bc_mod)), data)
 
 
-def save_mod(mod: Union[mod.Mod, mod.ModPack]) -> None:
+def save_mod(mod: mod.Mod) -> None:
     """
     Saves the mod.
 
     Args:
-        mod (Union[mod.Mod, mod.ModPack]): The mod.
+        mod (mod.Mod): The mod.
     """
     save_mods([mod])
 
@@ -296,7 +263,7 @@ def get_mod_folder() -> str:
     return mod_folder
 
 
-def get_mod(mod_name: str) -> Optional[Union[mod.Mod, mod.ModPack]]:
+def get_mod(mod_name: str) -> Optional[mod.Mod]:
     """
     Gets the mod.
 
@@ -304,75 +271,26 @@ def get_mod(mod_name: str) -> Optional[Union[mod.Mod, mod.ModPack]]:
         mod_name (str): The mod name.
 
     Returns:
-        Optional[Union[mod.Mod, mod.ModPack]]: The mod.
+        Optional[mod.Mod]: The mod.
     """
     for mod in load_mods():
         if get_mod_name(mod) == mod_name:
             return mod
     return None
 
-
-def pack_enabled_mods(
-    is_jp: bool,
-    create_mod_info: bool,
-    name: str,
-    author: str,
-    description: str,
-    game_version: int,
-) -> mod.ModPack:
+def set_mod_game_version(mod_name: str, game_version: int) -> None:
     """
-    Packs enabled mods into a mod pack.
-
-    Returns:
-        mod.ModPack: The mod pack.
-    """
-    mods = get_enabled_mods()
-    modpack = mod.ModPack(is_jp, name, author, description, game_version)
-    mod_log = ""
-
-    for bc_mod in mods:
-        if isinstance(bc_mod, mod.Mod):
-            modpack.add_mod(bc_mod)
-            if bc_mod.do_mod_info:
-                mod_log = mod.add_mod_to_mod_info(mod_log, bc_mod)
-        else:
-            modpack.insert_mod_pack(bc_mod)
-            if bc_mod.do_mod_info:
-                mod_log = mod.add_mod_pack_to_mod_info(mod_log, bc_mod)
-    if create_mod_info:
-        mod_log_mod = mod.write_mod_log(mod_log, is_jp)
-        modpack.add_mod(mod_log_mod)
-    return modpack
-
-
-def create_mod_pack(
-    name: str, author: str, description: str, game_version: int, is_jp: bool
-) -> None:
-    """
-    Creates a mod pack.
+    Sets the mod game version.
 
     Args:
-        name (str): The name of the mod pack.
+        mod_name (str): The mod name.
+        game_version (int): The game version.
     """
-    modpack = pack_enabled_mods(is_jp, False, name, author, description, game_version)
-    if modpack.mismatch_version():
-        helper.colored_text(
-            "WARNING: Both jp and non-jp mods are enabled. This could cause issues.",
-            helper.Color.RED,
-        )
-    data = modpack.export()
-    mod_folder = get_mod_folder()
-    helper.write_file_bytes(os.path.join(mod_folder, get_mod_name(modpack)), data)
-    remove_mods = (
-        helper.colored_input(
-            "Do you want to remove the mod files that are now in the mod pack? (&y&/&n&):"
-        )
-        == "y"
-    )
-    if remove_mods:
-        for mod in get_enabled_mods():
-            remove_mod(get_mod_name(mod))
-        enable_mod(get_mod_name(modpack))
+    mod = get_mod(mod_name)
+    if mod is None:
+        return
+    mod.game_version = game_version
+    save_mod(mod)
 
 
 def create_mod(
@@ -413,7 +331,7 @@ def create_mod(
     helper.colored_text(f"Creating mod files...")
     lists = apk.get_lists()
     file_lists = apk.get_files(lists)
-    with alive_bar(len(files)) as bar:  # type: ignore
+    with alive_bar(len(files), title=f"Adding Files to Mod: {bc_mod.get_name()}") as bar:  # type: ignore
         for file in files:
             pack_name = file_lists.get(os.path.basename(file))
             if pack_name is None:
@@ -426,6 +344,7 @@ def create_mod(
                     file, "DownloadLocal"
                 )  # download local because no hash is tracked, has no other langs, not a server pack, and has little files already -> reduces file size + decreased encryption time
             else:
+                pack_name = apk.convert_server_to_local(pack_name)
                 bc_mod.add_file(file, pack_name.replace(".list", ""))
             bar()
     add_mod(bc_mod)
@@ -471,22 +390,44 @@ def display_mods() -> None:
         helper.colored_text(disabled_mod.format())
 
 
-def get_mod_name(mod: Union[mod.Mod, mod.ModPack]) -> str:
+def get_mod_name(mod: mod.Mod) -> str:
     """
     Gets the mod name.
 
     Args:
-        mod (Union[mod.Mod, mod.ModPack]): The mod.
+        mod (mod.Mod): The mod.
     """
     return mod.get_name() + mod.get_extension()
 
+def prepare_mods(
+    is_jp: bool,
+    create_mod_info: bool,
+) -> list[mod.Mod]:
+    """
+    Prepares the mods.
 
-def add_mod(mod: Union[mod.Mod, mod.ModPack]) -> None:
+    Returns:
+        list[mod.Mod]: The list of mods.
+    """
+    mods = get_enabled_mods()
+    mod_log = ""
+    all_mods: list[mod.Mod] = []
+
+    for bc_mod in mods:
+        all_mods.append(bc_mod)
+        if bc_mod.do_mod_info:
+            mod_log = mod.add_mod_to_mod_info(mod_log, bc_mod)
+    if create_mod_info:
+        mod_log_mod = mod.write_mod_log(mod_log, is_jp)
+        all_mods.append(mod_log_mod)
+    return all_mods
+
+def add_mod(mod: mod.Mod) -> None:
     """
     Adds a mod to the mod folder.
 
     Args:
-        mod (Union[mod.Mod, mod.ModPack]): The mod to add.
+        mod (mod.Mod): The mod to add.
     """
     mods = load_mods()
     mods.append(mod)
@@ -516,18 +457,3 @@ def remove_mod(mod_name: str) -> None:
             break
     os.remove(os.path.join(get_mod_folder(), get_mod_name(bc_mod)))
     disable_mod(get_mod_name(bc_mod))
-    save_mods(mods)
-
-
-def add_modpack(modpack: mod.ModPack) -> None:
-    """
-    Adds a modpack.
-
-    Args:
-        modpack (mod.ModPack): The modpack.
-    """
-    mods = load_mods()
-    for mod in modpack.mods:
-        mods.append(mod)
-        enable_mod(get_mod_name(mod))
-    save_mods(mods)
