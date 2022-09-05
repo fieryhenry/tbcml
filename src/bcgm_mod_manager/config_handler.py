@@ -27,6 +27,14 @@ def set_mod_folder() -> None:
     set_config_setting("mod_folder", mod_folder)
     helper.colored_text("Mod folder set successfully.", helper.Color.GREEN)
 
+def set_mod_repo() -> None:
+    """
+    Sets the mod repository.
+    """
+    mod_repo = helper.colored_input("Enter the mod repository:")
+    set_config_setting("mod_repo", mod_repo)
+    helper.colored_text("Mod repository set successfully.", helper.Color.GREEN)
+
 
 def set_apk_copy_path() -> None:
     """
@@ -66,7 +74,7 @@ def get_config_setting(setting: str) -> Any:
         Any: Value of setting
     """
     config = get_config_file()
-    return config[setting]
+    return config.get(setting)
 
 
 def set_config_setting(setting: str, value: Any) -> None:
@@ -97,6 +105,7 @@ mod_folder: "./src/bcgm_mod_manager/files/Mods" # Path to the mod folder
 apk_folder: "./src/bcgm_mod_manager/files/APKs" # Path to the apk folder
 apk_copy_path: "" # Path to copy the apk to once mods are loaded
 apk_password: "BCGM_CUSTOM_APK" # Password for signing the apk
+mod_repo: "https://github.com/fieryhenry/bcgm_mod_manager" # Mod repository for the mod browser
 """
     if not os.path.exists(config_file):
         with open(config_file, "w") as fh:
