@@ -51,6 +51,7 @@ class GameFileEditor:
         helper.colored_text("Decrypting the game files...", helper.Color.GREEN)
         self.apk.decrypt()
         apk_handler.download_server_files(self.is_jp)
+        self.apk.copy_decrypt_server_files()
 
     def get_decrypted_path(self) -> str:
         """
