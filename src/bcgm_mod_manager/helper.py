@@ -531,7 +531,7 @@ def download_file(url: str, file_path: str, headers: dict[str, Any], percentage:
     total_size = int(res.headers.get("content-length", 0))
     block_size = 1024
     with open(file_path, "wb") as f:
-        with alive_bar((total_size // block_size) - 1) as bar:  # type: ignore
+        with alive_bar((total_size // block_size) - 3) as bar:  # type: ignore
             for data in res.iter_content(block_size):
                 f.write(data)
                 if percentage:

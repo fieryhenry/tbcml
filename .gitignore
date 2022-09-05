@@ -9,3 +9,4 @@ src/bcgm_mod_manager/files/enemy_icons
 pack.json
 /game_backup
 /temp_images
+mod_browser.py
