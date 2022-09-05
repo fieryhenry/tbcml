@@ -64,7 +64,7 @@ All mods are automatically enabled when they are loaded, but can be disabled wit
 
 You can view your mods with the `Display mods` option.
 
-##### Create a Mod
+#### Create a Mod
 
 To create a mod you will need some game files. To get them you can use the `Data Decryption -> Decrypt all game files` option. To decrypt server files you will need to use the option to `Download -> Download server pack files` beforehand.
 
@@ -72,7 +72,7 @@ Then you will need to modify those files, to do this you can use the features in
 
 Once you have your modded files, use the option in the tool to `Mod Management -> Create mod from game files`. Then input the required information and select your custom files. Alternatively, if you already have a mod, you can add files to it (it will overwrite duplicate files) with the `Mod Management -> Add game files to mod` option.
 
-##### Load Mods Into the Game
+#### Load Mods Into the Game
 
 To load your mods into the game, first select what mods you want by enabling / disabling certain mods by using the options in the tool.
 
