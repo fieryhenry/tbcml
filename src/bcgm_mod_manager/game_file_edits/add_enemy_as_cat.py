@@ -428,7 +428,7 @@ def import_enemy_mult(
     get_enemy_icons(enemy_ids)
     set_nyanko_picture_book(editor, cat_ids)
 
-    with alive_bar(len(enemy_ids), title="Importing Enemies: ") as bar: # type: ignore
+    with alive_bar(len(enemy_ids), title="Importing Enemies: ") as bar:  # type: ignore
         for enemy_id, cat_id in zip(enemy_ids, cat_ids):
             import_enemy_data(
                 editor,
@@ -512,6 +512,7 @@ def has_any_effects(enemy_stats: list[int]) -> bool:
         21,  # freeze chance
         23,  # slow chance
         29,  # weaken chance
+        65,  # warp chance
         73,  # curse chance
         77,  # dodge chance
     ]
@@ -683,7 +684,7 @@ def get_enemy_names() -> list[str]:
             enemy_names.append("")
             continue
         enemy_names.append(enemy_name.text.strip("\n"))
-    enemy_names.pop(55)  # remove duplicate enemy
+    enemy_names.pop(57)  # remove duplicate enemy
     return enemy_names
 
 
