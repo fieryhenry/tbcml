@@ -10,3 +10,4 @@ pack.json
 /game_backup
 /temp_images
 mod_browser.py
+.*
