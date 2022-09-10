@@ -8,6 +8,12 @@ from . import apk_handler, config_handler, helper, mod
 
 
 def add_files_to_mod(mod_name: str):
+    """
+    Adds files to a mod.
+
+    Args:
+        mod_name (str): The mod name.
+    """    
     files = helper.select_files("Select files to add to mod")
     mod_folder = get_mod_folder()
     mod_file = os.path.join(mod_folder, mod_name)
