@@ -7,9 +7,10 @@ from . import (
     game_file_edits,
     helper,
     mod,
-    mod_manager,
     mod_browser,
+    mod_manager,
 )
+
 
 def select_mod() -> Optional[mod.Mod]:
     """
@@ -17,7 +18,7 @@ def select_mod() -> Optional[mod.Mod]:
 
     Returns:
         Optional[mod.Mod]: The selected mod.
-    """    
+    """
     mods = mod_manager.load_mods()
     helper.colored_list(
         list(map(lambda x: mod_manager.get_mod_name(x), mods)), new=helper.Color.GREEN
@@ -32,15 +33,21 @@ def select_mod() -> Optional[mod.Mod]:
     helper.colored_text("Invalid choice.", helper.Color.RED)
     helper.colored_text("Please try again.", helper.Color.RED)
     return None
+
+
 def set_mod_version():
+    """
+    Sets the version of a mod.
+    """
     bc_mod = select_mod()
     if bc_mod is None:
         return
-    
+
     mod_name = mod_manager.get_mod_name(bc_mod)
     helper.colored_text("Setting version of mod: " + mod_name, helper.Color.GREEN)
     mod_version = helper.str_to_gv(input("Enter the game version (e.g 11.7.1):"))
     mod_manager.set_mod_game_version(mod_name, mod_version)
+
 
 def download_server_packs():
     is_jp = (
@@ -59,7 +66,7 @@ def add_file_to_mod() -> None:
     bc_mod = select_mod()
     if bc_mod is None:
         return
-    
+
     mod_name = mod_manager.get_mod_name(bc_mod)
     helper.colored_text("Adding files to mod: " + mod_name, helper.Color.GREEN)
     mod_manager.add_files_to_mod(mod_name)
@@ -260,7 +267,10 @@ def create_mod() -> None:
     )
     helper.colored_text("Mod created successfully.", helper.Color.GREEN)
 
-def decrypt_files(files: list[str], version: str, is_jp: bool, output_path: str) -> None:
+
+def decrypt_files(
+    files: list[str], version: str, is_jp: bool, output_path: str
+) -> None:
     """
     Decrypts files.
     Args:
@@ -268,14 +278,18 @@ def decrypt_files(files: list[str], version: str, is_jp: bool, output_path: str)
         version (str): The game version.
         is_jp (bool): Whether the files are for the jp version.
         output_path (str): The output path.
-    """    
+    """
     apk = apk_handler.BC_APK(version, is_jp, output_path)
     apk.decrypted_path = os.path.dirname(apk.decrypted_path)
     apk.download()
     apk.extract()
     for file in files:
         apk.decrypt_pack(os.path.join(apk.packs_path, file + ".pack"))
-        os.rename(os.path.join(apk.decrypted_path, file + ".pack"), os.path.join(apk.decrypted_path, file.replace(".pack", "")))
+        os.rename(
+            os.path.join(apk.decrypted_path, file + ".pack"),
+            os.path.join(apk.decrypted_path, file.replace(".pack", "")),
+        )
+
 
 def exit_manager() -> None:
     """
@@ -321,8 +335,14 @@ def load_mods_into_game() -> None:
         os.startfile(os.path.dirname(apk_path))
     helper.colored_text("Please re-install the game", helper.Color.GREEN)
 
+def display_help() -> None:
+    """
+    Displays the help menu.
+    """    
+    helper.colored_text("Read the help.md file on the github page.", helper.Color.GREEN)
 
 OPTIONS: dict[str, Any] = {
+    "Help": display_help,
     "Display mods": mod_manager.display_mods,
     "Load enabled mods into apk": load_mods_into_game,
     "Mod Management": {
@@ -353,6 +373,7 @@ OPTIONS: dict[str, Any] = {
         "Set mod folder": config_handler.set_mod_folder,
         "Set apk copy path": config_handler.set_apk_copy_path,
         "Set mod repo": config_handler.set_mod_repo,
+        "Set update to betas": config_handler.set_update_to_betas,
     },
     "Search For Mods": mod_browser.search_mods,
     "Exit": exit_manager,
@@ -362,7 +383,17 @@ OPTIONS: dict[str, Any] = {
 def get_feature(
     selected_features: Any, search_string: str, results: dict[str, Any]
 ) -> dict[str, Any]:
-    """Search for a feature if the feature name contains the search string"""
+    """
+    Gets a feature from the selected features.
+
+    Args:
+        selected_features (Any): The selected features.
+        search_string (str): The search string.
+        results (dict[str, Any]): The results.
+
+    Returns:
+        dict[str, Any]: The feature.
+    """
 
     for feature in selected_features:
         feature_data = selected_features[feature]
@@ -374,8 +405,12 @@ def get_feature(
 
 
 def show_options(features_to_use: dict[str, Any]) -> None:
-    """Allow the user to either enter a feature number or a feature name, and get the features that match"""
+    """
+    Shows the options to the user and allows them to select one.
 
+    Args:
+        features_to_use (dict[str, Any]): The features to show to the user.
+    """    
     prompt = "What do you want to do?(some options contain other features within them)"
     prompt += "\nYou can enter a number to run a feature or a word to search for that feature (e.g entering enable mod will run the Enable Mods feature)\nYou can press enter to see a list of all of the features"
     user_input = helper.colored_input(f"{prompt}:\n")
@@ -407,10 +442,85 @@ def show_options(features_to_use: dict[str, Any]) -> None:
     return show_options(results)
 
 
+def start_up_text() -> None:
+    """Print the start up text"""
+
+    helper.colored_text(
+        "Welcome to the &BC Mod Manager&", helper.Color.CYAN, helper.Color.WHITE
+    )
+    helper.colored_text("Made by &fieryhenry&", helper.Color.CYAN, helper.Color.WHITE)
+    print()
+    helper.colored_text(
+        "Github: &https://github.com/fieryhenry/bcgm_mod_manager&",
+        helper.Color.CYAN,
+        helper.Color.WHITE,
+    )
+    helper.colored_text(
+        "Discord: &https://discord.gg/DvmMgvn5ZB& - Please report any bugs to &#bug-reports&, or any suggestions to &#suggestions&",
+        helper.Color.CYAN,
+        helper.Color.WHITE,
+    )
+    helper.colored_text(
+        "Donate: &https://ko-fi.com/fieryhenry&", helper.Color.CYAN, helper.Color.WHITE
+    )
+    helper.colored_text(
+        f"Config file path: &{config_handler.get_config_path()}&",
+        helper.Color.CYAN,
+        helper.Color.WHITE,
+    )
+    print()
+    credits()
+
+
+def credits():
+    """
+    Print the credits
+    """
+    print()
+    helper.colored_text("Thanks To:", helper.Color.GREEN, helper.Color.WHITE)
+    helper.colored_text(
+        "&EasyMoneko& for the original keys for decrpyting / encrypting: &https://www.reddit.com/r/battlecats/comments/41e4l1/is_there_anyone_able_to_access_bc_files_your_help/&",
+        helper.Color.GREEN,
+        helper.Color.WHITE,
+    )
+    helper.colored_text(
+        "&Battle Cats Ultimate& for what some of the number mean in various csvs and the uni image boxes: &https://github.com/battlecatsultimate&",
+        helper.Color.GREEN,
+        helper.Color.WHITE,
+    )
+    helper.colored_text(
+        "&This resource& for what most of the values mean in the unit csvs: &https://pastebin.com/JrCTPnUV&",
+        helper.Color.GREEN,
+        helper.Color.WHITE,
+    )
+    helper.colored_text(
+        "&Vixie& on discord for what the numbers mean in enemy stat data",
+        helper.Color.GREEN,
+        helper.Color.WHITE,
+    )
+    helper.colored_text(
+        "&My Gamatoto& for enemy icons: &https://mygamatoto.com&",
+        helper.Color.GREEN,
+        helper.Color.WHITE,
+    )
+    helper.colored_text(
+        "&Anyone& who has supported my work for giving me motivation to keep working on this project: &https://ko-fi.com/fieryhenry&",
+        helper.Color.GREEN,
+        helper.Color.WHITE,
+    )
+    helper.colored_text(
+        "&Everyone& in the discord for reporting bugs, suggesting new features, and for being an amazing community: &https://discord.gg/DvmMgvn5ZB&",
+        helper.Color.GREEN,
+        helper.Color.WHITE,
+    )
+    print()
+
+
 def menu() -> None:
     """
     The main menu.
     """
+    start_up_text()
     while True:
         helper.colored_text("\nMod Manager", helper.Color.GREEN)
         helper.colored_list(list(OPTIONS))
