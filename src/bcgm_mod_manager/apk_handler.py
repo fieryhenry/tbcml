@@ -189,26 +189,24 @@ class BC_APK:
         password = config_handler.get_config_setting("apk_password")
 
         key_store_name = "bc_keystore"
-
-        # create a key
-        process = subprocess.run(
-            f'keytool -genkey -v -keystore {key_store_name}.keystore -alias alias_name -keyalg RSA -keysize 2048 -validity 10000 -keypass {password} -storepass {password} -dname "CN=, OU=, O=, L=, S=, C="',
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
+        key_store_path = os.path.join(config_handler.get_app_data_folder(), key_store_name)
+        if not os.path.exists(key_store_path):
+            # create a keystore
+            process = subprocess.run(
+                f'keytool -genkey -v -keystore {key_store_path}.keystore -alias alias_name -keyalg RSA -keysize 2048 -validity 10000 -keypass {password} -storepass {password} -dname "CN=, OU=, O=, L=, S=, C="',
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
 
         # sign the apk file
         process = subprocess.Popen(
-            f"jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore {key_store_name}.keystore {self.final_apk_path} alias_name",
+            f"jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore {key_store_path}.keystore {self.final_apk_path} alias_name",
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
             stderr=subprocess.PIPE,
             shell=True,
         )
         process.communicate(f"{password}".encode())
-
-        # remove the key
-        os.remove(f"{key_store_name}.keystore")
 
     def get_jp_str(self) -> str:
         """
