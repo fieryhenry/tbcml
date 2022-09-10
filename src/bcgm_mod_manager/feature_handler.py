@@ -339,10 +339,9 @@ def display_help() -> None:
     """
     Displays the help menu.
     """    
-    helper.colored_text("Read the help.md file on the github page.", helper.Color.GREEN)
+    helper.colored_text("Read the help page on the github if you need help using the tool: &https://github.com/fieryhenry/bcgm_mod_manager/blob/master/help.md&", helper.Color.GREEN, helper.Color.WHITE)
 
 OPTIONS: dict[str, Any] = {
-    "Help": display_help,
     "Display mods": mod_manager.display_mods,
     "Load enabled mods into apk": load_mods_into_game,
     "Mod Management": {
@@ -470,6 +469,7 @@ def start_up_text() -> None:
     )
     print()
     credits()
+    display_help()
 
 
 def credits():
