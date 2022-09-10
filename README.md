@@ -22,7 +22,7 @@ Join the [discord server](https://discord.gg/DvmMgvn5ZB) if you want to suggest 
 
 ## Getting Started
 
-Go to the help.md page to find out how to use the tool
+Go to the [help](https://github.com/fieryhenry/bcgm_mod_manager/blob/master/help.md) page to find out how to use the tool
 
 ## Mods
 
@@ -37,8 +37,6 @@ You can view your mods with the `Display mods` option.
 ### Known Issues
 
 - Some imported cats from BCU data crash the game
-
-- 
 
 ### Todo
 
