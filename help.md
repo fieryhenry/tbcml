@@ -50,7 +50,7 @@ Then you can edit the stats that you want. Once finished, the tool will display 
 
 If you want to have an enemy as a cat unit, you will need to run the `Download -> Download server pack files` option and then the `Data Decryption -> Decrypt all game files` option to get the animation data.
 
-Then you can run the `Edit Game Files -> Add enemies as cats` feature. sIt will ask you if you want a fresh download of game files. You can say `n` as we have already done that step.
+Then you can run the `Edit Game Files -> Add enemies as cats` feature. It will ask you if you want a fresh download of game files. You can say `n` as we have already done that step.
 
 Then you can enter the enemy ids that you wish to select from here: [Enemy Release Order](https://battle-cats.fandom.com/wiki/Enemy_Release_Order). Then you can enter the cat ids that you wish to replace, you can find cat ids here: [Cat Release Order](https://battle-cats.fandom.com/wiki/Cat_Release_Order).
 
@@ -64,7 +64,7 @@ Once finished, the tool will display where the modified files are, and you can m
 
 #### Import from Battle Cats Ultimate data
 
-If you have a BCU pack that you want as an actual mod, then you will first need to export the pack into the game files (In the future I might add the ability to select bcuzips).
+If you have a BCU pack that you want as an actual mod, then you will first need to export the pack into its game files (In the future I might add the ability to select bcuzips).
 
 First you will need to run the `Download -> Download server pack files` option and then the `Data Decryption -> Decrypt all game files` option to get the animation data.
 
@@ -75,13 +75,13 @@ At the moment, only unit data will be imported.
 The upgrade unit icons are low quality because that's the quality BCU uses.
 
 WARNING: Some animations may cause the game to crash when entering a 
-stage, getting knockbacked, etc. I have no idea why this happens because it doesn't happen every time.
+stage, getting knockbacked, etc. I have no idea why this happens and it doesn't happen every time.
 
 Once finished, the tool will display where the modified files are, and you can move on to the next step.
 
 ### How to create a mod
 
-Once you have your game files you can use the `Mod Management -> Create mod from game files` to create a new mod. Then input the required information and select your custom files (The tool displayed where they are located when you created them). Alternatively, if you already have a mod, you can add files to it (it 
+Once you have your game files you can use the `Mod Management -> Create mod from game files` to create a new mod. Then input the required information and select your custom files (The tool displayed where they were located when you created them). Alternatively, if you already have a mod, you can add files to it (it 
 will overwrite duplicate files) with the `Mod Management -> Add game files to mod` option.
 
 ### Load mods into game
