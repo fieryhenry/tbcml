@@ -3,8 +3,8 @@ import os
 import shutil
 import struct
 from typing import Any, Optional
+import uuid
 
-from alive_progress import alive_bar  # type: ignore
 from Cryptodome.Cipher import AES
 
 from . import helper
@@ -151,6 +151,22 @@ class File:
             file_path (str): Path to unpack to
         """
         helper.write_file_bytes(file_path, self.data)
+    
+    @staticmethod
+    def load_file_data(data: bytes):
+        json_len = struct.unpack("<I", data[:4])[0]
+        json_data = json.loads(data[4 : 4 + json_len].decode("utf-8"))
+
+        file_name = helper.get_dict_value(json_data, "file_name", None)
+        pack_name = helper.get_dict_value(json_data, "pack_name", "DownloadLocal")
+        data_len = helper.get_dict_value(json_data, "data_len", 0)
+        exclude = helper.get_dict_value(json_data, "exclude", False)
+        overwritable = helper.get_dict_value(json_data, "overwritable", False)
+
+        offset = 4 + json_len
+        file_data = data[offset : offset + data_len]
+        file = File(file_name, file_data, pack_name, exclude, overwritable)
+        return file, offset + data_len
 
 
 class Mod:
@@ -167,6 +183,7 @@ class Mod:
         country_code: str,
         files: Optional[dict[str, File]] = None,
         create_mod_info: bool = True,
+        file_count: int = 0,
     ) -> None:
         """
         Initialize a Mod object
@@ -179,6 +196,7 @@ class Mod:
             country_code (str): Country code of mod
             files (Optional[dict[str, File]], optional): Files in mod. Defaults to None.
             create_mod_info (bool, optional): Whether or not to create mod info. Defaults to True.
+            file_count (int, optional): Number of files in mod. Defaults to 0.
         """
         self.name = name
         self.author = author
@@ -190,6 +208,39 @@ class Mod:
         if files is not None:
             self.files = files
             self.add_padding()
+        self.basic_file_count = file_count
+        self.file_path = ""
+    
+    @property
+    def mod_id(self) -> str:
+        """
+        Get the mod id
+
+        Returns:
+            str: Mod id
+        """
+        return str(uuid.uuid5(uuid.NAMESPACE_DNS, self.generate_mod_signature()))
+    
+    def generate_mod_signature(self) -> str:
+        """
+        Generate a mod signature
+
+        Returns:
+            str: Mod signature
+        """        
+        data = self.export()
+        return helper.get_sha256(data)
+        
+    def load_files(self) -> dict[str, File]:
+        """
+        Load all files in the mod
+
+        Returns:
+            dict[str, File]: Files in mod
+        """
+        if self.file_path and not self.files:
+            self.files = self.__load_from_bytes(helper.read_file_bytes(self.file_path)).files
+        return self.files
 
     def add_file(self, file_path: str, packname: str, exlude: bool = False) -> None:
         """
@@ -200,6 +251,7 @@ class Mod:
             packname (str): Name of pack
             exlude (bool, optional): Exclude from mod log. Defaults to False.
         """
+        self.load_files()
         overwritable = self.get_file_by_name(os.path.basename(file_path))
         file_data = helper.read_file_bytes(file_path)
         if overwritable is None:
@@ -215,6 +267,7 @@ class Mod:
             file_paths (list[str]): Paths to files to add
             packname (str): Name of pack
         """
+        self.load_files()
         for file_path in file_paths:
             self.add_file(file_path, packname)
         self.add_padding()
@@ -238,10 +291,11 @@ class Mod:
             exclude (bool, optional): Exclude from mod log. Defaults to False.
             overwritable (bool, optional): Is the file overwritable. Defaults to False.
         """
+        self.load_files()
         self.files[file_name] = File(
             file_name, file_data, pack_name, exclude, overwritable
         )
-        self.files[file_name].data =  self.files[file_name].add_pkcs7_padding()
+        self.files[file_name].data = self.files[file_name].add_pkcs7_padding()
 
     def add_dir(self, dir_path: str, packname: str) -> None:
         """
@@ -252,19 +306,10 @@ class Mod:
             packname (str): Name of pack
         """
         """Add all files in a directory"""
-
+        self.load_files()
         for root, _, files in os.walk(dir_path):
             for file in files:
                 self.add_file(os.path.join(root, file), packname)
-
-    def get_files(self) -> dict[str, File]:
-        """
-        Get all files in the mod
-
-        Returns:
-            dict[str, File]: Files in mod
-        """
-        return self.files
 
     def get_file_names(self) -> list[str]:
         """
@@ -273,6 +318,7 @@ class Mod:
         Returns:
             list[str]: File names in mod
         """
+        self.load_files()
         return [file.name for file in self.files.values()]
 
     def get_file_data(self) -> list[bytes]:
@@ -282,6 +328,7 @@ class Mod:
         Returns:
             list[bytes]: File data in mod
         """
+        self.load_files()
         return [file.data for file in self.files.values()]
 
     def get_file_count(self) -> int:
@@ -291,7 +338,10 @@ class Mod:
         Returns:
             int: Number of files in mod
         """
-        return len(self.files)
+        if not self.basic_file_count:
+            self.load_files()
+            return len(self.files)
+        return self.basic_file_count
 
     def get_file_sizes(self) -> list[int]:
         """
@@ -300,6 +350,7 @@ class Mod:
         Returns:
             list[int]: File sizes in mod
         """
+        self.load_files()
         return [len(file.data) for file in self.files.values()]
 
     def get_file_by_name(self, name: str) -> Optional[File]:
@@ -312,6 +363,7 @@ class Mod:
         Returns:
             Optional[File]: File with given name
         """
+        self.load_files()
         return self.files.get(name)
 
     def get_files_by_packname(self, packname: str) -> list[File]:
@@ -324,6 +376,7 @@ class Mod:
         Returns:
             list[File]: Files in pack
         """
+        self.load_files()
         return [file for file in self.files.values() if file.packname == packname]
 
     def get_all_unique_pack_names(self) -> list[str]:
@@ -333,6 +386,7 @@ class Mod:
         Returns:
             list[str]: Unique pack names in mod
         """
+        self.load_files()
         return list(set([file.packname for file in self.files.values()]))
 
     def is_jp(self) -> bool:
@@ -354,6 +408,7 @@ class Mod:
         Returns:
             dict[str, bytes]: Dictionary of .list file data
         """
+        self.load_files()
         packs = self.get_all_unique_pack_names()
         pack_data: dict[str, bytes] = {}
         for pack in packs:
@@ -379,6 +434,7 @@ class Mod:
         Returns:
             dict[str, bytes]: Dictionary of .pack file data
         """
+        self.load_files()
         packs = self.get_all_unique_pack_names()
         pack_data: dict[str, bytes] = {}
         for pack in packs:
@@ -394,7 +450,8 @@ class Mod:
 
         Returns:
             bytes: .pack file data
-        """        
+        """
+        self.load_files()
         data = b""
         for file in self.get_files_by_packname(pack_name):
             data += file.encrypt(self.is_jp())
@@ -407,6 +464,7 @@ class Mod:
         Returns:
             dict[str, tuple[bytes, bytes]]: Dictionary of .pack and .list file data
         """
+        self.load_files()
         game_files: dict[str, tuple[bytes, bytes]] = {}
         pack_files = self.create_pack_files()
         list_files = self.create_list_files()
@@ -422,6 +480,7 @@ class Mod:
             files (list[File]): Files to import
             overwite (bool, optional): Overwrite existing files. Defaults to True.
         """
+        self.load_files()
         for file in files:
             if file.name in self.files and not overwite:
                 continue
@@ -434,6 +493,7 @@ class Mod:
         Args:
             path (str): Path to write files to
         """
+        self.load_files()
         game_files = self.create_game_files()
         helper.check_dir(path)
         for pack, data in game_files.items():
@@ -447,6 +507,7 @@ class Mod:
         Returns:
             list[bytes]: Encrypted files
         """
+        self.load_files()
         self.add_padding()
         return [file.encrypt(self.is_jp()) for file in self.files.values()]
 
@@ -457,6 +518,7 @@ class Mod:
         Returns:
             list[bytes]: Decrypted files
         """
+        self.load_files()
         return [file.decrypt(self.is_jp()) for file in self.files.values()]
 
     def export(self) -> bytes:
@@ -466,6 +528,7 @@ class Mod:
         Returns:
             bytes: Exported mod
         """
+        self.load_files()
         json_data = {
             "mod_name": self.name,
             "author": self.author,
@@ -491,6 +554,7 @@ class Mod:
         Args:
             path (str): Path to write mod to
         """
+        self.load_files()
         helper.check_dir(path)
         path = os.path.join(path, self.get_name() + Mod.get_extension())
         helper.write_file_bytes(path, self.export())
@@ -508,6 +572,7 @@ class Mod:
         """
         Adds padding to all files in the mod
         """
+        self.load_files()
         for file in self.files.values():
             file.data = file.add_pkcs7_padding()
 
@@ -522,6 +587,7 @@ class Mod:
             exclude_all (bool, optional): If True, all files in the pack will be excluded from the mod log. Defaults to False.
             pack_name (str, optional): Name of pack to import. Defaults to "".
         """
+        self.load_files()
         files = self.load_from_pack(
             pack_file_path,
             self.is_jp(),
@@ -543,6 +609,7 @@ class Mod:
         Args:
             mod_file_path (str): Path to mod file
         """
+        self.load_files()
         for file in self.load_from_mod_file(mod_file_path).files.values():
             self.files[file.name] = file
 
@@ -554,6 +621,7 @@ class Mod:
             new_mod (Mod): Mod to import
             overwite (bool, optional): Overwrite existing files. Defaults to True.
         """
+        self.load_files()
         for file in new_mod.files.values():
             if file.name in self.files and not overwite:
                 continue
@@ -566,6 +634,7 @@ class Mod:
         Args:
             file_path (str): Output path for unpacked files
         """
+        self.load_files()
         if os.path.exists(file_path):
             shutil.rmtree(file_path)
         helper.check_dir(file_path)
@@ -584,10 +653,30 @@ class Mod:
         Returns:
             Mod: Loaded mod
         """
-        return Mod.load_from_bytes(helper.read_file_bytes(file_path))
+        return Mod.load_basic_data(helper.read_file_bytes(file_path))
 
     @staticmethod
-    def load_from_bytes(data: bytes) -> "Mod":
+    def load_basic_data(data: bytes) -> "Mod":
+        if data[:3] != Mod.get_valid_str().encode("utf-8"):
+            raise Exception("Invalid mod file")
+        data = data[3:]
+
+        len_json = struct.unpack("<I", data[:4])[0]
+        json_data = data[4 : 4 + len_json]
+        json_data = json.loads(json_data.decode("utf-8"))
+
+        mod_name = helper.get_dict_value(json_data, "mod_name", "")
+        author = helper.get_dict_value(json_data, "author", "")
+        description = helper.get_dict_value(json_data, "description", "")
+        game_version = helper.get_dict_value(json_data, "game_version", 0)
+        country_code = helper.get_dict_value(json_data, "country_code", "en")
+        file_count = helper.get_dict_value(json_data, "file_count", 0)
+
+        mod = Mod(mod_name, author, description, game_version, country_code, file_count=file_count)
+        return mod
+
+    @staticmethod
+    def __load_from_bytes(data: bytes) -> "Mod":
         """
         Loads a mod from bytes
 
@@ -600,6 +689,7 @@ class Mod:
         Raises:
             ValueError: If the mod file is invalid
         """
+        original_data = data
         if data[:3] != Mod.get_valid_str().encode("utf-8"):
             raise Exception("Invalid mod file")
         data = data[3:]
@@ -608,35 +698,22 @@ class Mod:
         json_data = data[4 : 4 + len_json]
         json_data = json.loads(json_data.decode("utf-8"))
 
-        mod_name = json_data["mod_name"]
-        author = json_data["author"]
-        description = json_data["description"]
-        game_version = json_data["game_version"]
-        country_code = json_data["country_code"]
-        file_count = json_data["file_count"]
+        file_count = helper.get_dict_value(json_data, "file_count", 0)
+        base_mod = Mod.load_basic_data(original_data)
 
         files: list[File] = []
         offset = 4 + len_json
         for _ in range(file_count):
-            json_len = struct.unpack("<I", data[offset : offset + 4])[0]
-            file_js_data = data[offset + 4 : offset + 4 + json_len]
-            file_js_data = json.loads(file_js_data.decode("utf-8"))
+            json_len = struct.unpack("<I", data[offset:offset+4])[0]
+            json_data = json.loads(data[offset + 4 : offset + 4 + json_len].decode("utf-8"))
+            data_len = json_data["data_len"]
 
-            file_name = file_js_data["file_name"]
-            file_size = file_js_data["data_len"]
-            packname = file_js_data["pack_name"]
-            exclude = file_js_data["exclude"]
-
-            file_data = data[offset + 4 + json_len : offset + 4 + json_len + file_size]
-            files.append(File(file_name, file_data, packname, exclude))
-
-            offset += json_len + 4 + file_size
-
-        mod = Mod(mod_name, author, description, game_version, country_code)
-
+            file, new_offset = File.load_file_data(data[offset:offset+data_len+json_len+8])
+            offset += new_offset
+            files.append(file)
         for file in files:
-            mod.add_file_from_bytes(file.data, file.name, file.packname, file.exclude)
-        return mod
+            base_mod.add_file_from_bytes(file.data, file.name, file.packname, file.exclude)
+        return base_mod
 
     @staticmethod
     def get_list_data(list_path: str) -> bytes:
@@ -737,7 +814,7 @@ class Mod:
         output += f"{indent_text}Description: &{self.description}&\n"
         output += f"{indent_text}Game Version: &{self.game_version}&\n"
         output += f"{indent_text}Country Code: &{self.country_code}&\n"
-        output += f"{indent_text}Files: &{len(self.files)}&\n"
+        output += f"{indent_text}Files: &{self.get_file_count()}&\n"
         return output
 
     @staticmethod
