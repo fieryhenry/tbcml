@@ -8,7 +8,7 @@ import bs4
 import requests
 from bs4 import BeautifulSoup
 from PIL import Image
-from alive_progress import alive_bar # type: ignore
+from alive_progress import alive_bar  # type: ignore
 
 from .. import game_file_editor, helper
 from . import import_from_bcu
@@ -62,7 +62,9 @@ def convert_imgcut(imgcut_path: str, cat_id: int) -> str:
     """
     cat_id_str = str(cat_id).zfill(3)
     imgcut_data = helper.read_file_str(imgcut_path).splitlines()
-    imgcut_data = helper.write_val_in_csv(helper.read_file_str(imgcut_path), 2, 0, cat_id_str + "_f.png")
+    imgcut_data = helper.write_val_in_csv(
+        helper.read_file_str(imgcut_path), 2, 0, cat_id_str + "_f.png"
+    )
     return imgcut_data
 
 
@@ -437,12 +439,7 @@ def import_enemy_mult(
                 enemy_names[enemy_id],
             )
             bar()
-    file_path = os.path.abspath(
-        os.path.join(
-            editor.apk.output_path,
-            "Modified Files",
-        )
-    )
+    file_path = helper.get_modified_files_dir()
     helper.colored_text(
         f"\nDone. Files can be found at &{file_path}&",
         helper.Color.GREEN,
@@ -475,7 +472,9 @@ def import_name(
         )
         return
 
-    enemy_picture_book = helper.get_row_from_csv(helper.read_file_str(enemy_picture_book_path), enemy_id - 2, delimeter=delimeter)
+    enemy_picture_book = helper.get_row_from_csv(
+        helper.read_file_str(enemy_picture_book_path), enemy_id - 2, delimeter=delimeter
+    )
     enemy_description = enemy_picture_book[1:]
 
     unit_explanation = editor.parse_file(
@@ -544,7 +543,9 @@ def import_stats(editor: game_file_editor.GameFileEditor, enemy_id: int, cat_id:
     if t_unit_path is None:
         helper.colored_text(f"Can't find t_unit.csv", helper.Color.RED)
         return
-    enemy_stats = helper.str_list_to_int_list(helper.get_row_from_csv(helper.read_file_str(t_unit_path), enemy_id))
+    enemy_stats = helper.str_list_to_int_list(
+        helper.get_row_from_csv(helper.read_file_str(t_unit_path), enemy_id)
+    )
     effect_flag = 1 if has_any_effects(enemy_stats) else 0
     cat_stats_first = cat_stats[0]
     cat_stats_first = [

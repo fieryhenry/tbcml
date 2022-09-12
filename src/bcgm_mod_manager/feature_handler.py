@@ -74,7 +74,7 @@ def add_file_to_mod() -> None:
 
 def extract_all_mods() -> None:
     """
-    Extracts all mods.
+    Extracts all mods into their game files.
     """
     mods = mod_manager.load_mods()
     path = os.path.join(mod_manager.get_mod_folder(), "unpacked_mods")
@@ -247,14 +247,9 @@ def create_mod() -> None:
     country_code = helper.colored_input(
         "Enter the country code of the mod (e.g en, jp, kr, tw):"
     )
-    cc = "jp" if country_code == "jp" else ""
     files = helper.select_files(
         title="Select files to add to the mod",
-        initial_dir=os.path.join(
-            config_handler.get_config_setting("apk_folder"),
-            game_version + cc,
-            "Modified Files",
-        ),
+        initial_dir=helper.get_modified_files_dir()
     )
 
     mod_manager.create_mod(
@@ -520,8 +515,6 @@ def menu() -> None:
     """
     The main menu.
     """
-    start_up_text()
-    while True:
-        helper.colored_text("\nMod Manager", helper.Color.GREEN)
-        helper.colored_list(list(OPTIONS))
-        show_options(OPTIONS)
+    helper.colored_text("\nMod Manager", helper.Color.GREEN)
+    helper.colored_list(list(OPTIONS))
+    show_options(OPTIONS)

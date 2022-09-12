@@ -133,11 +133,7 @@ class GameFileEditor:
             file_data (bytes): The data to write.
             add_padding (bool): True if the file should be padded, False if not.
         """
-        file_path = os.path.abspath(
-            os.path.join(
-                self.apk.output_path, "Modified Files", os.path.basename(file_name)
-            )
-        )
+        file_path = os.path.join(helper.get_modified_files_dir(), os.path.basename(file_name))
         helper.check_dir(os.path.dirname(file_path))
 
         if add_padding:

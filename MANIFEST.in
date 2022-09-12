@@ -2,3 +2,4 @@ recursive-include src/bcgm_mod_manager/files *
 recursive-exclude src/bcgm_mod_manager/files/APKs *
 recursive-exclude src/bcgm_mod_manager/files/Mods *
 recursive-exclude src/bcgm_mod_manager/files/enemy_icons *
+recursive-exclude src/bcgm_mod_manager/files/Modifed_Files *
