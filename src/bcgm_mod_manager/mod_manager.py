@@ -27,7 +27,7 @@ def add_files_to_mod(mod_name: str):
     apk.download()
     helper.colored_text(f"Extracting apk...", helper.Color.GREEN)
     apk.extract()
-    bc_mod = get_mod_from_name(mod_name)
+    bc_mod = get_mod(mod_name)
     if bc_mod is None:
         return
     lists = apk.get_lists()
@@ -53,23 +53,6 @@ def add_files_to_mod(mod_name: str):
     save_mod(bc_mod)
 
 
-def get_mod_from_name(mod_name: str) -> Optional[mod.Mod]:
-    """
-    Gets the mod from the name.
-
-    Args:
-        mod_name (str): The mod name.
-
-    Returns:
-        Optional[mod.Mod]: The mod.
-    """
-    mods = load_mods()
-    for bc_mod in mods:
-        if get_mod_name(bc_mod) == mod_name:
-            return bc_mod
-    return None
-
-
 def load_mods() -> list[mod.Mod]:
     """
     Loads all mods from the mod folder.
@@ -82,7 +65,9 @@ def load_mods() -> list[mod.Mod]:
     mods: list[mod.Mod] = []
     for mod_file in helper.get_files(mod_folder):
         if mod_file.endswith(mod.Mod.get_extension()):
-            mods.append(mod.Mod.load_from_mod_file(mod_file))
+            bc_mod = mod.Mod.load_from_mod_file(mod_file)
+            bc_mod.file_path = mod_file
+            mods.append(bc_mod)
     return mods
 
 

@@ -396,6 +396,7 @@ class BC_APK:
         helper.check_dir(file_path)
         helper.check_dir(os.path.join(self.decrypted_path, os.path.basename(file_path)))
         moddata = mod.Mod.load_from_pack(file_path, self.is_jp, "", "", "", 0, "")
+        moddata.load_files()
         list_data = mod.Mod.get_list_data(file_path.replace(".pack", ".list"))
         helper.write_file_bytes(
             os.path.join(
@@ -404,8 +405,8 @@ class BC_APK:
             ),
             list_data,
         )
-        for decrypted_file in moddata.files:
-            data = moddata.files[decrypted_file].remove_pkcs7_padding()
+        for decrypted_file, data in moddata.files.items():
+            data = data.remove_pkcs7_padding()
             helper.write_file_bytes(
                 os.path.join(
                     self.decrypted_path, os.path.basename(file_path), decrypted_file
