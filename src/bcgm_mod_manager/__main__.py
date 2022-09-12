@@ -9,7 +9,9 @@ def main() -> None:
     args = parse_args()
     handle_args(args)
     #check_update()
-    feature_handler.menu()
+    feature_handler.start_up_text()
+    while True:
+        feature_handler.menu()
 
 
 def check_update() -> None:
