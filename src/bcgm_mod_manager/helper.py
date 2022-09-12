@@ -12,6 +12,17 @@ import requests
 from alive_progress import alive_bar  # type: ignore
 from Cryptodome.Cipher import AES
 
+def get_modified_files_dir() -> str:
+    """
+    Get the path to the modified files directory
+
+    Returns:
+        str: Path to modified files directory
+    """    
+    folder = str(get_file("Modified_Files"))
+    check_dir(folder)
+    return folder        
+
 def get_files_in_dir(dir_path: str) -> list[str]:
     """
     Get all files in a directory
@@ -27,6 +38,7 @@ def get_files_in_dir(dir_path: str) -> list[str]:
         for file in os.listdir(dir_path)
         if os.path.isfile(os.path.join(dir_path, file))
     ]
+
 
 def write_val_in_csv(csv_data: str, row: int, column: int, value: str):
     """
@@ -44,6 +56,7 @@ def write_val_in_csv(csv_data: str, row: int, column: int, value: str):
     csv_list[row] = ",".join(row_data)
     csv_data = "\n".join(csv_list)
     return csv_data
+
 
 def get_row_from_csv(csv_data: str, row: int, delimeter: str = ",") -> list[str]:
     """
@@ -78,6 +91,7 @@ def write_row_in_csv(csv_data: str, row: list[str], row_index: int) -> str:
     csv_data = "".join(csv_list)
     return csv_data
 
+
 def read_val_from_csv(csv_data: str, row: int, column: int) -> str:
     """
     Read a value from a CSV file
@@ -93,7 +107,7 @@ def read_val_from_csv(csv_data: str, row: int, column: int) -> str:
     csv_list = csv_data.splitlines()
     row_data = csv_list[row].split(",")
     return row_data[column]
-    
+
 
 def get_folders_in_dir(dir_path: str) -> list[str]:
     """
@@ -135,6 +149,7 @@ def read_file_bytes(file_path: str) -> bytes:
     with open(file_path, "rb") as fh:
         return fh.read()
 
+
 def read_file_str(file_path: str) -> str:
     """
     Read a file and return its contents as a string
@@ -148,6 +163,7 @@ def read_file_str(file_path: str) -> str:
     check_file_exists(file_path)
     with open(file_path, "r", encoding="utf-8") as fh:
         return fh.read()
+
 
 def colored_input(
     message: str, base: Color = Color.WHITE, new: Color = Color.DARK_YELLOW
@@ -515,6 +531,34 @@ def check_dir(dir_path: str) -> None:
         os.makedirs(dir_path)
 
 
+def get_sha256(data: bytes) -> str:
+    """
+    Get the sha256 hash of data
+
+    Args:
+        data (bytes): Data to get sha256 hash of
+
+    Returns:
+        str: sha256 hash of data
+    """
+    return hashlib.sha256(data).hexdigest()
+
+def get_dict_value(dictionary: dict[Any, Any], key: Any, default_value: Optional[Any] = None) -> Any:
+    """
+    Get the value of a key in a dictionary
+
+    Args:
+        dictionary (dict[Any, Any]): Dictionary to get value from
+        key (Any): Key to get value of
+        default_value (Optional[Any], optional): Default value to return if key is not in dictionary. Defaults to None.
+
+    Returns:
+        Any: Value of key in dictionary
+    """
+    if key in dictionary:
+        return dictionary[key]
+    return default_value
+
 def download_file(url: str, file_path: str, headers: dict[str, Any], percentage: bool):
     """
     Download a file from a url to a file path
@@ -673,6 +717,7 @@ def parse_int_list(list_of_lists: list[list[Any]]) -> list[list[Any]]:
                 pass
     return list_of_lists
 
+
 def str_list_to_int_list(list_of_lists: list[Any]) -> list[Any]:
     """
     Parse a list of lists to integers
@@ -765,6 +810,7 @@ def run_in_parallel(fns: list[Process]) -> None:
         proc.append(fn)
     for p in proc:
         p.join()
+
 
 def colored_text(
     text: str,
