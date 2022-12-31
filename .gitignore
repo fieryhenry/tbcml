@@ -1,14 +1,4 @@
 /dist
 __pycache__
 *.
-src/bcgm_mod_manager/files/APKs
-src/bcgm_mod_manager/files/Mods
-src/bcgm_mod_manager/files/enemy_icons
 *.egg-info
-/custom_files
-pack.json
-/game_backup
-/temp_images
-mod_browser.py
-.*
-src/bcgm_mod_manager/files/Modified_Files
