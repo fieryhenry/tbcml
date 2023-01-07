@@ -277,7 +277,10 @@ class GamePacks:
     def set_file(self, file_name: str, data: "io.data.Data") -> Optional[GameFile]:
         file = self.find_file(file_name)
         if file is None:
-            file = GameFile(data, file_name, self.get_pack("DownloadLocal"))
+            pack = self.get_pack("DownloadLocal")
+            if pack is None:
+                raise Exception(f"Could not find pack DownloadLocal")
+            file = GameFile(data, file_name, pack)
         new_pack_name = file.pack.convert_pack_name_server_local()
         pack = self.get_pack(new_pack_name)
         if pack is None:
