@@ -8,7 +8,8 @@ class Path:
     def __init__(self, path: str, is_relative: bool = False):
         if is_relative:
             self.path = self.get_relative_path(path)
-        self.path = path
+        else:
+            self.path = path
     
     def get_relative_path(self, path: str) -> str:
         return os.path.join(self.get_files_folder().path, path)
@@ -41,6 +42,10 @@ class Path:
             raise OSError("Unknown OS")
         path.generate_dirs()
         return path
+    
+    @staticmethod
+    def get_temp_folder() -> "Path":
+        return Path(os.path.join(os.environ["TEMP"], "bcml"))
         
     def generate_dirs(self: "Path") -> "Path":
         if not self.exists():
@@ -116,7 +121,10 @@ class Path:
             if self.is_directory():
                 self.copy_tree(target)
             else:
-                shutil.copy(self.path, target.path)
+                try:
+                    shutil.copy(self.path, target.path)
+                except shutil.SameFileError:
+                    pass
     
     def copy_tree(self, target: "Path"):
         if target.exists():
@@ -153,6 +161,15 @@ class Path:
     
     def change_name(self, name: str) -> "Path":
         return self.parent().add(name)
+    
+    def rename(self, name: str, overwrite: bool = False):
+        new_path = self.change_name(name)
+        if new_path.exists():
+            if overwrite:
+                new_path.remove()
+            else:
+                raise FileExistsError(f"File already exists: {new_path}")
+        os.rename(self.path, new_path.path)
     
     def parent(self) -> "Path":
         return Path(os.path.dirname(self.path))
