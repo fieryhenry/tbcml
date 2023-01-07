@@ -37,7 +37,7 @@ class Item:
         }
 
     @staticmethod
-    def deserialize(data: dict[str, Any], png: "io.bc_image.BCImage") -> "Item":
+    def deserialize(data: dict[str, Any]) -> "Item":
         return Item(
             data["shop_id"],
             data["gatya_item_id"],
@@ -46,7 +46,7 @@ class Item:
             data["draw_item_value"],
             data["category_name"],
             data["imgcut_id"],
-            bc_anim.Cut.deserialize(data["cut"], png),
+            bc_anim.Cut.deserialize(data["cut"]),
         )
 
 
@@ -65,7 +65,7 @@ class ItemShop:
     def deserialize(data: dict[str, Any]) -> "ItemShop":
         imgcut = bc_anim.Imgcut.deserialize(data["imgcut"])
         return ItemShop(
-            {int(k): Item.deserialize(v, imgcut.image) for k, v in data["items"].items()},
+            {int(k): Item.deserialize(v) for k, v in data["items"].items()},
             imgcut,
         )
 
