@@ -115,6 +115,10 @@ class BCImage:
     def save(self, path: "path.Path"):
         self.image.save(path.to_str(), format="PNG")
     
+    def save_temp(self, name: str):
+        self.save(path.Path.get_temp_folder().join(name))
+        return name
+    
     def to_data(self):
         if self.__image is None:
             return self.data
@@ -140,4 +144,3 @@ class BCImage:
     @image.setter
     def image(self, image: Image.Image):
         self.__image = image
-        self.update()
