@@ -243,7 +243,7 @@ class Apk:
         return versions[0]
     
     def format(self):
-        return f"{self.country_code.name} {self.game_version.format()} APK</>"
+        return f"{self.country_code.name} {self.game_version.format()} APK"
     
     @staticmethod
     def progress(progress: float, current: int, total: int, is_file_size: bool = False):
@@ -469,7 +469,15 @@ class Apk:
         gv = game_version.GameVersion.from_string(version_name)
         apk = Apk(gv, cc)
         apk_path.copy(apk.apk_path)
+        apk.original_extracted_path.remove_tree().generate_dirs()
         return apk
+    
+    def get_architectures(self):
+        architectures: list[str] = []
+        for folder in self.extracted_path.add("lib").get_dirs():
+            architectures.append(folder.basename())
+        return architectures
+            
     
     def __str__(self):
         return self.get_display_string()
