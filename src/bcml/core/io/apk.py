@@ -1,10 +1,12 @@
 import subprocess
 from typing import Any, Callable, Optional
-from bcml.core import game_version, country_code, game_data, request
-from bcml.core.io import file_handler, path, config, command, data, lib
+
 import bs4
+import cloudscraper  # type: ignore
 import requests
-import cloudscraper # type: ignore
+
+from bcml.core import country_code, game_data, game_version, mods, request
+from bcml.core.io import command, config, data, file_handler, json_file, lib, path
 
 
 class Apk:
@@ -48,6 +50,8 @@ class Apk:
             "original_extracted"
         ).generate_dirs()
 
+        self.temp_path = self.output_path.add("temp").remove_tree().generate_dirs()
+
     def get_packs_lists(self) -> list[tuple[path.Path, path.Path]]:
         files: list[tuple[path.Path, path.Path]] = []
         for file in self.packs_path.get_files():
@@ -84,6 +88,7 @@ class Apk:
         cmd.run()
         self.copy_extracted()
         self.copy_packs()
+        self.libs = self.get_libs()
 
     def pack(self):
         cmd = command.Command(
@@ -176,11 +181,11 @@ class Apk:
             game_version_str = name[:-2]
             gv = game_version.GameVersion.from_string_latest(game_version_str, cc)
             apks.append(Apk(gv, cc))
-        
+
         apks.sort(key=lambda apk: apk.game_version.game_version, reverse=True)
 
         return apks
-    
+
     @staticmethod
     def get_all_apks_cc(cc: country_code.CountryCode) -> list["Apk"]:
         """
@@ -215,7 +220,7 @@ class Apk:
         if cc == country_code.CountryCode.EN:
             return Apk.get_all_versions_en()
         url = Apk.get_apk_version_url(cc)
-        scraper = cloudscraper.create_scraper() # type: ignore
+        scraper = cloudscraper.create_scraper()  # type: ignore
         resp = scraper.get(url)
         soup = bs4.BeautifulSoup(resp.text, "html.parser")
         versionwrapp = soup.find("ul", {"class": "ver-wrap"})
@@ -241,10 +246,10 @@ class Apk:
         if len(versions) == 0:
             return None
         return versions[0]
-    
+
     def format(self):
         return f"{self.country_code.name} {self.game_version.format()} APK"
-    
+
     @staticmethod
     def progress(progress: float, current: int, total: int, is_file_size: bool = False):
         total_bar_length = 70
@@ -261,7 +266,10 @@ class Apk:
             end="",
         )
 
-    def download_apk(self, progress_callback: Optional[Callable[[float, int, int, bool], None]] = None) -> bool:
+    def download_apk(
+        self,
+        progress_callback: Optional[Callable[[float, int, int, bool], None]] = None,
+    ) -> bool:
         if progress_callback is None:
             progress_callback = self.progress
         if self.apk_path.exists():
@@ -270,10 +278,14 @@ class Apk:
             return self.download_apk_en(progress_callback)
         else:
             url = self.get_download_url()
-            scraper = cloudscraper.create_scraper() # type: ignore
-            scraper.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"})
+            scraper = cloudscraper.create_scraper()  # type: ignore
+            scraper.headers.update(
+                {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"
+                }
+            )
             stream = scraper.get(url, stream=True, timeout=10)
-            total_length = int(stream.headers.get("content-length")) # type: ignore
+            total_length = int(stream.headers.get("content-length"))  # type: ignore
             dl = 0
             chunk_size = 1024
             buffer = b""
@@ -286,8 +298,11 @@ class Apk:
             apk = data.Data(stream.content)
             apk.to_file(self.apk_path)
             return True
-        
-    def download_apk_en(self, progress_callback: Optional[Callable[[float, int, int, bool], None]] = None) -> bool:
+
+    def download_apk_en(
+        self,
+        progress_callback: Optional[Callable[[float, int, int, bool], None]] = None,
+    ) -> bool:
         if progress_callback is None:
             progress_callback = self.progress
         urls = Apk.get_en_apk_urls("the-battle-cats")
@@ -317,7 +332,7 @@ class Apk:
         apk = data.Data(stream.content)
         apk.to_file(self.apk_path)
         return True
-    
+
     def get_en_apk_url(self, apk_url: str):
         resp = request.RequestHandler(apk_url).get()
         soup = bs4.BeautifulSoup(resp.text, "html.parser")
@@ -325,7 +340,7 @@ class Apk:
         if not isinstance(download_button, bs4.element.Tag):
             return None
         return str(download_button.get_attribute_list("data-url")[0])
-    
+
     @staticmethod
     def get_en_app_id(package_name: str) -> Optional[str]:
         url = f"https://{package_name}.en.uptodown.com/android/versions"
@@ -339,7 +354,7 @@ class Apk:
             return None
         app_id = app_details.get_attribute_list("code")[0]
         return app_id
-    
+
     @staticmethod
     def get_en_apk_json(package_name: str) -> list[dict[str, Any]]:
         app_id = Apk.get_en_app_id(package_name)
@@ -348,7 +363,7 @@ class Apk:
         url = f"https://{package_name}.en.uptodown.com/android/apps/{app_id}/versions?page[limit]=200&page[offset]=0"
         resp = request.RequestHandler(url).get()
         return resp.json()["data"]
-    
+
     @staticmethod
     def get_en_apk_urls(package_name: str) -> Optional[dict[str, Any]]:
         json_data = Apk.get_en_apk_json(package_name)
@@ -357,8 +372,7 @@ class Apk:
         for data in json_data:
             versions.append(data["version"])
             urls.append(data["versionURL"])
-        return dict(zip(versions, urls))      
-
+        return dict(zip(versions, urls))
 
     def get_download_url(self) -> str:
         return f"https://d.apkpure.com/b/APK/jp.co.ponos.battlecats{self.country_code.get_patching_code()}?versionCode={self.game_version.game_version}0"
@@ -384,25 +398,27 @@ class Apk:
         else:
             raise ValueError(f"Country code {cc} not supported")
         return url
-    
+
     def is_downloaded(self) -> bool:
         return self.apk_path.exists()
-    
+
     def delete(self):
         self.apk_folder.remove_tree()
-    
+
     @staticmethod
     def clean_up():
         for apk in Apk.get_all_downloaded():
             if apk.is_downloaded():
                 continue
             print(f"Deleting {apk.get_display_string()}")
-            #apk.delete()
-        
+            # apk.delete()
+
     def get_display_string(self) -> str:
         return f"{self.game_version.format()} <dark_green>({self.country_code})</>"
-    
-    def download_server_files(self, progress_callback: Optional[Callable[[float, int, int], None]] = None):
+
+    def download_server_files(
+        self, progress_callback: Optional[Callable[[float, int, int], None]] = None
+    ):
         if progress_callback is None:
             progress_callback = self.progress
         url = f"https://api.github.com/repos/fieryhenry/BCData/git/trees/master?recursive=2"
@@ -414,13 +430,18 @@ class Apk:
         urls: list[str] = []
         for item in json_data["tree"]:
             if (
-                str(item["path"]).split("/")[0] == f"{self.country_code.get_code()}_server"
+                str(item["path"]).split("/")[0]
+                == f"{self.country_code.get_code()}_server"
                 and len(str(item["path"]).split("/")) == 2
             ):
                 url = f"https://raw.githubusercontent.com/fieryhenry/BCData/master/{item['path']}"
                 urls.append(url)
-            
-        output_dir = self.apk_folder.parent().add(f"{self.country_code.get_code()}_server").generate_dirs()
+
+        output_dir = (
+            self.apk_folder.parent()
+            .add(f"{self.country_code.get_code()}_server")
+            .generate_dirs()
+        )
         new_urls: list[str] = []
         for url in urls:
             file_path = output_dir.add(url.split("/")[-1])
@@ -435,14 +456,16 @@ class Apk:
             if progress_callback is not None:
                 progress_callback(i / total, i, total - 1)
         self.copy_server_files()
-    
+
     def copy_server_files(self):
-        server_path = self.apk_folder.parent().add(f"{self.country_code.get_code()}_server")
+        server_path = self.apk_folder.parent().add(
+            f"{self.country_code.get_code()}_server"
+        )
         if not server_path.exists():
             return
         for file in server_path.get_files():
             file.copy(self.packs_path.add(file.basename()))
-        
+
     @staticmethod
     def from_apk_path(apk_path: path.Path) -> "Apk":
         command = f"aapt dump badging {apk_path}"
@@ -458,12 +481,14 @@ class Apk:
         package_name = ""
         for line in output.splitlines():
             if "versionName" in line:
-                version_name = line.split("versionName='")[1].split("'")[0]            
+                version_name = line.split("versionName='")[1].split("'")[0]
             if "package: name=" in line:
                 package_name = line.split("name='")[1].split("'")[0]
         if version_name == "" or package_name == "":
-            raise ValueError(f"Could not get version name or package name from {apk_path}")
-        
+            raise ValueError(
+                f"Could not get version name or package name from {apk_path}"
+            )
+
         cc_str = package_name.replace("jp.co.ponos.battlecats", "")
         cc = country_code.CountryCode.from_patching_code(cc_str)
         gv = game_version.GameVersion.from_string(version_name)
@@ -471,17 +496,117 @@ class Apk:
         apk_path.copy(apk.apk_path)
         apk.original_extracted_path.remove_tree().generate_dirs()
         return apk
-    
+
     def get_architectures(self):
         architectures: list[str] = []
         for folder in self.extracted_path.add("lib").get_dirs():
             architectures.append(folder.basename())
         return architectures
-            
-    
+
     def __str__(self):
         return self.get_display_string()
-    
+
     def __repr__(self):
         return self.get_display_string()
-    
+
+    def get_libnative_path(self, architecture: str) -> "path.Path":
+        return self.get_lib_path(architecture).add("libnative-lib.so")
+
+    def parse_libnative(self, architecture: str) -> Optional["lib.Lib"]:
+        path = self.get_libnative_path(architecture)
+        if not path.exists():
+            return None
+        return lib.Lib(architecture, path)
+
+    def add_library(self, architecture: str, library_path: "path.Path"):
+        libnative = self.libs.get(architecture)
+        if libnative is None:
+            print(f"Could not find libnative for {architecture}")
+            return
+        libnative.add_library(library_path)  # type: ignore
+        libnative.write()  # type: ignore
+        self.add_to_lib_folder(architecture, library_path)
+
+    def get_lib_path(self, architecture: str) -> "path.Path":
+        return self.extracted_path.add("lib").add(architecture)
+
+    def import_libraries(self, lib_folder: "path.Path"):
+        for architecture in self.get_architectures():
+            libs_path = lib_folder.add(architecture)
+            if not libs_path.exists():
+                continue
+            for lib in libs_path.get_files():
+                self.add_library(architecture, lib)
+
+    def add_to_lib_folder(self, architecture: str, library_path: "path.Path"):
+        lib_folder_path = self.get_lib_path(architecture)
+        library_path.copy(lib_folder_path)
+        new_name = library_path.basename()
+        if not library_path.basename().startswith("lib"):
+            new_name = f"lib{library_path.basename()}"
+        if library_path.get_extension() != "so":
+            new_name = f"{new_name}.so"
+        curr_path = lib_folder_path.add(library_path.basename())
+        curr_path.rename(new_name, overwrite=True)
+
+    def create_libgadget_config(self):
+        json_data = {
+            "interaction": {
+                "type": "script",
+                "path": f"/data/data/{self.package_name}/lib/libbc_script.js.so",
+                "on_change": "reload",
+            }
+        }
+        json = json_file.JsonFile.from_json(json_data)
+        return json
+
+    def add_libgadget_config(self, used_arcs: list[str]):
+        config = self.create_libgadget_config()
+        temp_file = self.temp_path.add("libgadget.config")
+        config.to_data().to_file(temp_file)
+
+        for architecture in used_arcs:
+            self.add_to_lib_folder(architecture, temp_file)
+
+        temp_file.remove()
+
+    def add_libgadget_scripts(self, scripts: "mods.frida_script.Scripts"):
+        for architecture in scripts.get_used_arcs():
+            script_str = scripts.combine_scripts(architecture)
+            script_path = self.temp_path.add(f"libbc_script.js.so")
+            script_str.to_file(script_path)
+            self.add_to_lib_folder(architecture, script_path)
+            script_path.remove()
+
+    def get_libgadgets(self) -> dict[str, "path.Path"]:
+        folder = config.Config().get(config.Key.LIB_GADGETS_FOLDER)
+        arcs = path.Path(folder).generate_dirs().get_dirs()
+        libgadgets: dict[str, "path.Path"] = {}
+        for arc in arcs:
+            so_regex = ".*\\.so"
+            files = arc.get_files(regex=so_regex)
+            if len(files) == 0:
+                continue
+            libgadgets[arc.basename()] = files[0]
+        return libgadgets
+
+    def add_libgadget_sos(self, used_arcs: list[str]):
+        for architecture, libgadget in self.get_libgadgets().items():
+            if architecture not in used_arcs:
+                continue
+            self.add_library(architecture, libgadget)
+
+    def add_frida_scripts(self, scripts: "mods.frida_script.Scripts"):
+        used_arcs = scripts.get_used_arcs()
+        self.add_libgadget_config(used_arcs)
+        self.add_libgadget_scripts(scripts)
+        self.add_libgadget_sos(used_arcs)
+
+    def get_libs(self) -> dict[str, "lib.Lib"]:
+        libs: dict[str, "lib.Lib"] = {}
+        for architecture in self.get_architectures():
+            libnative = self.parse_libnative(architecture)
+            if libnative is None:
+                continue
+            libs[architecture] = libnative
+        return libs

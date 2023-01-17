@@ -1,5 +1,5 @@
 from typing import Any, Optional
-from bcml.core import io, game_version, country_code, crypto, game_data
+from bcml.core import io, game_version, country_code, crypto, game_data, mods
 
 
 class Mod:
@@ -19,6 +19,7 @@ class Mod:
         self.game_version = game_version
         self.mod_id = mod_id
         self.init_custom()
+        self.init_scripts()
     
     @staticmethod
     def get_extension() -> str:
@@ -32,6 +33,9 @@ class Mod:
         self.battle = game_data.battle.battle.Battle.create_empty()
         self.cat_base = game_data.cat_base.cat_base.CatBase.create_empty()
         self.maps = game_data.map.map.Maps.create_empty()
+    
+    def init_scripts(self):
+        self.scripts: mods.frida_script.Scripts = mods.frida_script.Scripts([], self.country_code, self.game_version)
     
     def create_mod_json(self) -> dict[str, Any]:
         return {
@@ -51,6 +55,8 @@ class Mod:
         self.cat_base.add_to_zip(zip_file)
         self.maps.add_to_zip(zip_file)
 
+        self.scripts.add_to_zip(zip_file)
+
         json = io.json_file.JsonFile.from_json(self.create_mod_json())
         zip_file.add_file(io.path.Path("mod.json"), json.to_data())
         zip_file.save(path)
@@ -68,6 +74,8 @@ class Mod:
         mod.battle = game_data.battle.battle.Battle.from_zip(zip_file)
         mod.cat_base = game_data.cat_base.cat_base.CatBase.from_zip(zip_file)
         mod.maps = game_data.map.map.Maps.from_zip(zip_file)
+
+        mod.scripts = mods.frida_script.Scripts.from_zip(zip_file, mod.country_code, mod.game_version)
 
         return mod
     
@@ -91,6 +99,8 @@ class Mod:
         self.battle.import_battle(other.battle)
         self.cat_base.import_cat_base(other.cat_base)
         self.maps.import_maps(other.maps)
+
+        self.scripts.import_scripts(other.scripts)
     
     def import_mods(self, others: list["Mod"]):
         for other in others:

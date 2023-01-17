@@ -125,7 +125,9 @@ class Path:
                     shutil.copy(self.path, target.path)
                 except shutil.SameFileError:
                     pass
-    
+        else:
+            raise FileNotFoundError(f"File not found: {self.path}")
+        
     def copy_tree(self, target: "Path"):
         if target.exists():
             target.remove_tree()
@@ -163,7 +165,11 @@ class Path:
         return self.parent().add(name)
     
     def rename(self, name: str, overwrite: bool = False):
+        if not self.exists():
+            raise FileNotFoundError(f"File not found: {self.path}")
         new_path = self.change_name(name)
+        if new_path.path == self.path:
+            return
         if new_path.exists():
             if overwrite:
                 new_path.remove()

@@ -13,6 +13,7 @@ class Key(enum.Enum):
     DEFAULT_AUTHOR = "default_author"
     DEFAULT_GAME_VERSION = "default_game_version"
     DEFAULT_COUNTRY_CODE = "default_country_code"
+    LIB_GADGETS_FOLDER = "lib_gadgets_folder"
 
 class Config:
     def __init__(self):
@@ -48,6 +49,7 @@ class Config:
             Key.DEFAULT_AUTHOR: "",
             Key.DEFAULT_GAME_VERSION: "latest",
             Key.DEFAULT_COUNTRY_CODE: country_code.CountryCode.EN.name,
+            Key.LIB_GADGETS_FOLDER: path.Path.get_appdata_folder().add("LibGadgets").path,
         }
         for key, value in initial_values.items():
             if key not in self.config:

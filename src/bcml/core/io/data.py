@@ -349,7 +349,7 @@ class Data:
     
     def to_csv(self, *args: Any, **kwargs: Any) -> "bc_csv.CSV":
         return bc_csv.CSV(self, *args, **kwargs)
-
+    
 class DataType(enum.Enum):
     INT = 0
     UINT = 1
