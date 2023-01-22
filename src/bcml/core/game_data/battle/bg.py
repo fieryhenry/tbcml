@@ -5,6 +5,7 @@ from bcml.core import io
 
 
 class ColorType(enum.Enum):
+    """Enum for the different types of colors in a Bg."""    
     SKY_TOP = 0
     SKY_BOTTOM = 1
     GROUND_TOP = 2
