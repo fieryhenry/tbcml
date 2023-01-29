@@ -2,8 +2,8 @@
 from typing import Any, Callable, Optional
 import webbrowser
 from PyQt5 import QtCore, QtWidgets, QtGui
-from bcml.core import io, country_code, game_version
-from bcml.ui import main, progress, ui_thread, ui_dialog
+from bcml.core import io, country_code, game_version, game_data
+from bcml.ui import main, progress, ui_thread, ui_dialog, ui_file_dialog
 
 
 class ApkManager(QtWidgets.QDialog):
@@ -41,7 +41,7 @@ class ApkManager(QtWidgets.QDialog):
             self.selected_apk_label.setText("None")
         self._layout.addWidget(self.selected_apk_label)
 
-        self.apk_list = ApkList(self.select_apk, self)
+        self.apk_list = ApkList(self.select_apk, self.decrypt_apk, self)
         self.apk_list.get_apks()
         self._layout.addWidget(self.apk_list)
 
@@ -87,11 +87,11 @@ class ApkManager(QtWidgets.QDialog):
 
     def add_apk_clicked(self):
         file_filter = "APK Files (*.apk);;All Files (*)"
-        apk_path, _ = QtWidgets.QFileDialog.getOpenFileName(
-            self,
+        apk_path = ui_file_dialog.FileDialog(self).select_file(
             "Select APK",
             io.apk.Apk.get_default_apk_folder().path,
             file_filter,
+            None,
         )
         if apk_path:
             path = io.path.Path(apk_path)
@@ -102,15 +102,46 @@ class ApkManager(QtWidgets.QDialog):
         io.config.Config().set(io.config.Key.SELECTED_APK, apk.format())
         self.selected_apk_label.setText(apk.format())
 
+    def decrypt_apk(self, apk: io.apk.Apk):
+
+        directory = ui_file_dialog.FileDialog(self).select_directory(
+            "Select a directory to save the decrypted game files to.",
+            apk.decrypted_path.to_str(),
+            QtWidgets.QFileDialog.Option.ShowDirsOnly,  # type: ignore
+        )
+        if directory:
+            path = io.path.Path(directory)
+        else:
+            return
+
+        self.progress_bar = progress.ProgressBar("Decrypting APK", self)
+        self._layout.addWidget(self.progress_bar)
+
+        self.decrypt_thread = ui_thread.ThreadWorker.run_in_thread(
+            self.decrypt_apk_thread, apk, path
+        )
+
+    def decrypt_apk_thread(self, apk: io.apk.Apk, path: io.path.Path):
+        game_packs = game_data.pack.GamePacks.from_apk(apk)
+
+        total_packs = len(game_packs.packs)
+        for i, pck in enumerate(game_packs.packs.values()):
+            pck.extract(path)
+            self.progress_bar.set_progress(i + 1, total_packs)
+        self.progress_bar.close()
+        path.open()
+
 
 class ApkList(QtWidgets.QListWidget):
     def __init__(
         self,
         on_select_apk: Callable[[io.apk.Apk], None],
+        on_decrypt_apk: Callable[[io.apk.Apk], None],
         parent: Optional[QtWidgets.QWidget] = None,
     ):
         super(ApkList, self).__init__(parent)
         self.on_select_apk = on_select_apk
+        self.on_decrypt_apk = on_decrypt_apk
         self.setup_ui()
 
     def setup_ui(self):
@@ -123,9 +154,10 @@ class ApkList(QtWidgets.QListWidget):
         menu = QtWidgets.QMenu()
         if not self.currentItem():
             return
-        delete_action = menu.addAction("Delete APK")
-        extraction_action = menu.addAction("Extract APK")
         select_apk_action = menu.addAction("Select APK")
+        extraction_action = menu.addAction("Extract APK")
+        decryption_action = menu.addAction("Decrypt APK")
+        delete_action = menu.addAction("Delete APK")
         action = menu.exec_(self.mapToGlobal(pos))
         if action == delete_action:
             self.delete_apk()
@@ -133,6 +165,8 @@ class ApkList(QtWidgets.QListWidget):
             self.extract_apk()
         elif action == select_apk_action:
             self.select_apk()
+        elif action == decryption_action:
+            self.decrypt_apk()
 
     def get_apks(self):
         self.apks = io.apk.Apk.get_all_downloaded()
@@ -143,8 +177,11 @@ class ApkList(QtWidgets.QListWidget):
         if event.key() == QtCore.Qt.Key.Key_Delete:
             self.delete_apk()
 
-    def get_selected_apk(self):
+    def get_selected_apk_text(self):
         return self.currentItem().text()
+
+    def get_selected_apk(self):
+        return io.apk.Apk.from_format_string(self.get_selected_apk_text())
 
     def delete_apk(self):
         ui_dialog.Dialog.yes_no_box(
@@ -157,7 +194,7 @@ class ApkList(QtWidgets.QListWidget):
         )
 
     def delete_apk_call(self):
-        apk = io.apk.Apk.from_format_string(self.get_selected_apk())
+        apk = self.get_selected_apk()
         apk.delete()
         self.takeItem(self.currentRow())
 
@@ -172,7 +209,7 @@ class ApkList(QtWidgets.QListWidget):
                 on_yes=self.open_apktool_install_page,
             )
         else:
-            apk = io.apk.Apk.from_format_string(self.get_selected_apk())
+            apk = self.get_selected_apk()
             apk.extract()
             apk.extracted_path.open()
 
@@ -180,8 +217,12 @@ class ApkList(QtWidgets.QListWidget):
         webbrowser.open("https://ibotpeaches.github.io/Apktool/install/")
 
     def select_apk(self):
-        apk = io.apk.Apk.from_format_string(self.get_selected_apk())
+        apk = self.get_selected_apk()
         self.on_select_apk(apk)
+
+    def decrypt_apk(self):
+        apk = self.get_selected_apk()
+        self.on_decrypt_apk(apk)
 
 
 class ApkDownloader(QtWidgets.QWidget):
