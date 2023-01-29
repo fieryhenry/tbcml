@@ -40,6 +40,9 @@ class Apk:
             apk_folder=apk_folder,
         )
 
+    def get_id(self) -> str:
+        return f"{self.country_code.get_code()} {self.game_version.to_string()}"
+
     def init_paths(self):
         self.apk_folder.generate_dirs()
         self.server_path = self.apk_folder.add(
@@ -285,7 +288,12 @@ class Apk:
         return f"{self.country_code.name} {self.game_version.format()} APK"
 
     @staticmethod
-    def progress(progress: float, current: int, total: int, is_file_size: bool = False):
+    def progress(
+        progress: float,
+        current: int,
+        total: int,
+        is_file_size: bool = False,
+    ):
         total_bar_length = 70
         if is_file_size:
             current_str = file_handler.FileSize(current).format()
