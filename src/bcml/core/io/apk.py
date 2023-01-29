@@ -26,6 +26,20 @@ class Apk:
 
         self.init_paths()
 
+    @staticmethod
+    def from_format_string(
+        format_string: str,
+        apk_folder: Optional[path.Path] = None,
+    ) -> "Apk":
+        cc, gv, _ = format_string.split(" ")
+        gv = game_version.GameVersion.from_string(gv)
+        cc = country_code.CountryCode.from_code(cc)
+        return Apk(
+            game_version=gv,
+            country_code=cc,
+            apk_folder=apk_folder,
+        )
+
     def init_paths(self):
         self.apk_folder.generate_dirs()
         self.server_path = self.apk_folder.add(
@@ -77,15 +91,35 @@ class Apk:
         self.extracted_path.remove_tree().generate_dirs()
         self.original_extracted_path.copy(self.extracted_path)
 
+    @staticmethod
+    def check_apktool_installed() -> bool:
+        cmd = command.Command("apktool version", False)
+        res = cmd.run()
+        return res.exit_code == 0
+
+    def check_display_apktool_error(self) -> bool:
+        if self.check_apktool_installed():
+            return True
+        message = "Apktool is not installed. Please install it and add it to your PATH. You can download it from https://ibotpeaches.github.io/Apktool/install/"
+        print(message)
+        return False
+
     def extract(self):
         if self.original_extracted_path.has_files():
             self.copy_extracted()
             self.copy_packs()
             return
+
+        if not self.check_display_apktool_error():
+            return
+
         cmd = command.Command(
             f"apktool d -f -s {self.apk_path} -o {self.original_extracted_path}", False
         )
-        cmd.run()
+        res = cmd.run()
+        if res.exit_code != 0:
+            print(f"Failed to extract APK: {res.result}")
+            return
         self.copy_extracted()
         self.copy_packs()
         self.libs = self.get_libs()
@@ -295,7 +329,7 @@ class Apk:
                 progress_callback(dl / total_length, dl, total_length, True)
             progress_callback(1, total_length, total_length, True)
 
-            apk = data.Data(stream.content)
+            apk = data.Data(buffer)
             apk.to_file(self.apk_path)
             return True
 
@@ -403,15 +437,14 @@ class Apk:
         return self.apk_path.exists()
 
     def delete(self):
-        self.apk_folder.remove_tree()
+        self.output_path.remove_tree()
 
     @staticmethod
     def clean_up():
         for apk in Apk.get_all_downloaded():
             if apk.is_downloaded():
                 continue
-            print(f"Deleting {apk.get_display_string()}")
-            # apk.delete()
+            apk.delete()
 
     def get_display_string(self) -> str:
         return f"{self.game_version.format()} <dark_green>({self.country_code})</>"
