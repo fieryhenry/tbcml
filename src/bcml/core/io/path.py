@@ -8,7 +8,7 @@ import re
 
 
 class Path:
-    def __init__(self, path: str, is_relative: bool = False):
+    def __init__(self, path: str = "", is_relative: bool = False):
         if is_relative:
             self.path = self.get_relative_path(path)
         else:
