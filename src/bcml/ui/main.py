@@ -1,6 +1,7 @@
 from typing import Optional
 from PyQt5 import QtCore, QtGui, QtWidgets
 from bcml.ui import apk_manager
+from bcml.core import io
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -26,6 +27,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.resize(800, 600)
         self.create_toolbar()
         self.setWindowTitle("Battle Cats Mod Loader")
+        icon_path = io.path.Path(is_relative=True).add("assets", "icon.png")
+        self.setWindowIcon(QtGui.QIcon(str(icon_path)))
 
     def run(self):
         self.show()
@@ -58,11 +61,3 @@ def clear_layout(layout: QtWidgets.QLayout):
             clear_layout(child.layout())
         except AttributeError:
             pass
-
-
-def error_dialog(message: str):
-    dialog = QtWidgets.QMessageBox()
-    dialog.setIcon(QtWidgets.QMessageBox.Icon.Critical)
-    dialog.setText(message)
-    dialog.setWindowTitle("Error")
-    dialog.exec_()
