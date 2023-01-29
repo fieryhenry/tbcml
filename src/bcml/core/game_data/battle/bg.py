@@ -13,8 +13,8 @@ class ColorType(enum.Enum):
 
 
 class Color:
-    def __init__(self, type: ColorType, r: int, g: int, b: int):
-        self.type = type
+    def __init__(self, c_type: ColorType, r: int, g: int, b: int):
+        self.type = c_type
         self.r = r
         self.g = g
         self.b = b
@@ -174,7 +174,7 @@ class Bgs:
             del remaining_bgs[i]
 
         for i, bg in remaining_bgs.items():
-            line = [
+            new_line = [
                 i,
                 bg.sky_top.r,
                 bg.sky_top.g,
@@ -192,8 +192,8 @@ class Bgs:
                 1 if bg.is_upper_side_bg_enabled else 0,
             ]
             if bg.extra is not None:
-                line.extend(bg.extra)
-            csv.add_line(line)
+                new_line.extend(bg.extra)
+            csv.add_line(new_line)
 
         game_data.set_file(Bgs.get_file_name(), csv.to_data())
 

@@ -164,7 +164,7 @@ class ShakeEffects:
             remaing_effects.pop(i)
 
         for i, effect in remaing_effects.items():
-            line = [
+            a_line = [
                 effect.shake_location.value,
                 effect.start_distance,
                 effect.end_distance,
@@ -173,7 +173,7 @@ class ShakeEffects:
                 effect.reset_frame,
                 effect.priority,
             ]
-            csv.add_line(line)
+            csv.add_line(a_line)
 
         game_data.set_file(self.get_file_name(), csv.to_data())
 

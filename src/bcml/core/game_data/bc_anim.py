@@ -212,11 +212,11 @@ class Maanim:
         csv = io.bc_csv.CSV(data)
         csv.read_line()
         csv.read_line()
-        total_parts = csv.read_line()
-        if total_parts is None:
+        total_parts_d = csv.read_line()
+        if total_parts_d is None:
             return Maanim([], name)
 
-        total_parts = total_parts[0].to_int()
+        total_parts = total_parts_d[0].to_int()
         parts: list[MaanimPart] = []
         start_index = 3
         for _ in range(total_parts):
@@ -306,7 +306,7 @@ class MamodelPart:
         self.alpha = alpha
         self.glow = glow
         self.name = name
-        self.parent = None
+        self.parent: Optional["MamodelPart"] = None
         self.children: list["MamodelPart"] = []
         self.cut = cut
         self.real_x: int = 0
@@ -492,11 +492,11 @@ class Mamodel:
         csv = io.bc_csv.CSV(data)
         csv.read_line()
         csv.read_line()
-        total_parts = csv.read_line()
-        if total_parts is None:
+        total_parts_d = csv.read_line()
+        if total_parts_d is None:
             return Mamodel([], [], [], [], cuts)
 
-        total_parts = total_parts[0].to_int()
+        total_parts = total_parts_d[0].to_int()
         parts: list[MamodelPart] = []
         for i in range(total_parts):
             line_data = csv.read_line()
@@ -507,17 +507,17 @@ class Mamodel:
         for part in parts:
             part.set_parent(parts)
 
-        maxes = csv.read_line()
-        if maxes is None:
+        maxes_d = csv.read_line()
+        if maxes_d is None:
             return Mamodel(parts, [], [], [], cuts)
 
-        maxes = io.data.Data.data_list_int_list(maxes)
+        maxes = io.data.Data.data_list_int_list(maxes_d)
 
-        total_ints = csv.read_line()
-        if total_ints is None:
+        total_ints_d = csv.read_line()
+        if total_ints_d is None:
             return Mamodel(parts, maxes, [], [], cuts)
 
-        total_ints = total_ints[0].to_int()
+        total_ints = total_ints_d[0].to_int()
         ints: list[list[int]] = []
         comments: list[str] = []
         for _ in range(total_ints):
@@ -530,9 +530,9 @@ class Mamodel:
             else:
                 comment = ""
 
-            line_data = io.data.Data.data_list_int_list(line_data)
+            line_data_i = io.data.Data.data_list_int_list(line_data)
             comments.append(comment)
-            ints.append(line_data)
+            ints.append(line_data_i)
 
         return Mamodel(parts, maxes, ints, comments, cuts)
 
@@ -691,16 +691,16 @@ class Imgcut:
         csv = io.bc_csv.CSV(data)
         csv.read_line()
         csv.read_line()
-        img_name = csv.read_line()
-        if img_name is None:
+        img_name_d = csv.read_line()
+        if img_name_d is None:
             return Imgcut([], "", image)
 
-        img_name = img_name[0].to_str()
-        total_cuts = csv.read_line()
-        if total_cuts is None:
+        img_name = img_name_d[0].to_str()
+        total_cuts_d = csv.read_line()
+        if total_cuts_d is None:
             return Imgcut([], img_name, image)
 
-        total_cuts = total_cuts[0].to_int()
+        total_cuts = total_cuts_d[0].to_int()
         cuts: list[Cut] = []
         for i in range(total_cuts):
             line_data = csv.read_line()

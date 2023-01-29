@@ -828,15 +828,15 @@ class Talents:
             cat_id = line[0].to_int()
             if cat_id not in self.talents:
                 continue
-            line = [cat_id]
-            line.extend(self.talents[cat_id].raw_data)
-            csv.set_line(i + 1, line)
+            d_line = [cat_id]
+            d_line.extend(self.talents[cat_id].raw_data)
+            csv.set_line(i + 1, d_line)
             del remanining_cats[cat_id]
 
         for cat_id, talent in remanining_cats.items():
-            line = [cat_id]
-            line.extend(talent.raw_data)
-            csv.add_line(line)
+            a_line = [cat_id]
+            a_line.extend(talent.raw_data)
+            csv.add_line(a_line)
 
         game_data.set_file(Talents.get_file_name(), csv.to_data())
 

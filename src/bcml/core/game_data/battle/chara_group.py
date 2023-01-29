@@ -83,10 +83,10 @@ class CharaGroups:
         
         for id in remaining_groups:
             group = self.groups[id]
-            line = [id, group.text_id, group.group_type.value]
+            a_line = [id, group.text_id, group.group_type.value]
             for chara_id in group.chara_ids:
-                line.append(chara_id)
-            csv.add_line(line)
+                a_line.append(chara_id)
+            csv.add_line(a_line)
 
         game_data.set_file(file_name, csv.to_data())
 

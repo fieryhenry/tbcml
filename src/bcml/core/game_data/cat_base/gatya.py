@@ -330,18 +330,18 @@ class GatyaOptions:
             csv.set_line(i + 1, line)
             del remaining[id]
         for id, option in remaining.items():
-            line: list[Any] = []
-            line.append(id)
-            line.append(option.banner_enabled)
-            line.append(option.ticket_item_id)
-            line.append(option.anime_id)
-            line.append(option.btn_cut_id)
-            line.append(option.series_id)
-            line.append(option.menu_cut_id)
+            aline: list[Any] = []
+            aline.append(id)
+            aline.append(option.banner_enabled)
+            aline.append(option.ticket_item_id)
+            aline.append(option.anime_id)
+            aline.append(option.btn_cut_id)
+            aline.append(option.series_id)
+            aline.append(option.menu_cut_id)
             if option.chara_id is not None:
-                line.append(option.chara_id)
-            line.extend(option.extra)
-            csv.add_line(line)
+                aline.append(option.chara_id)
+            aline.extend(option.extra)
+            csv.add_line(aline)
         game_data.set_file(file_name, csv.to_data())
 
 
