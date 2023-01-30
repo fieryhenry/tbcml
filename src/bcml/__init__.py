@@ -1,3 +1,3 @@
-from bcml import cli, core, ui
+from bcml import core, ui
 
-__all__ = ["cli", "core", "ui"]
+__all__ = ["core", "ui"]
