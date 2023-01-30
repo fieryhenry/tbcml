@@ -1,7 +1,6 @@
 import enum
 from typing import Any
 from bcml.core.io import path, yaml
-from bcml.core import country_code
 
 
 class Key(enum.Enum):
@@ -12,8 +11,6 @@ class Key(enum.Enum):
     UPDATE = "update"
     UPDATE_TO_BETA = "update_to_beta"
     DEFAULT_AUTHOR = "default_author"
-    DEFAULT_GAME_VERSION = "default_game_version"
-    DEFAULT_COUNTRY_CODE = "default_country_code"
     LIB_GADGETS_FOLDER = "lib_gadgets_folder"
     SELECTED_APK = "selected_apk"
 
@@ -48,8 +45,6 @@ class Config:
             Key.UPDATE: True,
             Key.UPDATE_TO_BETA: False,
             Key.DEFAULT_AUTHOR: "",
-            Key.DEFAULT_GAME_VERSION: "latest",
-            Key.DEFAULT_COUNTRY_CODE: country_code.CountryCode.EN.name,
             Key.LIB_GADGETS_FOLDER: path.Path.get_appdata_folder()
             .add("LibGadgets")
             .path,
