@@ -30,7 +30,7 @@ class Path:
         if os.name == "nt":
             os.startfile(self.path)
         elif os.name == "posix":
-            command.Command(f"xdg-open {self.path}", display_output=False).run()
+            command.Command(f"xdg-open {self.path} &", display_output=False).run()
         elif os.name == "mac":
             command.Command(f"open {self.path}", display_output=False).run()
         else:
