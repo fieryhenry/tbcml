@@ -34,11 +34,13 @@ class ApkManager(QtWidgets.QDialog):
         self.selected_apk = io.config.Config().get(io.config.Key.SELECTED_APK)
         self.selected_apk_label = QtWidgets.QLineEdit()
         self.selected_apk_label.setReadOnly(True)
-        self.selected_apk_label.setPlaceholderText("None")
         if self.selected_apk:
             self.selected_apk_label.setText(self.selected_apk)
+            self.selected_apk_label.setStyleSheet("color: #4e9a06")
         else:
             self.selected_apk_label.setText("None")
+            self.selected_apk_label.setStyleSheet("color: #b00020")
+
         self._layout.addWidget(self.selected_apk_label)
 
         self.apk_list = ApkList(self.select_apk, self.decrypt_apk, self)
@@ -101,9 +103,9 @@ class ApkManager(QtWidgets.QDialog):
     def select_apk(self, apk: io.apk.Apk):
         io.config.Config().set(io.config.Key.SELECTED_APK, apk.format())
         self.selected_apk_label.setText(apk.format())
+        self.selected_apk_label.setStyleSheet("color: #00b000")
 
     def decrypt_apk(self, apk: io.apk.Apk):
-
         directory = ui_file_dialog.FileDialog(self).select_directory(
             "Select a directory to save the decrypted game files to.",
             apk.decrypted_path.to_str(),
