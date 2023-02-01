@@ -57,7 +57,14 @@ class CatBase:
         itms = item_shop.ItemShop.from_game_data(game_data)
         np = nekokan_product.NekokanProducts.from_game_data(game_data)
         sch = scheme_item.SchemeItems.from_game_data(game_data)
-        if cts is None or enem is None or gt is None or itms is None or np is None or sch is None:
+        if (
+            cts is None
+            or enem is None
+            or gt is None
+            or itms is None
+            or np is None
+            or sch is None
+        ):
             return None
         return CatBase(
             cts,
@@ -92,7 +99,14 @@ class CatBase:
         itms = item_shop.ItemShop.from_zip(zip)
         np = nekokan_product.NekokanProducts.from_zip(zip)
         sch = scheme_item.SchemeItems.from_zip(zip)
-        if cts is None or enem is None or gt is None or itms is None or np is None or sch is None:
+        if (
+            cts is None
+            or enem is None
+            or gt is None
+            or itms is None
+            or np is None
+            or sch is None
+        ):
             return None
         return CatBase(
             cts,

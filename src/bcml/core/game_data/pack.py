@@ -14,7 +14,7 @@ class GameFile:
         self.file_name = file_name
         self.pack = pack
         self.country_code = country_code
-    
+
     def set_data(self, data: "io.data.Data"):
         self.dec_data = data
 
@@ -38,18 +38,20 @@ class GameFile:
         cipher = self.pack.get_cipher()
         data = self.dec_data.pad_pkcs7()
         return cipher.encrypt(data)
-    
+
     def extract(self, path: "io.path.Path"):
         path = path.add(self.file_name)
         path.write(self.dec_data)
-    
+
     def serialize(self) -> dict[str, str]:
         return {
             "data": self.dec_data.to_base_64(),
         }
-    
+
     @staticmethod
-    def deserialize(data: dict[str, str], file_name: str, pack: "PackFile") -> "GameFile":
+    def deserialize(
+        data: dict[str, str], file_name: str, pack: "PackFile"
+    ) -> "GameFile":
         return GameFile(
             io.data.Data.from_base_64(data["data"]),
             file_name,
@@ -66,14 +68,14 @@ class PackFile:
         self.pack_name = pack_name
         self.country_code = country_code
         self.files: dict[str, GameFile] = {}
-    
+
     def add_file(self, file: GameFile):
         self.files[file.file_name] = file
-    
+
     def add_files(self, files: list[GameFile]):
         for file in files:
             self.add_file(file)
-        
+
     def set_files(self, files: dict[str, GameFile]):
         self.files = files
 
@@ -181,7 +183,7 @@ class PackFile:
             ).encode("utf-8")
         ).encrypt(ls_data)
         return self.pack_name, pack_data, ls_data
-    
+
     def extract(self, path: "io.path.Path"):
         path = path.add(self.pack_name)
         path.generate_dirs()
@@ -192,9 +194,11 @@ class PackFile:
         return {
             "files": {file.file_name: file.serialize() for file in self.files.values()},
         }
-    
+
     @staticmethod
-    def deserialize(data: dict[str, Any], pack_name: str, country_code: country_code.CountryCode) -> Optional["PackFile"]:
+    def deserialize(
+        data: dict[str, Any], pack_name: str, country_code: country_code.CountryCode
+    ) -> Optional["PackFile"]:
         pack_file = PackFile(pack_name, country_code)
         files: dict[str, GameFile] = {}
         for file_name, file_data in data["files"].items():
@@ -214,7 +218,7 @@ class GamePacks:
         self.country_code = country_code
         self.modified_packs: dict[str, bool] = {}
         self.__catbase: Optional[cat_base.cat_base.CatBase] = None
-    
+
     @property
     def catbase(self) -> Optional[cat_base.cat_base.CatBase]:
         if self.__catbase is None:
@@ -223,8 +227,6 @@ class GamePacks:
                 return None
             self.__catbase = catbase
         return self.__catbase
-    
-
 
     def get_pack(self, pack_name: str) -> Optional[PackFile]:
         return self.packs.get(pack_name, None)
@@ -315,17 +317,19 @@ class GamePacks:
     def extract(self, path: "io.path.Path"):
         for pack in self.packs.values():
             pack.extract(path)
-    
+
     def apply_mods(self, mods: list["mods.bc_mod.Mod"]):
         for mod in mods:
             self.apply_mod(mod)
-        
+
     def serialize(self) -> dict[str, Any]:
         return {
             "country_code": self.country_code.get_code(),
-            "packs": {pack_name: pack.serialize() for pack_name, pack in self.packs.items()},
+            "packs": {
+                pack_name: pack.serialize() for pack_name, pack in self.packs.items()
+            },
         }
-    
+
     @staticmethod
     def deserialize(data: dict[str, Any]) -> Optional["GamePacks"]:
         cc = country_code.CountryCode.from_code(data["country_code"])
