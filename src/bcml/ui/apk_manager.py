@@ -116,7 +116,7 @@ class ApkManager(QtWidgets.QDialog):
         else:
             return
 
-        self.progress_bar = progress.ProgressBar("Decrypting APK", self)
+        self.progress_bar = progress.ProgressBar("Decrypting APK", None, self)
         self._layout.addWidget(self.progress_bar)
 
         self.decrypt_thread = ui_thread.ThreadWorker.run_in_thread(
@@ -124,6 +124,8 @@ class ApkManager(QtWidgets.QDialog):
         )
 
     def decrypt_apk_thread(self, apk: io.apk.Apk, path: io.path.Path):
+        apk.extract()
+        apk.copy_server_files()
         game_packs = game_data.pack.GamePacks.from_apk(apk)
 
         total_packs = len(game_packs.packs)
