@@ -28,20 +28,7 @@ class Command:
             shell=True,
             universal_newlines=True,
         )
-        # get output
-        output = ""
-        while True:
-            if self.process.stdout is None:
-                break
-            line = self.process.stdout.readline()
-            if line != "":
-                output += line
-                if self.display_output:
-                    print(line, end="")
-            else:
-                break
-        # get return code
-        self.process.communicate(inputData)
+        output, _ = self.process.communicate(inputData)
         return_code = self.process.wait()
         return Result(output, return_code)
 
