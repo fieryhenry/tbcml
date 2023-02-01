@@ -182,7 +182,7 @@ class Apk:
 
     def copy_final_apk(self):
         final_path = config.Config().get(config.Key.APK_COPY_PATH)
-        if final_path is None:
+        if not final_path:
             return
         final_path = path.Path(final_path)
         if final_path.get_extension() == "apk":
