@@ -1,6 +1,6 @@
 from typing import Any, Callable, Optional
 from PyQt5 import QtCore, QtGui, QtWidgets
-from bcml.ui import apk_manager, mod_manager, ui_dialog
+from bcml.ui import apk_manager, mod_manager, ui_dialog, server_files_manager
 from bcml.core import io
 
 
@@ -75,6 +75,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.file_menu = QtWidgets.QMenu("File")
         self.file_menu.addAction("APK Manager", self.open_apk_manager)
+        self.file_menu.addAction("Server Files Manager", self.open_server_files_manager)
         self.toolbar.addAction(self.file_menu.menuAction())
 
     def setup_ui(self):
@@ -117,6 +118,10 @@ class MainWindow(QtWidgets.QMainWindow):
     def open_apk_manager(self):
         self.apk_man = apk_manager.ApkManager()
         self.apk_man.show()
+
+    def open_server_files_manager(self):
+        self.server_files_manager = server_files_manager.ServerFilesManager()
+        self.server_files_manager.show()
 
     def check_apk_selected(self):
         if not io.config.Config().get(io.config.Key.SELECTED_APK):

@@ -6,6 +6,7 @@ from bcml.ui import (
     ui_dialog,
     ui_file_dialog,
     mod_manager,
+    server_files_manager,
 )
 
 __all__ = [
@@ -16,4 +17,5 @@ __all__ = [
     "ui_dialog",
     "ui_file_dialog",
     "mod_manager",
+    "server_files_manager",
 ]
