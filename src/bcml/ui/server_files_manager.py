@@ -10,7 +10,7 @@ class ServerFilesManager(QtWidgets.QDialog):
 
     def setup_ui(self):
         self.setObjectName("ServerFilesManager")
-        self.resize(600, 600)
+        self.resize(700, 700)
         self.setWindowTitle("Server Files Manager")
         self.setWindowModality(QtCore.Qt.WindowModality.ApplicationModal)
 
