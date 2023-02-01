@@ -88,14 +88,25 @@ class ModManager:
     def add_mod(self, mod: bc_mod.Mod):
         self.mods[mod.get_file_name()] = mod
         self.save_mod(mod)
+        self.json_file.get_json()["mods"][mod.get_file_name()] = True
+        self.save_mod_json()
 
     def save_mod(self, mod: bc_mod.Mod):
         self.mods[mod.get_file_name()] = mod
         mod.save(self.mod_folder.add(mod.get_file_name()))
+        self.save_mod_json()
 
     def remove_mod(self, mod: bc_mod.Mod):
-        self.mods.pop(mod.get_file_name())
+        try:
+            self.mods.pop(mod.get_file_name())
+        except KeyError:
+            pass
         self.mod_folder.add(mod.get_file_name()).remove()
+        try:
+            self.json_file.get_json()["mods"].pop(mod.get_file_name())
+        except KeyError:
+            pass
+        self.save_mod_json()
 
     def get_mod_folder(self) -> io.path.Path:
         return self.mod_folder
