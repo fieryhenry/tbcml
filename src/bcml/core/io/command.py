@@ -1,4 +1,5 @@
 import subprocess
+import threading
 
 
 class Result:
@@ -43,3 +44,7 @@ class Command:
         self.process.communicate(inputData)
         return_code = self.process.wait()
         return Result(output, return_code)
+
+    def run_in_thread(self, inputData: str = "\n") -> None:
+        self.thread = threading.Thread(target=self.run, args=(inputData,))
+        self.thread.start()
