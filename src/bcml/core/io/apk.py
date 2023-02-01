@@ -96,7 +96,19 @@ class Apk:
 
     @staticmethod
     def check_apktool_installed() -> bool:
-        cmd = command.Command("apktool version", False)
+        cmd = command.Command("apktool -version", False)
+        res = cmd.run()
+        return res.exit_code == 0
+
+    @staticmethod
+    def check_jarsigner_installed() -> bool:
+        cmd = command.Command("jarsigner", False)
+        res = cmd.run()
+        return res.exit_code == 0
+
+    @staticmethod
+    def check_keytool_installed() -> bool:
+        cmd = command.Command("keytool", False)
         res = cmd.run()
         return res.exit_code == 0
 
@@ -104,6 +116,22 @@ class Apk:
         if self.check_apktool_installed():
             return True
         message = "Apktool is not installed. Please install it and add it to your PATH. You can download it from https://ibotpeaches.github.io/Apktool/install/"
+        print(message)
+        return False
+
+    def check_display_jarsigner_error(self) -> bool:
+        if self.check_jarsigner_installed():
+            return True
+        message = (
+            "Jarsigner is not installed. Please install it and add it to your PATH."
+        )
+        print(message)
+        return False
+
+    def check_display_keytool_error(self) -> bool:
+        if self.check_keytool_installed():
+            return True
+        message = "Keytool is not installed. Please install it and add it to your PATH."
         print(message)
         return False
 
@@ -128,12 +156,21 @@ class Apk:
         self.libs = self.get_libs()
 
     def pack(self):
+        if not self.check_display_apktool_error():
+            return
         cmd = command.Command(
             f"apktool b {self.extracted_path} -o {self.final_apk_path}", False
         )
-        cmd.run()
+        res = cmd.run()
+        if res.exit_code != 0:
+            print(f"Failed to pack APK: {res.result}")
+            return
 
     def sign(self):
+        if not self.check_display_jarsigner_error():
+            return
+        if not self.check_display_keytool_error():
+            return
         password = config.Config().get(config.Key.KEYSTORE_PASSWORD)
         key_store_name = "bcml.keystore"
         key_store_path = path.Path.get_appdata_folder().add(key_store_name)
@@ -142,12 +179,19 @@ class Apk:
                 f'keytool -genkey -v -keystore {key_store_path} -alias bcml -keyalg RSA -keysize 2048 -validity 10000 -storepass {password} -keypass {password} -dname "CN=, OU=, O=, L=, S=, C="',
                 False,
             )
-            cmd.run()
+            res = cmd.run()
+            if res.exit_code != 0:
+                print(f"Failed to generate keystore: {res.result}")
+                return
+        
         cmd = command.Command(
             f"jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore {key_store_path} {self.final_apk_path} bcml",
-            False,
+            True,
         )
-        cmd.run(password)
+        res = cmd.run(password)
+        if res.exit_code != 0:
+            print(f"Failed to sign APK: {res.result}")
+            return
 
     def add_packs_lists(self, packs: game_data.pack.GamePacks):
         files = packs.to_packs_lists()
