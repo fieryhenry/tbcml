@@ -18,7 +18,7 @@ class Battle:
             shake_effects (battle_shake_setting.ShakeEffects): Screen shake effects.
             bgs (bg.Bgs): Backgrounds.
             groups (chara_group.CharaGroups): Character groups (Used for battle conditions).
-        """    
+        """
         self.shake_effects = shake_effects
         self.bgs = bgs
         self.groups = groups
@@ -28,7 +28,7 @@ class Battle:
 
         Returns:
             dict[str, Any]: The serialized Battle object.
-        """        
+        """
         return {
             "battle_shake_setting": self.shake_effects.serialize(),
             "bg": self.bgs.serialize(),
@@ -44,7 +44,7 @@ class Battle:
 
         Returns:
             Battle: The deserialized Battle object.
-        """        
+        """
         return Battle(
             battle_shake_setting.ShakeEffects.deserialize(data["battle_shake_setting"]),
             bg.Bgs.deserialize(data["bg"]),
@@ -60,7 +60,7 @@ class Battle:
 
         Returns:
             Battle: The Battle object.
-        """        
+        """
         shake_effects = battle_shake_setting.ShakeEffects.from_game_data(game_data)
         if shake_effects is None:
             return None
@@ -77,17 +77,32 @@ class Battle:
         )
 
     def to_game_data(self, game_data: "pack.GamePacks"):
+        """Writes the Battle object to the game data.
+
+        Args:
+            game_data (pack.GamePacks): The game data to write to.
+        """
         self.shake_effects.to_game_data(game_data)
         self.bgs.to_game_data(game_data)
         self.groups.to_game_data(game_data)
 
     def add_to_zip(self, zip: "io.zip.Zip"):
+        """Adds the Battle object to a mod zip.
+
+        Args:
+            zip (io.zip.Zip): The zip to add the Battle object to.
+        """
         self.shake_effects.add_to_zip(zip)
         self.bgs.add_to_zip(zip)
         self.groups.add_to_zip(zip)
 
     @staticmethod
     def from_zip(zip: "io.zip.Zip") -> Optional["Battle"]:
+        """Creates a Battle object from a mod zip.
+
+        Returns:
+            Battle: The Battle object.
+        """
         shake_effects = battle_shake_setting.ShakeEffects.from_zip(zip)
         if shake_effects is None:
             return None
@@ -105,6 +120,11 @@ class Battle:
 
     @staticmethod
     def create_empty() -> "Battle":
+        """Creates an empty Battle object.
+
+        Returns:
+            Battle: The empty Battle object.
+        """
         return Battle(
             battle_shake_setting.ShakeEffects.create_empty(),
             bg.Bgs.create_empty(),
@@ -112,6 +132,11 @@ class Battle:
         )
 
     def import_battle(self, other: "Battle"):
+        """Imports the data from another Battle object.
+
+        Args:
+            other (Battle): The Battle object to import from.
+        """
         self.shake_effects.import_shake_effects(other.shake_effects)
         self.bgs.import_bgs(other.bgs)
         self.groups.import_chara_groups(other.groups)

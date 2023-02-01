@@ -5,7 +5,8 @@ from bcml.core import io
 
 
 class ColorType(enum.Enum):
-    """Enum for the different types of colors in a Bg."""    
+    """Enum for the different places a color can be used in a background."""
+
     SKY_TOP = 0
     SKY_BOTTOM = 1
     GROUND_TOP = 2
@@ -14,12 +15,25 @@ class ColorType(enum.Enum):
 
 class Color:
     def __init__(self, c_type: ColorType, r: int, g: int, b: int):
+        """Initializes a Color object.
+
+        Args:
+            c_type (ColorType): The location where the color is applied.
+            r (int): Red value.
+            g (int): Green value.
+            b (int): Blue value.
+        """
         self.type = c_type
         self.r = r
         self.g = g
         self.b = b
 
     def serialize(self) -> dict[str, Any]:
+        """Serializes the Color object into a dictionary that can be written to a json file.
+
+        Returns:
+            dict[str, Any]: The serialized Color object.
+        """
         return {
             "type": self.type.value,
             "r": self.r,
@@ -29,6 +43,14 @@ class Color:
 
     @staticmethod
     def deserialize(data: dict[str, Any]) -> "Color":
+        """Deserializes a Color object from a dictionary.
+
+        Args:
+            data (dict[str, Any]): The dictionary to deserialize from.
+
+        Returns:
+            Color: The deserialized Color object.
+        """
         return Color(
             ColorType(data["type"]),
             data["r"],
@@ -49,6 +71,18 @@ class Bg:
         is_upper_side_bg_enabled: bool,
         extra: Optional[list[int]] = None,
     ):
+        """Initializes a Bg object.
+
+        Args:
+            id (int): The ID of the background.
+            sky_top (Color): The color of the top of the sky.
+            sky_bottom (Color): The color of the bottom of the sky.
+            ground_top (Color): The color of the top of the ground.
+            ground_bottom (Color): The color of the bottom of the ground.
+            imgcut_id (int): The ID of the imgcut used for the background.
+            is_upper_side_bg_enabled (bool): Whether or not the upper side of the background is enabled. ???
+            extra (Optional[list[int]], optional): Extra data. Defaults to None.
+        """
         self.id = id
         self.sky_top = sky_top
         self.sky_bottom = sky_bottom
@@ -59,6 +93,11 @@ class Bg:
         self.extra = extra
 
     def serialize(self) -> dict[str, Any]:
+        """Serializes the Bg object into a dictionary that can be written to a json file.
+
+        Returns:
+            dict[str, Any]: The serialized Bg object.
+        """
         return {
             "id": self.id,
             "sky_top": self.sky_top.serialize(),
@@ -72,6 +111,14 @@ class Bg:
 
     @staticmethod
     def deserialize(data: dict[str, Any]) -> "Bg":
+        """Deserializes a Bg object from a dictionary.
+
+        Args:
+            data (dict[str, Any]): The dictionary to deserialize from.
+
+        Returns:
+            Bg: The deserialized Bg object.
+        """
         return Bg(
             data["id"],
             Color.deserialize(data["sky_top"]),
@@ -86,17 +133,32 @@ class Bg:
 
 class Bgs:
     def __init__(self, bgs: dict[int, Bg]):
+        """Initializes a Bgs object.
+
+        Args:
+            bgs (dict[int, Bg]): A dictionary of Bg objects.
+        """
         self.bgs = bgs
 
     @staticmethod
     def get_file_name() -> str:
+        """Gets the name of the file that contains the background data.
+
+        Returns:
+            str: The name of the file that contains the background data.
+        """
         return "bg.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks"):
+    def from_game_data(game_data: "pack.GamePacks") -> Optional["Bgs"]:
+        """Creates a Bgs object from the game data.
+
+        Returns:
+            Optional[Bgs]: A Bgs object if the file was found, None otherwise.
+        """
         file = game_data.find_file(Bgs.get_file_name())
         if file is None:
-            raise FileNotFoundError(f"{Bgs.get_file_name()} not found")
+            return None
         csv = io.bc_csv.CSV(file.dec_data)
         bgs: dict[int, Bg] = {}
         for i, line in enumerate(csv.lines[1:]):
@@ -143,9 +205,14 @@ class Bgs:
         return Bgs(bgs)
 
     def to_game_data(self, game_data: "pack.GamePacks"):
+        """Writes the Bgs object to the game data.
+
+        Args:
+            game_data (pack.GamePacks): The game data to write to.
+        """
         file = game_data.find_file(Bgs.get_file_name())
         if file is None:
-            raise FileNotFoundError(f"{Bgs.get_file_name()} not found")
+            return
         csv = io.bc_csv.CSV(file.dec_data)
         remaining_bgs = self.bgs.copy()
         for i, line in enumerate(csv.lines[1:]):
@@ -198,41 +265,93 @@ class Bgs:
         game_data.set_file(Bgs.get_file_name(), csv.to_data())
 
     def get_bg(self, id: int) -> Bg:
+        """Gets a Bg by its id.
+
+        Args:
+            id (int): The id of the Bg to get.
+
+        Returns:
+            Bg: The Bg with the given id.
+        """
         return self.bgs[id]
 
     def set_bg(self, id: int, bg: Bg):
+        """Sets a Bg by its id.
+
+        Args:
+            id (int): The id of the Bg to set.
+            bg (Bg): The Bg to set.
+        """
         self.bgs[id] = bg
 
     def serialize(self) -> dict[str, Any]:
+        """Serializes the Bgs object to a dict.
+
+        Returns:
+            dict[str, Any]: The serialized Bgs object.
+        """
         return {
             "bgs": {id: bg.serialize() for id, bg in self.bgs.items()},
         }
 
     @staticmethod
     def deserialize(data: dict[str, Any]) -> "Bgs":
+        """Deserializes a dict to a Bgs object.
+
+        Args:
+            data (dict[str, Any]): The data to deserialize.
+
+        Returns:
+            Bgs: The deserialized Bgs object.
+        """
         return Bgs({id: Bg.deserialize(bg) for id, bg in data["bgs"].items()})
 
     @staticmethod
     def get_zip_json_file_path() -> "io.path.Path":
+        """Gets the path of the Bgs json file in the mod zip.
+
+        Returns:
+            io.path.Path: The path of the Bgs json file in the mod zip.
+        """
         return io.path.Path("battle").add("bgs.json")
-    
+
     def add_to_zip(self, zip: "io.zip.Zip"):
+        """Adds the Bgs object to a mod zip.
+
+        Args:
+            zip (io.zip.Zip): The mod zip to add the Bgs object to.
+        """
         json = io.json_file.JsonFile.from_json(self.serialize())
         path = Bgs.get_zip_json_file_path()
         zip.add_file(path, json.to_data())
-    
+
     @staticmethod
     def from_zip(zip: "io.zip.Zip") -> Optional["Bgs"]:
+        """Creates a Bgs object from a mod zip.
+
+        Returns:
+            Optional[Bgs]: The created Bgs object.
+        """
         path = Bgs.get_zip_json_file_path()
         file = zip.get_file(path)
         if file is None:
             return None
         json = io.json_file.JsonFile.from_data(file)
         return Bgs.deserialize(json.get_json())
-    
+
     @staticmethod
     def create_empty() -> "Bgs":
+        """Creates an empty Bgs object.
+
+        Returns:
+            Bgs: The created Bgs object.
+        """
         return Bgs({})
-    
+
     def import_bgs(self, other: "Bgs"):
+        """Imports Bgs from another Bgs object.
+
+        Args:
+            other (Bgs): The Bgs object to import from.
+        """
         self.bgs.update(other.bgs)
