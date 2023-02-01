@@ -20,7 +20,9 @@ class ModView(QtWidgets.QWidget):
         self._layout = QtWidgets.QHBoxLayout()
         self.setLayout(self._layout)
 
-        self.mod_list = ModList(self.create_mod, self.show_mod_info, self)
+        self.mod_list = ModList(
+            self.create_mod, self.show_mod_info, self.hide_mod_info, self
+        )
         self._layout.addWidget(self.mod_list)
 
         self.mod_info = ModInfoView(
@@ -35,6 +37,7 @@ class ModView(QtWidgets.QWidget):
         self.mod_info.show()
         self.mod_info.create_mod_button.show()
         self.mod_info.save_mod_button.hide()
+        self.mod_info.delete_mod_button.hide()
 
     def on_create_mod(self, md: mods.bc_mod.Mod):
         self.mod_info.hide()
@@ -48,13 +51,18 @@ class ModView(QtWidgets.QWidget):
         self.mod_info.show()
         self.mod_info.create_mod_button.hide()
         self.mod_info.save_mod_button.show()
+        self.mod_info.delete_mod_button.show()
 
     def hide_mod_info(self):
         self.mod_info.hide()
+        self.refresh()
 
     def keyPressEvent(self, event: QtGui.QKeyEvent):  # type: ignore
         if event.key() == QtCore.Qt.Key.Key_Escape:
             self.mod_info.close_wrapper()
+
+    def refresh(self):
+        self.mod_list.refresh_mods()
 
 
 class ModInfoView(QtWidgets.QWidget):
@@ -140,6 +148,11 @@ class ModInfoView(QtWidgets.QWidget):
         self.save_mod_button.clicked.connect(self.save_mod)  # type: ignore
         self.button_layout.addWidget(self.save_mod_button)
         self.save_mod_button.hide()
+
+        self.delete_mod_button = QtWidgets.QPushButton("Delete Mod")
+        self.delete_mod_button.clicked.connect(self.delete_mod)  # type: ignore
+        self.button_layout.addWidget(self.delete_mod_button)
+        self.delete_mod_button.hide()
 
         self.cancel_button = QtWidgets.QPushButton("Close")
         self.cancel_button.clicked.connect(self.close_wrapper)  # type: ignore
@@ -301,17 +314,38 @@ class ModInfoView(QtWidgets.QWidget):
         self.save_mod()
         self.hide_mod_info()
 
+    def delete_mod(self):
+        if self.mod is None:
+            return
+
+        ui_dialog.Dialog.yes_no_box(
+            QtWidgets.QMessageBox.Icon.Warning,
+            "Delete Mod",
+            f"Are you sure you want to delete\n{self.mod.get_full_mod_name()}?",
+            "Delete",
+            QtWidgets.QMessageBox.StandardButton.No,
+            self.delete_mod_wrapper,
+        )
+
+    def delete_mod_wrapper(self):
+        if self.mod is None:
+            return
+        mods.mod_manager.ModManager().remove_mod(self.mod)
+        self.hide_mod_info()
+
 
 class ModList(QtWidgets.QWidget):
     def __init__(
         self,
         on_create_mod: Callable[..., None],
         show_mod_info: Callable[[mods.bc_mod.Mod], None],
+        on_delete_mod: Callable[..., None],
         parent: Optional[QtWidgets.QWidget] = None,
     ):
         super(ModList, self).__init__(parent)
         self.on_create_mod = on_create_mod
         self.show_mod_info = show_mod_info
+        self.on_delete_mod = on_delete_mod
         self.setup_ui()
 
     def setup_ui(self):
@@ -353,6 +387,42 @@ class ModList(QtWidgets.QWidget):
         self.button_layout.addWidget(self.open_mod_folder_button)
 
         self.get_add_mods()
+
+        self.mod_list.setContextMenuPolicy(
+            QtCore.Qt.ContextMenuPolicy.CustomContextMenu
+        )
+        self.mod_list.customContextMenuRequested.connect(self.show_context_menu)  # type: ignore
+
+    def show_context_menu(self, pos: QtCore.QPoint):
+        item = self.mod_list.itemAt(pos)
+        if item is None:
+            return
+        menu = QtWidgets.QMenu()
+        menu.addAction("Delete Mod", self.delete_mod_wrapper)
+        menu.exec_(self.mod_list.mapToGlobal(pos))
+
+    def delete_mod_wrapper(self):
+        items = self.mod_list.selectedItems()
+        if len(items) > 0:
+            md = mods.mod_manager.ModManager().get_mod_by_full_name(items[0].text())
+            if md is not None:
+                ui_dialog.Dialog.yes_no_box(
+                    QtWidgets.QMessageBox.Icon.Warning,
+                    "Delete Mod",
+                    f"Are you sure you want to delete\n{md.get_full_mod_name()}?",
+                    "Delete",
+                    QtWidgets.QMessageBox.StandardButton.No,
+                    self.delete_mod,
+                )
+
+    def delete_mod(self):
+        items = self.mod_list.selectedItems()
+        if len(items) > 0:
+            md = mods.mod_manager.ModManager().get_mod_by_full_name(items[0].text())
+            if md is not None:
+                mods.mod_manager.ModManager().remove_mod(md)
+                self.refresh_mods()
+                self.on_delete_mod()
 
     def show_mod_info_wrapper(self, item: QtWidgets.QListWidgetItem):
         mod_name = item.text()
