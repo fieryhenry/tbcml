@@ -478,11 +478,7 @@ class Apk:
                 url = f"https://raw.githubusercontent.com/fieryhenry/BCData/master/{item['path']}"
                 urls.append(url)
 
-        output_dir = (
-            self.apk_folder.parent()
-            .add(f"{self.country_code.get_code()}_server")
-            .generate_dirs()
-        )
+        output_dir = self.get_server_path(self.country_code).generate_dirs()
         new_urls: list[str] = []
         for url in urls:
             file_path = output_dir.add(url.split("/")[-1])
@@ -490,6 +486,7 @@ class Apk:
                 continue
             new_urls.append(url)
         total = len(new_urls)
+        progress_callback(0, 0, total - 1)
         for i, url in enumerate(new_urls):
             file_path = output_dir.add(url.split("/")[-1])
             res = request.RequestHandler(url).get()
@@ -499,13 +496,16 @@ class Apk:
         self.copy_server_files()
 
     def copy_server_files(self):
-        server_path = self.apk_folder.parent().add(
-            f"{self.country_code.get_code()}_server"
-        )
+        server_path = self.get_server_path(self.country_code)
         if not server_path.exists():
             return
         for file in server_path.get_files():
             file.copy(self.packs_path.add(file.basename()))
+
+    @staticmethod
+    def get_server_path(cc: country_code.CountryCode) -> path.Path:
+        apk_folder = Apk.get_default_apk_folder()
+        return apk_folder.parent().add(f"{cc.get_code()}_server")
 
     @staticmethod
     def from_apk_path(apk_path: path.Path) -> "Apk":
