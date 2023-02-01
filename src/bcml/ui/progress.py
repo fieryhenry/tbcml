@@ -38,7 +38,7 @@ class ProgressBar(QtWidgets.QWidget):
         self.vertical_layout.addWidget(self.progress_label)
 
     def set_progress(self, current: int, total: int):
-        if total < 0:
+        if total <= 0:
             total = 1
         self.progress_bar.setMaximum(total)
         self.progress_bar.setValue(current)
@@ -50,7 +50,7 @@ class ProgressBar(QtWidgets.QWidget):
     def set_progress_full(
         self, progress: float, current: int, total: int, is_file_size: bool = False
     ):
-        if total < 0:
+        if total <= 0:
             total = 1
         self.progress_bar.setMaximum(100)
         self.progress_bar.setValue(int(progress * 100))
