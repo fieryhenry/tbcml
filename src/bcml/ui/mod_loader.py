@@ -64,14 +64,21 @@ class ModLoader(QtWidgets.QDialog):
 
     def load_mods_thread(self, mod_names: list[str]):
         self.loading_mods = True
+        total_progress = 100
+        self.progress_bar.set_progress(0, total_progress)
         game_packs = game_data.pack.GamePacks.from_apk(self.apk)
+        self.progress_bar.set_progress(10, total_progress)
         mds: list[mods.bc_mod.Mod] = []
         for mod_name in mod_names:
             md = mods.mod_manager.ModManager().get_mod_by_full_name(mod_name)
             if md is not None:
                 mds.append(md)
         game_packs.apply_mods(mds)
-        self.apk.load_packs_into_game(game_packs)
+        self.progress_bar.set_progress(15, total_progress)
+        self.apk.load_packs_into_game(
+            game_packs, self.progress_bar.set_progress_str, 15, 100
+        )
+        self.progress_bar.set_progress(100, total_progress)
 
         self.progress_bar.close()
         self.loading_mods = False

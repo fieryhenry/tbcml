@@ -47,6 +47,16 @@ class ProgressBar(QtWidgets.QWidget):
         if self.on_progress:
             self.on_progress(current, total)
 
+    def set_progress_str(self, text: str, current: int, total: int):
+        if total <= 0:
+            total = 1
+        self.progress_bar.setMaximum(total)
+        self.progress_bar.setValue(current)
+        percent_str = f"{int(current / total * 100)}%"
+        self.progress_label.setText(f"{text} ({percent_str})")
+        if self.on_progress:
+            self.on_progress(current, total)
+
     def set_progress_full(
         self, progress: float, current: int, total: int, is_file_size: bool = False
     ):

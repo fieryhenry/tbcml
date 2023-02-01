@@ -183,7 +183,7 @@ class Apk:
             if res.exit_code != 0:
                 print(f"Failed to generate keystore: {res.result}")
                 return
-        
+
         cmd = command.Command(
             f"jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore {key_store_path} {self.final_apk_path} bcml",
             True,
@@ -210,18 +210,41 @@ class Apk:
         for file in self.modified_packs_path.get_files():
             file.copy(self.extracted_path.add("assets").add(file.basename()))
 
-    def load_packs_into_game(self, packs: game_data.pack.GamePacks):
-        print("Creating pack and list files...")
+    def load_packs_into_game(
+        self,
+        packs: game_data.pack.GamePacks,
+        progress_callback: Optional[Callable[[str, int, int], None]] = None,
+        start_prog: int = 0,
+        end_prog: int = 100,
+    ):
+        if not progress_callback:
+            progress_callback = lambda x, y, z: None
+        progress_callback(
+            "Creating pack and list files",
+            start_prog,
+            end_prog,
+        )
+        base_increment = (end_prog - start_prog) / 100
         self.add_packs_lists(packs)
-        print("Patching lib...")
+        progress_callback(
+            "Patching lib files", int(start_prog + base_increment * 5), end_prog
+        )
         lib.LibFiles(self).patch()
-        print("Copying modded packs...")
+        progress_callback(
+            "Copying modded packs", int(start_prog + base_increment * 15), end_prog
+        )
         self.copy_modded_packs()
-        print("Packing apk...")
+        progress_callback(
+            "Packing apk", int(start_prog + base_increment * 20), end_prog
+        )
         self.pack()
-        print("Signing apk...")
+        progress_callback(
+            "Signing apk", int(start_prog + base_increment * 60), end_prog
+        )
         self.sign()
-        print("Copying final apk...")
+        progress_callback(
+            "Copying final apk", int(start_prog + base_increment * 90), end_prog
+        )
         self.copy_final_apk()
 
     def copy_final_apk(self):
