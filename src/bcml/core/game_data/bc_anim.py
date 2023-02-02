@@ -103,7 +103,7 @@ class MaanimPart:
         self.name = name
         self.moves = moves
         self.end_index = end_index
-    
+
     @staticmethod
     def from_data(data: list[list["io.data.Data"]]):
         model_id = data[0][0].to_int()
@@ -192,7 +192,7 @@ class MaanimPart:
         if self.modification_type == ModificationType.ANGLE:
             for move in self.moves:
                 move.change_in_value *= -1
-    
+
     def get_max_frame(self) -> int:
         if not self.moves:
             return 0
@@ -255,11 +255,13 @@ class Maanim:
     def flip(self):
         for part in self.parts:
             part.flip()
-        
+
     def get_max_frame(self) -> int:
         return max(part.get_max_frame() for part in self.parts)
 
-    def remove_loop_minus_one(self): # for enemy attack anims only, bcu allows -1 loop, the game does not
+    def remove_loop_minus_one(
+        self,
+    ):  # for enemy attack anims only, bcu allows -1 loop, the game does not
         max_frame = self.get_max_frame()
         for part in self.parts:
             if part.loop != -1:
@@ -392,7 +394,7 @@ class MamodelPart:
             data["alpha"],
             data["glow"],
             data["name"],
-            cuts[data["cut_id"]],
+            cuts[data["cut_id"]],  # type: ignore
         )
 
     def copy(self):
@@ -604,12 +606,14 @@ class Cut:
         self.height = height
         self.name = name
         self.image: Optional["io.bc_image.BCImage"] = None
-    
+
     def get_image(self, image: "io.bc_image.BCImage"):
         if self.width == 0 or self.height == 0:
             self.image = io.bc_image.BCImage.from_size(0, 0)
         else:
-            self.image = image.crop(self.x, self.y, self.x + self.width, self.y + self.height)
+            self.image = image.crop(
+                self.x, self.y, self.x + self.width, self.y + self.height
+            )
         return self.image
 
     @staticmethod
@@ -743,11 +747,11 @@ class Imgcut:
             self.image_name,
             self.image,
         )
-    
+
     def reconstruct_image(self):
         if len(self.cuts) == 0:
             self.image = io.bc_image.BCImage.create_empty()
-            return        
+            return
         max_x = max(cut.x + cut.width for cut in self.cuts)
         max_y = max(cut.y + cut.height for cut in self.cuts)
         new_image = io.bc_image.BCImage.from_size(max_x, max_y)
@@ -757,7 +761,18 @@ class Imgcut:
                 continue
             new_image.paste(cut_image, cut.x, cut.y)
         self.image = new_image
-        
+
+    def set_cut(self, id: int, cut: "Cut"):
+        if id >= len(self.cuts):
+            return
+        cut.index = id
+        self.cuts[id] = cut
+
+    def get_cut(self, index: int) -> Optional["Cut"]:
+        if index >= len(self.cuts):
+            return None
+        return self.cuts[index]
+
 
 class Anim:
     def __init__(
@@ -779,10 +794,14 @@ class Anim:
         self.__mamodel_path = mamodel_path
         self.__maanims_path = maanims_path
         self.__game_data = game_data
-    
+
     @property
     def maanims(self):
-        if self.__maanims_path is not None and self.__maanims is None and self.__game_data is not None:
+        if (
+            self.__maanims_path is not None
+            and self.__maanims is None
+            and self.__game_data is not None
+        ):
             maanims: list[Maanim] = []
             for path in self.__maanims_path:
                 data = self.__game_data.find_file(path)
@@ -794,17 +813,24 @@ class Anim:
         if self.__maanims is None:
             raise Exception("Maanims not loaded")
         return self.__maanims
-    
+
     @property
     def imgcut(self):
-        if self.__imgcut_path is not None and self.__imgcut is None and self.__game_data is not None and self.__png_path is not None:
+        if (
+            self.__imgcut_path is not None
+            and self.__imgcut is None
+            and self.__game_data is not None
+            and self.__png_path is not None
+        ):
             data = self.__game_data.find_file(self.__imgcut_path)
             if data is None:
                 raise Exception("Imgcut not found")
             png_data = self.__game_data.find_file(self.__png_path)
             if png_data is None:
                 raise Exception("PNG not found")
-            self.__imgcut = Imgcut.from_data(data.dec_data, io.bc_image.BCImage(png_data.dec_data))
+            self.__imgcut = Imgcut.from_data(
+                data.dec_data, io.bc_image.BCImage(png_data.dec_data)
+            )
             self.__imgcut_path = None
         if self.__imgcut is None:
             raise Exception("Imgcut not loaded")
@@ -812,7 +838,11 @@ class Anim:
 
     @property
     def mamodel(self):
-        if self.__mamodel_path is not None and self.__mamodel is None and self.__game_data is not None:
+        if (
+            self.__mamodel_path is not None
+            and self.__mamodel is None
+            and self.__game_data is not None
+        ):
             data = self.__game_data.find_file(self.__mamodel_path)
             if data is None:
                 raise Exception("Mamodel not found")
@@ -821,7 +851,6 @@ class Anim:
         if self.__mamodel is None:
             raise Exception("Mamodel not loaded")
         return self.__mamodel
-
 
     @staticmethod
     def create_empty():
@@ -958,16 +987,16 @@ class Anim:
             self.mamodel = anim.mamodel
         if len(anim.maanims) > 0:
             self.maanims = anim.maanims
-    
+
     @imgcut.setter
     def imgcut(self, imgcut: "Imgcut"):
         self.__imgcut = imgcut
         self.mamodel.cuts = imgcut.cuts
-    
+
     @mamodel.setter
     def mamodel(self, mamodel: "Mamodel"):
         self.__mamodel = mamodel
 
     @maanims.setter
     def maanims(self, maanims: list["Maanim"]):
-        self.__maanims = maanims            
+        self.__maanims = maanims
