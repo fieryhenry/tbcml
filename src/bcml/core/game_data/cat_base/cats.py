@@ -204,8 +204,8 @@ class Stats:
             self.weaken.prob.percent,  # 37
             self.weaken.time.frames,  # 38
             self.weaken.multiplier,  # 39
-            self.strengthen.hp,  # 40
-            self.strengthen.multiplier,  # 41
+            self.strengthen.hp_percent,  # 40
+            self.strengthen.multiplier_percent,  # 41
             self.lethal_strike.prob.percent,  # 42
             int(self.is_metal),  # 43
             self.attack_1.long_distance_start,  # 44
@@ -357,7 +357,7 @@ class Stats:
         self.target_relic = has_targeted_effect
         self.target_traitless = has_targeted_effect
         self.target_zombie = has_targeted_effect
-    
+
     def copy(self) -> "Stats":
         return Stats(
             self.cat_id,
@@ -455,7 +455,7 @@ class Anim:
         self.anim.mamodel.fix_collision()
         self.anim.flip_x()
         self.anim.set_cat_id(self.cat_id, self.form.value)
-    
+
     def copy(self) -> "Anim":
         return Anim(
             self.cat_id,
@@ -494,18 +494,18 @@ class Form:
             "upgrade_icon": self.upgrade_icon.serialize(),
             "deploy_icon": self.deploy_icon.serialize(),
         }
-    
+
     def format_deploy_icon(self):
         if self.deploy_icon.width == 128 and self.deploy_icon.height == 128:
             return
         base_image = io.bc_image.BCImage.from_size(128, 128)
         base_image.paste(self.deploy_icon, 9, 21)
         self.deploy_icon = base_image
-    
+
     def format_upgrade_icon(self):
         if self.upgrade_icon.width == 85 and self.upgrade_icon.height == 32:
             self.upgrade_icon.scale(3.5)
-        
+
         base_image = io.bc_image.BCImage.from_size(512, 128)
         base_image.paste(self.upgrade_icon, 13, 1)
 
@@ -520,13 +520,12 @@ class Form:
                 )
             start_offset += 1
             start_width -= 1
-        
+
         self.upgrade_icon = base_image
 
     def format_icons(self):
         self.format_deploy_icon()
         self.format_upgrade_icon()
-        
 
     @staticmethod
     def deserialize(
@@ -581,7 +580,7 @@ class Form:
         self.description = enemy.description[1:]
         self.anim.import_enemy_anim(enemy.anim)
         self.stats.import_enemy_stats(enemy.stats)
-    
+
     def copy(self) -> "Form":
         return Form(
             self.cat_id,
@@ -1232,7 +1231,7 @@ class Cats:
                 continue
             cats[cat_id] = cat
         return Cats(cats)
-    
+
     def to_game_data(self, game_data: "pack.GamePacks"):
         unit_buy = UnitBuy({})
         talents = Talents({})
@@ -1264,10 +1263,10 @@ class Cats:
         zip.add_file(Cats.get_cats_json_file_name(), cats_json.to_data())
 
     @staticmethod
-    def from_zip(zip: "io.zip.Zip") -> Optional["Cats"]:
+    def from_zip(zip: "io.zip.Zip") -> "Cats":
         cats_json = zip.get_file(Cats.get_cats_json_file_name())
         if cats_json is None:
-            return None
+            return Cats.create_empty()
         return Cats.deserialize(io.json_file.JsonFile.from_data(cats_json).get_json())
 
     @staticmethod

@@ -214,8 +214,8 @@ class BCUForm:
         )
         stats.weaken.prob = self.get_proc_prob(procs, "WEAK")
         stats.weaken.time = self.get_proc_time(procs, "WEAK")
-        stats.strengthen.hp = self.get_proc_health(procs, "STRONG")
-        stats.strengthen.multiplier = self.get_proc_mult(procs, "STRONG")
+        stats.strengthen.hp_percent = self.get_proc_health(procs, "STRONG")
+        stats.strengthen.multiplier_percent = self.get_proc_mult(procs, "STRONG")
         stats.lethal_strike.prob = self.get_proc_prob(procs, "LETHAL")
         stats.is_metal = self.check_ability(base_stats["abi"], 4)
         stats.attack_1.long_distance_start = base_stats["atks"]["pool"][0]["ld0"]
@@ -393,7 +393,11 @@ class BCUCat:
         unit_buy.max_upgrade_level_catseye = self.max_base_level
         unit = cat_base.cats.Cat(cat_id, forms, unit_buy, talent, npbd, evov_text)
         unit.nyanko_picture_book_data.obtainable = True
-        unit.unit_buy_data.game_version = 0 if unit.unit_buy_data.game_version == -1 else unit.unit_buy_data.game_version
+        unit.unit_buy_data.game_version = (
+            0
+            if unit.unit_buy_data.game_version == -1
+            else unit.unit_buy_data.game_version
+        )
         unit.set_cat_id(cat_id)
         return unit
 
@@ -410,9 +414,7 @@ class BCUEnemy:
         self.id = self.enemy_data["anim"]["id"]
         self.local_id = self.enemy_data["id"]["id"]
         self.name = self.enemy_data["names"]["dat"][0]["val"]
-        self.descritpion = self.enemy_data["description"]["dat"][0]["val"].split(
-            "<br>"
-        )
+        self.descritpion = self.enemy_data["description"]["dat"][0]["val"].split("<br>")
         anim = self.load_anim()
         if anim is None:
             return None
@@ -471,7 +473,6 @@ class BCUEnemy:
 
     def to_stats(self) -> "cat_base.enemies.Stats":
         stats = cat_base.enemies.Stats(self.enemy_id, [])
-        #print(self.enemy_data)
         base_stats = self.enemy_data["de"]
         traits = base_stats["traits"]
         procs = base_stats["rep"]["proc"]
@@ -513,8 +514,8 @@ class BCUEnemy:
         )
         stats.weaken.prob = BCUForm.get_proc_prob(procs, "WEAK")
         stats.weaken.time = BCUForm.get_proc_time(procs, "WEAK")
-        stats.strengthen.hp = BCUForm.get_proc_health(procs, "STRONG")
-        stats.strengthen.multiplier = BCUForm.get_proc_mult(procs, "STRONG")
+        stats.strengthen.hp_percent = BCUForm.get_proc_health(procs, "STRONG")
+        stats.strengthen.multiplier_percent = BCUForm.get_proc_mult(procs, "STRONG")
         stats.survive_lethal_strike.prob = BCUForm.get_proc_prob(procs, "LETHAL")
         stats.attack_1.long_distance_start = base_stats["atks"]["pool"][0]["ld0"]
         stats.attack_1.long_distance_range = (
@@ -594,8 +595,8 @@ class BCUEnemy:
         stats.aku = BCUForm.get_trait_by_id(traits, 7)
         stats.baron = BCUForm.get_trait_by_id(traits, 12)
         stats.attack_2.long_distance_flag = (
-            BCUForm.get_attack(base_stats["atks"]["pool"], 1, "ld0") != 0 or
-            BCUForm.get_attack(base_stats["atks"]["pool"], 1, "ld1") != 0
+            BCUForm.get_attack(base_stats["atks"]["pool"], 1, "ld0") != 0
+            or BCUForm.get_attack(base_stats["atks"]["pool"], 1, "ld1") != 0
         )
         stats.attack_2.long_distance_start = BCUForm.get_attack(
             base_stats["atks"]["pool"], 1, "ld0"
@@ -605,8 +606,8 @@ class BCUEnemy:
             - stats.attack_2.long_distance_start
         )
         stats.attack_3.long_distance_flag = (
-            BCUForm.get_attack(base_stats["atks"]["pool"], 2, "ld0") != 0 or
-            BCUForm.get_attack(base_stats["atks"]["pool"], 2, "ld1") != 0
+            BCUForm.get_attack(base_stats["atks"]["pool"], 2, "ld0") != 0
+            or BCUForm.get_attack(base_stats["atks"]["pool"], 2, "ld1") != 0
         )
         stats.attack_3.long_distance_start = BCUForm.get_attack(
             base_stats["atks"]["pool"], 2, "ld0"
@@ -771,7 +772,7 @@ class BCUZip:
             )
             units.append(unit)
         return units
-    
+
     def load_enemies(self):
         enemies_data: list[Any] = self.pack_json["enemies"]["data"]
         enemies: list[BCUEnemy] = []
