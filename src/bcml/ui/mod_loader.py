@@ -1,6 +1,6 @@
 from PyQt5 import QtCore, QtWidgets
 from bcml.core import io, game_data, mods
-from bcml.ui import progress, ui_thread
+from bcml.ui import progress, ui_thread, apk_manager
 
 
 class ModLoader(QtWidgets.QDialog):
@@ -19,11 +19,22 @@ class ModLoader(QtWidgets.QDialog):
 
         self.add_ui()
 
+    def load_data(self):
+        self.apk.extract()
+        self.apk.copy_server_files()
+
     def add_ui(self):
         self.loading_mods = False
         self.selected_apk = io.config.Config().get(io.config.Key.SELECTED_APK)
+        if not self.selected_apk:
+            self._layout.addWidget(QtWidgets.QLabel("No APK selected."))
+            self.apk_manager = apk_manager.ApkManager()
+            self.apk_manager.show()
+            return
         self.apk = io.apk.Apk.from_format_string(self.selected_apk)
-        self.apk.extract()
+
+        self._data_thread = ui_thread.ThreadWorker.run_in_thread(self.load_data)
+
         self._layout.addWidget(QtWidgets.QLabel(f"Selected APK: {self.apk.format()}"))
 
         self.mod_list = QtWidgets.QListWidget()
@@ -54,6 +65,10 @@ class ModLoader(QtWidgets.QDialog):
     def load_mods_wrapper(self, mod_names: list[str]):
         if self.loading_mods:
             return
+        try:
+            self.progress_bar.close()
+        except AttributeError:
+            pass
         self.progress_bar = progress.ProgressBar("Loading mods...", None, self)
         self._layout.addWidget(self.progress_bar)
         self.progress_bar.show()
@@ -65,9 +80,9 @@ class ModLoader(QtWidgets.QDialog):
     def load_mods_thread(self, mod_names: list[str]):
         self.loading_mods = True
         total_progress = 100
-        self.progress_bar.set_progress(0, total_progress)
+        self.progress_bar.set_progress_str("Loading Game Data", 0, total_progress)
         game_packs = game_data.pack.GamePacks.from_apk(self.apk)
-        self.progress_bar.set_progress(10, total_progress)
+        self.progress_bar.set_progress_str("Applying Mods", 10, total_progress)
         mds: list[mods.bc_mod.Mod] = []
         for mod_name in mod_names:
             md = mods.mod_manager.ModManager().get_mod_by_full_name(mod_name)
@@ -78,9 +93,8 @@ class ModLoader(QtWidgets.QDialog):
         self.apk.load_packs_into_game(
             game_packs, self.progress_bar.set_progress_str, 15, 100
         )
-        self.progress_bar.set_progress(100, total_progress)
+        self.progress_bar.set_progress_str("Finished", 100, total_progress)
 
-        self.progress_bar.close()
         self.loading_mods = False
 
     def load_mods(self):
