@@ -18,6 +18,8 @@ class Key(enum.Enum):
 class Config:
     def __init__(self):
         config = yaml.YamlFile(path.Path.get_appdata_folder().add("config.yaml"))
+        if config.yaml is None:
+            config.yaml = {}
         self.config: dict[Key, Any] = {}
         for key, value in config.yaml.items():
             try:
