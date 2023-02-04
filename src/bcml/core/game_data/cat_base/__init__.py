@@ -7,6 +7,8 @@ from bcml.core.game_data.cat_base import (
     item_shop,
     nekokan_product,
     scheme_item,
+    user_rank_reward,
+    gatya_item,
 )
 
 __all__ = [
@@ -18,4 +20,6 @@ __all__ = [
     "item_shop",
     "nekokan_product",
     "scheme_item",
+    "user_rank_reward",
+    "gatya_item",
 ]
