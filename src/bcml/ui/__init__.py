@@ -8,6 +8,9 @@ from bcml.ui import (
     mod_manager,
     server_files_manager,
     mod_loader,
+    game_editor,
+    shop_editor,
+    gatya_item,
 )
 
 __all__ = [
@@ -20,4 +23,7 @@ __all__ = [
     "mod_manager",
     "server_files_manager",
     "mod_loader",
+    "game_editor",
+    "shop_editor",
+    "gatya_item",
 ]

@@ -1,17 +1,15 @@
 from typing import Callable, Optional
 from PyQt5 import QtWidgets, QtCore, QtGui
 from bcml.core import io, country_code, game_version, mods
-from bcml.ui import ui_dialog, ui_file_dialog, main
+from bcml.ui import ui_dialog, ui_file_dialog, game_editor
 
 
 class ModView(QtWidgets.QWidget):
     def __init__(
         self,
-        changes: "main.Changes",
         parent: Optional[QtWidgets.QWidget] = None,
     ):
         super(ModView, self).__init__(parent)
-        self.changes = changes
         self.setup_ui()
 
     def setup_ui(self):
@@ -26,10 +24,15 @@ class ModView(QtWidgets.QWidget):
         self._layout.addWidget(self.mod_list)
 
         self.mod_info = ModInfoView(
-            self.on_create_mod, self.on_save_mod, self.hide_mod_info, self.changes, self
+            self.on_create_mod,
+            self.on_save_mod,
+            self.on_edit_mod,
+            self.hide_mod_info,
+            self,
         )
         self.mod_info.hide()
         self._layout.addWidget(self.mod_info)
+        self.open_game_editor = False
 
     def create_mod(self):
         self.mod_info.reset()
@@ -37,6 +40,7 @@ class ModView(QtWidgets.QWidget):
         self.mod_info.show()
         self.mod_info.create_mod_button.show()
         self.mod_info.save_mod_button.hide()
+        self.mod_info.edit_mod_button.hide()
         self.mod_info.delete_mod_button.hide()
 
     def on_create_mod(self, md: mods.bc_mod.Mod):
@@ -46,23 +50,37 @@ class ModView(QtWidgets.QWidget):
     def on_save_mod(self, md: mods.bc_mod.Mod):
         self.mod_list.add_mod_obj(md)
 
+    def on_edit_mod(self, md: mods.bc_mod.Mod):
+        self.mod_list.add_mod_obj(md)
+        self.game_editor = game_editor.GameEditor(md, self.back_here, self)
+        self.mod_info.hide()
+        self.mod_list.hide()
+
+        self._layout.addWidget(self.game_editor)
+
     def show_mod_info(self, md: mods.bc_mod.Mod):
         self.mod_info.load_mod(md)
         self.mod_info.show()
         self.mod_info.create_mod_button.hide()
         self.mod_info.save_mod_button.show()
+        self.mod_info.edit_mod_button.show()
         self.mod_info.delete_mod_button.show()
 
     def hide_mod_info(self):
         self.mod_info.hide()
-        self.refresh()
+        self.refresh_mods()
 
     def keyPressEvent(self, event: QtGui.QKeyEvent):  # type: ignore
         if event.key() == QtCore.Qt.Key.Key_Escape:
             self.mod_info.close_wrapper()
 
-    def refresh(self):
+    def refresh_mods(self):
         self.mod_list.refresh_mods()
+
+    def back_here(self):
+        self.mod_list.show()
+        self.refresh_mods()
+        self.game_editor.deleteLater()
 
 
 class ModInfoView(QtWidgets.QWidget):
@@ -70,15 +88,15 @@ class ModInfoView(QtWidgets.QWidget):
         self,
         on_create_mod: Callable[[mods.bc_mod.Mod], None],
         on_save_mod: Callable[[mods.bc_mod.Mod], None],
+        on_edit_mod: Callable[[mods.bc_mod.Mod], None],
         hide_mod_info: Callable[[], None],
-        changes: "main.Changes",
         parent: Optional[QtWidgets.QWidget] = None,
     ):
         super(ModInfoView, self).__init__(parent)
         self.on_create_mod = on_create_mod
         self.on_save_mod = on_save_mod
+        self.on_edit_mod = on_edit_mod
         self.hide_mod_info = hide_mod_info
-        self.changes = changes
         self.mod: Optional[mods.bc_mod.Mod] = None
         self.setup_ui()
 
@@ -149,6 +167,11 @@ class ModInfoView(QtWidgets.QWidget):
         self.button_layout.addWidget(self.save_mod_button)
         self.save_mod_button.hide()
 
+        self.edit_mod_button = QtWidgets.QPushButton("Edit Mod Data")
+        self.edit_mod_button.clicked.connect(self.edit_mod)  # type: ignore
+        self.button_layout.addWidget(self.edit_mod_button)
+        self.edit_mod_button.hide()
+
         self.delete_mod_button = QtWidgets.QPushButton("Delete Mod")
         self.delete_mod_button.clicked.connect(self.delete_mod)  # type: ignore
         self.button_layout.addWidget(self.delete_mod_button)
@@ -159,9 +182,6 @@ class ModInfoView(QtWidgets.QWidget):
         self.button_layout.addWidget(self.cancel_button)
 
         self._layout.setRowStretch(10, 1)
-
-        change = main.Change(self.has_changed, self.save_and_close_wrapper)
-        self.changes.add(change)
 
     def get_all_attrs(self):
         return [
@@ -218,12 +238,30 @@ class ModInfoView(QtWidgets.QWidget):
             return
         self.on_create_mod(md)
 
+    def edit_mod(self):
+        md = self.gen_mod()
+        if md is None:
+            return
+        self.close_wrapper()
+        self.on_edit_mod(md)
+
     def gen_mod(self):
         if not self.has_attrs():
             return
         attrs = self.get_attrs_dict()
+
         cc = country_code.CountryCode.from_code(attrs["country_code"])
         gv = game_version.GameVersion.from_string_latest(attrs["game_version"], cc)
+        md = mods.mod_manager.ModManager().get_mod(attrs["id"])
+        if md is not None:
+            md.name = attrs["name"]
+            md.author = attrs["author"]
+            md.description = attrs["desc"]
+            md.country_code = cc
+            md.game_version = gv
+            md.mod_version = attrs["version"]
+            md.mod_url = attrs["url"]
+            return md
         md = mods.bc_mod.Mod(
             attrs["name"],
             attrs["author"],
@@ -303,12 +341,7 @@ class ModInfoView(QtWidgets.QWidget):
         return self.mod.get_hash() != md.get_hash()
 
     def close_wrapper(self):
-        if self.has_changed():
-            ui_dialog.Dialog.save_changes_dialog(
-                self.save_and_close_wrapper, self.hide_mod_info
-            )
-        else:
-            self.hide_mod_info()
+        self.hide_mod_info()
 
     def save_and_close_wrapper(self):
         self.save_mod()
