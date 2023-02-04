@@ -77,6 +77,8 @@ class ModManager:
         return list(self.mods.values())
 
     def get_mod(self, id: str) -> Optional[bc_mod.Mod]:
+        if not id.endswith(".bcmod"):
+            id = id + ".bcmod"
         return self.mods.get(id)
 
     def get_mod_by_full_name(self, full_name: str) -> Optional[bc_mod.Mod]:
