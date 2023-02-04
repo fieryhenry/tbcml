@@ -1,4 +1,4 @@
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 from PyQt5 import QtCore
 
 
@@ -21,9 +21,20 @@ class ThreadWorker(QtCore.QThread):
         self.has_finished.emit()
 
     @staticmethod
+    def run_in_thread_on_finished(
+        func: Callable[..., Any],
+        on_finished: Optional[Callable[..., Any]] = None,
+        *args: Any,
+        **kwargs: Any
+    ) -> "ThreadWorker":
+        worker = ThreadWorker(func, *args, **kwargs)
+        if on_finished:
+            worker.has_finished.connect(on_finished)
+        worker.start()
+        return worker
+
+    @staticmethod
     def run_in_thread(
         func: Callable[..., Any], *args: Any, **kwargs: Any
     ) -> "ThreadWorker":
-        worker = ThreadWorker(func, *args, **kwargs)
-        worker.start()
-        return worker
+        return ThreadWorker.run_in_thread_on_finished(func, None, *args, **kwargs)
