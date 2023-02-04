@@ -134,6 +134,7 @@ class MapIndexType(enum.Enum):
                 return types_sorted[i]
         return None
 
+
 class ResetType(enum.Enum):
     NONE = 0
     REWARD = 1
@@ -722,6 +723,7 @@ class MapStageDataStage:
             data["stage_drop_item_amount"],
         )
 
+
 class StageNameImage:
     def __init__(
         self,
@@ -732,12 +734,12 @@ class StageNameImage:
         self.stage_id = stage_id
         self.stage_index = stage_index
         self.image = image
-    
+
     def serialize(self) -> dict[str, Any]:
         return {
             "image": self.image.serialize(),
         }
-    
+
     @staticmethod
     def deserialize(
         data: dict[str, Any], stage_id: int, stage_index: int
@@ -747,12 +749,10 @@ class StageNameImage:
             stage_index,
             io.bc_image.BCImage.deserialize(data["image"]),
         )
-    
+
     @staticmethod
     def get_file_name(
-        stage_id: int,
-        stage_index: int,
-        cc: "country_code.CountryCode"
+        stage_id: int, stage_index: int, cc: "country_code.CountryCode"
     ) -> Optional[str]:
         map_index_type = MapIndexType.from_index(stage_id)
         if map_index_type is None:
@@ -764,14 +764,16 @@ class StageNameImage:
         relative_stage_id_str = io.data.PaddedInt(relative_stage_id, 3).to_str()
         stage_index_str = io.data.PaddedInt(stage_index, 2).to_str()
         return f"mapsn{relative_stage_id_str}_{stage_index_str}_{map_stage_data_type.value.lower()}_{cc.get_language()}.png"
-    
+
     @staticmethod
     def from_game_data(
         game_data: "pack.GamePacks",
         stage_id: int,
         stage_index: int,
     ):
-        file_name = StageNameImage.get_file_name(stage_id, stage_index, game_data.country_code)
+        file_name = StageNameImage.get_file_name(
+            stage_id, stage_index, game_data.country_code
+        )
         if file_name is None:
             return None
         file = game_data.find_file(file_name)
@@ -782,12 +784,15 @@ class StageNameImage:
             stage_index,
             io.bc_image.BCImage(file.dec_data),
         )
-    
+
     def to_game_data(self, game_data: "pack.GamePacks"):
-        file_name = StageNameImage.get_file_name(self.stage_id, self.stage_index, game_data.country_code)
+        file_name = StageNameImage.get_file_name(
+            self.stage_id, self.stage_index, game_data.country_code
+        )
         if file_name is None:
             return
         game_data.set_file(file_name, self.image.to_data())
+
 
 class MapNameImage:
     def __init__(
@@ -797,26 +802,21 @@ class MapNameImage:
     ):
         self.stage_id = stage_id
         self.image = image
-    
+
     def serialize(self) -> dict[str, Any]:
         return {
             "image": self.image.serialize(),
         }
-    
+
     @staticmethod
-    def deserialize(
-        data: dict[str, Any], stage_id: int
-    ) -> "MapNameImage":
+    def deserialize(data: dict[str, Any], stage_id: int) -> "MapNameImage":
         return MapNameImage(
             stage_id,
             io.bc_image.BCImage.deserialize(data["image"]),
         )
-    
+
     @staticmethod
-    def get_file_name(
-        stage_id: int,
-        cc: "country_code.CountryCode"
-    ) -> Optional[str]:
+    def get_file_name(stage_id: int, cc: "country_code.CountryCode") -> Optional[str]:
         map_index_type = MapIndexType.from_index(stage_id)
         if map_index_type is None:
             return None
@@ -826,7 +826,7 @@ class MapNameImage:
         relative_stage_id = stage_id - map_index_type.value
         relative_stage_id_str = io.data.PaddedInt(relative_stage_id, 3).to_str()
         return f"mapname{relative_stage_id_str}_{map_stage_data_type.value.lower()}_{cc.get_language()}.png"
-    
+
     @staticmethod
     def from_game_data(
         game_data: "pack.GamePacks",
@@ -842,13 +842,13 @@ class MapNameImage:
             stage_id,
             io.bc_image.BCImage(file.dec_data),
         )
-    
+
     def to_game_data(self, game_data: "pack.GamePacks"):
         file_name = MapNameImage.get_file_name(self.stage_id, game_data.country_code)
         if file_name is None:
             return
         game_data.set_file(file_name, self.image.to_data())
-    
+
 
 class StageName:
     def __init__(
@@ -860,12 +860,12 @@ class StageName:
         self.stage_id = stage_id
         self.stage_index = stage_index
         self.name = name
-    
+
     def serialize(self) -> dict[str, Any]:
         return {
             "name": self.name,
         }
-    
+
     @staticmethod
     def deserialize(
         data: dict[str, Any], stage_id: int, stage_index: int
@@ -876,6 +876,7 @@ class StageName:
             data["name"],
         )
 
+
 class StageNames:
     def __init__(
         self,
@@ -884,23 +885,25 @@ class StageNames:
     ):
         self.stage_id = stage_id
         self.names = names
-    
+
     def serialize(self) -> dict[str, Any]:
         return {
             "names": {k: v.serialize() for k, v in self.names.items()},
         }
-    
+
     @staticmethod
-    def deserialize(
-        data: dict[str, Any], stage_id: int
-    ) -> "StageNames":
+    def deserialize(data: dict[str, Any], stage_id: int) -> "StageNames":
         return StageNames(
             stage_id,
-            {int(k): StageName.deserialize(v, stage_id, int(k)) for k, v in data["names"].items()},
+            {
+                int(k): StageName.deserialize(v, stage_id, int(k))
+                for k, v in data["names"].items()
+            },
         )
-    
+
     def get(self, stage_index: int) -> Optional[StageName]:
         return self.names.get(stage_index)
+
 
 class StageNameSet:
     def __init__(
@@ -918,21 +921,22 @@ class StageNameSet:
             raise ValueError(f"Invalid base stage id {base_stage_id}")
         self.name_str = name_str
         self.names = names
-    
+
     def serialize(self) -> dict[str, Any]:
         return {
             "names": {k: v.serialize() for k, v in self.names.items()},
         }
-    
+
     @staticmethod
-    def deserialize(
-        data: dict[str, Any], base_stage_id: int
-    ) -> "StageNameSet":
+    def deserialize(data: dict[str, Any], base_stage_id: int) -> "StageNameSet":
         return StageNameSet(
             base_stage_id,
-            {int(k): StageNames.deserialize(v, int(k)) for k, v in data["names"].items()},
+            {
+                int(k): StageNames.deserialize(v, int(k))
+                for k, v in data["names"].items()
+            },
         )
-    
+
     @staticmethod
     def get_file_name(base_stage_id: int, cc: "country_code.CountryCode"):
         map_index_type = MapIndexType.from_index(base_stage_id)
@@ -942,7 +946,7 @@ class StageNameSet:
         if name_str is None:
             raise ValueError(f"Invalid base stage id {base_stage_id}")
         return f"StageName_{name_str.value}_{cc.get_language()}.csv"
-    
+
     @staticmethod
     def from_game_data(
         base_stage_id: int,
@@ -958,7 +962,11 @@ class StageNameSet:
         file = game_data.find_file(file_name)
         if file is None:
             return None
-        csv = io.bc_csv.CSV(file.dec_data, delimeter=io.bc_csv.Delimeter.from_country_code_res(game_data.country_code), remove_empty=True)
+        csv = io.bc_csv.CSV(
+            file.dec_data,
+            delimeter=io.bc_csv.Delimeter.from_country_code_res(game_data.country_code),
+            remove_empty=True,
+        )
         all_names: dict[int, StageNames] = {}
         for stage_index, line in enumerate(csv.lines):
             stage_id = base_stage_id + stage_index
@@ -968,16 +976,22 @@ class StageNameSet:
                 names[name.stage_index] = name
             all_names[stage_id] = StageNames(stage_id, names)
         return StageNameSet(base_stage_id, all_names)
-    
+
     def to_game_data(
         self,
         game_data: "pack.GamePacks",
     ) -> None:
-        file_name = StageNameSet.get_file_name(self.base_stage_id, game_data.country_code)
+        file_name = StageNameSet.get_file_name(
+            self.base_stage_id, game_data.country_code
+        )
         file = game_data.find_file(file_name)
         if file is None:
             raise ValueError(f"Could not find file {file_name}")
-        csv = io.bc_csv.CSV(file.dec_data, delimeter=io.bc_csv.Delimeter.from_country_code_res(game_data.country_code), remove_empty=True)
+        csv = io.bc_csv.CSV(
+            file.dec_data,
+            delimeter=io.bc_csv.Delimeter.from_country_code_res(game_data.country_code),
+            remove_empty=True,
+        )
         remaining = self.names.copy()
         for stage_index, line in enumerate(csv.lines):
             stage_id = self.base_stage_id + stage_index
@@ -995,10 +1009,10 @@ class StageNameSet:
             line = [name.name for name in names.names.values()]
             csv.add_line(line)
         game_data.set_file(file_name, csv.to_data())
-    
+
     def get(self, stage_id: int) -> Optional[StageNames]:
         return self.names.get(stage_id)
-    
+
 
 class StageNameSets:
     def __init__(
@@ -1006,20 +1020,23 @@ class StageNameSets:
         sets: dict[MapIndexType, StageNameSet],
     ):
         self.sets = sets
-    
+
     def serialize(self) -> dict[str, Any]:
         return {
             "sets": {k.value: v.serialize() for k, v in self.sets.items()},
         }
-    
+
     @staticmethod
     def deserialize(
         data: dict[str, Any],
     ) -> "StageNameSets":
         return StageNameSets(
-            {MapIndexType(int(k)): StageNameSet.deserialize(v, int(k)) for k, v in data["sets"].items()},
+            {
+                MapIndexType(int(k)): StageNameSet.deserialize(v, int(k))
+                for k, v in data["sets"].items()
+            },
         )
-    
+
     @staticmethod
     def from_game_data(
         game_data: "pack.GamePacks",
@@ -1032,14 +1049,14 @@ class StageNameSets:
                 continue
             sets[base_stage_id] = set
         return StageNameSets(sets)
-    
+
     def to_game_data(
         self,
         game_data: "pack.GamePacks",
     ) -> None:
         for set in self.sets.values():
             set.to_game_data(game_data)
-    
+
     def get(self, stage_id: int) -> Optional[StageNames]:
         map_index_type = MapIndexType.from_index(stage_id)
         if map_index_type is None:
@@ -1048,7 +1065,7 @@ class StageNameSets:
         if set is None:
             return None
         return set.get(stage_id)
-    
+
     def set(self, stage_id: int, names: StageNames) -> None:
         map_index_type = MapIndexType.from_index(stage_id)
         if map_index_type is None:
@@ -1058,7 +1075,8 @@ class StageNameSets:
             set = StageNameSet(stage_id, {})
             self.sets[map_index_type] = set
         set.names[stage_id] = names
-        
+
+
 class MapStageData:
     def __init__(
         self,
@@ -1239,7 +1257,10 @@ class Map:
 
     @staticmethod
     def from_game_data(
-        game_data: "pack.GamePacks", stage_id: int, map_options: MapOptions, stage_names: StageNames
+        game_data: "pack.GamePacks",
+        stage_id: int,
+        map_options: MapOptions,
+        stage_names: StageNames,
     ) -> Optional["Map"]:
         map_option = map_options.get(stage_id)
         if stage_names is None:
@@ -1331,10 +1352,10 @@ class Maps:
         zip.add_file(Maps.get_maps_json_file_name(), json.to_data())
 
     @staticmethod
-    def from_zip(zip: "io.zip.Zip") -> Optional["Maps"]:
+    def from_zip(zip: "io.zip.Zip") -> "Maps":
         json = zip.get_file(Maps.get_maps_json_file_name())
         if json is None:
-            return None
+            return Maps.create_empty()
         return Maps.deserialize(io.json_file.JsonFile.from_data(json).get_json())
 
     @staticmethod

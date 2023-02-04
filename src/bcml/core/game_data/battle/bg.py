@@ -326,16 +326,16 @@ class Bgs:
         zip.add_file(path, json.to_data())
 
     @staticmethod
-    def from_zip(zip: "io.zip.Zip") -> Optional["Bgs"]:
+    def from_zip(zip: "io.zip.Zip") -> "Bgs":
         """Creates a Bgs object from a mod zip.
 
         Returns:
-            Optional[Bgs]: The created Bgs object.
+            Bgs: The created Bgs object.
         """
         path = Bgs.get_zip_json_file_path()
         file = zip.get_file(path)
         if file is None:
-            return None
+            return Bgs.create_empty()
         json = io.json_file.JsonFile.from_data(file)
         return Bgs.deserialize(json.get_json())
 

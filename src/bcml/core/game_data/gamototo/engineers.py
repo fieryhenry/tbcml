@@ -3,24 +3,25 @@ from typing import Any, Optional
 from bcml.core.game_data import pack, bc_anim
 from bcml.core import io
 
+
 class Engineer:
     def __init__(self, limit: "EngineerLimit", anim: "EngineerAnim"):
         self.limit = limit
         self.anim = anim
-    
+
     def serialize(self) -> dict[str, Any]:
         return {
             "limit": self.limit.serialize(),
             "anim": self.anim.serialize(),
         }
-    
+
     @staticmethod
     def deserialize(data: dict[str, Any]) -> "Engineer":
         return Engineer(
             EngineerLimit.deserialize(data["limit"]),
             EngineerAnim.deserialize(data["anim"]),
         )
-    
+
     @staticmethod
     def from_game_data(game_data: "pack.GamePacks") -> Optional["Engineer"]:
         limit = EngineerLimit.from_game_data(game_data)
@@ -31,11 +32,11 @@ class Engineer:
             limit,
             anim,
         )
-    
+
     def to_game_data(self, game_data: "pack.GamePacks"):
         self.limit.to_game_data(game_data)
         self.anim.to_game_data(game_data)
-    
+
     @staticmethod
     def get_json_file_path() -> "io.path.Path":
         return io.path.Path("gamototo").add("ototo").add("engineer.json")
@@ -43,26 +44,26 @@ class Engineer:
     def add_to_zip(self, zip: "io.zip.Zip"):
         json = io.json_file.JsonFile.from_json(self.serialize())
         zip.add_file(Engineer.get_json_file_path(), json.to_data())
-    
+
     @staticmethod
-    def from_zip(zip: "io.zip.Zip") -> Optional["Engineer"]:
+    def from_zip(zip: "io.zip.Zip") -> "Engineer":
         json_data = zip.get_file(Engineer.get_json_file_path())
         if json_data is None:
-            return None
+            return Engineer.create_empty()
         json = io.json_file.JsonFile.from_data(json_data)
         return Engineer.deserialize(json.get_json())
-    
+
     @staticmethod
     def create_empty() -> "Engineer":
         return Engineer(
             EngineerLimit.create_empty(),
             EngineerAnim.create_empty(),
         )
-    
+
     def import_engineer(self, other: "Engineer"):
         self.limit = other.limit
         self.anim.import_engineer_anim(other.anim)
-        
+
 
 class EngineerLimit:
     def __init__(self, limit: int):
@@ -72,17 +73,17 @@ class EngineerLimit:
         return {
             "limit": self.limit,
         }
-    
+
     @staticmethod
     def deserialize(data: dict[str, Any]) -> "EngineerLimit":
         return EngineerLimit(
             data["limit"],
         )
-    
+
     @staticmethod
     def get_file_name() -> str:
         return "CastleCustomLimit.csv"
-    
+
     @staticmethod
     def from_game_data(game_data: "pack.GamePacks") -> Optional["EngineerLimit"]:
         file = game_data.find_file(EngineerLimit.get_file_name())
@@ -92,7 +93,7 @@ class EngineerLimit:
         return EngineerLimit(
             csv.lines[0][0].to_int(),
         )
-    
+
     def to_game_data(self, game_data: "pack.GamePacks"):
         file = game_data.find_file(EngineerLimit.get_file_name())
         if file is None:
@@ -100,16 +101,17 @@ class EngineerLimit:
         csv = io.bc_csv.CSV(file.dec_data)
         csv.lines[0][0].set(self.limit)
         game_data.set_file(EngineerLimit.get_file_name(), csv.to_data())
-    
+
     @staticmethod
     def create_empty() -> "EngineerLimit":
         return EngineerLimit(0)
-    
+
     def __str__(self):
         return f"EngineerLimit({self.limit})"
-    
+
     def __repr__(self):
         return self.__str__()
+
 
 class EngineerAnim:
     class FilePath(enum.Enum):
@@ -165,7 +167,7 @@ class EngineerAnim:
         if anim is None:
             return None
         return EngineerAnim(anim)
-    
+
     def to_game_data(self, game_data: "pack.GamePacks"):
         self.anim.to_game_data(
             game_data,
@@ -174,12 +176,12 @@ class EngineerAnim:
             EngineerAnim.FilePath.MAMODEL.value,
             EngineerAnim.FilePath.get_all_maanims_names(),
         )
-    
+
     def serialize(self) -> dict[str, Any]:
         return {
             "anim": self.anim.serialize(),
         }
-    
+
     @staticmethod
     def deserialize(data: dict[str, Any]) -> "EngineerAnim":
         anim = bc_anim.Anim.deserialize(data["anim"])
@@ -189,6 +191,6 @@ class EngineerAnim:
     def create_empty() -> "EngineerAnim":
         anim = bc_anim.Anim.create_empty()
         return EngineerAnim(anim)
-    
+
     def import_engineer_anim(self, other: "EngineerAnim"):
         self.anim.import_anim(other.anim)

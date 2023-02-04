@@ -60,11 +60,11 @@ class GatyaDataSet:
                 for key, value in data["sets"].items()
             },
         )
-    
+
     @staticmethod
     def get_file_name(type: GatyaType, index: int) -> str:
         return f"GatyaDataSet{type.value}{index+1}.csv"
-    
+
     @staticmethod
     def from_game_data(
         game_data: "pack.GamePacks", type: GatyaType, index: int
@@ -86,7 +86,7 @@ class GatyaDataSet:
                     cats.append(cat_id)
             sets[i] = GatyaDataSetData(i, cats)
         return GatyaDataSet(type, index, sets)
-    
+
     def to_game_data(self, game_data: "pack.GamePacks") -> None:
         file_name = GatyaDataSet.get_file_name(self.gatya_type, self.index)
         file = game_data.find_file(file_name)
@@ -111,23 +111,27 @@ class GatyaDataSets:
 
         self.type = type
         self.gatya_sets = gatya_sets
-    
+
     def serialize(self) -> dict[str, Any]:
         return {
             "type": self.type.value,
-            "gatya_sets": {str(key): value.serialize() for key, value in self.gatya_sets.items()},
+            "gatya_sets": {
+                str(key): value.serialize() for key, value in self.gatya_sets.items()
+            },
         }
-    
+
     @staticmethod
     def deserialize(data: dict[str, Any]) -> "GatyaDataSets":
         return GatyaDataSets(
             GatyaType(data["type"]),
             {
-                int(key): GatyaDataSet.deserialize(value, GatyaType(data["type"]), int(key))
+                int(key): GatyaDataSet.deserialize(
+                    value, GatyaType(data["type"]), int(key)
+                )
                 for key, value in data["gatya_sets"].items()
             },
         )
-    
+
     @staticmethod
     def from_game_data(game_data: "pack.GamePacks", type: GatyaType) -> "GatyaDataSets":
         gatya_sets: dict[int, GatyaDataSet] = {}
@@ -139,18 +143,19 @@ class GatyaDataSets:
             gatya_sets[i] = gatya_set
             i += 1
         return GatyaDataSets(type, gatya_sets)
-    
+
     def to_game_data(self, game_data: "pack.GamePacks") -> None:
         for gatya_set in self.gatya_sets.values():
             gatya_set.to_game_data(game_data)
-        
+
     def get_gatya_set(self, index: int) -> Optional[GatyaDataSet]:
         return self.gatya_sets.get(index, None)
-    
+
     def set_gatya_set(self, index: int, gatya_set: GatyaDataSet) -> None:
         gatya_set.index = index
         gatya_set.gatya_type = self.type
         self.gatya_sets[index] = gatya_set
+
 
 class GatyaDataSetsAll:
     def __init__(
@@ -158,12 +163,15 @@ class GatyaDataSetsAll:
         gatya_data_sets: dict[GatyaType, GatyaDataSets],
     ):
         self.gatya_data_sets = gatya_data_sets
-    
+
     def serialize(self) -> dict[str, Any]:
         return {
-            "gatya_data_sets": {str(key.value): value.serialize() for key, value in self.gatya_data_sets.items()},
+            "gatya_data_sets": {
+                str(key.value): value.serialize()
+                for key, value in self.gatya_data_sets.items()
+            },
         }
-    
+
     @staticmethod
     def deserialize(data: dict[str, Any]) -> "GatyaDataSetsAll":
         return GatyaDataSetsAll(
@@ -172,28 +180,31 @@ class GatyaDataSetsAll:
                 for key, value in data["gatya_data_sets"].items()
             },
         )
-    
+
     @staticmethod
     def from_game_data(game_data: "pack.GamePacks") -> "GatyaDataSetsAll":
         gatya_data_sets: dict[GatyaType, GatyaDataSets] = {}
         for type in GatyaType:
             gatya_data_sets[type] = GatyaDataSets.from_game_data(game_data, type)
         return GatyaDataSetsAll(gatya_data_sets)
-    
+
     def to_game_data(self, game_data: "pack.GamePacks") -> None:
         for gatya_data_set in self.gatya_data_sets.values():
             gatya_data_set.to_game_data(game_data)
-        
+
     def get_gatya_data_sets(self, type: GatyaType) -> Optional[GatyaDataSets]:
         return self.gatya_data_sets.get(type, None)
-    
-    def set_gatya_data_sets(self, type: GatyaType, gatya_data_sets: GatyaDataSets) -> None:
+
+    def set_gatya_data_sets(
+        self, type: GatyaType, gatya_data_sets: GatyaDataSets
+    ) -> None:
         gatya_data_sets.type = type
         self.gatya_data_sets[type] = gatya_data_sets
-    
+
     @staticmethod
     def create_empty() -> "GatyaDataSetsAll":
         return GatyaDataSetsAll({})
+
 
 class GatyaOptionSet:
     def __init__(
@@ -390,7 +401,9 @@ class GatyaOptionsAll:
 
 
 class Gatya:
-    def __init__(self, gatya_options: GatyaOptionsAll, gatya_data_sets: GatyaDataSetsAll):
+    def __init__(
+        self, gatya_options: GatyaOptionsAll, gatya_data_sets: GatyaDataSetsAll
+    ):
         self.gatya_options = gatya_options
         self.gatya_data_sets = gatya_data_sets
 
@@ -422,10 +435,10 @@ class Gatya:
         zip.add_file(self.get_json_file_path(), json.to_data())
 
     @staticmethod
-    def from_zip(zip: "io.zip.Zip") -> Optional["Gatya"]:
+    def from_zip(zip: "io.zip.Zip") -> "Gatya":
         json_data = zip.get_file(Gatya.get_json_file_path())
         if json_data is None:
-            return None
+            return Gatya.create_empty()
         json = io.json_file.JsonFile.from_data(json_data)
         return Gatya.deserialize(json.get_json())
 
@@ -443,14 +456,14 @@ class Gatya:
 
     @staticmethod
     def create_empty() -> "Gatya":
-        return Gatya(
-            GatyaOptionsAll.create_empty(), GatyaDataSetsAll.create_empty()
-        )
+        return Gatya(GatyaOptionsAll.create_empty(), GatyaDataSetsAll.create_empty())
 
     def set_gatya(self, gatya: "Gatya"):
         self.gatya_options = gatya.gatya_options
         self.gatya_data_sets = gatya.gatya_data_sets
-    
+
     def import_gatya(self, other: "Gatya"):
         self.gatya_options.gatya_options.update(other.gatya_options.gatya_options)
-        self.gatya_data_sets.gatya_data_sets.update(other.gatya_data_sets.gatya_data_sets)
+        self.gatya_data_sets.gatya_data_sets.update(
+            other.gatya_data_sets.gatya_data_sets
+        )

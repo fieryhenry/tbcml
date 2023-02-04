@@ -76,8 +76,12 @@ class ItemShop:
     @staticmethod
     def from_game_data(game_data: "pack.GamePacks") -> Optional["ItemShop"]:
         tsv_data = game_data.find_file(ItemShop.get_file_name())
-        png_data = game_data.find_file(f"item000_{game_data.country_code.get_language()}.png")
-        imgcut_data = game_data.find_file(f"item000_{game_data.country_code.get_language()}.imgcut")
+        png_data = game_data.find_file(
+            f"item000_{game_data.country_code.get_language()}.png"
+        )
+        imgcut_data = game_data.find_file(
+            f"item000_{game_data.country_code.get_language()}.imgcut"
+        )
         if tsv_data is None or png_data is None or imgcut_data is None:
             return None
         img = io.bc_image.BCImage(png_data.dec_data)
@@ -127,14 +131,17 @@ class ItemShop:
             line.append(item.category_name)
             line.append(item.imgcut_id)
             tsv.add_line(line)
-        
+
         game_data.set_file(ItemShop.get_file_name(), tsv.to_data())
         if not self.imgcut.is_empty():
             self.imgcut.reconstruct_image()
             csv_data, png_data = self.imgcut.to_data()
-            game_data.set_file(f"item000_{game_data.country_code.get_language()}.png", png_data)
-            game_data.set_file(f"item000_{game_data.country_code.get_language()}.imgcut", csv_data)
-        
+            game_data.set_file(
+                f"item000_{game_data.country_code.get_language()}.png", png_data
+            )
+            game_data.set_file(
+                f"item000_{game_data.country_code.get_language()}.imgcut", csv_data
+            )
 
     @staticmethod
     def get_json_file_path() -> "io.path.Path":
@@ -145,10 +152,10 @@ class ItemShop:
         zip_file.add_file(ItemShop.get_json_file_path(), json.to_data())
 
     @staticmethod
-    def from_zip(zip: "io.zip.Zip") -> Optional["ItemShop"]:
+    def from_zip(zip: "io.zip.Zip") -> "ItemShop":
         json_data = zip.get_file(ItemShop.get_json_file_path())
         if json_data is None:
-            return None
+            return ItemShop.create_empty()
         json = io.json_file.JsonFile.from_data(json_data)
         return ItemShop.deserialize(json.get_json())
 
@@ -158,12 +165,12 @@ class ItemShop:
 
     def get_item(self, shop_index: int) -> Optional[Item]:
         return self.items.get(shop_index)
-    
+
     def set_item(self, shop_index: int, item: Item):
         item.shop_id = shop_index
         self.items[shop_index] = item
-    
+        self.imgcut.set_cut(item.imgcut_id, item.cut)
+
     def import_item_shop(self, other: "ItemShop"):
-        self.items.update(other.items)
-        if not other.imgcut.is_empty():
-            self.imgcut = other.imgcut
+        for item in other.items.values():
+            self.set_item(item.shop_id, item)

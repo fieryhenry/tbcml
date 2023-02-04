@@ -69,18 +69,11 @@ class Ototo:
         self.main_chara_anim.to_zip(zip)
 
     @staticmethod
-    def from_zip(zip: "io.zip.Zip") -> Optional["Ototo"]:
+    def from_zip(zip: "io.zip.Zip") -> "Ototo":
         engineer = engineers.Engineer.from_zip(zip)
         cannons = cannon.Cannons.from_zip(zip)
         item_packs = item_pack.ItemPacks.from_zip(zip)
         main_chara_anim = ototo_anim.MainChara.from_zip(zip)
-        if (
-            engineer is None
-            or cannons is None
-            or item_packs is None
-            or main_chara_anim is None
-        ):
-            return None
         return Ototo(
             engineer,
             cannons,

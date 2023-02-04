@@ -97,21 +97,15 @@ class Battle:
         self.groups.add_to_zip(zip)
 
     @staticmethod
-    def from_zip(zip: "io.zip.Zip") -> Optional["Battle"]:
+    def from_zip(zip: "io.zip.Zip") -> "Battle":
         """Creates a Battle object from a mod zip.
 
         Returns:
             Battle: The Battle object.
         """
         shake_effects = battle_shake_setting.ShakeEffects.from_zip(zip)
-        if shake_effects is None:
-            return None
         bgs = bg.Bgs.from_zip(zip)
-        if bgs is None:
-            return None
         groups = chara_group.CharaGroups.from_zip(zip)
-        if groups is None:
-            return None
         return Battle(
             shake_effects,
             bgs,

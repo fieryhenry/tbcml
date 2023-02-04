@@ -3,35 +3,40 @@ from typing import Any, Optional
 from bcml.core.game_data import pack
 from bcml.core import io
 
+
 class DropType(enum.Enum):
     ITEM_PACK = 0
     GREAT_FORTUNE = 1
+
 
 class DropItem:
     def __init__(self, item_id: int, probability: int):
         self.item_id = item_id
         self.probability = probability
-    
+
     def get_percentage(self) -> float:
         return self.probability / 100
-    
+
     def serialize(self) -> dict[str, int]:
         return {
             "item_id": self.item_id,
             "probability": self.probability,
         }
-    
+
     @staticmethod
     def deserialize(data: dict[str, int]) -> "DropItem":
         return DropItem(data["item_id"], data["probability"])
 
+
 class ItemPack:
-    def __init__(self, type: DropType, user_rank: int, unknown: int, items: dict[int, DropItem]):
+    def __init__(
+        self, type: DropType, user_rank: int, unknown: int, items: dict[int, DropItem]
+    ):
         self.type = type
         self.user_rank = user_rank
         self.unknown = unknown
         self.items = items
-    
+
     def serialize(self) -> dict[str, Any]:
         return {
             "type": self.type.value,
@@ -39,7 +44,7 @@ class ItemPack:
             "unknown": self.unknown,
             "items": {k: v.serialize() for k, v in self.items.items()},
         }
-    
+
     @staticmethod
     def deserialize(data: dict[str, Any]) -> "ItemPack":
         return ItemPack(
@@ -48,13 +53,12 @@ class ItemPack:
             data["unknown"],
             {k: DropItem.deserialize(v) for k, v in data["items"].items()},
         )
-    
 
 
 class ItemPacks:
     def __init__(self, packs: dict[int, ItemPack]):
         self.packs = packs
-    
+
     @staticmethod
     def get_file_name() -> str:
         return "Adreward_table.csv"
@@ -76,7 +80,7 @@ class ItemPacks:
                 items[j - 3] = DropItem(item_id, 0)
             packs[i] = ItemPack(type, user_rank, unknown, items)
         return ItemPacks(packs)
-    
+
     def to_game_data(self, game_data: "pack.GamePacks"):
         file = game_data.find_file(self.get_file_name())
         if file is None:
@@ -99,7 +103,7 @@ class ItemPacks:
                 line[j].set(item.item_id)
             csv.set_line(i + 1, line)
             del remaining_item_packs[i]
-        
+
         for i, pack in remaining_item_packs.items():
             line = [pack.type.value, pack.user_rank, pack.unknown]
             for j in range(3, len(line)):
@@ -110,42 +114,42 @@ class ItemPacks:
                 line.append(item.item_id)
             csv.add_line(line)
         game_data.set_file(self.get_file_name(), csv.to_data())
-    
+
     def serialize(self) -> dict[str, Any]:
         return {
             "packs": {k: v.serialize() for k, v in self.packs.items()},
         }
-    
+
     @staticmethod
     def deserialize(data: dict[str, Any]) -> "ItemPacks":
         return ItemPacks({k: ItemPack.deserialize(v) for k, v in data["packs"].items()})
-    
+
     @staticmethod
     def get_zip_folder() -> "io.path.Path":
         return io.path.Path("gamototo").add("ototo")
-    
+
     @staticmethod
     def get_zip_json_file_path() -> "io.path.Path":
         return ItemPacks.get_zip_folder().add("item_packs.json")
-    
+
     def add_to_zip(self, zip: "io.zip.Zip"):
         json = io.json_file.JsonFile.from_json(self.serialize())
         zip.add_file(self.get_zip_json_file_path(), json.to_data())
-    
+
     @staticmethod
-    def from_zip(zip: "io.zip.Zip") -> Optional["ItemPacks"]:
+    def from_zip(zip: "io.zip.Zip") -> "ItemPacks":
         file = zip.get_file(ItemPacks.get_zip_json_file_path())
         if file is None:
-            return None
+            return ItemPacks.create_empty()
         json = io.json_file.JsonFile.from_data(file)
         return ItemPacks.deserialize(json.json)
-    
+
     @staticmethod
     def create_empty() -> "ItemPacks":
         return ItemPacks({})
-    
+
     def set_item_pack(self, pack: ItemPack):
         self.packs[pack.user_rank] = pack
-    
+
     def import_item_packs(self, item_packs: "ItemPacks"):
         self.packs.update(item_packs.packs)

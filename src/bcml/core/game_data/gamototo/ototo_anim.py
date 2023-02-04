@@ -3,6 +3,7 @@ import enum
 from bcml.core.game_data import bc_anim, pack
 from bcml.core import io
 
+
 class MainChara:
     class FilePath(enum.Enum):
         IMGCUT = "castleCustom_mainChara_001.imgcut"
@@ -34,7 +35,7 @@ class MainChara:
                 if member.value.endswith(".maanim"):
                     all_maanims.append(member)
             return all_maanims
-        
+
         @staticmethod
         def get_all_maanims_names() -> list[str]:
             all_maanims: list[str] = []
@@ -45,32 +46,31 @@ class MainChara:
 
     def __init__(self, anim: "bc_anim.Anim"):
         self.anim = anim
-    
+
     def serialize(self) -> dict[str, Any]:
         return {
             "anim": self.anim.serialize(),
         }
-    
+
     @staticmethod
     def deserialize(data: dict[str, Any]) -> "MainChara":
         return MainChara(bc_anim.Anim.deserialize(data["anim"]))
-    
+
     def to_zip(self, zip: "io.zip.Zip"):
         path = MainChara.get_zip_path()
         json_data = io.json_file.JsonFile.from_json(self.serialize()).to_data()
         zip.add_file(path.add("main_chara.json"), json_data)
-                
 
     @staticmethod
     def get_zip_path() -> io.path.Path:
         return io.path.Path("gamototo").add("ototo")
 
     @staticmethod
-    def from_zip(zip: "io.zip.Zip") -> Optional["MainChara"]:
+    def from_zip(zip: "io.zip.Zip") -> "MainChara":
         path = MainChara.get_zip_path()
         json_data = zip.get_file(path.add("main_chara.json"))
         if json_data is None:
-            return None
+            return MainChara.create_empty()
         json_file = io.json_file.JsonFile.from_data(json_data)
         return MainChara.deserialize(json_file.get_json())
 

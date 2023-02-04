@@ -181,15 +181,15 @@ class CharaGroups:
         zip.add_file(self.get_zip_json_file_path(), json.to_data())
 
     @staticmethod
-    def from_zip(zip: "io.zip.Zip") -> Optional["CharaGroups"]:
+    def from_zip(zip: "io.zip.Zip") -> "CharaGroups":
         """Loads the CharaGroups from a mod zip file.
 
         Returns:
-            Optional[CharaGroups]: The CharaGroups, or None if the file could not be found.
+            CharaGroups: The CharaGroups, or None if the file could not be found.
         """
         file = zip.get_file(CharaGroups.get_zip_json_file_path())
         if file is None:
-            return None
+            return CharaGroups.create_empty()
 
         json = io.json_file.JsonFile.from_data(file)
         return CharaGroups.deserialize(json.get_json())

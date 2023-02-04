@@ -142,7 +142,7 @@ class ShakeEffects:
 
         Args:
             game_data (pack.GamePacks): The game data to write the ShakeEffects to.
-        """        
+        """
         file = game_data.find_file(self.get_file_name())
         if file is None:
             return
@@ -182,7 +182,7 @@ class ShakeEffects:
 
         Returns:
             dict[str, Any]: The serialized ShakeEffects.
-        """        
+        """
         return {
             "effects": {i: effect.serialize() for i, effect in self.effects.items()},
         }
@@ -196,7 +196,7 @@ class ShakeEffects:
 
         Returns:
             ShakeEffects: The deserialized ShakeEffects.
-        """        
+        """
         return ShakeEffects(
             {
                 i: ShakeEffect.deserialize(effect)
@@ -210,7 +210,7 @@ class ShakeEffects:
 
         Returns:
             ShakeEffects: The empty ShakeEffects object.
-        """        
+        """
         return ShakeEffects({})
 
     @staticmethod
@@ -219,7 +219,7 @@ class ShakeEffects:
 
         Returns:
             io.path.Path: The path of the json file that contains the ShakeEffects in the mod zip.
-        """        
+        """
         return io.path.Path("battle").add("battle_shake_setting.json")
 
     def add_to_zip(self, zip: "io.zip.Zip"):
@@ -227,13 +227,13 @@ class ShakeEffects:
 
         Args:
             zip (io.zip.Zip): The mod zip to add the ShakeEffects to.
-        """        
+        """
         json = io.json_file.JsonFile.from_json(self.serialize())
         path = self.get_zip_json_file_path()
         zip.add_file(path, json.to_data())
 
     @staticmethod
-    def from_zip(zip: "io.zip.Zip") -> Optional["ShakeEffects"]:
+    def from_zip(zip: "io.zip.Zip") -> "ShakeEffects":
         """Loads the ShakeEffects from the mod zip.
 
         Args:
@@ -241,11 +241,11 @@ class ShakeEffects:
 
         Returns:
             ShakeEffects: The ShakeEffects loaded from the mod zip.
-        """        
+        """
         path = ShakeEffects.get_zip_json_file_path()
         file = zip.get_file(path)
         if file is None:
-            return None
+            return ShakeEffects.create_empty()
         json = io.json_file.JsonFile.from_data(file)
         return ShakeEffects.deserialize(json.json)
 
@@ -254,5 +254,5 @@ class ShakeEffects:
 
         Args:
             other (ShakeEffects): The ShakeEffects to load from.
-        """        
+        """
         self.effects.update(other.effects)

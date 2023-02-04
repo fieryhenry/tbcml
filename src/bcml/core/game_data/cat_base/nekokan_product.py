@@ -9,7 +9,7 @@ class Product:
         self.index = index
         self.cf_amount = cf_amount
         self.comment = comment
-    
+
     def serialize(self) -> dict[str, Any]:
         return {
             "product_id": self.product_id,
@@ -17,7 +17,7 @@ class Product:
             "cf_amount": self.cf_amount,
             "comment": self.comment,
         }
-    
+
     @staticmethod
     def deserialize(data: dict[str, Any]) -> "Product":
         return Product(
@@ -26,27 +26,27 @@ class Product:
             data["cf_amount"],
             data["comment"],
         )
-    
+
 
 class NekokanProducts:
     def __init__(self, products: dict[int, Product]):
         self.products = products
-    
+
     def serialize(self) -> dict[str, Any]:
         return {
             "products": {k: v.serialize() for k, v in self.products.items()},
         }
-    
+
     @staticmethod
     def deserialize(data: dict[str, Any]) -> "NekokanProducts":
         return NekokanProducts(
             {k: Product.deserialize(v) for k, v in data["products"].items()},
         )
-    
+
     @staticmethod
     def get_file_name(lang_code: str):
         return f"NekokanProduct_{lang_code}.tsv"
-    
+
     @staticmethod
     def from_game_data(game_data: "pack.GamePacks") -> Optional["NekokanProducts"]:
         lang_code = game_data.country_code.get_language()
@@ -64,7 +64,7 @@ class NekokanProducts:
             )
             products[product.index] = product
         return NekokanProducts(products)
-    
+
     def to_game_data(self, game_data: "pack.GamePacks"):
         lang_code = game_data.country_code.get_language()
         file_name = NekokanProducts.get_file_name(lang_code)
@@ -92,33 +92,33 @@ class NekokanProducts:
             line.append(product.comment)
             csv.add_line(line)
         game_data.set_file(file_name, csv.to_data())
-    
+
     @staticmethod
     def get_json_file_path() -> "io.path.Path":
         return io.path.Path("catbase").add("nekokan_products.json")
-    
+
     def add_to_zip(self, zip_file: "io.zip.Zip"):
         json = io.json_file.JsonFile.from_json(self.serialize())
         zip_file.add_file(NekokanProducts.get_json_file_path(), json.to_data())
-    
+
     @staticmethod
-    def from_zip(zip: "io.zip.Zip") -> Optional["NekokanProducts"]:
+    def from_zip(zip: "io.zip.Zip") -> "NekokanProducts":
         json_data = zip.get_file(NekokanProducts.get_json_file_path())
         if json_data is None:
-            return None
+            return NekokanProducts.create_empty()
         json = io.json_file.JsonFile.from_data(json_data)
         return NekokanProducts.deserialize(json.get_json())
-    
+
     @staticmethod
     def create_empty() -> "NekokanProducts":
         return NekokanProducts({})
-    
+
     def get_product(self, index: int) -> Optional[Product]:
         return self.products.get(index)
-    
+
     def set_product(self, product: Product, index: int):
         product.index = index
         self.products[product.index] = product
-    
+
     def import_nekokan(self, other: "NekokanProducts"):
         self.products.update(other.products)

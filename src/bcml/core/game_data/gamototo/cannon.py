@@ -428,8 +428,7 @@ class Cannon:
             recipe=castle_recipe.CastleRecipe.deserialize(data["recipe"]),
             parts_anims={
                 Part(int(k)): {
-                    int(k2): bc_anim.Anim.deserialize(v2)
-                    for k2, v2 in v.items()
+                    int(k2): bc_anim.Anim.deserialize(v2) for k2, v2 in v.items()
                 }
                 for k, v in data["parts_anim"].items()
             },
@@ -458,7 +457,7 @@ class Cannon:
                 continue
             imgcut = bc_anim.Imgcut.from_data(file.dec_data, image)
             imgcuts[part] = imgcut
-           
+
             png_name_2 = f"nyankoCastle_{io.data.PaddedInt(part.value, 3)}_{io.data.PaddedInt(castle_type.value, 2)}_00.png"
             file = game_data.find_file(png_name_2, show_error=False)
             if file is None:
@@ -481,7 +480,7 @@ class Cannon:
             if file is None:
                 continue
             maanim = bc_anim.Maanim.from_data(file.dec_data, maanim_name)
-    
+
             anims[part] = {}
             anims[part][0] = bc_anim.Anim(imgcut_2, mamodel, [maanim])
 
@@ -496,23 +495,21 @@ class Cannon:
             maanim_name_2 = png_name_3.replace(".png", ".maanim")
             file = game_data.find_file(maanim_name_2, show_error=False)
             if file is None:
-                anims[part] = {
-                    0: bc_anim.Anim(imgcut_2, mamodel, [maanim])
-                }
+                anims[part] = {0: bc_anim.Anim(imgcut_2, mamodel, [maanim])}
                 continue
             maanim_2 = bc_anim.Maanim.from_data(file.dec_data, maanim_name_2)
 
             anims[part][1] = bc_anim.Anim(imgcut_2, mamodel_2, [maanim_2])
-        
+
         return anims, imgcuts
-    
+
     def parts_anims_to_game_data(
         self,
         game_data: "pack.GamePacks",
     ):
         for part in Part:
             png_name = f"nyankoCastle_{io.data.PaddedInt(part.value, 3)}_{io.data.PaddedInt(self.castle_type.value, 2)}.png"
-            
+
             imgcut = self.parts_imgcut[part]
             imgcut_data = imgcut.to_data()
             if not imgcut_data[1].is_empty():
@@ -530,9 +527,9 @@ class Cannon:
             except KeyError:
                 continue
             imgcut_data_2 = anim.imgcut.to_data()
-            mamodel = anim.mamodel        
+            mamodel = anim.mamodel
             maanim = anim.maanims[0]
-            
+
             game_data.set_file(png_name_2, imgcut_data_2[1])
 
             imgcut_name_2 = png_name_2.replace(".png", ".imgcut")
@@ -551,16 +548,14 @@ class Cannon:
                     continue
             except KeyError:
                 continue
-            mamodel_2 = anim_2.mamodel        
+            mamodel_2 = anim_2.mamodel
             maanim_2 = anim_2.maanims[0]
-
 
             mamodel_data_2 = mamodel_2.to_data()
             game_data.set_file(png_name_3.replace(".png", ".mamodel"), mamodel_data_2)
 
             maanim_data_2 = maanim_2.to_data()
             game_data.set_file(png_name_3.replace(".png", ".maanim"), maanim_data_2)
-
 
 
 class Cannons:
@@ -607,9 +602,7 @@ class Cannons:
         statuses = CannonStatuses.from_game_data(game_data)
         recipies = castle_recipe.CastleRecipies.from_game_data(game_data)
         map_png = game_data.find_file(Cannons.get_map_png_file_name())
-        silhouette_png = game_data.find_file(
-            Cannons.get_silhouette_file_name()
-        )
+        silhouette_png = game_data.find_file(Cannons.get_silhouette_file_name())
         silhouette_imgcut = game_data.find_file(
             Cannons.get_silhouette_file_name().replace(".png", ".imgcut"),
             show_error=True,
@@ -683,10 +676,10 @@ class Cannons:
         zip.add_file(Cannons.get_zip_json_file_path(), json.to_data())
 
     @staticmethod
-    def from_zip(zip: "io.zip.Zip") -> Optional["Cannons"]:
+    def from_zip(zip: "io.zip.Zip") -> "Cannons":
         file = zip.get_file(Cannons.get_zip_json_file_path())
         if file is None:
-            return None
+            return Cannons.create_empty()
         json = io.json_file.JsonFile.from_data(file)
 
         return Cannons.deserialize(json.json)
@@ -696,7 +689,7 @@ class Cannons:
         return Cannons(
             {}, io.bc_image.BCImage.create_empty(), bc_anim.Imgcut.create_empty()
         )
-    
+
     def set_cannon(self, cannon: Cannon) -> None:
         self.cannons[cannon.castle_type] = cannon
 
