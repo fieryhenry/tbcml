@@ -61,10 +61,6 @@ class Path:
         path.generate_dirs()
         return path
 
-    @staticmethod
-    def get_temp_folder() -> "Path":
-        return Path(os.path.join(os.environ["TEMP"], "bcml"))
-
     def generate_dirs(self: "Path") -> "Path":
         if not self.exists():
             try:
