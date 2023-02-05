@@ -1,6 +1,6 @@
 from typing import Callable, Optional
 from PyQt5 import QtWidgets, QtCore, QtGui
-from bcml.core import io, country_code, game_version, mods
+from bcml.core import io, country_code, game_version, mods, locale_handler
 from bcml.ui import ui_dialog, ui_file_dialog, game_editor
 
 
@@ -98,6 +98,7 @@ class ModInfoView(QtWidgets.QWidget):
         self.on_edit_mod = on_edit_mod
         self.hide_mod_info = hide_mod_info
         self.mod: Optional[mods.bc_mod.Mod] = None
+        self.property_set = locale_handler.PropertySet.from_config("mod_manager")
         self.setup_ui()
 
     def setup_ui(self):
@@ -109,44 +110,62 @@ class ModInfoView(QtWidgets.QWidget):
         self._layout.setColumnStretch(0, 1)
         self._layout.setColumnStretch(1, 5)
 
-        self.mod_name_label = QtWidgets.QLabel("Mod Name (Required)")
+        required_str = f" ({self.property_set.get_key('required_text')})"
+
+        self.mod_name_label = QtWidgets.QLabel(
+            f"{self.property_set.get_key('mod_name_label')}{required_str}"
+        )
         self._layout.addWidget(self.mod_name_label, 0, 0)
         self.mod_name = QtWidgets.QLineEdit()
         self._layout.addWidget(self.mod_name, 0, 1)
 
-        self.mod_desc_label = QtWidgets.QLabel("Mod Description")
+        self.mod_desc_label = QtWidgets.QLabel(
+            self.property_set.get_key("mod_description_label")
+        )
         self._layout.addWidget(self.mod_desc_label, 1, 0)
         self.mod_desc = QtWidgets.QTextEdit()
 
         self._layout.addWidget(self.mod_desc, 1, 1)
 
-        self.mod_author_label = QtWidgets.QLabel("Mod Author (Required)")
+        self.mod_author_label = QtWidgets.QLabel(
+            f"{self.property_set.get_key('mod_author_label')}{required_str}"
+        )
         self._layout.addWidget(self.mod_author_label, 2, 0)
         self.mod_author = QtWidgets.QLineEdit()
         self._layout.addWidget(self.mod_author, 2, 1)
 
-        self.mod_game_version_label = QtWidgets.QLabel("Mod Game Version (Required)")
+        self.mod_game_version_label = QtWidgets.QLabel(
+            f"{self.property_set.get_key('mod_game_version_label')}{required_str}"
+        )
         self._layout.addWidget(self.mod_game_version_label, 3, 0)
         self.mod_game_version = QtWidgets.QLineEdit()
         self._layout.addWidget(self.mod_game_version, 3, 1)
 
-        self.mod_country_code_label = QtWidgets.QLabel("Mod Country Code (Required)")
+        self.mod_country_code_label = QtWidgets.QLabel(
+            f"{self.property_set.get_key('mod_country_code_label')}{required_str}"
+        )
         self._layout.addWidget(self.mod_country_code_label, 4, 0)
         self.mod_country_code_dropdown = QtWidgets.QComboBox()
         self.mod_country_code_dropdown.addItems(country_code.CountryCode.get_all_str())
         self._layout.addWidget(self.mod_country_code_dropdown, 4, 1)
 
-        self.mod_version_label = QtWidgets.QLabel("Mod Version (Required)")
+        self.mod_version_label = QtWidgets.QLabel(
+            f"{self.property_set.get_key('mod_version_label')}{required_str}"
+        )
         self._layout.addWidget(self.mod_version_label, 5, 0)
         self.mod_version = QtWidgets.QLineEdit()
         self._layout.addWidget(self.mod_version, 5, 1)
 
-        self.mod_url_label = QtWidgets.QLabel("Mod Website")
+        self.mod_url_label = QtWidgets.QLabel(
+            f"{self.property_set.get_key('mod_website_label')}"
+        )
         self._layout.addWidget(self.mod_url_label, 6, 0)
         self.mod_url = QtWidgets.QLineEdit()
         self._layout.addWidget(self.mod_url, 6, 1)
 
-        self.mod_id_label = QtWidgets.QLabel("Mod ID")
+        self.mod_id_label = QtWidgets.QLabel(
+            f"{self.property_set.get_key('mod_id_label')}"
+        )
         self._layout.addWidget(self.mod_id_label, 7, 0)
         self.mod_id = QtWidgets.QLineEdit()
         self._layout.addWidget(self.mod_id, 7, 1)
@@ -157,27 +176,37 @@ class ModInfoView(QtWidgets.QWidget):
         self.button_layout = QtWidgets.QVBoxLayout()
         self._layout.addLayout(self.button_layout, 9, 0, 1, 2)
 
-        self.create_mod_button = QtWidgets.QPushButton("Create Mod")
+        self.create_mod_button = QtWidgets.QPushButton(
+            f"{self.property_set.get_key('create_mod_button')}"
+        )
         self.create_mod_button.clicked.connect(self.create_mod)  # type: ignore
         self.button_layout.addWidget(self.create_mod_button)
         self.create_mod_button.hide()
 
-        self.save_mod_button = QtWidgets.QPushButton("Save Changes")
+        self.save_mod_button = QtWidgets.QPushButton(
+            f"{self.property_set.get_key('save_changes_button')}"
+        )
         self.save_mod_button.clicked.connect(self.save_mod)  # type: ignore
         self.button_layout.addWidget(self.save_mod_button)
         self.save_mod_button.hide()
 
-        self.edit_mod_button = QtWidgets.QPushButton("Edit Mod Data")
+        self.edit_mod_button = QtWidgets.QPushButton(
+            f"{self.property_set.get_key('edit_mod_data_button')}"
+        )
         self.edit_mod_button.clicked.connect(self.edit_mod)  # type: ignore
         self.button_layout.addWidget(self.edit_mod_button)
         self.edit_mod_button.hide()
 
-        self.delete_mod_button = QtWidgets.QPushButton("Delete Mod")
+        self.delete_mod_button = QtWidgets.QPushButton(
+            f"{self.property_set.get_key('delete_mod_button')}"
+        )
         self.delete_mod_button.clicked.connect(self.delete_mod)  # type: ignore
         self.button_layout.addWidget(self.delete_mod_button)
         self.delete_mod_button.hide()
 
-        self.cancel_button = QtWidgets.QPushButton("Close")
+        self.cancel_button = QtWidgets.QPushButton(
+            f"{self.property_set.get_key('close_button')}"
+        )
         self.cancel_button.clicked.connect(self.close_wrapper)  # type: ignore
         self.button_layout.addWidget(self.cancel_button)
 
@@ -352,12 +381,15 @@ class ModInfoView(QtWidgets.QWidget):
     def delete_mod(self):
         if self.mod is None:
             return
-
+        secondary_text = (
+            self.property_set.get_key("delete_mod_confirm_secondary_text")
+            % self.mod.get_full_mod_name()
+        )
         ui_dialog.Dialog.yes_no_box(
             QtWidgets.QMessageBox.Icon.Warning,
-            "Delete Mod",
-            f"Are you sure you want to delete\n{self.mod.get_full_mod_name()}?",
-            "Delete",
+            f"{self.property_set.get_key('delete_mod_confirm_main_text')}",
+            f"{secondary_text}",
+            f"{self.property_set.get_key('delete_mod_confirm_title')}",
             QtWidgets.QMessageBox.StandardButton.No,
             self.delete_mod_wrapper,
         )
@@ -381,6 +413,7 @@ class ModList(QtWidgets.QWidget):
         self.on_create_mod = on_create_mod
         self.show_mod_info = show_mod_info
         self.on_delete_mod = on_delete_mod
+        self.property_set = locale_handler.PropertySet.from_config("mod_manager")
         self.setup_ui()
 
     def setup_ui(self):
@@ -392,7 +425,7 @@ class ModList(QtWidgets.QWidget):
         self.add_ui()
 
     def add_ui(self):
-        self.label = QtWidgets.QLabel("Mods")
+        self.label = QtWidgets.QLabel(f"{self.property_set.get_key('mod_list_label')}")
         self._layout.addWidget(self.label)
 
         self.mod_list = QtWidgets.QListWidget()
@@ -403,21 +436,29 @@ class ModList(QtWidgets.QWidget):
         self.button_layout = QtWidgets.QHBoxLayout()
         self._layout.addLayout(self.button_layout)
 
-        self.add_mod_button = QtWidgets.QPushButton("Add Mod from File")
+        self.add_mod_button = QtWidgets.QPushButton(
+            f"{self.property_set.get_key('add_mod_button')}"
+        )
         self.add_mod_button.clicked.connect(self.add_mod)  # type: ignore
         self.button_layout.addWidget(self.add_mod_button)
 
-        self.create_mod_button = QtWidgets.QPushButton("Create Mod")
+        self.create_mod_button = QtWidgets.QPushButton(
+            f"{self.property_set.get_key('refresh_mods_button')}"
+        )
         self.create_mod_button.clicked.connect(self.create_mod)  # type: ignore
         self.button_layout.addWidget(self.create_mod_button)
 
         self.button_layout.addStretch(1)
 
-        self.refresh_mod_button = QtWidgets.QPushButton("Refresh Mods")
+        self.refresh_mod_button = QtWidgets.QPushButton(
+            f"{self.property_set.get_key('refresh_mods_button')}"
+        )
         self.refresh_mod_button.clicked.connect(self.refresh_mods)  # type: ignore
         self.button_layout.addWidget(self.refresh_mod_button)
 
-        self.open_mod_folder_button = QtWidgets.QPushButton("Open Mod Folder")
+        self.open_mod_folder_button = QtWidgets.QPushButton(
+            f"{self.property_set.get_key('open_mod_folder_button')}"
+        )
         self.open_mod_folder_button.clicked.connect(self.open_mod_folder)  # type: ignore
         self.button_layout.addWidget(self.open_mod_folder_button)
 
@@ -433,7 +474,10 @@ class ModList(QtWidgets.QWidget):
         if item is None:
             return
         menu = QtWidgets.QMenu()
-        menu.addAction("Delete Mod", self.delete_mod_wrapper)
+        menu.addAction(
+            f"{self.property_set.get_key('delete_mod_context')}",
+            self.delete_mod_wrapper,
+        )
         menu.exec_(self.mod_list.mapToGlobal(pos))
 
     def delete_mod_wrapper(self):
@@ -441,11 +485,15 @@ class ModList(QtWidgets.QWidget):
         if len(items) > 0:
             md = mods.mod_manager.ModManager().get_mod_by_full_name(items[0].text())
             if md is not None:
+                secondary_text = (
+                    self.property_set.get_key("delete_mod_confirm_secondary_text")
+                    % md.get_full_mod_name()
+                )
                 ui_dialog.Dialog.yes_no_box(
                     QtWidgets.QMessageBox.Icon.Warning,
-                    "Delete Mod",
-                    f"Are you sure you want to delete\n{md.get_full_mod_name()}?",
-                    "Delete",
+                    f"{self.property_set.get_key('delete_mod_confirm_main_text')}",
+                    f"{secondary_text}",
+                    f"{self.property_set.get_key('delete_mod_confirm_title')}",
                     QtWidgets.QMessageBox.StandardButton.No,
                     self.delete_mod,
                 )
@@ -478,9 +526,9 @@ class ModList(QtWidgets.QWidget):
     def add_mod(self):
         extension = mods.bc_mod.Mod.get_extension()
         files = ui_file_dialog.FileDialog(self).select_files(
-            "Select Mod Files",
+            self.property_set.get_key("mod_file_select_dialog_title"),
             "",
-            f"Mod Files (*{extension});;All Files (*)",
+            f"{self.property_set.get_key('mod_file_select_dialog_filter_mod')} (*{extension});;{self.property_set.get_key('mod_file_select_dialog_filter_all')} (*)",
             None,
         )
         for file in files:
@@ -490,9 +538,14 @@ class ModList(QtWidgets.QWidget):
                 mods.mod_manager.ModManager().add_mod(md)
                 self.refresh_mods()
             else:
+                secondary_text = (
+                    self.property_set.get_key("mod_load_failed_dialog_informative_text")
+                    % path
+                )
+
                 ui_dialog.Dialog.error_dialog(
-                    "Failed to load mod",
-                    f"Failed to load mod from:\n {path}.\nThe file may be corrupted or not a valid mod.",
+                    f"{self.property_set.get_key('mod_load_failed_dialog_message')}",
+                    f"{secondary_text}",
                 )
 
     def add_mod_obj(self, md: mods.bc_mod.Mod):

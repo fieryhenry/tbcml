@@ -13,6 +13,7 @@ class Key(enum.Enum):
     DEFAULT_AUTHOR = "default_author"
     LIB_GADGETS_FOLDER = "lib_gadgets_folder"
     SELECTED_APK = "selected_apk"
+    LOCALE = "locale"
 
 
 class Config:
@@ -51,6 +52,7 @@ class Config:
             .add("LibGadgets")
             .path,
             Key.SELECTED_APK: "",
+            Key.LOCALE: "en",
         }
         for key, value in initial_values.items():
             if key not in self.config:
