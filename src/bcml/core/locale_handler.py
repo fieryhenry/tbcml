@@ -15,7 +15,11 @@ class PropertySet:
         for line in lines:
             if line.startswith("#") or line == "":
                 continue
-            key, value = line.split("=")
+            parts = line.split("=")
+            if len(parts) < 2:
+                continue
+            key = parts[0]
+            value = "=".join(parts[1:])
             self.properties[key] = value
 
     def get_key(self, key: str) -> str:
