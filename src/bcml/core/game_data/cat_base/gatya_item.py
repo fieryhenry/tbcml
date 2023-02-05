@@ -116,10 +116,10 @@ class GatyaItemBuy:
         return "Gatyaitembuy.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["GatyaItemBuy"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "GatyaItemBuy":
         csv_data = game_data.find_file(GatyaItemBuy.get_file_name())
         if csv_data is None:
-            return None
+            return GatyaItemBuy.create_empty()
 
         csv = io.bc_csv.CSV(csv_data.dec_data)
         gatya_item_buys: dict[int, GatyaItemBuyItem] = {}
@@ -176,12 +176,24 @@ class GatyaItemBuy:
         item.item_id = item_id
         self.gatya_item_buys[item_id] = item
 
+    @staticmethod
+    def create_empty() -> "GatyaItemBuy":
+        return GatyaItemBuy({})
+
 
 class GatyaItemNameItem:
     def __init__(self, id: int, name: str, description: list[str]):
         self.id = id
         self.name = name
         self.description = description
+
+    def get_trimmed_description(self) -> str:
+        desc = ""
+        for line in self.description:
+            if line == "＠":
+                break
+            desc += f"{line}\n"
+        return desc.strip()
 
     def serialize(self) -> dict[str, Any]:
         return {
@@ -226,10 +238,10 @@ class GatyaItemName:
         return "GatyaitemName.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["GatyaItemName"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "GatyaItemName":
         csv_data = game_data.find_file(GatyaItemName.get_file_name())
         if csv_data is None:
-            return None
+            return GatyaItemName.create_empty()
 
         csv = io.bc_csv.CSV(
             csv_data.dec_data,
@@ -266,6 +278,10 @@ class GatyaItemName:
     def set_item(self, id: int, item: GatyaItemNameItem) -> None:
         item.id = id
         self.gatya_item_names[id] = item
+
+    @staticmethod
+    def create_empty() -> "GatyaItemName":
+        return GatyaItemName({})
 
 
 class GatyaItem:
@@ -312,21 +328,19 @@ class GatyaItem:
         id: int,
         gatya_item_buy: GatyaItemBuyItem,
         gatya_item_name: GatyaItemNameItem,
-    ) -> Optional["GatyaItem"]:
+    ) -> "GatyaItem":
         image = game_data.find_file(GatyaItem.get_image_name(id, False))
-        if image is None:
-            return None
 
         silhouette = game_data.find_file(GatyaItem.get_image_name(id, True))
-        if silhouette is None:
-            return None
 
         return GatyaItem(
             id,
             gatya_item_buy,
             gatya_item_name,
-            io.bc_image.BCImage(image.dec_data),
-            io.bc_image.BCImage(silhouette.dec_data),
+            io.bc_image.BCImage(image.dec_data if image is not None else None),
+            io.bc_image.BCImage(
+                silhouette.dec_data if silhouette is not None else None
+            ),
         )
 
     def to_game_data(self, game_data: "pack.GamePacks") -> None:
@@ -361,14 +375,9 @@ class GatyaItems:
         )
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["GatyaItems"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "GatyaItems":
         gatya_item_buy = GatyaItemBuy.from_game_data(game_data)
-        if gatya_item_buy is None:
-            return None
-
         gatya_item_name = GatyaItemName.from_game_data(game_data)
-        if gatya_item_name is None:
-            return None
 
         items: dict[int, GatyaItem] = {}
         for i in range(len(gatya_item_buy.gatya_item_buys)):
