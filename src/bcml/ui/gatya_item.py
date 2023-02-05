@@ -72,7 +72,7 @@ class GatyaItemSelector(QtWidgets.QDialog):
             item_image.setIcon(QtGui.QIcon(pixmap))
             self._gatya_item_table.setItem(i, 2, item_image)
 
-            item_name.setToolTip("\n".join(item.gatya_item_name_item.description[:-1]))
+            item_name.setToolTip(item.gatya_item_name_item.get_trimmed_description())
 
         self._gatya_item_table.itemDoubleClicked.connect(self._on_item_double_clicked)  # type: ignore
 
