@@ -29,7 +29,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def setup_ui(self):
         self.setObjectName("MainWindow")
-        self.resize(800, 600)
+        self.resize(900, 700)
         self.create_toolbar()
         self.setWindowTitle("Battle Cats Mod Loader")
         icon_path = io.path.Path(is_relative=True).add("assets", "icon.png")
