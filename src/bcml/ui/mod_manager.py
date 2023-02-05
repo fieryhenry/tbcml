@@ -242,6 +242,7 @@ class ModInfoView(QtWidgets.QWidget):
         md = self.gen_mod()
         if md is None:
             return
+
         self.close_wrapper()
         self.on_edit_mod(md)
 
@@ -261,6 +262,7 @@ class ModInfoView(QtWidgets.QWidget):
             md.game_version = gv
             md.mod_version = attrs["version"]
             md.mod_url = attrs["url"]
+
             return md
         md = mods.bc_mod.Mod(
             attrs["name"],
