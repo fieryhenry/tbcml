@@ -602,8 +602,8 @@ class Cut:
         self.index = index
         self.x = x
         self.y = y
-        self.width = width
-        self.height = height
+        self.__width = width
+        self.__height = height
         self.name = name
         self.image: Optional["io.bc_image.BCImage"] = None
 
@@ -674,6 +674,18 @@ class Cut:
             self.height,
             self.name,
         )
+
+    @property
+    def width(self) -> int:
+        if self.image:
+            return self.image.width
+        return self.__width
+
+    @property
+    def height(self) -> int:
+        if self.image:
+            return self.image.height
+        return self.__height
 
 
 class Imgcut:
@@ -830,6 +842,16 @@ class Imgcut:
         self.cuts = cuts
         for i in range(len(cuts)):
             cuts[i].index = i
+
+    @staticmethod
+    def regenerate_cuts(cuts: list["Cut"]):
+        c_x = 0
+        for cut in cuts:
+            cut.x = c_x
+            c_x += cut.width
+            cut.y = 0
+
+        return cuts
 
 
 class Anim:
