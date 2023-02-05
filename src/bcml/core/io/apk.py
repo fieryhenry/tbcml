@@ -722,6 +722,6 @@ class Apk:
     @staticmethod
     def get_selected_apk() -> Optional["Apk"]:
         selected_apk = config.Config().get(config.Key.SELECTED_APK)
-        if selected_apk is None:
+        if not selected_apk:
             return None
         return Apk.from_format_string(selected_apk)
