@@ -16,7 +16,8 @@ class BCImage:
         if not self.__image:
             if self.data.is_empty():
                 self.__image = Image.new("RGBA", (1, 1))
-            self.__image = Image.open(self.data.to_bytes_io())
+            else:
+                self.__image = Image.open(self.data.to_bytes_io())
         return self.__image
 
     def copy(self):
@@ -113,14 +114,8 @@ class BCImage:
     def save(self, path: "path.Path"):
         self.image.save(path.to_str(), format="PNG")
 
-    def save_temp(self, name: str):
-        self.save(path.Path.get_temp_folder().join(name))
-        return name
-
     def to_data(self):
-        if self.__image is None:
-            return self.data
-        bytes_io = self.data.to_bytes_io()
+        bytes_io = data.Data().to_bytes_io()
         self.image.save(bytes_io, format="PNG")
         return data.Data(bytes_io.getvalue())
 
