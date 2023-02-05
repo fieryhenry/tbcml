@@ -631,7 +631,7 @@ class Cut:
             name,
         )
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self, img: bool = False) -> dict[str, Any]:
         return {
             "index": self.index,
             "x": self.x,
@@ -639,11 +639,12 @@ class Cut:
             "width": self.width,
             "height": self.height,
             "name": self.name,
+            "image": self.image.serialize() if img and self.image else None,
         }
 
     @staticmethod
     def deserialize(data: dict[str, Any]):
-        return Cut(
+        cut = Cut(
             data["index"],
             data["x"],
             data["y"],
@@ -651,6 +652,9 @@ class Cut:
             data["height"],
             data["name"],
         )
+        if data["image"]:
+            cut.image = io.bc_image.BCImage.deserialize(data["image"])
+        return cut
 
     def to_data(self) -> list["io.data.Data"]:
         return [
@@ -679,9 +683,18 @@ class Imgcut:
         image_name: str,
         image: "io.bc_image.BCImage",
     ):
-        self.cuts = cuts
+        self.__cuts = cuts
         self.image_name = image_name
         self.image = image
+
+    @property
+    def cuts(self) -> list["Cut"]:
+        return self.reorder_cuts(self.__cuts)
+
+    @cuts.setter
+    def cuts(self, value: list["Cut"]):
+        cuts = self.reorder_cuts(value)
+        self.__cuts = cuts
 
     def is_empty(self):
         return len(self.cuts) == 0
@@ -721,11 +734,26 @@ class Imgcut:
             "image": self.image.serialize(),
         }
 
+    def serialize_no_cuts(self) -> dict[str, Any]:
+        return {
+            "image_name": self.image_name,
+            "image": self.image.serialize(),
+        }
+
     @staticmethod
     def deserialize(data: dict[str, Any]):
         image = io.bc_image.BCImage.deserialize(data["image"])
         return Imgcut(
             [Cut.deserialize(cut) for cut in data["cuts"]],
+            data["image_name"],
+            image,
+        )
+
+    @staticmethod
+    def deserialize_no_cuts(data: dict[str, Any], cuts: list[Cut]):
+        image = io.bc_image.BCImage.deserialize(data["image"])
+        return Imgcut(
+            cuts,
             data["image_name"],
             image,
         )
@@ -749,29 +777,59 @@ class Imgcut:
         )
 
     def reconstruct_image(self):
-        if len(self.cuts) == 0:
-            self.image = io.bc_image.BCImage.create_empty()
-            return
-        max_x = max(cut.x + cut.width for cut in self.cuts)
-        max_y = max(cut.y + cut.height for cut in self.cuts)
-        new_image = io.bc_image.BCImage.from_size(max_x, max_y)
+        max_width = 0
+        max_height = 0
         for cut in self.cuts:
-            cut_image = cut.get_image(self.image)
-            if cut_image is None:
-                continue
-            new_image.paste(cut_image, cut.x, cut.y)
-        self.image = new_image
+            max_width = max(max_width, cut.x + cut.width)
+            max_height = max(max_height, cut.y + cut.height)
 
-    def set_cut(self, id: int, cut: "Cut"):
-        if id >= len(self.cuts):
-            return
-        cut.index = id
-        self.cuts[id] = cut
+        self.image = io.bc_image.BCImage.from_size(max_width, max_height)
+        for cut in self.cuts:
+            if cut.image is None:
+                continue
+            self.image.paste(cut.image, cut.x, cut.y)
+
+    @staticmethod
+    def from_cuts(cuts: list["Cut"], imgname: str):
+        imgcut = Imgcut([], imgname, io.bc_image.BCImage.create_empty())
+        imgcut.cuts = cuts
+        imgcut.reconstruct_image()
+        return imgcut
+
+    @staticmethod
+    def reorder_cuts(cuts: list["Cut"]) -> list["Cut"]:
+        cuts.sort(key=lambda cut: cut.index)
+        for i in range(len(cuts)):
+            cuts[i].index = i
+        return cuts
 
     def get_cut(self, index: int) -> Optional["Cut"]:
         if index >= len(self.cuts):
             return None
         return self.cuts[index]
+
+    def remove_cut(self, index: int):
+        if index >= len(self.cuts):
+            return
+        self.cuts.pop(index)
+        for i in range(index, len(self.cuts)):
+            self.cuts[i].index = i
+
+    def add_cut(self, cut: "Cut"):
+        cut.index = len(self.cuts)
+        self.cuts.append(cut)
+
+    def set_cut(self, id: int, cut: "Cut"):
+        if id >= len(self.cuts):
+            self.add_cut(cut)
+            return
+        cut.index = id
+        self.cuts[id] = cut
+
+    def set_cuts(self, cuts: list["Cut"]):
+        self.cuts = cuts
+        for i in range(len(cuts)):
+            cuts[i].index = i
 
 
 class Anim:
