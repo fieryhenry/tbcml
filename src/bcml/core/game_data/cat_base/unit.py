@@ -1465,7 +1465,8 @@ class BehemothDodge:
 
 
 class SoulAnimType(enum.Enum):
-    """Represents the type of a soul animation."""
+    """Represents the type of a soul animation.
+    Files are in the format `battle_soul_{id:03}` e.g `battle_soul_001`."""
 
     NONE = -1
     """No soul animation."""

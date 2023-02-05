@@ -150,15 +150,18 @@ class Bgs:
         return "bg.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["Bgs"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "Bgs":
         """Creates a Bgs object from the game data.
 
+        Args:
+            game_data (pack.GamePacks): The game data to create the Bgs object from.
+
         Returns:
-            Optional[Bgs]: A Bgs object if the file was found, None otherwise.
+            Bgs: A Bgs object if the file was found, None otherwise.
         """
         file = game_data.find_file(Bgs.get_file_name())
         if file is None:
-            return None
+            return Bgs.create_empty()
         csv = io.bc_csv.CSV(file.dec_data)
         bgs: dict[int, Bg] = {}
         for i, line in enumerate(csv.lines[1:]):
@@ -328,6 +331,9 @@ class Bgs:
     @staticmethod
     def from_zip(zip: "io.zip.Zip") -> "Bgs":
         """Creates a Bgs object from a mod zip.
+
+        Args:
+            zip (io.zip.Zip): The mod zip to create the Bgs object from.
 
         Returns:
             Bgs: The created Bgs object.

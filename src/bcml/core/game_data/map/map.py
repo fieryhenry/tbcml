@@ -252,10 +252,10 @@ class MapOptions:
         return "Map_option.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["MapOptions"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "MapOptions":
         map_options = game_data.find_file(MapOptions.get_file_name())
         if map_options is None:
-            return None
+            return MapOptions.create_empty()
         options: dict[int, MapOption] = {}
         csv = io.bc_csv.CSV(map_options.dec_data)
         for line in csv.lines[1:]:
@@ -326,6 +326,10 @@ class MapOptions:
             csv.add_line(line)
 
         game_data.set_file(MapOptions.get_file_name(), csv.to_data())
+
+    @staticmethod
+    def create_empty() -> "MapOptions":
+        return MapOptions({})
 
 
 class EnemyRow:

@@ -48,11 +48,11 @@ class NekokanProducts:
         return f"NekokanProduct_{lang_code}.tsv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["NekokanProducts"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "NekokanProducts":
         lang_code = game_data.country_code.get_language()
         tsv_data = game_data.find_file(NekokanProducts.get_file_name(lang_code))
         if tsv_data is None:
-            return None
+            return NekokanProducts.create_empty()
         products: dict[int, Product] = {}
         csv = io.bc_csv.CSV(tsv_data.dec_data, delimeter="\t")
         for line in csv.lines[1:]:

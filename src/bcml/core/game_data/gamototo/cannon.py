@@ -80,11 +80,11 @@ class CannonStatuses:
         return "CC_AllParts_status.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["CannonStatuses"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "CannonStatuses":
         file_name = CannonStatuses.get_file_name()
         file = game_data.find_file(file_name)
         if file is None:
-            return None
+            return CannonStatuses.create_empty()
 
         csv = io.bc_csv.CSV(file.dec_data)
         statuses: dict[CastleType, CannonStatus] = {}
@@ -138,6 +138,10 @@ class CannonStatuses:
 
         game_data.set_file(file_name, csv.to_data())
 
+    @staticmethod
+    def create_empty() -> "CannonStatuses":
+        return CannonStatuses({})
+
 
 class EasingType(enum.Enum):
     LINEAR = 0
@@ -190,11 +194,11 @@ class CastleGrowths:
         return "CC_Castle_growth.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["CastleGrowths"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "CastleGrowths":
         file_name = CastleGrowths.get_file_name()
         file = game_data.find_file(file_name)
         if file is None:
-            return None
+            return CastleGrowths.create_empty()
 
         csv = io.bc_csv.CSV(file.dec_data)
         growths: dict[int, CastleGrowth] = {}
@@ -231,6 +235,10 @@ class CastleGrowths:
             csv.add_line(line)
 
         game_data.set_file(file_name, csv.to_data())
+
+    @staticmethod
+    def create_empty() -> "CastleGrowths":
+        return CastleGrowths({})
 
 
 class CannonEffectType(enum.Enum):
@@ -316,11 +324,11 @@ class CannonEffects:
         return "CC_AllParts_growth.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks"):
+    def from_game_data(game_data: "pack.GamePacks") -> "CannonEffects":
         file_name = CannonEffects.get_file_name()
         file = game_data.find_file(file_name)
         if file is None:
-            return None
+            return CannonEffects.create_empty()
 
         csv = io.bc_csv.CSV(file.dec_data)
         effects: dict[CastleType, dict[int, CannonEffect]] = {}
@@ -375,6 +383,10 @@ class CannonEffects:
                 )
 
         game_data.set_file(file_name, csv.to_data())
+
+    @staticmethod
+    def create_empty() -> "CannonEffects":
+        return CannonEffects({})
 
 
 class Part(enum.Enum):
@@ -597,7 +609,7 @@ class Cannons:
         )
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["Cannons"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "Cannons":
         effects = CannonEffects.from_game_data(game_data)
         statuses = CannonStatuses.from_game_data(game_data)
         recipies = castle_recipe.CastleRecipies.from_game_data(game_data)
@@ -607,19 +619,12 @@ class Cannons:
             Cannons.get_silhouette_file_name().replace(".png", ".imgcut"),
             show_error=True,
         )
-        if (
-            effects is None
-            or statuses is None
-            or recipies is None
-            or map_png is None
-            or silhouette_png is None
-            or silhouette_imgcut is None
-        ):
-            return None
-
-        imgcut = bc_anim.Imgcut.from_data(
-            silhouette_imgcut.dec_data, io.bc_image.BCImage(silhouette_png.dec_data)
+        imgcut_data = (
+            silhouette_imgcut.dec_data if silhouette_imgcut else io.data.Data()
         )
+        png_data = silhouette_png.dec_data if silhouette_png else io.data.Data()
+        map_png_data = map_png.dec_data if map_png else io.data.Data()
+        imgcut = bc_anim.Imgcut.from_data(imgcut_data, io.bc_image.BCImage(png_data))
 
         cannons: dict[CastleType, Cannon] = {}
         for castle_type in CastleType:
@@ -632,7 +637,7 @@ class Cannons:
                 anims,
                 imgcuts,
             )
-        return Cannons(cannons, io.bc_image.BCImage(map_png.dec_data), imgcut)
+        return Cannons(cannons, io.bc_image.BCImage(map_png_data), imgcut)
 
     @staticmethod
     def get_map_png_file_name() -> str:

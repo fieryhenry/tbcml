@@ -1,22 +1,24 @@
 from bcml.core.io import data, path, apk
 from bcml.core import crypto
-import lief # type: ignore
+import lief  # type: ignore
+
 
 class Lib:
     def __init__(self, architecture: str, path: "path.Path"):
         self.architecture = architecture
         self.path = path
-        self.lib = self.parse() # type: ignore
-    
-    def parse(self) -> lief.ELF.Binary: # type: ignore
-        return lief.parse(str(self.path)) # type: ignore
-    
+        self.lib = self.parse()  # type: ignore
+
+    def parse(self) -> lief.ELF.Binary:  # type: ignore
+        return lief.parse(str(self.path))  # type: ignore
+
     def add_library(self, library_path: "path.Path"):
-        self.lib.add_library(library_path.basename()) # type: ignore
-    
+        self.lib.add_library(library_path.basename())  # type: ignore
+
     def write(self):
-        self.lib.write(str(self.path)) # type: ignore
-    
+        self.lib.write(str(self.path))  # type: ignore
+
+
 class LibFiles:
     def __init__(self, apk: "apk.Apk"):
         self.libs_folder = apk.extracted_path.add("lib")
@@ -40,9 +42,7 @@ class LibFiles:
         hashes: dict[str, data.Data] = {}
         for pack in self.modified_packs:
             hashes[pack.basename()] = data.Data(
-                crypto.Hash(crypto.HashAlgorithm.MD5, pack.read())
-                .get_hash()
-                .to_hex()
+                crypto.Hash(crypto.HashAlgorithm.MD5, pack.read()).get_hash().to_hex()
             )
 
         return hashes
@@ -59,9 +59,7 @@ class LibFiles:
                 if original_Pack is None:
                     continue
                 original_hash = data.Data(
-                    crypto.Hash(
-                        crypto.HashAlgorithm.MD5, original_Pack.read()
-                    )
+                    crypto.Hash(crypto.HashAlgorithm.MD5, original_Pack.read())
                     .get_hash()
                     .to_hex()
                 )

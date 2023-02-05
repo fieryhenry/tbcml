@@ -1,6 +1,6 @@
 from bcml.core.game_data import pack
 from bcml.core import io
-from typing import Any, Optional
+from typing import Any
 from bcml.core.game_data.gamototo import ototo
 
 
@@ -18,10 +18,8 @@ class Gamototo:
         return Gamototo(ototo.Ototo.deserialize(data["ototo"]))
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["Gamototo"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "Gamototo":
         ot = ototo.Ototo.from_game_data(game_data)
-        if ot is None:
-            return None
         return Gamototo(
             ot,
         )

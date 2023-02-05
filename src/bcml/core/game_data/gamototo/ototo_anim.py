@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 import enum
 from bcml.core.game_data import bc_anim, pack
 from bcml.core import io
@@ -75,7 +75,7 @@ class MainChara:
         return MainChara.deserialize(json_file.get_json())
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["MainChara"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "MainChara":
         anim = bc_anim.Anim.from_paths(
             game_data,
             MainChara.FilePath.SPRITE.value,
@@ -84,7 +84,7 @@ class MainChara:
             MainChara.FilePath.get_all_maanims_names(),
         )
         if anim is None:
-            return None
+            return MainChara.create_empty()
         return MainChara(anim)
 
     def to_game_data(self, game_data: "pack.GamePacks"):

@@ -735,10 +735,10 @@ class UnitBuy:
         return "unitbuy.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["UnitBuy"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "UnitBuy":
         file = game_data.find_file(UnitBuy.get_file_name())
         if file is None:
-            return None
+            return UnitBuy.create_empty()
 
         csv = io.bc_csv.CSV(file.dec_data)
         unit_buy_data: dict[int, UnitBuyData] = {}
@@ -761,6 +761,10 @@ class UnitBuy:
 
     def set(self, cat: "Cat"):
         self.unit_buy_data[cat.cat_id] = cat.unit_buy_data
+
+    @staticmethod
+    def create_empty() -> "UnitBuy":
+        return UnitBuy({})
 
 
 class Talent:
@@ -803,10 +807,10 @@ class Talents:
         return "SkillAcquisition.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["Talents"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "Talents":
         file = game_data.find_file(Talents.get_file_name())
         if file is None:
-            return None
+            return Talents.create_empty()
 
         csv = io.bc_csv.CSV(file.dec_data)
         talents: dict[int, Talent] = {}
@@ -843,6 +847,10 @@ class Talents:
         if cat.talent is None:
             return
         self.talents[cat.cat_id] = cat.talent
+
+    @staticmethod
+    def create_empty() -> "Talents":
+        return Talents({})
 
 
 class NyankoPictureBookData:
@@ -922,10 +930,10 @@ class NyankoPictureBook:
         return "nyankoPictureBookData.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["NyankoPictureBook"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "NyankoPictureBook":
         file = game_data.find_file(NyankoPictureBook.get_file_name())
         if file is None:
-            return None
+            return NyankoPictureBook.create_empty()
 
         csv = io.bc_csv.CSV(file.dec_data)
         data: dict[int, NyankoPictureBookData] = {}
@@ -968,6 +976,10 @@ class NyankoPictureBook:
     def set(self, cat: "Cat"):
         self.data[cat.cat_id] = cat.nyanko_picture_book_data
 
+    @staticmethod
+    def create_empty() -> "NyankoPictureBook":
+        return NyankoPictureBook({})
+
 
 class EvolveText:
     def __init__(self, text: dict[int, list[str]]):
@@ -985,10 +997,10 @@ class EvolveText:
         return f"unitevolve_{cc.get_language()}.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["EvolveText"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "EvolveText":
         file = game_data.find_file(EvolveText.get_file_name(game_data.country_code))
         if file is None:
-            return None
+            return EvolveText.create_empty()
 
         csv = io.bc_csv.CSV(
             file.dec_data,
@@ -1019,6 +1031,10 @@ class EvolveText:
 
     def set(self, cat: "Cat"):
         self.text[cat.cat_id] = cat.evolve_text
+
+    @staticmethod
+    def create_empty() -> "EvolveText":
+        return EvolveText({})
 
 
 class Cat:
@@ -1212,14 +1228,12 @@ class Cats:
     @staticmethod
     def from_game_data(
         game_data: "pack.GamePacks", cat_ids: Optional[list[int]] = None
-    ) -> Optional["Cats"]:
+    ) -> "Cats":
         cats: dict[int, Cat] = {}
         unit_buy = UnitBuy.from_game_data(game_data)
         talents = Talents.from_game_data(game_data)
         nyan = NyankoPictureBook.from_game_data(game_data)
         evov_text = EvolveText.from_game_data(game_data)
-        if unit_buy is None or talents is None or nyan is None or evov_text is None:
-            return None
         total_cats = len(nyan.data)
         if cat_ids is None:
             cat_ids = list(range(total_cats))

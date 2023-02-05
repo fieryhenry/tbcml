@@ -1,5 +1,5 @@
 import enum
-from typing import Any, Optional
+from typing import Any
 from bcml.core.game_data import pack
 from bcml.core import io
 
@@ -64,10 +64,10 @@ class ItemPacks:
         return "Adreward_table.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["ItemPacks"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "ItemPacks":
         file = game_data.find_file(ItemPacks.get_file_name())
         if file is None:
-            return None
+            return ItemPacks.create_empty()
         csv = io.bc_csv.CSV(file.dec_data)
         packs: dict[int, ItemPack] = {}
         for i, line in enumerate(csv.lines[1:]):

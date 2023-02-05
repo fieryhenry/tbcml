@@ -285,13 +285,11 @@ class GatyaOptions:
         return f"GatyaData_Option_Set{type.value}.tsv"
 
     @staticmethod
-    def from_game_data(
-        game_data: "pack.GamePacks", type: GatyaType
-    ) -> Optional["GatyaOptions"]:
+    def from_game_data(game_data: "pack.GamePacks", type: GatyaType) -> "GatyaOptions":
         file_name = GatyaOptions.get_file_name(type)
         file = game_data.find_file(file_name)
         if file is None:
-            return None
+            return GatyaOptions.create_empty(type)
         csv = io.bc_csv.CSV(file.dec_data, delimeter="\t")
         options: dict[int, GatyaOptionSet] = {}
         for line in csv.lines[1:]:
@@ -355,6 +353,10 @@ class GatyaOptions:
             csv.add_line(aline)
         game_data.set_file(file_name, csv.to_data())
 
+    @staticmethod
+    def create_empty(type: GatyaType) -> "GatyaOptions":
+        return GatyaOptions(type, {})
+
 
 class GatyaOptionsAll:
     def __init__(self, gatya_options: dict[GatyaType, GatyaOptions]):
@@ -378,12 +380,10 @@ class GatyaOptionsAll:
         )
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["GatyaOptionsAll"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "GatyaOptionsAll":
         gatya_otpions: dict[GatyaType, GatyaOptions] = {}
         for type in GatyaType:
             options = GatyaOptions.from_game_data(game_data, type)
-            if options is None:
-                return None
             gatya_otpions[type] = options
         return GatyaOptionsAll(gatya_otpions)
 
@@ -443,11 +443,9 @@ class Gatya:
         return Gatya.deserialize(json.get_json())
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["Gatya"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "Gatya":
         gatya_options = GatyaOptionsAll.from_game_data(game_data)
         gatya_data_sets = GatyaDataSetsAll.from_game_data(game_data)
-        if gatya_options is None or gatya_data_sets is None:
-            return None
         return Gatya(gatya_options, gatya_data_sets)
 
     def to_game_data(self, game_data: "pack.GamePacks"):

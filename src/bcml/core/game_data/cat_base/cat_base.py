@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 from bcml.core.game_data.cat_base import (
     cats,
     enemies,
@@ -14,6 +14,8 @@ from bcml.core import io
 
 
 class CatBase:
+    """Represents the CatBase object."""
+
     def __init__(
         self,
         cats: "cats.Cats",
@@ -25,6 +27,18 @@ class CatBase:
         user_rank_rewards: "user_rank_reward.UserRankReward",
         gatya_items: "gatya_item.GatyaItems",
     ):
+        """Initialize a new CatBase.
+
+        Args:
+            cats (cats.Cats): Cat data.
+            enemies (enemies.Enemies): Enemy data.
+            gatya (gatya.Gatya): Gatya data.
+            item_shop (item_shop.ItemShop): Item shop data.
+            nekokan_product (nekokan_product.NekokanProducts): Inapp purchase data.
+            scheme_items (scheme_item.SchemeItems): Scheme item data.
+            user_rank_rewards (user_rank_reward.UserRankReward): User rank reward data.
+            gatya_items (gatya_item.GatyaItems): Gatya item data.
+        """
         self.cats = cats
         self.enemies = enemies
         self.gatya = gatya
@@ -35,6 +49,11 @@ class CatBase:
         self.gatya_items = gatya_items
 
     def serialize(self) -> dict[str, Any]:
+        """Serialize the CatBase object into a dictionary that can be written to a json file.
+
+        Returns:
+            dict[str, Any]: The serialized CatBase object.
+        """
         return {
             "cats": self.cats.serialize(),
             "enemies": self.enemies.serialize(),
@@ -48,6 +67,14 @@ class CatBase:
 
     @staticmethod
     def deserialize(data: dict[str, Any]) -> "CatBase":
+        """Deserialize a CatBase object from a dictionary.
+
+        Args:
+            data (dict[str, Any]): The dictionary to deserialize.
+
+        Returns:
+            CatBase: The deserialized CatBase object.
+        """
         return CatBase(
             cats.Cats.deserialize(data["cats"]),
             enemies.Enemies.deserialize(data["enemies"]),
@@ -60,7 +87,15 @@ class CatBase:
         )
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["CatBase"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "CatBase":
+        """Create a CatBase object from a GamePacks object.
+
+        Args:
+            game_data (pack.GamePacks): The GamePacks object to create the CatBase object from.
+
+        Returns:
+            CatBase: The CatBase object.
+        """
         cts = cats.Cats.from_game_data(game_data)
         enem = enemies.Enemies.from_game_data(game_data)
         gt = gatya.Gatya.from_game_data(game_data)
@@ -69,17 +104,6 @@ class CatBase:
         sch = scheme_item.SchemeItems.from_game_data(game_data)
         urr = user_rank_reward.UserRankReward.from_game_data(game_data)
         gtya = gatya_item.GatyaItems.from_game_data(game_data)
-        if (
-            cts is None
-            or enem is None
-            or gt is None
-            or itms is None
-            or np is None
-            or sch is None
-            or urr is None
-            or gtya is None
-        ):
-            return None
         return CatBase(
             cts,
             enem,

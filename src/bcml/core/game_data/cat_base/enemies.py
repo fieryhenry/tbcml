@@ -263,10 +263,10 @@ class StatsData:
         return "t_unit.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["StatsData"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "StatsData":
         stats_data = game_data.find_file(StatsData.get_file_name())
         if stats_data is None:
-            return None
+            return StatsData.create_empty()
         stats: dict[int, Stats] = {}
         csv = io.bc_csv.CSV(stats_data.dec_data)
         for enemy_id, line in enumerate(csv.lines):
@@ -286,6 +286,10 @@ class StatsData:
 
     def get(self, enemy_id: int) -> Optional[Stats]:
         return self.stats.get(enemy_id)
+
+    @staticmethod
+    def create_empty() -> "StatsData":
+        return StatsData({})
 
 
 class Anim:
@@ -380,10 +384,10 @@ class Names:
         return "Enemyname.tsv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["Names"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "Names":
         names_data = game_data.find_file(Names.get_file_name())
         if names_data is None:
-            return None
+            return Names.create_empty()
         names: dict[int, str] = {}
         csv = io.bc_csv.CSV(names_data.dec_data, delimeter="\t", remove_empty=False)
         for enemy_id, line in enumerate(csv.lines):
@@ -409,6 +413,10 @@ class Names:
     def get(self, enemy_id: int) -> str:
         return self.names.get(enemy_id, "???")
 
+    @staticmethod
+    def create_empty() -> "Names":
+        return Names({})
+
 
 class Descriptions:
     def __init__(self, descriptions: dict[int, list[str]]):
@@ -428,12 +436,12 @@ class Descriptions:
         return f"EnemyPictureBook_{cc.get_language()}.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["Descriptions"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "Descriptions":
         descriptions: dict[int, list[str]] = {}
         cc = game_data.country_code
         file = game_data.find_file(Descriptions.get_file_name(cc))
         if file is None:
-            return None
+            return Descriptions.create_empty()
         csv = io.bc_csv.CSV(
             file.dec_data,
             delimeter=io.bc_csv.Delimeter.from_country_code_res(cc),
@@ -467,6 +475,10 @@ class Descriptions:
 
     def get(self, enemy_id: int) -> list[str]:
         return self.descriptions.get(enemy_id, ["???"])
+
+    @staticmethod
+    def create_empty() -> "Descriptions":
+        return Descriptions({})
 
 
 class Enemy:
@@ -580,12 +592,10 @@ class Enemies:
         )
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["Enemies"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "Enemies":
         stats = StatsData.from_game_data(game_data)
         names = Names.from_game_data(game_data)
         descriptions = Descriptions.from_game_data(game_data)
-        if stats is None or names is None or descriptions is None:
-            return None
         enemies = {}
         for enemy_id in names.names.keys():
             enemy = Enemy.from_game_data(

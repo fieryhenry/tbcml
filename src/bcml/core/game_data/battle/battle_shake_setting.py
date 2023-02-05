@@ -1,6 +1,6 @@
 """Module for handling the screen shake effects in battle. This feature was added in version 11.8.0"""
 import enum
-from typing import Any, Optional
+from typing import Any
 from bcml.core.game_data import pack
 from bcml.core import io
 
@@ -104,7 +104,7 @@ class ShakeEffects:
         return "battleshake_setting.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["ShakeEffects"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "ShakeEffects":
         """Loads the ShakeEffects from the game data.
 
         Args:
@@ -115,7 +115,7 @@ class ShakeEffects:
         """
         file = game_data.find_file(ShakeEffects.get_file_name())
         if file is None:
-            return None
+            return ShakeEffects.create_empty()
         csv = io.bc_csv.CSV(file.dec_data)
         effects: dict[int, ShakeEffect] = {}
         for i, line in enumerate(csv.lines):

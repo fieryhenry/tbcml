@@ -1,7 +1,7 @@
 """Contains the Battle class, which contains all battle-related data."""
 from bcml.core.game_data import pack
 from bcml.core import io
-from typing import Any, Optional
+from typing import Any
 from bcml.core.game_data.battle import battle_shake_setting, bg, chara_group
 
 
@@ -52,7 +52,7 @@ class Battle:
         )
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["Battle"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "Battle":
         """Creates a Battle object from the game data.
 
         Args:
@@ -62,14 +62,8 @@ class Battle:
             Battle: The Battle object.
         """
         shake_effects = battle_shake_setting.ShakeEffects.from_game_data(game_data)
-        if shake_effects is None:
-            return None
         bgs = bg.Bgs.from_game_data(game_data)
-        if bgs is None:
-            return None
         groups = chara_group.CharaGroups.from_game_data(game_data)
-        if groups is None:
-            return None
         return Battle(
             shake_effects,
             bgs,
@@ -99,6 +93,9 @@ class Battle:
     @staticmethod
     def from_zip(zip: "io.zip.Zip") -> "Battle":
         """Creates a Battle object from a mod zip.
+
+        Args:
+            zip (io.zip.Zip): The zip to create the Battle object from.
 
         Returns:
             Battle: The Battle object.

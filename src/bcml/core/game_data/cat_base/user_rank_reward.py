@@ -81,15 +81,15 @@ class UserRankReward:
         return "rankGiftMessage.tsv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["UserRankReward"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "UserRankReward":
         csv_data = game_data.find_file(UserRankReward.get_file_name())
 
         if csv_data is None:
-            return None
+            return UserRankReward.create_empty()
 
         name_text_data = game_data.find_file(UserRankReward.get_file_name_text())
         if name_text_data is None:
-            return None
+            return UserRankReward.create_empty()
 
         tsv = io.bc_csv.CSV(name_text_data.dec_data, delimeter="\t")
 

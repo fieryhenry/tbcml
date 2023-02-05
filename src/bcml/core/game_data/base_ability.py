@@ -2,6 +2,7 @@ import enum
 from bcml.core.game_data import pack
 from bcml.core import io
 
+
 class Probability(enum.Enum):
     NORMAL = 0
     RARE = 1
@@ -23,22 +24,23 @@ class BaseAbilityData:
         self.max_base_level = max_base_level
         self.max_plus_level = max_plus_level
         self.chapter_1_to_2_max_level = chapter_1_to_2_max_level
-    
+
 
 class BaseAbility:
     def __init__(self, ability_id: int, data: BaseAbilityData):
         self.ability_id = ability_id
         self.data = data
 
+
 class BaseAbilities:
     def __init__(self, abilities: dict[int, BaseAbility]):
         self.abilities = abilities
 
     @staticmethod
-    def from_game_data(game_data: pack.GamePacks):
+    def from_game_data(game_data: pack.GamePacks) -> "BaseAbilities":
         file = game_data.find_file("AbilityData.csv")
         if file is None:
-            raise FileNotFoundError("AbilityData.csv not found")
+            return BaseAbilities.create_empty()
         csv = io.bc_csv.CSV(file.dec_data)
         abilitise: dict[int, BaseAbility] = {}
         for i, line in enumerate(csv):
@@ -60,7 +62,7 @@ class BaseAbilities:
             abilitise[i] = BaseAbility(i, data)
 
         return BaseAbilities(abilitise)
-    
+
     def to_game_data(self, game_data: pack.GamePacks):
         file = game_data.find_file(self.get_file_name())
         if file is None:
@@ -82,15 +84,23 @@ class BaseAbilities:
             line[4].set(ability.data.chapter_1_to_2_max_level)
             csv.set_line(i, line)
             del remaining_abilities[i]
-        
+
         for ability in remaining_abilities.values():
-            line = [ability.data.sell_price, ability.data.probability.value, ability.data.max_base_level, ability.data.max_plus_level, ability.data.chapter_1_to_2_max_level]
+            line = [
+                ability.data.sell_price,
+                ability.data.probability.value,
+                ability.data.max_base_level,
+                ability.data.max_plus_level,
+                ability.data.chapter_1_to_2_max_level,
+            ]
             csv.add_line(line)
 
         game_data.set_file(self.get_file_name(), csv.to_data())
-            
+
     @staticmethod
     def get_file_name() -> str:
         return "AbilityData.csv"
 
-            
+    @staticmethod
+    def create_empty() -> "BaseAbilities":
+        return BaseAbilities({})

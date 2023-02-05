@@ -1,5 +1,5 @@
 import enum
-from typing import Any, Optional
+from typing import Any
 from bcml.core.game_data import pack, bc_anim
 from bcml.core import io
 
@@ -23,11 +23,9 @@ class Engineer:
         )
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["Engineer"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "Engineer":
         limit = EngineerLimit.from_game_data(game_data)
         anim = EngineerAnim.from_game_data(game_data)
-        if limit is None or anim is None:
-            return None
         return Engineer(
             limit,
             anim,
@@ -85,10 +83,10 @@ class EngineerLimit:
         return "CastleCustomLimit.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["EngineerLimit"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "EngineerLimit":
         file = game_data.find_file(EngineerLimit.get_file_name())
         if file is None:
-            return None
+            return EngineerLimit.create_empty()
         csv = io.bc_csv.CSV(file.dec_data)
         return EngineerLimit(
             csv.lines[0][0].to_int(),
@@ -156,7 +154,7 @@ class EngineerAnim:
         self.anim = anim
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["EngineerAnim"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "EngineerAnim":
         anim = bc_anim.Anim.from_paths(
             game_data,
             EngineerAnim.FilePath.SPRITE.value,
@@ -165,7 +163,7 @@ class EngineerAnim:
             EngineerAnim.FilePath.get_all_maanims_names(),
         )
         if anim is None:
-            return None
+            return EngineerAnim.create_empty()
         return EngineerAnim(anim)
 
     def to_game_data(self, game_data: "pack.GamePacks"):

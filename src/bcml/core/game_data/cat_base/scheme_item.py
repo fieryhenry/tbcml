@@ -80,10 +80,10 @@ class SchemeItems:
         return "schemeItemData.tsv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["SchemeItems"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "SchemeItems":
         tsv_data = game_data.find_file(SchemeItems.get_file_name())
         if tsv_data is None:
-            return None
+            return SchemeItems.create_empty()
         items: dict[int, SchemeItem] = {}
         csv = io.bc_csv.CSV(tsv_data.dec_data, delimeter="\t")
         for line in csv.lines[1:]:

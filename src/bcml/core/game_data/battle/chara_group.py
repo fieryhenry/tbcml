@@ -1,5 +1,5 @@
 import enum
-from typing import Any, Optional
+from typing import Any
 from bcml.core.game_data import pack
 from bcml.core import io
 
@@ -84,16 +84,16 @@ class CharaGroups:
         return "Charagroup.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["CharaGroups"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "CharaGroups":
         """Loads the CharaGroups from the game data.
 
         Returns:
-            Optional[CharaGroups]: The CharaGroups, or None if the file could not be found.
+            CharaGroups: The CharaGroups loaded from the game data.
         """
         file_name = CharaGroups.get_file_name()
         file = game_data.find_file(file_name)
         if file is None:
-            return None
+            return CharaGroups.create_empty()
         csv = io.bc_csv.CSV(file.dec_data)
         groups: dict[int, CharaGroupSet] = {}
         for line in csv.lines[1:]:
@@ -183,6 +183,9 @@ class CharaGroups:
     @staticmethod
     def from_zip(zip: "io.zip.Zip") -> "CharaGroups":
         """Loads the CharaGroups from a mod zip file.
+
+        Args:
+            zip (io.zip.Zip): The mod zip file to load the CharaGroups from.
 
         Returns:
             CharaGroups: The CharaGroups, or None if the file could not be found.

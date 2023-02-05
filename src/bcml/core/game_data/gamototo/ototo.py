@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 from bcml.core.game_data.gamototo import cannon, engineers, item_pack, ototo_anim
 from bcml.core.game_data import pack
 from bcml.core import io
@@ -37,18 +37,11 @@ class Ototo:
         )
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> Optional["Ototo"]:
+    def from_game_data(game_data: "pack.GamePacks") -> "Ototo":
         engineer = engineers.Engineer.from_game_data(game_data)
         cannons = cannon.Cannons.from_game_data(game_data)
         item_packs = item_pack.ItemPacks.from_game_data(game_data)
         main_chara_anim = ototo_anim.MainChara.from_game_data(game_data)
-        if (
-            engineer is None
-            or cannons is None
-            or item_packs is None
-            or main_chara_anim is None
-        ):
-            return None
         return Ototo(
             engineer,
             cannons,
