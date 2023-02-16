@@ -1,6 +1,6 @@
 from typing import Any, Optional
 from bcml.core.game_data import pack, bc_anim
-from bcml.core import io
+from bcml.core import io, country_code
 
 
 class Item:
@@ -145,6 +145,18 @@ class ItemShop:
         return "itemShopData.tsv"
 
     @staticmethod
+    def get_imgname(cc: "country_code.CountryCode") -> str:
+        """Get the name of the file containing the ItemShop icons.
+
+        Args:
+            cc (country_code.CountryCode): The country code of the game.
+
+        Returns:
+            str: The name of the file containing the ItemShop icons.
+        """
+        return f"item000_{cc.get_language()}.png"
+
+    @staticmethod
     def from_game_data(game_data: "pack.GamePacks") -> "ItemShop":
         """Get the ItemShop from the game data.
 
@@ -191,7 +203,9 @@ class ItemShop:
         cuts: list[bc_anim.Cut] = []
         for item in self.items.values():
             cuts.append(item.cut)
-        return bc_anim.Imgcut.from_cuts(cuts, self.imgname)
+        imgcut = bc_anim.Imgcut.from_cuts(cuts, self.imgname)
+        imgcut.cuts = bc_anim.Imgcut.regenerate_cuts(imgcut.cuts)
+        return imgcut
 
     def to_game_data(self, game_data: "pack.GamePacks"):
         """Write the ItemShop to the game data.
@@ -240,6 +254,7 @@ class ItemShop:
             game_data.set_file(
                 f"item000_{game_data.country_code.get_language()}.imgcut", csv_data
             )
+            game_data.set_file(f"item000.imgcut", csv_data)
 
     @staticmethod
     def get_json_file_path() -> "io.path.Path":
