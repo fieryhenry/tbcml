@@ -20,6 +20,8 @@ class PropertySet:
                 continue
             key = parts[0]
             value = "=".join(parts[1:])
+            if key in self.properties:
+                raise KeyError(f"Key {key} already exists in property file")
             self.properties[key] = value
 
     def get_key(self, key: str) -> str:
@@ -35,24 +37,22 @@ class LocalManager:
         self.locale = locale
         self.path = io.path.Path("locales", True).add(locale)
         self.properties: dict[str, PropertySet] = {}
+        self.all_properties: dict[str, str] = {}
         self.parse()
 
     def parse(self):
         for file in self.path.get_files():
             file_name = file.basename()
             if file_name.endswith(".properties"):
-                self.properties[file_name[:-11]] = PropertySet(
-                    self.locale, file_name[:-11]
-                )
+                property_set = PropertySet(self.locale, file_name[:-11])
+                self.all_properties.update(property_set.properties)
+                self.properties[file_name[:-11]] = property_set
 
     def get_key(self, property: str, key: str) -> str:
         return self.properties[property].get_key(key)
 
     def search_key(self, key: str) -> str:
-        for prop in self.properties.values():
-            if key in prop.properties:
-                return prop.get_key(key)
-        raise KeyError(f"Key {key} not found in any property file")
+        return self.all_properties[key]
 
     @staticmethod
     def from_config() -> "LocalManager":
