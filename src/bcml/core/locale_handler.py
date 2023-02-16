@@ -48,6 +48,12 @@ class LocalManager:
     def get_key(self, property: str, key: str) -> str:
         return self.properties[property].get_key(key)
 
+    def search_key(self, key: str) -> str:
+        for prop in self.properties.values():
+            if key in prop.properties:
+                return prop.get_key(key)
+        raise KeyError(f"Key {key} not found in any property file")
+
     @staticmethod
     def from_config() -> "LocalManager":
         return LocalManager(io.config.Config().get(io.config.Key.LOCALE))
