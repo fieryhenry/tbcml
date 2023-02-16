@@ -57,3 +57,11 @@ class LocalManager:
     @staticmethod
     def from_config() -> "LocalManager":
         return LocalManager(io.config.Config().get(io.config.Key.LOCALE))
+
+    def check_duplicates(self):
+        keys: set[str] = set()
+        for property in self.properties.values():
+            for key in property.properties.keys():
+                if key in keys:
+                    raise KeyError(f"Duplicate key {key}")
+                keys.add(key)
