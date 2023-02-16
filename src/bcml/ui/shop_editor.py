@@ -274,6 +274,7 @@ class ShopEditor(QtWidgets.QWidget):
             item_id_o = QtWidgets.QTableWidgetItem(str(item.id))
             item_id_o.setFlags(item_id_o.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)  # type: ignore
             name_o = QtWidgets.QTableWidgetItem(item.gatya_item_name_item.name)
+            name_o.setFlags(name_o.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)  # type: ignore
 
             name_o.setToolTip(item.gatya_item_name_item.get_trimmed_description())
 
