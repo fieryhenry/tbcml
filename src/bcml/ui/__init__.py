@@ -11,6 +11,7 @@ from bcml.ui import (
     game_editor,
     shop_editor,
     gatya_item,
+    localizable,
 )
 
 __all__ = [
@@ -26,4 +27,5 @@ __all__ = [
     "game_editor",
     "shop_editor",
     "gatya_item",
+    "localizable",
 ]
