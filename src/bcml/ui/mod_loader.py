@@ -16,12 +16,14 @@ class ModLoader(QtWidgets.QDialog):
 
         self._layout = QtWidgets.QVBoxLayout(self)
         self.setLayout(self._layout)
+        self.loaded = False
 
         self.add_ui()
 
     def load_data(self):
         self.apk.extract()
         self.apk.copy_server_files()
+        self.loaded = True
 
     def add_ui(self):
         self.loading_mods = False
@@ -78,6 +80,8 @@ class ModLoader(QtWidgets.QDialog):
         )
 
     def load_mods_thread(self, mod_names: list[str]):
+        if not self.loaded:
+            self.load_data()
         self.loading_mods = True
         total_progress = 100
         self.progress_bar.set_progress_str("Loading Game Data", 0, total_progress)
