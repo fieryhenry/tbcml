@@ -1,17 +1,20 @@
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 from PyQt5 import QtWidgets
+from bcml.core import locale_handler
 
 
 class Dialog:
     def __init__(self):
-        pass
+        self.locale_manager = locale_handler.LocalManager.from_config()
 
-    @staticmethod
     def error_dialog(
+        self,
         message: str,
-        informative_text: str = "",
-        title: str = "Error",
+        informative_text: str,
+        title: Optional[str] = None,
     ):
+        if title is None:
+            title = self.locale_manager.search_key("error")
         dialog = QtWidgets.QMessageBox()
         dialog.setIcon(QtWidgets.QMessageBox.Icon.Critical)
         dialog.setText(message)
@@ -20,8 +23,8 @@ class Dialog:
 
         dialog.exec_()
 
-    @staticmethod
     def yes_no_box(
+        self,
         icon: QtWidgets.QMessageBox.Icon,
         text: str,
         informative_text: str,
@@ -40,13 +43,19 @@ class Dialog:
             | QtWidgets.QMessageBox.StandardButton.No
         )
         msg.setDefaultButton(default_button)
-        msg.buttonClicked.connect(  # type: ignore
-            lambda button: on_yes() if "Yes" in button.text() else on_no()  # type: ignore
-        )
+
+        def on_button_clicked(button: QtWidgets.QPushButton):
+            if button == msg.button(QtWidgets.QMessageBox.StandardButton.Yes):
+                on_yes()
+            elif button == msg.button(QtWidgets.QMessageBox.StandardButton.No):
+                on_no()
+
+        msg.buttonClicked.connect(on_button_clicked)  # type: ignore
+
         msg.exec_()
 
-    @staticmethod
     def three_button_box(
+        self,
         icon: QtWidgets.QMessageBox.Icon,
         text: str,
         informative_text: str,
@@ -67,30 +76,29 @@ class Dialog:
             | QtWidgets.QMessageBox.StandardButton.Cancel
         )
         msg.setDefaultButton(default_button)
-        msg.buttonClicked.connect(  # type: ignore
-            lambda button: on_yes() if "Yes" in button.text() else on_no() if "No" in button.text() else on_cancel()  # type: ignore
-        )
+
+        def on_button_click(button: QtWidgets.QPushButton):
+            if button == msg.button(QtWidgets.QMessageBox.StandardButton.Yes):
+                on_yes()
+            elif button == msg.button(QtWidgets.QMessageBox.StandardButton.No):
+                on_no()
+            elif button == msg.button(QtWidgets.QMessageBox.StandardButton.Cancel):
+                on_cancel()
+
+        msg.buttonClicked.connect(on_button_click)  # type: ignore
         msg.exec_()
 
-    @staticmethod
-    def info_dialog(message: str):
-        dialog = QtWidgets.QMessageBox()
-        dialog.setIcon(QtWidgets.QMessageBox.Icon.Information)
-        dialog.setText(message)
-        dialog.setWindowTitle("Info")
-        dialog.exec_()
-
-    @staticmethod
     def save_changes_dialog(
+        self,
         on_yes: Callable[..., Any] = lambda: None,
         on_no: Callable[..., Any] = lambda: None,
         on_cancel: Callable[..., Any] = lambda: None,
     ):
-        Dialog.three_button_box(
+        self.three_button_box(
             QtWidgets.QMessageBox.Icon.Warning,
-            "Save changes?",
-            "You have unsaved changes. Do you want to save them?",
-            "Save changes?",
+            self.locale_manager.search_key("save_changes_q"),
+            self.locale_manager.search_key("save_changes_info"),
+            self.locale_manager.search_key("save_changes_q"),
             QtWidgets.QMessageBox.StandardButton.Yes,
             on_yes,
             on_no,

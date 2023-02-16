@@ -107,7 +107,7 @@ class ApkManager(QtWidgets.QDialog):
         io.apk.Apk.get_default_apk_folder().open()
 
     def add_apk_clicked(self):
-        file_filter = f"{self.locale_manager.search_key('apk_filter')} (*.apk);;{self.locale_manager.search_key('all_filter')} (*)"
+        file_filter = self.locale_manager.search_key("apk_filter")
         apk_path = ui_file_dialog.FileDialog(self).select_file(
             self.locale_manager.search_key("select_apk"),
             io.apk.Apk.get_default_apk_folder().path,
@@ -222,7 +222,7 @@ class ApkList(QtWidgets.QListWidget):
         return io.apk.Apk.from_format_string(self.get_selected_apk_text())
 
     def delete_apk(self):
-        ui_dialog.Dialog.yes_no_box(
+        ui_dialog.Dialog().yes_no_box(
             icon=QtWidgets.QMessageBox.Icon.Question,
             text=self.locale_manager.search_key("delete_apk_text"),
             informative_text=self.locale_manager.search_key("delete_apk_info"),
@@ -238,7 +238,7 @@ class ApkList(QtWidgets.QListWidget):
 
     def extract_apk(self):
         if not io.apk.Apk.check_apktool_installed():
-            ui_dialog.Dialog.yes_no_box(
+            ui_dialog.Dialog().yes_no_box(
                 icon=QtWidgets.QMessageBox.Icon.Warning,
                 text=self.locale_manager.search_key("apk_tool_missing_text"),
                 informative_text=self.locale_manager.search_key(

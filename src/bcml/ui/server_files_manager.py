@@ -1,17 +1,20 @@
 from PyQt5 import QtCore, QtWidgets
-from bcml.core import io, country_code, game_version
+from bcml.core import io, country_code, game_version, locale_handler
 from bcml.ui import progress, ui_thread
 
 
 class ServerFilesManager(QtWidgets.QDialog):
     def __init__(self):
         super(ServerFilesManager, self).__init__()
+        self.locale_manager = locale_handler.LocalManager.from_config()
         self.setup_ui()
 
     def setup_ui(self):
         self.setObjectName("ServerFilesManager")
         self.resize(700, 700)
-        self.setWindowTitle("Server Files Manager")
+        self.setWindowTitle(
+            self.locale_manager.search_key("server_files_manager_title")
+        )
         self.setWindowModality(QtCore.Qt.WindowModality.ApplicationModal)
 
         self._layout = QtWidgets.QVBoxLayout(self)
@@ -26,26 +29,34 @@ class ServerFilesManager(QtWidgets.QDialog):
         self._cc_combo.currentTextChanged.connect(self.on_cc_changed)  # type: ignore
         self._layout.addWidget(self._cc_combo)
 
-        self._layout.addWidget(QtWidgets.QLabel("Server files:"))
+        self._layout.addWidget(
+            QtWidgets.QLabel(self.locale_manager.search_key("server_files_label"))
+        )
         self._server_files = ServerFilesList(self)
         self._layout.addWidget(self._server_files)
 
-        self.refresh_button = QtWidgets.QPushButton("Refresh", self)
+        self.refresh_button = QtWidgets.QPushButton(
+            self.locale_manager.search_key("refresh"), self
+        )
         self.refresh_button.clicked.connect(self._server_files.refresh)  # type: ignore
         self._layout.addWidget(self.refresh_button)
 
-        self.open_button = QtWidgets.QPushButton("Open Folder", self)
+        self.open_button = QtWidgets.QPushButton(
+            self.locale_manager.search_key("open_server_files_folder"), self
+        )
         self.open_button.clicked.connect(self.open_folder)  # type: ignore
         self._layout.addWidget(self.open_button)
 
         self.download_button = QtWidgets.QPushButton(
-            "Download Missing Server Files", self
+            self.locale_manager.search_key("download_missing_server_files"), self
         )
         self.download_button.clicked.connect(self.download_server_files_wrapper)  # type: ignore
         self._layout.addWidget(self.download_button)
 
         self.progress_bar = progress.ProgressBar(
-            "Downloading server files...", self.on_progress, self
+            self.locale_manager.search_key("downloading_missing_server_files_progress"),
+            self.on_progress,
+            self,
         )
         self.progress_bar.hide()
         self._layout.addWidget(self.progress_bar)
@@ -122,8 +133,5 @@ class ServerFilesList(QtWidgets.QWidget):
         self.refresh()
 
     def on_context_menu(self, pos: QtCore.QPoint):
-        item = self._server_files_list.itemAt(pos)
-        if item is None:
-            return
         menu = QtWidgets.QMenu()
         menu.exec_(self._server_files_list.mapToGlobal(pos))

@@ -385,7 +385,7 @@ class ModInfoView(QtWidgets.QWidget):
             self.locale_manager.search_key("delete_mod_confirm_secondary_text")
             % self.mod.get_full_mod_name()
         )
-        ui_dialog.Dialog.yes_no_box(
+        ui_dialog.Dialog().yes_no_box(
             QtWidgets.QMessageBox.Icon.Warning,
             f"{self.locale_manager.search_key('delete_mod_confirm')}",
             f"{secondary_text}",
@@ -486,7 +486,7 @@ class ModList(QtWidgets.QWidget):
                     self.locale_manager.search_key("delete_mod_confirm_secondary_text")
                     % md.get_full_mod_name()
                 )
-                ui_dialog.Dialog.yes_no_box(
+                ui_dialog.Dialog().yes_no_box(
                     QtWidgets.QMessageBox.Icon.Warning,
                     f"{self.locale_manager.search_key('delete_mod_confirm')}",
                     f"{secondary_text}",
@@ -525,7 +525,7 @@ class ModList(QtWidgets.QWidget):
         files = ui_file_dialog.FileDialog(self).select_files(
             self.locale_manager.search_key("mod_file_select_dialog_title"),
             "",
-            f"{self.locale_manager.search_key('all_filter')} (*{extension});;{self.locale_manager.search_key('mod_file_select_dialog_filter_all')} (*)",
+            f"{self.locale_manager.search_key('mod_file_select_dialog_filter_mod')} (*{extension});;{self.locale_manager.search_key('all_filter')}",
             None,
         )
         for file in files:
@@ -542,9 +542,10 @@ class ModList(QtWidgets.QWidget):
                     % path
                 )
 
-                ui_dialog.Dialog.error_dialog(
+                ui_dialog.Dialog().error_dialog(
                     f"{self.locale_manager.search_key('mod_load_failed_dialog_message')}",
                     f"{secondary_text}",
+                    self.locale_manager.search_key("error"),
                 )
 
     def add_mod_obj(self, md: mods.bc_mod.Mod):
