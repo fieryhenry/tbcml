@@ -36,13 +36,13 @@ class RequestHandler:
                 return
             total_length = int(total_length)
             downloaded = 0
-            all_data = io.data.Data()
+            all_data: list[io.data.Data] = []
             for data in response.iter_content(chunk_size=4096):
                 downloaded += len(data)
                 progress = downloaded / total_length
                 progress_callback(progress, downloaded, total_length, True)
-                all_data += io.data.Data(data)
-            response._content = all_data.data
+                all_data.append(io.data.Data(data))
+            response._content = io.data.Data.from_many(all_data).data
 
         return hook
 

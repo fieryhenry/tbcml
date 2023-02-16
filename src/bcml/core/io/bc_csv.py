@@ -27,7 +27,8 @@ class Delimeter:
 
     def __str__(self) -> str:
         return self.delimeter.value
-    
+
+
 class CSV:
     def __init__(
         self,
@@ -50,9 +51,12 @@ class CSV:
         self.remove_empty = remove_empty
         self.index = 0
         self.parse()
-    
+
     def parse(self):
-        reader = csv_module.reader(self.file_data.data.decode("utf-8").splitlines(), delimiter=str(self.delimeter))
+        reader = csv_module.reader(
+            self.file_data.data.decode("utf-8").splitlines(),
+            delimiter=str(self.delimeter),
+        )
         self.lines: list[list["data.Data"]] = []
         for row in reader:
             new_row: list["data.Data"] = []
@@ -67,22 +71,21 @@ class CSV:
                         new_row.append(data.Data(item))
                 if new_row or not self.remove_empty:
                     self.lines.append(new_row)
-    
+
     def get_row(self, index: int) -> list["data.Data"]:
         return self.lines[index]
-
 
     @staticmethod
     def from_file(
         path: path.Path, delimeter: Delimeter = Delimeter(DelimeterType.COMMA)
     ) -> "CSV":
         return CSV(path.read(), delimeter)
-    
+
     def add_line(self, line: list[Any]):
         new_line: list["data.Data"] = []
         for item in line:
             new_line.append(data.Data(str(item)))
-        self.lines.append(new_line)    
+        self.lines.append(new_line)
 
     def set_line(self, index: int, line: list[Any]):
         new_line: list["data.Data"] = []
@@ -93,17 +96,17 @@ class CSV:
         except IndexError:
             print("Index out of range")
             self.lines.append(new_line)
-        
+
     def to_data(self) -> "data.Data":
-        csv = ""
+        csv: list[str] = []
         for line in self.lines:
             for i, item in enumerate(line):
-                csv += str(item)
+                csv.append(str(item))
                 if i != len(line) - 1:
-                    csv += str(self.delimeter)
-            csv += "\r\n"
-        return data.Data(csv)
-    
+                    csv.append(str(self.delimeter))
+            csv.append("\r\n")
+        return data.Data("".join(csv))
+
     def read_line(self, lg: bool = False) -> Optional[list["data.Data"]]:
         if self.index >= len(self.lines):
             if lg:
@@ -112,26 +115,25 @@ class CSV:
         line = self.lines[self.index]
         self.index += 1
         return line
-    
+
     def reset_index(self):
         self.index = 0
-    
+
     def has_line(self) -> bool:
         return self.index < len(self.lines)
-    
+
     def __iter__(self):
         return self
-    
-    def __next__(self) -> list["data.Data"]:    
+
+    def __next__(self) -> list["data.Data"]:
         line = self.read_line()
         if line is None:
             raise StopIteration
         return line
-    
+
     def extend(self, length: int, sub_length: int = 0):
         for _ in range(length):
             if sub_length == 0:
                 self.lines.append([])
             else:
                 self.lines.append([data.Data("")] * sub_length)
-        
