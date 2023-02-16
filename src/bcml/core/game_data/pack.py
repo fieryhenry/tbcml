@@ -305,8 +305,11 @@ class GamePacks:
             pack.extract(path)
 
     def apply_mods(self, mods: list["mods.bc_mod.Mod"]):
-        for mod in mods:
-            self.apply_mod(mod)
+        if not mods:
+            return
+        main_mod = mods[0]
+        main_mod.import_mods(mods[1:])
+        self.apply_mod(main_mod)
 
     def serialize(self) -> dict[str, Any]:
         return {
@@ -375,6 +378,8 @@ class Localizable:
         return "localizable.tsv"
 
     def to_game_data(self, game_data: "GamePacks"):
+        if len(self.localizable) == 0:
+            return
         file_name = self.get_file_name()
 
         file = game_data.find_file(file_name)
