@@ -52,7 +52,9 @@ class GatyaItemSelector(QtWidgets.QDialog):
         self._gatya_item_table.setRowCount(len(self.gatya_items.items))
         for i, (item_id, item) in enumerate(self.gatya_items.items.items()):
             item_id = QtWidgets.QTableWidgetItem(str(item.id))
-            item_id.setFlags(QtCore.Qt.ItemFlag.ItemIsEnabled)
+            item_id.setFlags(
+                QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsSelectable  # type: ignore
+            )
 
             self._gatya_item_table.setItem(i, 0, item_id)
 
@@ -61,11 +63,15 @@ class GatyaItemSelector(QtWidgets.QDialog):
                 name = self.tr("Unknown")
 
             item_name = QtWidgets.QTableWidgetItem(name)
-            item_name.setFlags(QtCore.Qt.ItemFlag.ItemIsEnabled)
+            item_name.setFlags(
+                QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsSelectable  # type: ignore
+            )
             self._gatya_item_table.setItem(i, 1, item_name)
 
             item_image = QtWidgets.QTableWidgetItem()
-            item_image.setFlags(QtCore.Qt.ItemFlag.ItemIsEnabled)
+            item_image.setFlags(
+                QtCore.Qt.ItemFlag.ItemIsEnabled | QtCore.Qt.ItemFlag.ItemIsSelectable  # type: ignore
+            )
             img = QtGui.QImage()
             img.loadFromData(item.image.to_data().to_bytes())
             pixmap = QtGui.QPixmap.fromImage(img)
@@ -75,6 +81,8 @@ class GatyaItemSelector(QtWidgets.QDialog):
             item_name.setToolTip(item.gatya_item_name_item.get_trimmed_description())
 
         self._gatya_item_table.itemDoubleClicked.connect(self._on_item_double_clicked)  # type: ignore
+
+        self._gatya_item_table.selectRow(self.current_item.id)
 
     def _on_item_double_clicked(self, item: QtWidgets.QTableWidgetItem):
         item_id = int(self._gatya_item_table.item(item.row(), 0).text())
