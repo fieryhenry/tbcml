@@ -1,7 +1,7 @@
 from typing import Callable, Optional
 from PyQt5 import QtWidgets, QtCore, QtGui
 from bcml.core import io, country_code, game_version, mods, locale_handler
-from bcml.ui import ui_dialog, ui_file_dialog, game_editor
+from bcml.ui import ui_dialog, ui_file_dialog, game_editor, apk_manager
 
 
 class ModView(QtWidgets.QWidget):
@@ -51,6 +51,12 @@ class ModView(QtWidgets.QWidget):
         self.mod_list.add_mod_obj(md)
 
     def on_edit_mod(self, md: mods.bc_mod.Mod):
+        apk = io.apk.Apk(md.game_version, md.country_code)
+        if not apk.is_downloaded():
+            self.apk_manager = apk_manager.ApkManager()
+            self.apk_manager.prompt_download(apk)
+            self.apk_manager.show()
+            return
         self.mod_list.add_mod_obj(md)
         self.game_editor = game_editor.GameEditor(md, self.back_here, self)
         self.mod_info.hide()

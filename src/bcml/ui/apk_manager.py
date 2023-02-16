@@ -83,18 +83,34 @@ class ApkManager(QtWidgets.QDialog):
 
     def download_apk_clicked(self):
         self.apk_downloader = ApkDownloader(
-            self.add_apk_call, self.refresh_apk_list, self
+            self.add_apk_call, self.refresh_apk_list, None, self
         )
         main.clear_layout(self._layout)
         self._layout.addWidget(self.apk_downloader)
 
     def download_specific_apk(self, apk: io.apk.Apk):
         self.apk_downloader = ApkDownloader(
-            self.add_apk_call, self.refresh_apk_list, self
+            self.add_apk_call, self.refresh_apk_list, None, self
         )
         main.clear_layout(self._layout)
         self._layout.addWidget(self.apk_downloader)
         self.apk_downloader.download_apk(apk)
+
+    def prompt_download(self, apk: io.apk.Apk):
+        self.prompt_label = QtWidgets.QLabel(
+            self.locale_manager.search_key("prompt_download") % apk.format()
+        )
+        main.clear_layout(self._layout)
+        self._layout.addWidget(self.prompt_label)
+
+        self.apk = apk
+        self.apk_downloader = ApkDownloader(
+            self.add_apk_call, self.refresh_apk_list, self.prompt_download_ready, self
+        )
+        self._layout.addWidget(self.apk_downloader)
+
+    def prompt_download_ready(self):
+        self.apk_downloader.select_element(self.apk)
 
     def refresh_apk_list(self):
         main.clear_layout(self._layout)
@@ -274,6 +290,7 @@ class ApkDownloader(QtWidgets.QWidget):
         self,
         add_call: Callable[..., Any],
         go_back_call: Callable[..., Any],
+        on_load_apks: Optional[Callable[..., Any]] = None,
         parent: Optional[QtWidgets.QWidget] = None,
     ):
         super(ApkDownloader, self).__init__(parent)
@@ -281,6 +298,7 @@ class ApkDownloader(QtWidgets.QWidget):
         self.go_back_call = go_back_call
         self.downloading_apks: list[str] = []
         self.locale_manager = locale_handler.LocalManager.from_config()
+        self.on_load_apks = on_load_apks
         self.setup_ui()
 
     def setup_ui(self):
@@ -288,12 +306,14 @@ class ApkDownloader(QtWidgets.QWidget):
         self._layout = QtWidgets.QVBoxLayout()
         self.setLayout(self._layout)
 
+        self.resize(600, 500)
+
         self.downloadable_apks_layout = QtWidgets.QHBoxLayout()
         self._layout.addLayout(self.downloadable_apks_layout)
 
         for cc in country_code.CountryCode.get_all():
             self.downloadable_apks_layout.addWidget(
-                DownloadableApksList(cc, self.download_apk)
+                DownloadableApksList(cc, self.download_apk, self.on_load_apks)
             )
 
         self.button_layout = QtWidgets.QGridLayout()
@@ -314,6 +334,7 @@ class ApkDownloader(QtWidgets.QWidget):
         self.downloading_apks.append(apk_id)
         self.progress_bar = progress.ProgressBar(title, None, self)
         self._layout.addWidget(self.progress_bar)
+        self.progress_bar.show()
         self._thread = ui_thread.ThreadWorker.run_in_thread_on_finished_args(
             self.download_thread, self.on_download_finished, [apk], [apk]
         )
@@ -328,17 +349,27 @@ class ApkDownloader(QtWidgets.QWidget):
     def download_thread(self, apk: io.apk.Apk):
         apk.download_apk(self.progress_bar.set_progress_full)
 
+    def select_element(self, apk: io.apk.Apk):
+        for i in range(self.downloadable_apks_layout.count()):
+            widget = self.downloadable_apks_layout.itemAt(i).widget()
+            if isinstance(widget, DownloadableApksList):
+                if widget.cc == apk.country_code:  # type: ignore
+                    widget.select_element(apk)  # type: ignore
+                    break
+
 
 class DownloadableApksList(QtWidgets.QWidget):
     def __init__(
         self,
         cc: "country_code.CountryCode",
         download_call: Callable[..., Any],
+        on_load: Optional[Callable[..., Any]] = None,
         parent: Optional[QtWidgets.QWidget] = None,
     ):
         super(DownloadableApksList, self).__init__(parent)
         self.cc = cc
         self.download_call = download_call
+        self.on_load = on_load
         self.setup_ui()
 
     def setup_ui(self):
@@ -353,7 +384,9 @@ class DownloadableApksList(QtWidgets.QWidget):
         self.apk_list = QtWidgets.QListWidget()
         self.list_layout.addWidget(self.apk_list)
 
-        self._thread = ui_thread.ThreadWorker.run_in_thread(self.load_apks)
+        self._thread = ui_thread.ThreadWorker.run_in_thread_on_finished(
+            self.load_apks, self.on_load
+        )
 
         self.apk_list.itemDoubleClicked.connect(self.download)  # type: ignore
 
@@ -373,3 +406,9 @@ class DownloadableApksList(QtWidgets.QWidget):
     def keyPressEvent(self, event: QtGui.QKeyEvent):  # type: ignore
         if event.key() == QtCore.Qt.Key.Key_Return:
             self.download()
+
+    def select_element(self, apk: io.apk.Apk):
+        for i in range(self.apk_list.count()):
+            if apk.game_version.format() == self.apk_list.item(i).text():
+                self.apk_list.setCurrentRow(i)
+                break

@@ -1,7 +1,7 @@
 from typing import Callable, Optional
 from PyQt5 import QtWidgets, QtCore
 from bcml.core import io, mods, game_data, locale_handler
-from bcml.ui import ui_thread, shop_editor, progress, apk_manager, localizable
+from bcml.ui import ui_thread, shop_editor, progress, localizable
 
 
 class GameEditor(QtWidgets.QWidget):
@@ -15,14 +15,10 @@ class GameEditor(QtWidgets.QWidget):
         self.mod = mod
         self.on_back = on_back
         self.local_manager = locale_handler.LocalManager.from_config()
+        self.game_data: Optional[game_data.pack.GamePacks] = None
         self.setup_ui()
 
     def set_up_data(self):
-        self.apk = io.apk.Apk(self.mod.game_version, self.mod.country_code)
-        if not self.apk.is_downloaded():
-            self.apk_manager = apk_manager.ApkManager()
-            self.apk_manager.show()
-            self.apk_manager.download_specific_apk(self.apk)
         self.progress_bar.set_progress_str(
             self.local_manager.search_key("extracting_apk_progress"), 0
         )
@@ -63,6 +59,8 @@ class GameEditor(QtWidgets.QWidget):
         self._layout.setAlignment(
             self.progress_bar, QtCore.Qt.AlignmentFlag.AlignVCenter
         )
+
+        self.apk = io.apk.Apk(self.mod.game_version, self.mod.country_code)
 
         self._thread = ui_thread.ThreadWorker.run_in_thread_on_finished(
             self.set_up_data, self.add_tabs
@@ -106,12 +104,16 @@ class GameEditor(QtWidgets.QWidget):
         self._tab_widget.currentChanged.connect(self.tab_changed)
 
     def create_item_shop_tab(self):
+        if self.game_data is None:
+            return
         self.shop_editor = shop_editor.ShopEditor(
             self.mod, self.game_data, self.original_game_data, self
         )
         return self.shop_editor
 
     def create_text_tab(self):
+        if self.game_data is None:
+            return
         self.text_editor = localizable.TextEditor(
             self.mod, self.game_data, self.original_game_data, self
         )
@@ -125,6 +127,8 @@ class GameEditor(QtWidgets.QWidget):
     def save_thread(self):
         self.shop_editor.save()
         self.text_editor.save()
+        if self.game_data is None:
+            return
         self.game_data.apply_mod(self.mod)
         mods.mod_manager.ModManager().save_mod(self.mod)
 
