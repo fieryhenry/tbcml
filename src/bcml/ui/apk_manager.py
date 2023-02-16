@@ -155,6 +155,7 @@ class ApkManager(QtWidgets.QDialog):
             self.locale_manager.search_key("decrypt_progress_bar_title"), None, self
         )
         self._layout.addWidget(self.progress_bar)
+        self.progress_bar.show()
 
         self.decrypt_thread = ui_thread.ThreadWorker.run_in_thread(
             self.decrypt_apk_thread, apk, path, with_mods
