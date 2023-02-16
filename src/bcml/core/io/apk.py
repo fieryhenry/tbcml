@@ -5,7 +5,14 @@ import bs4
 import cloudscraper  # type: ignore
 import requests
 
-from bcml.core import country_code, game_data, game_version, mods, request
+from bcml.core import (
+    country_code,
+    game_data,
+    game_version,
+    mods,
+    request,
+    locale_handler,
+)
 from bcml.core.io import command, config, data, file_handler, json_file, lib, path
 
 
@@ -23,6 +30,7 @@ class Apk:
         if apk_folder is None:
             apk_folder = self.get_default_apk_folder()
         self.apk_folder = apk_folder
+        self.locale_manager = locale_handler.LocalManager.from_config()
 
         self.init_paths()
 
@@ -220,30 +228,40 @@ class Apk:
         if not progress_callback:
             progress_callback = lambda x, y, z: None
         progress_callback(
-            "Creating pack and list files",
+            self.locale_manager.search_key("creating_pack_list_progress"),
             start_prog,
             end_prog,
         )
         base_increment = (end_prog - start_prog) / 100
         self.add_packs_lists(packs)
         progress_callback(
-            "Patching lib files", int(start_prog + base_increment * 5), end_prog
+            self.locale_manager.search_key("patching_lib_progress"),
+            int(start_prog + base_increment * 5),
+            end_prog,
         )
         lib.LibFiles(self).patch()
         progress_callback(
-            "Copying modded packs", int(start_prog + base_increment * 15), end_prog
+            self.locale_manager.search_key("copying_modded_packs_progress"),
+            int(start_prog + base_increment * 15),
+            end_prog,
         )
         self.copy_modded_packs()
         progress_callback(
-            "Packing apk", int(start_prog + base_increment * 20), end_prog
+            self.locale_manager.search_key("packing_apk_progress"),
+            int(start_prog + base_increment * 20),
+            end_prog,
         )
         self.pack()
         progress_callback(
-            "Signing apk", int(start_prog + base_increment * 60), end_prog
+            self.locale_manager.search_key("signing_apk_progress"),
+            int(start_prog + base_increment * 60),
+            end_prog,
         )
         self.sign()
         progress_callback(
-            "Copying final apk", int(start_prog + base_increment * 90), end_prog
+            self.locale_manager.search_key("copying_final_apk_progress"),
+            int(start_prog + base_increment * 90),
+            end_prog,
         )
         self.copy_final_apk()
 
@@ -558,8 +576,7 @@ class Apk:
             file_path = output_dir.add(url.split("/")[-1])
             res = request.RequestHandler(url).get()
             file_path.write(data.Data(res.content))
-            if progress_callback is not None:
-                progress_callback(i / total, i, total - 1)
+            progress_callback(i / total, i, total - 1)
         self.copy_server_files()
 
     def copy_server_files(self):

@@ -6,12 +6,14 @@ from bcml.ui import (
     server_files_manager,
     mod_loader,
 )
-from bcml.core import io
+from bcml.core import io, locale_handler
 
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, parent: Optional[QtWidgets.QWidget] = None):
         super(MainWindow, self).__init__(parent)
+        self.locale_manager = locale_handler.LocalManager.from_config()
+        self.locale_manager.check_duplicates()
         self.setup_ui()
 
     def create_toolbar(self):
@@ -21,17 +23,24 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         self.addToolBar(QtCore.Qt.ToolBarArea.TopToolBarArea, self.toolbar)
 
-        self.file_menu = QtWidgets.QMenu("File")
-        self.file_menu.addAction("APK Manager", self.open_apk_manager)
-        self.file_menu.addAction("Server Files Manager", self.open_server_files_manager)
-        self.file_menu.addAction("Load Mods into Game", self.load_mods_into_game)
+        self.file_menu = QtWidgets.QMenu(self.locale_manager.search_key("file_menu"))
+        self.file_menu.addAction(
+            self.locale_manager.search_key("apk_manager"), self.open_apk_manager
+        )
+        self.file_menu.addAction(
+            self.locale_manager.search_key("server_files_manager"),
+            self.open_server_files_manager,
+        )
+        self.file_menu.addAction(
+            self.locale_manager.search_key("load_mods"), self.load_mods_into_game
+        )
         self.toolbar.addAction(self.file_menu.menuAction())
 
     def setup_ui(self):
         self.setObjectName("MainWindow")
         self.resize(900, 700)
         self.create_toolbar()
-        self.setWindowTitle("Battle Cats Mod Loader")
+        self.setWindowTitle(self.locale_manager.search_key("main_title"))
         icon_path = io.path.Path(is_relative=True).add("assets", "icon.png")
         self.setWindowIcon(QtGui.QIcon(str(icon_path)))
 
