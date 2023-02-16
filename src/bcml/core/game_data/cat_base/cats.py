@@ -429,8 +429,6 @@ class Anim:
         anim = bc_anim.Anim.from_paths(
             game_data, img_path, imgcut_path, mamodel_path, maanim_paths
         )
-        if anim is None:
-            return None
         return Anim(cat_id, form, anim)
 
     def to_game_data(self, game_data: "pack.GamePacks"):

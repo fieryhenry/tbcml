@@ -348,8 +348,6 @@ class Anim:
         anim = bc_anim.Anim.from_paths(
             game_data, img_path, imgcut_path, mamodel_path, maanim_paths
         )
-        if anim is None:
-            return None
         return Anim(enemy_id, anim)
 
     def to_game_data(self, game_data: "pack.GamePacks"):
@@ -553,7 +551,7 @@ class Enemy:
         name = names.get(enemy_id)
         description = descriptions.get(enemy_id)
         stats = stat_data.get(enemy_id)
-        if name is None or description is None or stats is None:
+        if stats is None:
             return None
 
         return Enemy(enemy_id, stats, name, description, anim, enemy_icon, release_id)

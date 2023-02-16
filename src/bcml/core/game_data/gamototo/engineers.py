@@ -162,8 +162,6 @@ class EngineerAnim:
             EngineerAnim.FilePath.MAMODEL.value,
             EngineerAnim.FilePath.get_all_maanims_names(),
         )
-        if anim is None:
-            return EngineerAnim.create_empty()
         return EngineerAnim(anim)
 
     def to_game_data(self, game_data: "pack.GamePacks"):

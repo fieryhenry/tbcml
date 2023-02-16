@@ -83,8 +83,6 @@ class MainChara:
             MainChara.FilePath.MAMODEL.value,
             MainChara.FilePath.get_all_maanims_names(),
         )
-        if anim is None:
-            return MainChara.create_empty()
         return MainChara(anim)
 
     def to_game_data(self, game_data: "pack.GamePacks"):

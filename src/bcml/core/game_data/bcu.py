@@ -385,8 +385,7 @@ class BCUCat:
     ) -> "cat_base.cats.Cat":
         forms: dict[cat_base.cats.FormType, cat_base.cats.Form] = {}
         for form in self.forms:
-            if form.form is not None:
-                forms[form.form] = form.to_cat_form()
+            forms[form.form] = form.to_cat_form()
         unit_buy.rarity = cat_base.cats.Rarity(self.rarity)
         unit_buy.max_upgrade_level_no_catseye = self.max_base_level
         unit_buy.max_plus_upgrade_level = self.max_plus_level

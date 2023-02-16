@@ -1267,8 +1267,6 @@ class Map:
         stage_names: StageNames,
     ) -> Optional["Map"]:
         map_option = map_options.get(stage_id)
-        if stage_names is None:
-            return None
         map_stage_data = MapStageData.from_game_data(game_data, stage_id)
         map_name_image = MapNameImage.from_game_data(game_data, stage_id)
         i = 0
@@ -1322,8 +1320,6 @@ class Maps:
     def from_game_data(game_data: "pack.GamePacks"):
         map_options = MapOptions.from_game_data(game_data)
         stage_name_sets = StageNameSets.from_game_data(game_data)
-        if map_options is None or stage_name_sets is None:
-            return None
         maps: dict[int, Map] = {}
         stage_id = 0
         while True:

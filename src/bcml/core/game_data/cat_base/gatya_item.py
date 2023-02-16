@@ -393,8 +393,6 @@ class GatyaItems:
                 item_buy,
                 item_name,
             )
-            if item is None:
-                continue
 
             items[i] = item
 
