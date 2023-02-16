@@ -47,7 +47,7 @@ class ProgressBar(QtWidgets.QWidget):
         if self.on_progress:
             self.on_progress(current, total)
 
-    def set_progress_str(self, text: str, current: int, total: int):
+    def set_progress_str(self, text: str, current: int, total: int = 100):
         if total <= 0:
             total = 1
         self.progress_bar.setMaximum(total)
