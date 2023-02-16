@@ -41,6 +41,7 @@ class Mod:
         self.battle = game_data.battle.battle.Battle.create_empty()
         self.cat_base = game_data.cat_base.cat_base.CatBase.create_empty()
         self.maps = game_data.map.map.Maps.create_empty()
+        self.localizable = game_data.pack.Localizable.create_empty()
 
     def init_scripts(self):
         self.scripts: mods.frida_script.Scripts = mods.frida_script.Scripts(
@@ -70,6 +71,7 @@ class Mod:
         self.battle.add_to_zip(zip_file)
         self.cat_base.add_to_zip(zip_file)
         self.maps.add_to_zip(zip_file)
+        self.localizable.add_to_zip(zip_file)
 
         self.scripts.add_to_zip(zip_file)
 
@@ -93,6 +95,7 @@ class Mod:
         mod.battle = game_data.battle.battle.Battle.from_zip(zip_file)
         mod.cat_base = game_data.cat_base.cat_base.CatBase.from_zip(zip_file)
         mod.maps = game_data.map.map.Maps.from_zip(zip_file)
+        mod.localizable = game_data.pack.Localizable.from_zip(zip_file)
 
         mod.scripts = mods.frida_script.Scripts.from_zip(
             zip_file, mod.country_code, mod.game_version
@@ -115,13 +118,14 @@ class Mod:
 
     @staticmethod
     def create_mod_id() -> str:
-        return crypto.Random.get_alpha_string(8)
+        return crypto.Random.get_alpha_string(16)
 
     def import_mod(self, other: "Mod"):
         self.gamototo.import_gamototo(other.gamototo)
         self.battle.import_battle(other.battle)
         self.cat_base.import_cat_base(other.cat_base)
         self.maps.import_maps(other.maps)
+        self.localizable.import_localizable(other.localizable)
 
         self.scripts.import_scripts(other.scripts)
 

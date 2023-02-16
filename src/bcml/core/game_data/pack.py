@@ -1,6 +1,5 @@
 from typing import Any, Optional
 from bcml.core import io, country_code, crypto, langs, mods
-from bcml.core.game_data import cat_base
 
 
 class GameFile:
@@ -169,8 +168,6 @@ class PackFile:
             ls_data.add_line(
                 io.data.Data.string_list_data_list([file.file_name, offset, len(data)])
             )
-            if file is None:
-                continue
             pack_data_ls.append(data)
             offset += len(data)
         pack_data = io.data.Data.from_many(pack_data_ls)
@@ -203,8 +200,6 @@ class PackFile:
         files: dict[str, GameFile] = {}
         for file_name, file_data in data["files"].items():
             file = GameFile.deserialize(file_data, file_name, pack_file)
-            if file is None:
-                return None
             files[file_name] = file
         pack_file.set_files(files)
         return pack_file
@@ -217,16 +212,6 @@ class GamePacks:
         self.packs = packs
         self.country_code = country_code
         self.modified_packs: dict[str, bool] = {}
-        self.__catbase: Optional[cat_base.cat_base.CatBase] = None
-
-    @property
-    def catbase(self) -> Optional[cat_base.cat_base.CatBase]:
-        if self.__catbase is None:
-            catbase = cat_base.cat_base.CatBase.from_game_data(self)
-            if catbase is None:
-                return None
-            self.__catbase = catbase
-        return self.__catbase
 
     def get_pack(self, pack_name: str) -> Optional[PackFile]:
         return self.packs.get(pack_name, None)
@@ -313,6 +298,7 @@ class GamePacks:
         mod.battle.to_game_data(self)
         mod.cat_base.to_game_data(self)
         mod.maps.to_game_data(self)
+        mod.localizable.to_game_data(self)
 
     def extract(self, path: "io.path.Path"):
         for pack in self.packs.values():
@@ -333,8 +319,6 @@ class GamePacks:
     @staticmethod
     def deserialize(data: dict[str, Any]) -> Optional["GamePacks"]:
         cc = country_code.CountryCode.from_code(data["country_code"])
-        if country_code is None:
-            return None
         packs: dict[str, PackFile] = {}
         for pack_name, pack_data in data["packs"].items():
             pack = PackFile.deserialize(pack_data, pack_name, cc)
@@ -342,3 +326,125 @@ class GamePacks:
                 return None
             packs[pack_name] = pack
         return GamePacks(packs, cc)
+
+
+class LocalItem:
+    def __init__(self, key: str, value: str):
+        self.key = key
+        self.value = value
+
+    def get_formatted_text(self) -> str:
+        return self.value.replace("<br>", "\n")
+
+    def serialize(self) -> dict[str, Any]:
+        return {
+            "key": self.key,
+            "value": self.value,
+        }
+
+    @staticmethod
+    def deserialize(data: dict[str, Any]) -> "LocalItem":
+        return LocalItem(data["key"], data["value"])
+
+
+class Localizable:
+    def __init__(self, localizable: dict[str, LocalItem]):
+        self.localizable = localizable
+
+    @staticmethod
+    def from_game_data(game_data: "GamePacks") -> "Localizable":
+        file_name = Localizable.get_file_name()
+
+        file = game_data.find_file(file_name)
+        if file is None:
+            return Localizable.create_empty()
+        csv_data = io.bc_csv.CSV(file.dec_data, "\t")
+
+        localizable: dict[str, LocalItem] = {}
+        for line in csv_data:
+            try:
+                key = line[0].to_str()
+                value = line[1].to_str()
+                localizable[key] = LocalItem(key, value)
+            except IndexError:
+                pass
+        return Localizable(localizable)
+
+    @staticmethod
+    def get_file_name() -> str:
+        return "localizable.tsv"
+
+    def to_game_data(self, game_data: "GamePacks"):
+        file_name = self.get_file_name()
+
+        file = game_data.find_file(file_name)
+        if file is None:
+            return
+        csv = io.bc_csv.CSV(None, "\t")
+        for item in self.localizable.values():
+            csv.add_line([item.key, item.value])
+
+        game_data.set_file(file_name, csv.to_data())
+
+    @staticmethod
+    def create_empty() -> "Localizable":
+        return Localizable({})
+
+    def serialize(self) -> dict[str, Any]:
+        return {
+            "localizable": {
+                key: item.serialize() for key, item in self.localizable.items()
+            }
+        }
+
+    @staticmethod
+    def deserialize(data: dict[str, Any]) -> "Localizable":
+        localizable: dict[str, LocalItem] = {}
+        for key, item_data in data["localizable"].items():
+            localizable[key] = LocalItem.deserialize(item_data)
+        return Localizable(localizable)
+
+    @staticmethod
+    def get_json_file_name() -> "io.path.Path":
+        return io.path.Path("localizable.json")
+
+    def add_to_zip(self, zip: "io.zip.Zip"):
+        json = io.json_file.JsonFile.from_json(self.serialize())
+        zip.add_file(Localizable.get_json_file_name(), json.to_data())
+
+    @staticmethod
+    def from_zip(zip: "io.zip.Zip") -> "Localizable":
+        json = zip.get_file(Localizable.get_json_file_name())
+        if json is None:
+            return Localizable.create_empty()
+        return Localizable.deserialize(io.json_file.JsonFile.from_data(json).get_json())
+
+    def import_localizable(self, localizable: "Localizable"):
+        self.localizable.update(localizable.localizable)
+
+    def get(self, key: str) -> Optional[str]:
+        try:
+            return self.localizable[key].value
+        except KeyError:
+            return None
+
+    def set(self, key: str, value: str):
+        self.localizable[key] = LocalItem(key, value)
+
+    def remove(self, key: str):
+        try:
+            del self.localizable[key]
+        except KeyError:
+            pass
+
+    def rename(self, key: str, new_key: str):
+        try:
+            old = self.localizable[key]
+            new = LocalItem(new_key, old.value)
+            del self.localizable[key]
+            self.localizable[new_key] = new
+        except KeyError:
+            pass
+
+    def sort(self):
+        self.localizable = dict(sorted(self.localizable.items()))
