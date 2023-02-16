@@ -31,10 +31,7 @@ class GameEditor(QtWidgets.QWidget):
             self.local_manager.search_key("loading_game_data_progress"), 50
         )
         self.game_data = game_data.pack.GamePacks.from_apk(self.apk)
-        self.progress_bar.set_progress_str(
-            self.local_manager.search_key("loading_original_game_data_progress"), 70
-        )
-        self.original_game_data = game_data.pack.GamePacks.from_apk(self.apk)
+        self.original_game_data = self.game_data.copy()
         self.progress_bar.set_progress_str(
             self.local_manager.search_key("loading_mod_data_progress"), 90
         )
@@ -129,6 +126,7 @@ class GameEditor(QtWidgets.QWidget):
         self.text_editor.save()
         if self.game_data is None:
             return
+        self.game_data = self.original_game_data.copy()
         self.game_data.apply_mod(self.mod)
         mods.mod_manager.ModManager().save_mod(self.mod)
 
