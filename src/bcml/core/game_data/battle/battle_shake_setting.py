@@ -84,6 +84,22 @@ class ShakeEffect:
             data["priority"],
         )
 
+    def __eq__(self, other: object):
+        if not isinstance(other, ShakeEffect):
+            return False
+        return (
+            self.shake_location == other.shake_location
+            and self.start_distance == other.start_distance
+            and self.end_distance == other.end_distance
+            and self.frames == other.frames
+            and self.events_until_next_shake == other.events_until_next_shake
+            and self.reset_frame == other.reset_frame
+            and self.priority == other.priority
+        )
+
+    def __ne__(self, other: object):
+        return not self.__eq__(other)
+
 
 class ShakeEffects:
     def __init__(self, effects: dict[int, ShakeEffect]):
@@ -249,10 +265,24 @@ class ShakeEffects:
         json = io.json_file.JsonFile.from_data(file)
         return ShakeEffects.deserialize(json.json)
 
-    def import_shake_effects(self, other: "ShakeEffects"):
+    def import_shake_effects(self, other: "ShakeEffects", game_data: "pack.GamePacks"):
         """Loads the ShakeEffects from another ShakeEffects object.
 
         Args:
             other (ShakeEffects): The ShakeEffects to load from.
         """
-        self.effects.update(other.effects)
+        gd_effects = ShakeEffects.from_game_data(game_data)
+        all_keys = set(self.effects.keys())
+        all_keys.update(other.effects.keys())
+        all_keys.update(gd_effects.effects.keys())
+
+        for id in all_keys:
+            other_effect = other.effects.get(id)
+            gd_effect = gd_effects.effects.get(id)
+            if other_effect is None:
+                continue
+            if gd_effect is not None:
+                if other_effect != gd_effect:
+                    self.effects[id] = other_effect
+            else:
+                self.effects[id] = other_effect

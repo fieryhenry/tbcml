@@ -43,5 +43,5 @@ class Gamototo:
             ototo.Ototo.create_empty(),
         )
 
-    def import_gamototo(self, other: "Gamototo"):
-        self.ototo.import_ototo(other.ototo)
+    def import_gamototo(self, other: "Gamototo", game_data: "pack.GamePacks"):
+        self.ototo.import_ototo(other.ototo, game_data)

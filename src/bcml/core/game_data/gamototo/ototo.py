@@ -83,8 +83,8 @@ class Ototo:
             ototo_anim.MainChara.create_empty(),
         )
 
-    def import_ototo(self, other: "Ototo"):
-        self.engineer.import_engineer(other.engineer)
-        self.cannons.import_cannons(other.cannons)
-        self.item_packs.import_item_packs(other.item_packs)
-        self.main_chara_anim.import_main_chara(other.main_chara_anim)
+    def import_ototo(self, other: "Ototo", game_data: "pack.GamePacks"):
+        self.engineer.import_engineer(other.engineer, game_data)
+        self.cannons.import_cannons(other.cannons, game_data)
+        self.item_packs.import_item_packs(other.item_packs, game_data)
+        self.main_chara_anim.import_main_chara(other.main_chara_anim, game_data)

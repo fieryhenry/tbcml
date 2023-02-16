@@ -236,6 +236,14 @@ class Stats:
             int(self.behemoth),  # 101
         ]
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Stats):
+            return False
+        return self.to_raw_data() == other.to_raw_data()
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
 
 class StatsData:
     def __init__(self, stats: dict[int, Stats]):
@@ -290,6 +298,14 @@ class StatsData:
     @staticmethod
     def create_empty() -> "StatsData":
         return StatsData({})
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, StatsData):
+            return False
+        return self.stats == other.stats
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
 
 
 class Anim:
@@ -363,6 +379,14 @@ class Anim:
         self.enemy_id = enemy_id
         self.anim.set_enemy_id(enemy_id)
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Anim):
+            return False
+        return self.enemy_id == other.enemy_id and self.anim == other.anim
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
 
 class Names:
     def __init__(self, names: dict[int, str]):
@@ -414,6 +438,14 @@ class Names:
     @staticmethod
     def create_empty() -> "Names":
         return Names({})
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Names):
+            return False
+        return self.names == other.names
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
 
 
 class Descriptions:
@@ -477,6 +509,14 @@ class Descriptions:
     @staticmethod
     def create_empty() -> "Descriptions":
         return Descriptions({})
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Descriptions):
+            return False
+        return self.descriptions == other.descriptions
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
 
 
 class Enemy:
@@ -567,6 +607,21 @@ class Enemy:
         self.stats.enemy_id = enemy_id
         self.anim.set_enemy_id(enemy_id)
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Enemy):
+            return False
+        return (
+            self.enemy_id == other.enemy_id
+            and self.stats == other.stats
+            and self.name == other.name
+            and self.description == other.description
+            and self.anim == other.anim
+            and self.enemy_icon == other.enemy_icon
+        )
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
 
 class Enemies:
     def __init__(self, enemies: dict[int, Enemy]):
@@ -643,5 +698,18 @@ class Enemies:
     def set_enemy(self, enemy: Enemy):
         self.enemies[enemy.enemy_id] = enemy
 
-    def import_enemies(self, other: "Enemies"):
-        self.enemies.update(other.enemies)
+    def import_enemies(self, other: "Enemies", game_data: "pack.GamePacks"):
+        gd_enemies = Enemies.from_game_data(game_data)
+        all_keys = set(self.enemies.keys())
+        all_keys.update(other.enemies.keys())
+        all_keys.update(gd_enemies.enemies.keys())
+        for enemy_id in all_keys:
+            other_enemy = other.get_enemy(enemy_id)
+            gd_enemy = gd_enemies.get_enemy(enemy_id)
+            if other_enemy is None:
+                continue
+            if gd_enemy is not None:
+                if other_enemy != gd_enemy:
+                    self.set_enemy(other_enemy)
+            else:
+                self.set_enemy(other_enemy)

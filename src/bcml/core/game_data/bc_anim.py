@@ -62,6 +62,19 @@ class MaanimMove:
         ls: list[int] = [self.frame, self.change_in_value, self.ease, self.ease_power]
         return io.data.Data.int_list_data_list(ls)
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, MaanimMove):
+            return False
+        return (
+            self.frame == other.frame
+            and self.change_in_value == other.change_in_value
+            and self.ease == other.ease
+            and self.ease_power == other.ease_power
+        )
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
 
 class ModificationType(enum.Enum):
     PARENT = 0
@@ -198,6 +211,22 @@ class MaanimPart:
             return 0
         return max(move.frame for move in self.moves)
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, MaanimPart):
+            return False
+        return (
+            self.model_id == other.model_id
+            and self.modification_type == other.modification_type
+            and self.loop == other.loop
+            and self.min_value == other.min_value
+            and self.max_value == other.max_value
+            and self.name == other.name
+            and self.moves == other.moves
+        )
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
 
 class Maanim:
     def __init__(self, parts: list[MaanimPart], name: str):
@@ -271,6 +300,14 @@ class Maanim:
                 part.loop = 1
             else:
                 part.loop = max_frame // part_max_frame
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Maanim):
+            return False
+        return self.parts == other.parts and self.name == other.name
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
 
 
 class MamodelPart:
@@ -450,6 +487,30 @@ class MamodelPart:
             if part.parent_id == self.index:
                 self.children.append(part)
 
+    def __eq__(self, __o: object) -> bool:
+        if not isinstance(__o, MamodelPart):
+            return False
+        return (
+            self.index == __o.index
+            and self.parent_id == __o.parent_id
+            and self.unit_id == __o.unit_id
+            and self.cut_id == __o.cut_id
+            and self.z_depth == __o.z_depth
+            and self.x == __o.x
+            and self.y == __o.y
+            and self.pivot_x == __o.pivot_x
+            and self.pivot_y == __o.pivot_y
+            and self.scale_x == __o.scale_x
+            and self.scale_y == __o.scale_y
+            and self.rotation == __o.rotation
+            and self.alpha == __o.alpha
+            and self.glow == __o.glow
+            and self.name == __o.name
+        )
+
+    def __ne__(self, __o: object) -> bool:
+        return not self.__eq__(__o)
+
 
 class Mamodel:
     def __init__(
@@ -588,6 +649,19 @@ class Mamodel:
         self.ints.append(self.ints[0].copy())
         self.comments.append("")
 
+    def __eq__(self, __o: object) -> bool:
+        if not isinstance(__o, Mamodel):
+            return False
+        return (
+            self.parts == __o.parts
+            and self.maxes == __o.maxes
+            and self.ints == __o.ints
+            and self.comments == __o.comments
+        )
+
+    def __ne__(self, __o: object) -> bool:
+        return not self.__eq__(__o)
+
 
 class Cut:
     def __init__(
@@ -686,6 +760,21 @@ class Cut:
         if self.image:
             return self.image.height
         return self.__height
+
+    def __eq__(self, __o: object) -> bool:
+        if not isinstance(__o, Cut):
+            return False
+        return (
+            self.index == __o.index
+            and self.x == __o.x
+            and self.y == __o.y
+            and self.width == __o.width
+            and self.height == __o.height
+            and self.name == __o.name
+        )
+
+    def __ne__(self, __o: object) -> bool:
+        return not self.__eq__(__o)
 
 
 class Imgcut:
@@ -852,6 +941,14 @@ class Imgcut:
             cut.y = 0
 
         return cuts
+
+    def __eq__(self, other: object):
+        if not isinstance(other, Imgcut):
+            return False
+        return self.cuts == other.cuts and self.image_name == other.image_name
+
+    def __ne__(self, other: object):
+        return not self.__eq__(other)
 
 
 class Anim:
@@ -1080,3 +1177,15 @@ class Anim:
     @maanims.setter
     def maanims(self, maanims: list["Maanim"]):
         self.__maanims = maanims
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Anim):
+            return False
+        return (
+            self.imgcut == other.imgcut
+            and self.mamodel == other.mamodel
+            and self.maanims == other.maanims
+        )
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)

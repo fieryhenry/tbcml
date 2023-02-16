@@ -87,6 +87,27 @@ class GatyaItemBuyItem:
     def set_id(self, item_id: int) -> None:
         self.item_id = item_id
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, GatyaItemBuyItem):
+            return False
+        return (
+            self.rarity == other.rarity
+            and self.storage == other.storage
+            and self.sell_price == other.sell_price
+            and self.stage_drop_item_id == other.stage_drop_item_id
+            and self.quantity == other.quantity
+            and self.server_id == other.server_id
+            and self.category == other.category
+            and self.index_in_category == other.index_in_category
+            and self.src_item_id == other.src_item_id
+            and self.main_menu_type == other.main_menu_type
+            and self.gatya_ticket_id == other.gatya_ticket_id
+            and self.comment == other.comment
+        )
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
 
 class GatyaItemBuy:
     def __init__(
@@ -180,6 +201,14 @@ class GatyaItemBuy:
     def create_empty() -> "GatyaItemBuy":
         return GatyaItemBuy({})
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, GatyaItemBuy):
+            return False
+        return self.gatya_item_buys == other.gatya_item_buys
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
 
 class GatyaItemNameItem:
     def __init__(self, id: int, name: str, description: list[str]):
@@ -211,6 +240,18 @@ class GatyaItemNameItem:
 
     def set_id(self, id: int) -> None:
         self.id = id
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, GatyaItemNameItem):
+            return False
+        return (
+            self.id == other.id
+            and self.name == other.name
+            and self.description == other.description
+        )
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
 
 
 class GatyaItemName:
@@ -282,6 +323,14 @@ class GatyaItemName:
     @staticmethod
     def create_empty() -> "GatyaItemName":
         return GatyaItemName({})
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, GatyaItemName):
+            return False
+        return self.gatya_item_names == other.gatya_item_names
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
 
 
 class GatyaItem:
@@ -357,6 +406,20 @@ class GatyaItem:
         self.id = id
         self.gatya_item_buy_item.set_id(id)
         self.gatya_item_name_item.set_id(id)
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, GatyaItem):
+            return False
+        return (
+            self.id == other.id
+            and self.gatya_item_buy_item == other.gatya_item_buy_item
+            and self.gatya_item_name_item == other.gatya_item_name_item
+            and self.image == other.image
+            and self.silhouette == other.silhouette
+        )
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
 
 
 class GatyaItems:
@@ -435,5 +498,18 @@ class GatyaItems:
     def create_empty() -> "GatyaItems":
         return GatyaItems({})
 
-    def import_items(self, other: "GatyaItems") -> None:
-        self.items.update(other.items)
+    def import_items(self, other: "GatyaItems", game_data: "pack.GamePacks"):
+        gd_items = GatyaItems.from_game_data(game_data)
+        all_keys = set(gd_items.items.keys())
+        all_keys.update(other.items.keys())
+        all_keys.update(self.items.keys())
+        for id in all_keys:
+            gd_item = gd_items.get_item(id)
+            other_item = other.get_item(id)
+            if other_item is None:
+                continue
+            if gd_item is not None:
+                if other_item != gd_item:
+                    self.set_item(id, other_item)
+            else:
+                self.set_item(id, other_item)

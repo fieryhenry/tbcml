@@ -58,6 +58,22 @@ class CannonStatus:
             unknown=data["unknown"],
         )
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, CannonStatus):
+            return False
+        return (
+            self.id == other.id
+            and self.type == other.type
+            and self.wave == other.wave
+            and self.option == other.option
+            and self.knockback == other.knockback
+            and self.mark == other.mark
+            and self.unknown == other.unknown
+        )
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
 
 class CannonStatuses:
     def __init__(self, statuses: dict[CastleType, CannonStatus]):
@@ -142,6 +158,14 @@ class CannonStatuses:
     def create_empty() -> "CannonStatuses":
         return CannonStatuses({})
 
+    def __eq__(self, __o: object) -> bool:
+        if not isinstance(__o, CannonStatuses):
+            return False
+        return self.statuses == __o.statuses
+
+    def __ne__(self, __o: object) -> bool:
+        return not self.__eq__(__o)
+
 
 class EasingType(enum.Enum):
     LINEAR = 0
@@ -172,6 +196,19 @@ class CastleGrowth:
             end=data["end"],
             easing_type=EasingType(data["easing_type"]),
         )
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, CastleGrowth):
+            return False
+        return (
+            self.level == other.level
+            and self.start == other.start
+            and self.end == other.end
+            and self.easing_type == other.easing_type
+        )
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
 
 
 class CastleGrowths:
@@ -240,6 +277,14 @@ class CastleGrowths:
     def create_empty() -> "CastleGrowths":
         return CastleGrowths({})
 
+    def __eq__(self, __o: object) -> bool:
+        if not isinstance(__o, CastleGrowths):
+            return False
+        return self.growths == __o.growths
+
+    def __ne__(self, __o: object) -> bool:
+        return not self.__eq__(__o)
+
 
 class CannonEffectType(enum.Enum):
     STRENGTH = 0
@@ -294,6 +339,21 @@ class CannonEffect:
             end=data["end"],
             easing_type=EasingType(data["easing_type"]),
         )
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, CannonEffect):
+            return False
+        return (
+            self.castle_type == other.castle_type
+            and self.effect_type == other.effect_type
+            and self.level == other.level
+            and self.start == other.start
+            and self.end == other.end
+            and self.easing_type == other.easing_type
+        )
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
 
 
 class CannonEffects:
@@ -387,6 +447,14 @@ class CannonEffects:
     @staticmethod
     def create_empty() -> "CannonEffects":
         return CannonEffects({})
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, CannonEffects):
+            return False
+        return self.effects == other.effects
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
 
 
 class Part(enum.Enum):
@@ -569,6 +637,18 @@ class Cannon:
             maanim_data_2 = maanim_2.to_data()
             game_data.set_file(png_name_3.replace(".png", ".maanim"), maanim_data_2)
 
+    def __eq__(self, __o: object) -> bool:
+        if not isinstance(__o, Cannon):
+            return False
+        return (
+            self.castle_type == __o.castle_type
+            and self.parts_imgcut == __o.parts_imgcut
+            and self.parts_anims == __o.parts_anims
+        )
+
+    def __ne__(self, __o: object) -> bool:
+        return not self == __o
+
 
 class Cannons:
     def __init__(
@@ -698,7 +778,25 @@ class Cannons:
     def set_cannon(self, cannon: Cannon) -> None:
         self.cannons[cannon.castle_type] = cannon
 
-    def import_cannons(self, cannons: "Cannons") -> None:
-        self.cannons.update(cannons.cannons)
-        self.map_png = cannons.map_png
-        self.silhouette_imgcut = cannons.silhouette_imgcut
+    def import_cannons(self, cannons: "Cannons", game_data: "pack.GamePacks") -> None:
+        gd_cannons = Cannons.from_game_data(game_data)
+        for castle_type in CastleType:
+            gd_cannon = gd_cannons.cannons.get(castle_type)
+            other_cannon = cannons.cannons.get(castle_type)
+            if other_cannon is None:
+                continue
+            if gd_cannon is not None:
+                if gd_cannon != other_cannon:
+                    self.cannons[castle_type] = other_cannon
+            else:
+                self.cannons[castle_type] = other_cannon
+
+        other_map_png = cannons.map_png
+        gd_map_png = gd_cannons.map_png
+        if gd_map_png != other_map_png:
+            self.map_png = other_map_png
+
+        other_silhouette_imgcut = cannons.silhouette_imgcut
+        gd_silhouette_imgcut = gd_cannons.silhouette_imgcut
+        if gd_silhouette_imgcut != other_silhouette_imgcut:
+            self.silhouette_imgcut = other_silhouette_imgcut

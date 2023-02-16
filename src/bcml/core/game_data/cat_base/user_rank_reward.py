@@ -27,6 +27,17 @@ class Reward:
     def __repr__(self) -> str:
         return f"Reward({self.reward_id}, {self.reward_amout})"
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Reward):
+            return False
+        return (
+            self.reward_id == other.reward_id
+            and self.reward_amout == other.reward_amout
+        )
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
 
 class RewardSet:
     def __init__(
@@ -52,6 +63,19 @@ class RewardSet:
             [Reward.deserialize(v) for v in data["rewards"]],
             data["text"],
         )
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, RewardSet):
+            return False
+        return (
+            self.index == other.index
+            and self.reward_threshold == other.reward_threshold
+            and self.rewards == other.rewards
+            and self.text == other.text
+        )
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
 
 
 class UserRankReward:
@@ -186,6 +210,21 @@ class UserRankReward:
         reward.index = index
         self.reward_sets[index] = reward
 
-    def import_user_rank_rewards(self, other: "UserRankReward") -> None:
-        for index, reward in other.reward_sets.items():
-            self.set_reward(index, reward)
+    def import_user_rank_rewards(
+        self, other: "UserRankReward", game_data: "pack.GamePacks"
+    ) -> None:
+        gd_rewards = self.from_game_data(game_data)
+        all_keys = set(gd_rewards.reward_sets.keys())
+        all_keys.update(other.reward_sets.keys())
+        all_keys.update(self.reward_sets.keys())
+
+        for id in all_keys:
+            gd_reward = gd_rewards.get_reward(id)
+            other_reward = other.get_reward(id)
+            if other_reward is None:
+                continue
+            if gd_reward is not None:
+                if gd_reward != other_reward:
+                    self.set_reward(id, other_reward)
+            else:
+                self.set_reward(id, other_reward)

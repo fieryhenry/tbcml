@@ -93,6 +93,23 @@ class Item:
         """
         return str(self)
 
+    def __eq__(self, other: object):
+        if not isinstance(other, Item):
+            return False
+        return (
+            self.shop_id == other.shop_id
+            and self.gatya_item_id == other.gatya_item_id
+            and self.count == other.count
+            and self.price == other.price
+            and self.draw_item_value == other.draw_item_value
+            and self.category_name == other.category_name
+            and self.imgcut_id == other.imgcut_id
+            and self.cut.image == other.cut.image
+        )
+
+    def __ne__(self, other: object):
+        return not self.__eq__(other)
+
 
 class ItemShop:
     """Represents the Item Shop."""
@@ -320,14 +337,27 @@ class ItemShop:
         item.shop_id = shop_index
         self.items[shop_index] = item
 
-    def import_item_shop(self, other: "ItemShop"):
+    def import_item_shop(self, other: "ItemShop", game_data: "pack.GamePacks"):
         """Import an ItemShop into this ItemShop.
 
         Args:
             other (ItemShop): The ItemShop to import.
         """
-        for item in other.items.values():
-            self.set_item(item.shop_id, item)
+        gd_item_shop = self.from_game_data(game_data)
+        all_keys = set(self.items.keys())
+        all_keys.update(other.items.keys())
+        all_keys.update(gd_item_shop.items.keys())
+
+        for id in all_keys:
+            other_item = other.get_item(id)
+            if other_item is None:
+                continue
+            gd_item = gd_item_shop.get_item(id)
+            if gd_item is not None:
+                if other_item != gd_item:
+                    self.set_item(id, other_item)
+            else:
+                self.set_item(id, other_item)
 
     def add_item(self, item: Item):
         """Add an item to the ItemShop.

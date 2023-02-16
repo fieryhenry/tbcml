@@ -222,6 +222,30 @@ class MapOption:
             data["map_comment"],
         )
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, MapOption):
+            return False
+        return (
+            self.stage_id == other.stage_id
+            and self.number_of_stars == other.number_of_stars
+            and self.star_mult_1 == other.star_mult_1
+            and self.star_mult_2 == other.star_mult_2
+            and self.star_mult_3 == other.star_mult_3
+            and self.star_mult_4 == other.star_mult_4
+            and self.guerrilla_set == other.guerrilla_set
+            and self.reset_type == other.reset_type
+            and self.one_time_display == other.one_time_display
+            and self.display_order == other.display_order
+            and self.interval == other.interval
+            and self.challenge_flag == other.challenge_flag
+            and self.difficulty_mask == other.difficulty_mask
+            and self.hide_after_clear == other.hide_after_clear
+            and self.map_comment == other.map_comment
+        )
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
 
 class MapOptions:
     def __init__(self, options: dict[int, MapOption]):
@@ -331,6 +355,14 @@ class MapOptions:
     def create_empty() -> "MapOptions":
         return MapOptions({})
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, MapOptions):
+            return False
+        return self.options == other.options
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
 
 class EnemyRow:
     def __init__(
@@ -404,6 +436,14 @@ class EnemyRow:
             data.get("group"),
             data.get("kill_count"),
         )
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, EnemyRow):
+            return False
+        return self.serialize() == other.serialize()
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
 
 
 class StageStats:
@@ -622,6 +662,28 @@ class StageStats:
             csv.set_line(i + 2, line)
         game_data.set_file(file_name, csv.to_data())
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, StageStats):
+            return False
+        return (
+            self.stage_id == other.stage_id
+            and self.stage_index == other.stage_index
+            and self.castle_type == other.castle_type
+            and self.no_continues == other.no_continues
+            and self.unknowns == other.unknowns
+            and self.stage_width == other.stage_width
+            and self.base_health == other.base_health
+            and self.min_production_frames == other.min_production_frames
+            and self.max_production_frames == other.max_production_frames
+            and self.background_type == other.background_type
+            and self.max_enemy_count == other.max_enemy_count
+            and self.unused == other.unused
+            and self.enemies == other.enemies
+        )
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
 
 class Stage:
     def __init__(
@@ -671,6 +733,20 @@ class Stage:
     def to_game_data(self, game_data: "pack.GamePacks"):
         self.stage_stats.to_game_data(game_data)
         self.name_image.to_game_data(game_data)
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Stage):
+            return False
+        return (
+            self.stage_id == other.stage_id
+            and self.stage_index == other.stage_index
+            and self.stage_stats == other.stage_stats
+            and self.name == other.name
+            and self.name_image == other.name_image
+        )
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
 
 
 class MapStageDataStage:
@@ -726,6 +802,25 @@ class MapStageDataStage:
             data["stage_drop_item_id"],
             data["stage_drop_item_amount"],
         )
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, MapStageDataStage):
+            return False
+        return (
+            self.stage_id == other.stage_id
+            and self.stage_index == other.stage_index
+            and self.energy_cost == other.energy_cost
+            and self.xp_gain == other.xp_gain
+            and self.start_music == other.start_music
+            and self.base_percentage_boss_music == other.base_percentage_boss_music
+            and self.boss_music == other.boss_music
+            and self.item_probability == other.item_probability
+            and self.stage_drop_item_id == other.stage_drop_item_id
+            and self.stage_drop_item_amount == other.stage_drop_item_amount
+        )
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
 
 
 class StageNameImage:
@@ -797,6 +892,18 @@ class StageNameImage:
             return
         game_data.set_file(file_name, self.image.to_data())
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, StageNameImage):
+            return False
+        return (
+            self.stage_id == other.stage_id
+            and self.stage_index == other.stage_index
+            and self.image == other.image
+        )
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
 
 class MapNameImage:
     def __init__(
@@ -853,6 +960,14 @@ class MapNameImage:
             return
         game_data.set_file(file_name, self.image.to_data())
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, MapNameImage):
+            return False
+        return self.stage_id == other.stage_id and self.image == other.image
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
 
 class StageName:
     def __init__(
@@ -879,6 +994,18 @@ class StageName:
             stage_index,
             data["name"],
         )
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, StageName):
+            return False
+        return (
+            self.stage_id == other.stage_id
+            and self.stage_index == other.stage_index
+            and self.name == other.name
+        )
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
 
 
 class StageNames:
@@ -907,6 +1034,14 @@ class StageNames:
 
     def get(self, stage_index: int) -> Optional[StageName]:
         return self.names.get(stage_index)
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, StageNames):
+            return False
+        return self.stage_id == other.stage_id and self.names == other.names
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
 
 
 class StageNameSet:
@@ -1017,6 +1152,14 @@ class StageNameSet:
     def get(self, stage_id: int) -> Optional[StageNames]:
         return self.names.get(stage_id)
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, StageNameSet):
+            return False
+        return self.base_stage_id == other.base_stage_id and self.names == other.names
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
 
 class StageNameSets:
     def __init__(
@@ -1079,6 +1222,14 @@ class StageNameSets:
             set = StageNameSet(stage_id, {})
             self.sets[map_index_type] = set
         set.names[stage_id] = names
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, StageNameSets):
+            return False
+        return self.sets == other.sets
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
 
 
 class MapStageData:
@@ -1225,6 +1376,22 @@ class MapStageData:
 
         game_data.set_file(file_name, csv.to_data())
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, MapStageData):
+            return False
+        return (
+            self.map_number == other.map_number
+            and self.item_reward_type == other.item_reward_type
+            and self.score_reward_type == other.score_reward_type
+            and self.unknown_1 == other.unknown_1
+            and self.unknown_2 == other.unknown_2
+            and self.map_pattern == other.map_pattern
+            and self.data == other.data
+        )
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
 
 class Map:
     def __init__(
@@ -1293,6 +1460,20 @@ class Map:
 
     def get_names(self) -> StageNames:
         return StageNames(self.stage_id, {k: v.name for k, v in self.stages.items()})
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Map):
+            return False
+        return (
+            self.stage_id == other.stage_id
+            and self.map_option == other.map_option
+            and self.map_stage_data == other.map_stage_data
+            and self.stages == other.stages
+            and self.map_name_image == other.map_name_image
+        )
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
 
 
 class Maps:
@@ -1365,5 +1546,18 @@ class Maps:
     def set_map(self, map: Map):
         self.maps[map.map_option.stage_id] = map
 
-    def import_maps(self, other: "Maps"):
-        self.maps.update(other.maps)
+    def import_maps(self, other: "Maps", game_data: "pack.GamePacks"):
+        gd_maps = Maps.from_game_data(game_data)
+        all_keys = set(gd_maps.maps.keys())
+        all_keys.update(other.maps.keys())
+        all_keys.update(self.maps.keys())
+        for id in all_keys:
+            gd_map = gd_maps.get(id)
+            other_map = other.get(id)
+            if other_map is None:
+                continue
+            if gd_map is not None:
+                if gd_map != other_map:
+                    self.maps[id] = other_map
+            else:
+                self.maps[id] = other_map

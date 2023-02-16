@@ -122,12 +122,12 @@ class Battle:
             chara_group.CharaGroups.create_empty(),
         )
 
-    def import_battle(self, other: "Battle"):
+    def import_battle(self, other: "Battle", game_data: "pack.GamePacks"):
         """Imports the data from another Battle object.
 
         Args:
             other (Battle): The Battle object to import from.
         """
-        self.shake_effects.import_shake_effects(other.shake_effects)
-        self.bgs.import_bgs(other.bgs)
-        self.groups.import_chara_groups(other.groups)
+        self.shake_effects.import_shake_effects(other.shake_effects, game_data)
+        self.bgs.import_bgs(other.bgs, game_data)
+        self.groups.import_chara_groups(other.groups, game_data)

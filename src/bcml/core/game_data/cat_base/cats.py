@@ -365,6 +365,14 @@ class Stats:
             self.to_raw_data(),
         )
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Stats):
+            return False
+        return self.to_raw_data() == other.to_raw_data()
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
 
 class Anim:
     def __init__(self, cat_id: int, form: FormType, anim: "bc_anim.Anim"):
@@ -460,6 +468,14 @@ class Anim:
             self.form,
             self.anim.copy(),
         )
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Anim):
+            return False
+        return self.anim == other.anim
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
 
 
 class Form:
@@ -591,6 +607,23 @@ class Form:
             self.deploy_icon.copy(),
         )
 
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, Form):
+            return False
+        return (
+            self.cat_id == other.cat_id
+            and self.form == other.form
+            and self.stats == other.stats
+            and self.name == other.name
+            and self.description == other.description
+            and self.anim == other.anim
+            and self.upgrade_icon == other.upgrade_icon
+            and self.deploy_icon == other.deploy_icon
+        )
+
+    def __ne__(self, other: Any) -> bool:
+        return not self.__eq__(other)
+
 
 class UnlockSourceType(enum.Enum):
     XP = 0
@@ -706,6 +739,14 @@ class UnitBuyData:
     def deserialize(data: dict[str, Any], cat_id: int) -> "UnitBuyData":
         return UnitBuyData(cat_id, data["raw_data"])
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, UnitBuyData):
+            return False
+        return self.to_raw_data() == other.to_raw_data()
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
 
 class UnitBuy:
     def __init__(self, unit_buy_data: dict[int, UnitBuyData]):
@@ -764,6 +805,14 @@ class UnitBuy:
     def create_empty() -> "UnitBuy":
         return UnitBuy({})
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, UnitBuy):
+            return False
+        return self.unit_buy_data == other.unit_buy_data
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
 
 class Talent:
     def __init__(self, cat_id: int, raw_data: list[int]):
@@ -778,6 +827,14 @@ class Talent:
     @staticmethod
     def deserialize(data: dict[str, Any], cat_id: int) -> "Talent":
         return Talent(cat_id, data["raw_data"])
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Talent):
+            return False
+        return self.raw_data == other.raw_data
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
 
 
 class Talents:
@@ -850,6 +907,14 @@ class Talents:
     def create_empty() -> "Talents":
         return Talents({})
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Talents):
+            return False
+        return self.talents == other.talents
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
 
 class NyankoPictureBookData:
     def __init__(
@@ -903,6 +968,14 @@ class NyankoPictureBookData:
             data["scale_3"],
             data["other"],
         )
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, NyankoPictureBookData):
+            return False
+        return self.serialize() == other.serialize()
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
 
 
 class NyankoPictureBook:
@@ -978,6 +1051,14 @@ class NyankoPictureBook:
     def create_empty() -> "NyankoPictureBook":
         return NyankoPictureBook({})
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, NyankoPictureBook):
+            return False
+        return self.data == other.data
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
 
 class EvolveText:
     def __init__(self, text: dict[int, list[str]]):
@@ -1033,6 +1114,14 @@ class EvolveText:
     @staticmethod
     def create_empty() -> "EvolveText":
         return EvolveText({})
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, EvolveText):
+            return False
+        return self.text == other.text
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
 
 
 class Cat:
@@ -1207,6 +1296,21 @@ class Cat:
             self.talent.cat_id = cat_id
         self.nyanko_picture_book_data.cat_id = cat_id
 
+    def __eq__(self, other: object):
+        if not isinstance(other, Cat):
+            return False
+        return (
+            self.cat_id == other.cat_id
+            and self.forms == other.forms
+            and self.unit_buy_data == other.unit_buy_data
+            and self.talent == other.talent
+            and self.nyanko_picture_book_data == other.nyanko_picture_book_data
+            and self.evolve_text == other.evolve_text
+        )
+
+    def __ne__(self, other: object):
+        return not self == other
+
 
 class Cats:
     def __init__(self, cats: dict[int, Cat]):
@@ -1285,5 +1389,18 @@ class Cats:
     def create_empty() -> "Cats":
         return Cats({})
 
-    def import_cats(self, other: "Cats"):
-        self.cats.update(other.cats)
+    def import_cats(self, other: "Cats", game_data: "pack.GamePacks"):
+        gd_cats = Cats.from_game_data(game_data)
+        all_keys = set(self.cats.keys())
+        all_keys.update(other.cats.keys())
+        all_keys.update(gd_cats.cats.keys())
+        for cat_id in all_keys:
+            other_cat = other.get_cat(cat_id)
+            gd_cat = gd_cats.get_cat(cat_id)
+            if other_cat is None:
+                continue
+            if gd_cat is not None:
+                if gd_cat != other_cat:
+                    self.cats[cat_id] = gd_cat
+            else:
+                self.cats[cat_id] = other_cat

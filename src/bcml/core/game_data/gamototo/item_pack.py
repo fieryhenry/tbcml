@@ -27,6 +27,14 @@ class DropItem:
     def deserialize(data: dict[str, int]) -> "DropItem":
         return DropItem(data["item_id"], data["probability"])
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, DropItem):
+            return False
+        return self.item_id == other.item_id and self.probability == other.probability
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
 
 class ItemPack:
     def __init__(
@@ -53,6 +61,19 @@ class ItemPack:
             data["unknown"],
             {k: DropItem.deserialize(v) for k, v in data["items"].items()},
         )
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, ItemPack):
+            return False
+        return (
+            self.type == other.type
+            and self.user_rank == other.user_rank
+            and self.unknown == other.unknown
+            and self.items == other.items
+        )
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
 
 
 class ItemPacks:
@@ -151,5 +172,18 @@ class ItemPacks:
     def set_item_pack(self, pack: ItemPack):
         self.packs[pack.user_rank] = pack
 
-    def import_item_packs(self, item_packs: "ItemPacks"):
-        self.packs.update(item_packs.packs)
+    def import_item_packs(self, item_packs: "ItemPacks", game_data: "pack.GamePacks"):
+        gd_item_packs = ItemPacks.from_game_data(game_data)
+        all_keys = set(self.packs.keys())
+        all_keys.update(item_packs.packs.keys())
+        all_keys.update(gd_item_packs.packs.keys())
+        for rank in all_keys:
+            other_pack = item_packs.packs.get(rank)
+            gd_pack = gd_item_packs.packs.get(rank)
+            if other_pack is None:
+                continue
+            if gd_pack is not None:
+                if other_pack != gd_pack:
+                    self.packs[rank] = other_pack
+            else:
+                self.packs[rank] = other_pack

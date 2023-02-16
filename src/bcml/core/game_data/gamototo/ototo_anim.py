@@ -98,5 +98,7 @@ class MainChara:
     def create_empty() -> "MainChara":
         return MainChara(bc_anim.Anim.create_empty())
 
-    def import_main_chara(self, other: "MainChara"):
-        self.anim.import_anim(other.anim)
+    def import_main_chara(self, other: "MainChara", game_data: "pack.GamePacks"):
+        gd_chara = self.from_game_data(game_data)
+        if gd_chara != other:
+            self.anim = other.anim

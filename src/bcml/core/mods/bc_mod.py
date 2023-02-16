@@ -120,18 +120,18 @@ class Mod:
     def create_mod_id() -> str:
         return crypto.Random.get_alpha_string(16)
 
-    def import_mod(self, other: "Mod"):
-        self.gamototo.import_gamototo(other.gamototo)
-        self.battle.import_battle(other.battle)
-        self.cat_base.import_cat_base(other.cat_base)
-        self.maps.import_maps(other.maps)
-        self.localizable.import_localizable(other.localizable)
+    def import_mod(self, other: "Mod", game_packs: "game_data.pack.GamePacks"):
+        self.gamototo.import_gamototo(other.gamototo, game_packs)
+        self.battle.import_battle(other.battle, game_packs)
+        self.cat_base.import_cat_base(other.cat_base, game_packs)
+        self.maps.import_maps(other.maps, game_packs)
+        self.localizable.import_localizable(other.localizable, game_packs)
 
         self.scripts.import_scripts(other.scripts)
 
-    def import_mods(self, others: list["Mod"]):
+    def import_mods(self, others: list["Mod"], game_packs: "game_data.pack.GamePacks"):
         for other in others:
-            self.import_mod(other)
+            self.import_mod(other, game_packs)
 
     def get_hash(self) -> str:
         return (

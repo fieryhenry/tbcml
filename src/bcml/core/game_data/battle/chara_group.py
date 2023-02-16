@@ -64,6 +64,19 @@ class CharaGroupSet:
             data["chara_ids"],
         )
 
+    def __eq__(self, other: object):
+        if not isinstance(other, CharaGroupSet):
+            return False
+        return (
+            self.group_id == other.group_id
+            and self.text_id == other.text_id
+            and self.group_type == other.group_type
+            and self.chara_ids == other.chara_ids
+        )
+
+    def __ne__(self, other: object):
+        return not self.__eq__(other)
+
 
 class CharaGroups:
     def __init__(self, groups: dict[int, CharaGroupSet]):
@@ -206,10 +219,23 @@ class CharaGroups:
         """
         return CharaGroups({})
 
-    def import_chara_groups(self, other: "CharaGroups"):
+    def import_chara_groups(self, other: "CharaGroups", game_data: "pack.GamePacks"):
         """Imports the CharaGroups from another CharaGroups object.
 
         Args:
             other (CharaGroups): The CharaGroups to import from.
         """
-        self.groups.update(other.groups)
+        gd_chara_groups = CharaGroups.from_game_data(game_data)
+        all_keys = set(self.groups.keys())
+        all_keys.update(other.groups.keys())
+        all_keys.update(gd_chara_groups.groups.keys())
+        for id in all_keys:
+            other_group = other.groups.get(id)
+            gd_group = gd_chara_groups.groups.get(id)
+            if other_group is None:
+                continue
+            if gd_group is not None:
+                if other_group != gd_group:
+                    self.groups[id] = other_group
+            else:
+                self.groups[id] = other_group

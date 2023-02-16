@@ -58,6 +58,19 @@ class Color:
             data["b"],
         )
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Color):
+            return False
+        return (
+            self.type == other.type
+            and self.r == other.r
+            and self.g == other.g
+            and self.b == other.b
+        )
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
 
 class Bg:
     def __init__(
@@ -129,6 +142,23 @@ class Bg:
             data["is_upper_side_bg_enabled"],
             data["extra"],
         )
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Bg):
+            return False
+        return (
+            self.id == other.id
+            and self.sky_top == other.sky_top
+            and self.sky_bottom == other.sky_bottom
+            and self.ground_top == other.ground_top
+            and self.ground_bottom == other.ground_bottom
+            and self.imgcut_id == other.imgcut_id
+            and self.is_upper_side_bg_enabled == other.is_upper_side_bg_enabled
+            and self.extra == other.extra
+        )
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
 
 
 class Bgs:
@@ -267,7 +297,7 @@ class Bgs:
 
         game_data.set_file(Bgs.get_file_name(), csv.to_data())
 
-    def get_bg(self, id: int) -> Bg:
+    def get_bg(self, id: int) -> Optional[Bg]:
         """Gets a Bg by its id.
 
         Args:
@@ -276,7 +306,7 @@ class Bgs:
         Returns:
             Bg: The Bg with the given id.
         """
-        return self.bgs[id]
+        return self.bgs.get(id)
 
     def set_bg(self, id: int, bg: Bg):
         """Sets a Bg by its id.
@@ -354,10 +384,24 @@ class Bgs:
         """
         return Bgs({})
 
-    def import_bgs(self, other: "Bgs"):
+    def import_bgs(self, other: "Bgs", game_data: "pack.GamePacks"):
         """Imports Bgs from another Bgs object.
 
         Args:
             other (Bgs): The Bgs object to import from.
         """
-        self.bgs.update(other.bgs)
+        gd_bgs = self.from_game_data(game_data)
+        all_keys = set(self.bgs.keys())
+        all_keys.update(other.bgs.keys())
+        all_keys.update(gd_bgs.bgs.keys())
+
+        for id in all_keys:
+            other_bg = gd_bgs.get_bg(id)
+            gd_bg = self.get_bg(id)
+            if other_bg is None:
+                continue
+            if gd_bg is not None:
+                if gd_bg != other_bg:
+                    self.set_bg(id, other_bg)
+            else:
+                self.set_bg(id, other_bg)

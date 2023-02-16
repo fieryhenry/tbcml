@@ -308,7 +308,7 @@ class GamePacks:
         if not mods:
             return
         main_mod = mods[0]
-        main_mod.import_mods(mods[1:])
+        main_mod.import_mods(mods[1:], self)
         self.apply_mod(main_mod)
 
     def serialize(self) -> dict[str, Any]:
@@ -320,15 +320,19 @@ class GamePacks:
         }
 
     @staticmethod
-    def deserialize(data: dict[str, Any]) -> Optional["GamePacks"]:
+    def deserialize(data: dict[str, Any]) -> "GamePacks":
         cc = country_code.CountryCode.from_code(data["country_code"])
         packs: dict[str, PackFile] = {}
         for pack_name, pack_data in data["packs"].items():
             pack = PackFile.deserialize(pack_data, pack_name, cc)
             if pack is None:
-                return None
+                continue
             packs[pack_name] = pack
         return GamePacks(packs, cc)
+
+    def copy(self) -> "GamePacks":
+        serialized = self.serialize()
+        return GamePacks.deserialize(serialized)
 
 
 class LocalItem:
@@ -385,10 +389,20 @@ class Localizable:
         file = game_data.find_file(file_name)
         if file is None:
             return
-        csv = io.bc_csv.CSV(None, "\t")
-        for item in self.localizable.values():
+        csv = io.bc_csv.CSV(file.dec_data, "\t")
+        remaining_items = self.localizable.copy()
+        for line in csv:
+            try:
+                key = line[0].to_str()
+                item = self.get(key)
+                if item is None:
+                    continue
+                line[1].set(item)
+                del remaining_items[key]
+            except IndexError:
+                pass
+        for item in remaining_items.values():
             csv.add_line([item.key, item.value])
-
         game_data.set_file(file_name, csv.to_data())
 
     @staticmethod
@@ -424,8 +438,21 @@ class Localizable:
             return Localizable.create_empty()
         return Localizable.deserialize(io.json_file.JsonFile.from_data(json).get_json())
 
-    def import_localizable(self, localizable: "Localizable"):
-        self.localizable.update(localizable.localizable)
+    def import_localizable(self, localizable: "Localizable", game_data: "GamePacks"):
+        gd_localizable = Localizable.from_game_data(game_data)
+        all_keys = set(self.localizable.keys())
+        all_keys.update(localizable.localizable.keys())
+        all_keys.update(gd_localizable.localizable.keys())
+        for key in all_keys:
+            gd_item = gd_localizable.get(key)
+            other_item = localizable.get(key)
+            if other_item is None:
+                continue
+            if gd_item is not None:
+                if gd_item != other_item:
+                    self.set(key, other_item)
+            else:
+                self.set(key, other_item)
 
     def get(self, key: str) -> Optional[str]:
         try:

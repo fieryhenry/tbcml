@@ -37,6 +37,18 @@ class Item:
             data["value"],
         )
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Item):
+            return False
+        return (
+            self.drop_category == other.drop_category
+            and self.id == other.id
+            and self.value == other.value
+        )
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
 
 class SchemeItem:
     def __init__(self, id: int, type: SchemeType, items: list[Item]):
@@ -58,6 +70,18 @@ class SchemeItem:
             SchemeType(data["type"]),
             [Item.deserialize(i) for i in data["items"]],
         )
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, SchemeItem):
+            return False
+        return (
+            self.id == other.id
+            and self.type == other.type
+            and self.items == other.items
+        )
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
 
 
 class SchemeItems:
@@ -163,5 +187,18 @@ class SchemeItems:
         item.id = id
         self.items[item.id] = item
 
-    def import_scheme_items(self, other: "SchemeItems"):
-        self.items.update(other.items)
+    def import_scheme_items(self, other: "SchemeItems", game_data: "pack.GamePacks"):
+        gd_items = self.from_game_data(game_data)
+        all_keys = set(gd_items.items.keys())
+        all_keys.update(other.items.keys())
+        all_keys.update(self.items.keys())
+        for id in all_keys:
+            gd_item = gd_items.get_item(id)
+            other_item = other.get_item(id)
+            if other_item is None:
+                continue
+            if gd_item is not None:
+                if gd_item != other_item:
+                    self.set_item(other_item, id)
+            else:
+                self.set_item(other_item, id)

@@ -31,6 +31,14 @@ class GatyaDataSetData:
             data["cats"],
         )
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, GatyaDataSetData):
+            return False
+        return self.id == other.id and self.cats == other.cats
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
 
 class GatyaDataSet:
     def __init__(
@@ -101,6 +109,18 @@ class GatyaDataSet:
             csv.set_line(set.id, line)
         game_data.set_file(file_name, csv.to_data())
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, GatyaDataSet):
+            return False
+        return (
+            self.gatya_type == other.gatya_type
+            and self.index == other.index
+            and self.sets == other.sets
+        )
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
 
 class GatyaDataSets:
     def __init__(
@@ -156,6 +176,14 @@ class GatyaDataSets:
         gatya_set.gatya_type = self.type
         self.gatya_sets[index] = gatya_set
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, GatyaDataSets):
+            return False
+        return self.type == other.type and self.gatya_sets == other.gatya_sets
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
 
 class GatyaDataSetsAll:
     def __init__(
@@ -204,6 +232,14 @@ class GatyaDataSetsAll:
     @staticmethod
     def create_empty() -> "GatyaDataSetsAll":
         return GatyaDataSetsAll({})
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, GatyaDataSetsAll):
+            return False
+        return self.gatya_data_sets == other.gatya_data_sets
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
 
 
 class GatyaOptionSet:
@@ -255,6 +291,24 @@ class GatyaOptionSet:
             data["chara_id"],
             data["extra"],
         )
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, GatyaOptionSet):
+            return False
+        return (
+            self.gatya_set_id == other.gatya_set_id
+            and self.banner_enabled == other.banner_enabled
+            and self.ticket_item_id == other.ticket_item_id
+            and self.anime_id == other.anime_id
+            and self.btn_cut_id == other.btn_cut_id
+            and self.series_id == other.series_id
+            and self.menu_cut_id == other.menu_cut_id
+            and self.chara_id == other.chara_id
+            and self.extra == other.extra
+        )
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
 
 
 class GatyaOptions:
@@ -357,6 +411,14 @@ class GatyaOptions:
     def create_empty(type: GatyaType) -> "GatyaOptions":
         return GatyaOptions(type, {})
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, GatyaOptions):
+            return False
+        return self.type == other.type and self.options == other.options
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
 
 class GatyaOptionsAll:
     def __init__(self, gatya_options: dict[GatyaType, GatyaOptions]):
@@ -398,6 +460,14 @@ class GatyaOptionsAll:
     def set_gatya_options(self, type: GatyaType, options: GatyaOptions):
         options.type = type
         self.gatya_options[type] = options
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, GatyaOptionsAll):
+            return False
+        return self.gatya_options == other.gatya_options
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
 
 
 class Gatya:
@@ -460,8 +530,27 @@ class Gatya:
         self.gatya_options = gatya.gatya_options
         self.gatya_data_sets = gatya.gatya_data_sets
 
-    def import_gatya(self, other: "Gatya"):
-        self.gatya_options.gatya_options.update(other.gatya_options.gatya_options)
-        self.gatya_data_sets.gatya_data_sets.update(
-            other.gatya_data_sets.gatya_data_sets
-        )
+    def import_gatya(self, other: "Gatya", game_data: "pack.GamePacks"):
+        gd_gatya = self.from_game_data(game_data)
+        for gatyta_type in GatyaType:
+            other_options = other.gatya_options.gatya_options.get(gatyta_type)
+            gd_options = gd_gatya.gatya_options.gatya_options.get(gatyta_type)
+            if other_options is None:
+                continue
+            if gd_options is not None:
+                if gd_options != other_options:
+                    self.gatya_options.set_gatya_options(gatyta_type, other_options)
+            else:
+                self.gatya_options.set_gatya_options(gatyta_type, other_options)
+        for gatyta_type in GatyaType:
+            other_data_set = other.gatya_data_sets.gatya_data_sets.get(gatyta_type)
+            gd_data_set = gd_gatya.gatya_data_sets.gatya_data_sets.get(gatyta_type)
+            if other_data_set is None:
+                continue
+            if gd_data_set is not None:
+                if gd_data_set != other_data_set:
+                    self.gatya_data_sets.set_gatya_data_sets(
+                        gatyta_type, other_data_set
+                    )
+            else:
+                self.gatya_data_sets.set_gatya_data_sets(gatyta_type, other_data_set)

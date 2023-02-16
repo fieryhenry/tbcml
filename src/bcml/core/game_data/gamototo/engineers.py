@@ -58,9 +58,11 @@ class Engineer:
             EngineerAnim.create_empty(),
         )
 
-    def import_engineer(self, other: "Engineer"):
-        self.limit = other.limit
-        self.anim.import_engineer_anim(other.anim)
+    def import_engineer(self, other: "Engineer", game_data: "pack.GamePacks"):
+        gd_limit = EngineerLimit.from_game_data(game_data)
+        if gd_limit.limit != other.limit.limit:
+            self.limit = other.limit
+        self.anim.import_engineer_anim(other.anim, game_data)
 
 
 class EngineerLimit:
@@ -188,5 +190,7 @@ class EngineerAnim:
         anim = bc_anim.Anim.create_empty()
         return EngineerAnim(anim)
 
-    def import_engineer_anim(self, other: "EngineerAnim"):
-        self.anim.import_anim(other.anim)
+    def import_engineer_anim(self, other: "EngineerAnim", game_data: "pack.GamePacks"):
+        gd_anim = EngineerAnim.from_game_data(game_data)
+        if gd_anim.anim != other.anim:
+            self.anim = other.anim
