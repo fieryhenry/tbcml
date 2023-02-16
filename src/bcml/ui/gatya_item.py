@@ -1,6 +1,6 @@
 from typing import Callable
 from PyQt5 import QtWidgets, QtCore, QtGui
-from bcml.core import game_data
+from bcml.core import game_data, locale_handler
 
 
 class GatyaItemSelector(QtWidgets.QDialog):
@@ -14,11 +14,12 @@ class GatyaItemSelector(QtWidgets.QDialog):
         self.current_item = current_item
         self.gatya_items = gatya_items
         self.on_select = on_select
+        self.local_manager = locale_handler.LocalManager.from_config()
         self.setup_ui()
 
     def setup_ui(self):
         self.resize(600, 500)
-        self.setWindowTitle("Item Selector")
+        self.setWindowTitle(self.local_manager.search_key("item_selector_title"))
         layout = QtWidgets.QVBoxLayout(self)
         layout.setObjectName("gatya_item_selector_layout")
         self.setLayout(layout)
@@ -27,7 +28,11 @@ class GatyaItemSelector(QtWidgets.QDialog):
         self._gatya_item_table.setObjectName("gatya_item_table")
         self._gatya_item_table.setColumnCount(3)
         self._gatya_item_table.setHorizontalHeaderLabels(
-            [self.tr("Item ID"), self.tr("Item Name"), self.tr("Image")]
+            [
+                self.tr(self.local_manager.search_key("item_id")),
+                self.tr(self.local_manager.search_key("item_name")),
+                self.tr(self.local_manager.search_key("image")),
+            ]
         )
         self._gatya_item_table.verticalHeader().setVisible(False)
 
@@ -60,7 +65,7 @@ class GatyaItemSelector(QtWidgets.QDialog):
 
             name = item.gatya_item_name_item.name
             if name == "＠":
-                name = self.tr("Unknown")
+                name = self.tr(self.local_manager.search_key("unknown"))
 
             item_name = QtWidgets.QTableWidgetItem(name)
             item_name.setFlags(

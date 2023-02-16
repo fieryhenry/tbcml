@@ -1,6 +1,6 @@
 from typing import Callable, Optional
 from PyQt5 import QtWidgets, QtCore, QtGui
-from bcml.core import game_data, mods
+from bcml.core import game_data, mods, locale_handler
 from bcml.ui import ui_thread, main
 
 
@@ -18,18 +18,23 @@ class LocalizableSelector(QtWidgets.QDialog):
         self.raw = raw
         self.localizable.sort()
         self.on_select = on_select
+        self.locale_manager = locale_handler.LocalManager.from_config()
         self.setup_ui()
 
     def setup_ui(self):
         self.resize(600, 500)
-        self.setWindowTitle("Text Selector")
+        self.setWindowTitle(
+            self.locale_manager.search_key("localizable_selector_title")
+        )
         layout = QtWidgets.QVBoxLayout(self)
         layout.setObjectName("localizable_selector_layout")
         self.setLayout(layout)
 
         self.search_bar = QtWidgets.QLineEdit(self)
         self.search_bar.setObjectName("search_bar")
-        self.search_bar.setPlaceholderText("Search...")
+        self.search_bar.setPlaceholderText(
+            self.locale_manager.search_key("search_placeholder")
+        )
         layout.addWidget(self.search_bar)
         self.search_bar.textChanged.connect(self.on_search)  # type: ignore
 
@@ -37,7 +42,10 @@ class LocalizableSelector(QtWidgets.QDialog):
         self._localizable_table.setObjectName("localizable_table")
         self._localizable_table.setColumnCount(2)
         self._localizable_table.setHorizontalHeaderLabels(
-            [self.tr("Key"), self.tr("Rendered Text")]
+            [
+                self.locale_manager.search_key("text_key"),
+                self.locale_manager.search_key("rendered_text"),
+            ]
         )
         self._localizable_table.verticalHeader().setVisible(False)
 
@@ -72,7 +80,13 @@ class LocalizableSelector(QtWidgets.QDialog):
                 self._localizable_table.setItem(i, 1, texto)
             else:
                 text_renderer = TextRenderBox(
-                    text, key, False, None, self.on_double_click, self
+                    text,
+                    key,
+                    False,
+                    self.locale_manager,
+                    None,
+                    self.on_double_click,
+                    self,
                 )
                 self._localizable_table.setCellWidget(i, 1, text_renderer)
 
@@ -164,6 +178,7 @@ class TextRenderBox(QtWidgets.QWidget):
         text: str,
         key: str,
         allow_edit: bool,
+        locale_manager: locale_handler.LocalManager,
         on_change: Optional[Callable[[str, str], None]] = None,
         on_double_click: Optional[Callable[[str], None]] = None,
         parent: Optional[QtWidgets.QWidget] = None,
@@ -174,6 +189,7 @@ class TextRenderBox(QtWidgets.QWidget):
         self.allow_edit = allow_edit
         self.on_change = on_change
         self.on_double_click = on_double_click
+        self.locale_manager = locale_manager
         self._layout = QtWidgets.QVBoxLayout(self)
         self._layout.setObjectName("text_render_box_layout")
         self.setLayout(self._layout)
@@ -213,7 +229,7 @@ class TextRenderBox(QtWidgets.QWidget):
 
         self.text_edit.setWindowFlag(QtCore.Qt.WindowType.Window)
         self.text_edit.setWindowModality(QtCore.Qt.WindowModality.ApplicationModal)
-        self.text_edit.setWindowTitle("Edit Text")
+        self.text_edit.setWindowTitle(self.locale_manager.search_key("edit_text"))
         self.text_edit.resize(400, 400)
 
         self.text_edit.show()
@@ -310,6 +326,7 @@ class TextEditor(QtWidgets.QWidget):
         self.game_packs = game_packs
         self.original_game_packs = original_game_packs
         self.setup = False
+        self.locale_manager = locale_handler.LocalManager.from_config()
 
     def setup_ui(self):
         if self.setup:
@@ -326,13 +343,13 @@ class TextEditor(QtWidgets.QWidget):
 
         self.add_row_button = QtWidgets.QPushButton(self)
         self.add_row_button.setObjectName("add_row_button")
-        self.add_row_button.setText("Add Row")
+        self.add_row_button.setText(self.locale_manager.search_key("add_text_entry"))
         self.add_row_button.clicked.connect(self.on_add_row_clicked)  # type: ignore
         self._layout.addWidget(self.add_row_button)
 
         self.reset_button = QtWidgets.QPushButton(self)
         self.reset_button.setObjectName("reset_button")
-        self.reset_button.setText("Reset to Original Game Data")
+        self.reset_button.setText(self.locale_manager.search_key("reset_to_original"))
         self.reset_button.clicked.connect(self.reset)  # type: ignore
         self._layout.addWidget(self.reset_button)
 
@@ -340,7 +357,10 @@ class TextEditor(QtWidgets.QWidget):
 
     def on_context_menu(self, pos: QtCore.QPoint):
         menu = QtWidgets.QMenu()
-        menu.addAction("Delete Row", self.on_delete_row_clicked)
+        menu.addAction(
+            self.locale_manager.search_key("remove_text_entry"),
+            self.on_delete_row_clicked,
+        )
         menu.exec_(self.text_editor_table.mapToGlobal(pos))
 
     def on_delete_row_clicked(self):
@@ -351,7 +371,9 @@ class TextEditor(QtWidgets.QWidget):
 
     def create_search_box(self):
         self.search_box = QtWidgets.QLineEdit(self)
-        self.search_box.setPlaceholderText("Search")
+        self.search_box.setPlaceholderText(
+            self.locale_manager.search_key("search_placeholder")
+        )
         self.search_box.textChanged.connect(self.search)  # type: ignore
 
         self._layout.insertWidget(0, self.search_box)
@@ -384,7 +406,10 @@ class TextEditor(QtWidgets.QWidget):
         self.text_editor_table.setObjectName("text_editor_table")
         self.text_editor_table.setColumnCount(2)
         self.text_editor_table.setHorizontalHeaderLabels(
-            [self.tr("Key"), self.tr("Rendered Text")]
+            [
+                self.locale_manager.search_key("text_key"),
+                self.locale_manager.search_key("rendered_text"),
+            ]
         )
         self.text_editor_table.verticalHeader().setVisible(False)
 
@@ -424,7 +449,13 @@ class TextEditor(QtWidgets.QWidget):
             self.text_editor_table.setItem(i, 0, key_i)
 
             rendered_text = TextRenderBox(
-                item.value, key, True, self.on_item_changed, None, self
+                item.value,
+                key,
+                True,
+                self.locale_manager,
+                self.on_item_changed,
+                None,
+                self,
             )
             self.text_editor_table.setCellWidget(i, 1, rendered_text)
         self.search(self.search_box.text())
