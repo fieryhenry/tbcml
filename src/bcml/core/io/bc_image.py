@@ -2,6 +2,9 @@ from typing import Any, Optional
 from bcml.core.io import data, path
 from PIL import Image, ImageDraw
 
+import cv2
+import numpy as np
+
 
 class BCImage:
     def __init__(self, dt: Optional["data.Data"] = None):
@@ -116,7 +119,7 @@ class BCImage:
 
     def to_data(self):
         bytes_io = data.Data().to_bytes_io()
-        self.image.save(bytes_io, format="PNG")
+        self.image.save(bytes_io, format="PNG", compress_level=0)
         return data.Data(bytes_io.getvalue())
 
     def serialize(self) -> dict[str, Any]:
@@ -135,3 +138,17 @@ class BCImage:
     @image.setter
     def image(self, image: Image.Image):
         self.__image = image
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, BCImage):
+            return False
+
+        # use cv2 and numpy to compare images
+
+        img1 = cv2.cvtColor(np.array(self.image), cv2.COLOR_RGBA2BGRA)
+        img2 = cv2.cvtColor(np.array(other.image), cv2.COLOR_RGBA2BGRA)
+
+        return np.array_equal(img1, img2)  # type: ignore
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)

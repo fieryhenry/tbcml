@@ -32,6 +32,7 @@ setuptools.setup(
         "requests",
         "eel",
         "lief",
+        "opencv-python-headless",
     ],
     include_package_data=True,
     extras_require={
