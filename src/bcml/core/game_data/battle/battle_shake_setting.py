@@ -6,15 +6,12 @@ from bcml.core import io
 
 
 class ShakeLocation(enum.Enum):
-    """At what location the shake effect should be applied to.
-
-    Attributes:
-        BASE_HIT: The shake effect is applied when the cat base is hit.
-        BOSS_WAVE: The shake effect is applied when an ending main story boss appears (e.g The Face, Nyandam, etc)
-    """
+    """At what location the shake effect should be applied to."""
 
     BASE_HIT = 0
+    """The shake effect is applied when the cat base is hit."""
     BOSS_WAVE = 1
+    """The shake effect is applied when an ending main story boss appears (e.g The Face, Nyandam, etc)"""
 
 
 class ShakeEffect:
@@ -84,7 +81,15 @@ class ShakeEffect:
             data["priority"],
         )
 
-    def __eq__(self, other: object):
+    def __eq__(self, other: object) -> bool:
+        """Checks if the ShakeEffect is equal to another ShakeEffect.
+
+        Args:
+            other (object): The ShakeEffect to compare to.
+
+        Returns:
+            bool: True if the ShakeEffect is equal to the other ShakeEffect, False otherwise.
+        """
         if not isinstance(other, ShakeEffect):
             return False
         return (
@@ -97,7 +102,15 @@ class ShakeEffect:
             and self.priority == other.priority
         )
 
-    def __ne__(self, other: object):
+    def __ne__(self, other: object) -> bool:
+        """Checks if the ShakeEffect is not equal to another ShakeEffect.
+
+        Args:
+            other (object): The ShakeEffect to compare to.
+
+        Returns:
+            bool: True if the ShakeEffect is not equal to the other ShakeEffect, False otherwise.
+        """
         return not self.__eq__(other)
 
 
@@ -270,6 +283,7 @@ class ShakeEffects:
 
         Args:
             other (ShakeEffects): The ShakeEffects to load from.
+            game_data (pack.GamePacks): The game data to check if the imported ShakeEffects are different from the game data. This is used to prevent overwriting the current ShakeEffects with base game ShakeEffects.
         """
         gd_effects = ShakeEffects.from_game_data(game_data)
         all_keys = set(self.effects.keys())

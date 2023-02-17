@@ -59,6 +59,14 @@ class Color:
         )
 
     def __eq__(self, other: object) -> bool:
+        """Compares two Color objects.
+
+        Args:
+            other (object): The other Color object to compare to.
+
+        Returns:
+            bool: Whether or not the two Color objects are equal.
+        """
         if not isinstance(other, Color):
             return False
         return (
@@ -69,6 +77,14 @@ class Color:
         )
 
     def __ne__(self, other: object) -> bool:
+        """Compares two Color objects.
+
+        Args:
+            other (object): The other Color object to compare to.
+
+        Returns:
+            bool: Whether or not the two Color objects are not equal.
+        """
         return not self.__eq__(other)
 
 
@@ -389,6 +405,7 @@ class Bgs:
 
         Args:
             other (Bgs): The Bgs object to import from.
+            game_data (pack.GamePacks): The game data to check if the imported data is different from the game data. This is used to prevent overwriting the current data with base game data.
         """
         gd_bgs = self.from_game_data(game_data)
         all_keys = set(self.bgs.keys())

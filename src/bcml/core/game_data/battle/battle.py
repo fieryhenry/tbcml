@@ -127,6 +127,7 @@ class Battle:
 
         Args:
             other (Battle): The Battle object to import from.
+            game_data (pack.GamePacks): The game data to check if the imported Battle Object is different from the game data. This is used to prevent overwriting the current Battle data with base game data.
         """
         self.shake_effects.import_shake_effects(other.shake_effects, game_data)
         self.bgs.import_bgs(other.bgs, game_data)

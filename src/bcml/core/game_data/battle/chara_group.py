@@ -224,6 +224,7 @@ class CharaGroups:
 
         Args:
             other (CharaGroups): The CharaGroups to import from.
+            game_data (pack.GamePacks): The game data to check if the imported data is different from the game data. This is used to prevent overwriting the current data with base game data.
         """
         gd_chara_groups = CharaGroups.from_game_data(game_data)
         all_keys = set(self.groups.keys())
