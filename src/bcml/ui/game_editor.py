@@ -31,7 +31,6 @@ class GameEditor(QtWidgets.QWidget):
             self.local_manager.search_key("loading_game_data_progress"), 50
         )
         self.game_data = game_data.pack.GamePacks.from_apk(self.apk)
-        self.original_game_data = self.game_data.copy()
         self.progress_bar.set_progress_str(
             self.local_manager.search_key("loading_mod_data_progress"), 90
         )
@@ -103,31 +102,21 @@ class GameEditor(QtWidgets.QWidget):
     def create_item_shop_tab(self):
         if self.game_data is None:
             return
-        self.shop_editor = shop_editor.ShopEditor(
-            self.mod, self.game_data, self.original_game_data, self
-        )
+        self.shop_editor = shop_editor.ShopEditor(self.mod, self.game_data, self)
         return self.shop_editor
 
     def create_text_tab(self):
         if self.game_data is None:
             return
-        self.text_editor = localizable.TextEditor(
-            self.mod, self.game_data, self.original_game_data, self
-        )
+        self.text_editor = localizable.TextEditor(self.mod, self.game_data, self)
         return self.text_editor
 
     def save(self):
-        self._save_thread = ui_thread.ThreadWorker.run_in_thread_on_finished(
-            self.save_thread
-        )
+        self._save_thread = ui_thread.ThreadWorker.run_in_thread(self.save_thread)
 
     def save_thread(self):
         self.shop_editor.save()
         self.text_editor.save()
-        if self.game_data is None:
-            return
-        self.game_data = self.original_game_data.copy()
-        self.game_data.apply_mod(self.mod)
         mods.mod_manager.ModManager().save_mod(self.mod)
 
     def back(self):

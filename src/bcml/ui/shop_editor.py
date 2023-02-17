@@ -21,13 +21,11 @@ class ShopEditor(QtWidgets.QWidget):
         self,
         mod: mods.bc_mod.Mod,
         game_packs: game_data.pack.GamePacks,
-        original_game_packs: game_data.pack.GamePacks,
         parent: Optional[QtWidgets.QWidget] = None,
     ):
         super(ShopEditor, self).__init__(parent)
         self.mod = mod
         self.game_packs = game_packs
-        self.original_game_packs = original_game_packs
         self.setup = False
 
     def setup_ui(self):
@@ -248,19 +246,20 @@ class ShopEditor(QtWidgets.QWidget):
     def save(self):
         self.mod.cat_base.item_shop = self.item_shop
 
-    def setup_data(self, game_packs: Optional["game_data.pack.GamePacks"] = None):
-        if game_packs is None:
-            game_packs = self.game_packs
-
-        item_shop = game_data.cat_base.item_shop.ItemShop.from_game_data(game_packs)
+    def setup_data(self):
+        item_shop = game_data.cat_base.item_shop.ItemShop.from_game_data(
+            self.game_packs
+        )
         gatya_items = game_data.cat_base.gatya_item.GatyaItems.from_game_data(
-            game_packs
+            self.game_packs
         )
         self.item_shop = item_shop
         self.gatya_items = gatya_items
-        self.locals = game_data.pack.Localizable.from_game_data(
-            self.game_packs
-        )  # deliberately not using the argument because it's not stored in the item shop and so should not be reset
+        self.locals = game_data.pack.Localizable.from_game_data(self.game_packs)
+
+        self.item_shop.import_item_shop(self.mod.cat_base.item_shop, self.game_packs)
+        self.gatya_items.import_items(self.mod.cat_base.gatya_items, self.game_packs)
+        self.locals.import_localizable(self.mod.localizable, self.game_packs)
 
     def fill_table(self):
         self._item_shop_table.clearContents()
@@ -438,5 +437,5 @@ class ShopEditor(QtWidgets.QWidget):
 
     def reset(self):
         self._thread = ui_thread.ThreadWorker.run_in_thread_on_finished(
-            self.setup_data, self.fill_table, self.original_game_packs
+            self.setup_data, self.fill_table
         )
