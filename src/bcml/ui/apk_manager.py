@@ -331,7 +331,7 @@ class ApkDownloader(QtWidgets.QWidget):
         apk_id = apk.get_id()
         if apk_id in self.downloading_apks:
             return
-        title = self.locale_manager.search_key("downloading") % apk.format()
+        title = self.locale_manager.search_key("downloading_apk") % apk.format()
         self.downloading_apks.append(apk_id)
         self.progress_bar = progress.ProgressBar(title, None, self)
         self._layout.addWidget(self.progress_bar)
