@@ -17,17 +17,21 @@ class ModLoader(QtWidgets.QDialog):
 
         self._layout = QtWidgets.QVBoxLayout(self)
         self.setLayout(self._layout)
-        self.loaded = False
 
-        self.add_ui()
+        self.loading_progress_bar = progress.ProgressBar(
+            self.locale_manager.search_key("preparing_apk"), None, self
+        )
+        self._layout.addWidget(self.loading_progress_bar)
+        self.loading_progress_bar.show()
+
+        self._data_thread = ui_thread.ThreadWorker.run_in_thread_on_finished(
+            self.load_data, self.add_ui
+        )
 
     def load_data(self):
-        self.apk.extract()
-        self.apk.copy_server_files()
-        self.loaded = True
-
-    def add_ui(self):
-        self.loading_mods = False
+        self.loading_progress_bar.set_progress_str(
+            self.locale_manager.search_key("getting_selected_apk"), 0
+        )
         self.selected_apk = io.config.Config().get(io.config.Key.SELECTED_APK)
         if not self.selected_apk:
             self._layout.addWidget(
@@ -37,8 +41,18 @@ class ModLoader(QtWidgets.QDialog):
             self.apk_manager.show()
             return
         self.apk = io.apk.Apk.from_format_string(self.selected_apk)
+        self.loading_progress_bar.set_progress_str(
+            self.locale_manager.search_key("extracting_apk"), 5
+        )
+        self.apk.extract()
+        self.loading_progress_bar.set_progress_str(
+            self.locale_manager.search_key("copying_server_files"), 50
+        )
+        self.apk.copy_server_files()
 
-        self._data_thread = ui_thread.ThreadWorker.run_in_thread(self.load_data)
+    def add_ui(self):
+        self.loading_progress_bar.close()
+        self.loading_mods = False
 
         self._layout.addWidget(
             QtWidgets.QLabel(
@@ -80,10 +94,6 @@ class ModLoader(QtWidgets.QDialog):
     def load_mods_wrapper(self, mod_names: list[str]):
         if self.loading_mods:
             return
-        try:
-            self.progress_bar.close()
-        except AttributeError:
-            pass
         self.progress_bar = progress.ProgressBar(
             self.locale_manager.search_key("loading_mods_progress"), None, self
         )
@@ -95,8 +105,6 @@ class ModLoader(QtWidgets.QDialog):
         )
 
     def load_mods_thread(self, mod_names: list[str]):
-        if not self.loaded:
-            self.load_data()
         self.loading_mods = True
         total_progress = 100
         self.progress_bar.set_progress_str(
