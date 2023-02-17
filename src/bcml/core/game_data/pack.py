@@ -11,12 +11,25 @@ class GameFile:
         pack_name: str,
         cc: country_code.CountryCode,
     ):
+        """Initialize a new GameFile.
+
+        Args:
+            dec_data (io.data.Data): Decrypted data.
+            file_name (str): Name of the file.
+            pack_name (str): Name of the pack the file is in.
+            cc (country_code.CountryCode): Country code of the game data.
+        """
         self.dec_data = dec_data
         self.file_name = file_name
         self.pack_name = pack_name
         self.cc = cc
 
     def set_data(self, data: "io.data.Data"):
+        """Set the decrypted data.
+
+        Args:
+            data (io.data.Data): Decrypted data.
+        """
         self.dec_data = data
 
     @staticmethod
@@ -26,6 +39,17 @@ class GameFile:
         pack_name: str,
         cc: country_code.CountryCode,
     ) -> "GameFile":
+        """Create a GameFile from encrypted data.
+
+        Args:
+            enc_data (io.data.Data): Encrypted data.
+            file_name (str): The name of the file.
+            pack_name (str): The name of the pack the file is in.
+            cc (country_code.CountryCode): The country code of the game data.
+
+        Returns:
+            GameFile: The GameFile object.
+        """
         cipher = PackFile.get_cipher(cc, pack_name)
         data = cipher.decrypt(enc_data)
         try:
@@ -35,6 +59,11 @@ class GameFile:
         return GameFile(data, file_name, pack_name, cc)
 
     def encrypt(self) -> "io.data.Data":
+        """Encrypt the decrypted data.
+
+        Returns:
+            io.data.Data: The encrypted data.
+        """
         if PackFile.is_image_data_local_pack(self.pack_name):
             return self.dec_data
         cipher = PackFile.get_cipher(self.cc, self.pack_name)
@@ -42,10 +71,20 @@ class GameFile:
         return cipher.encrypt(data)
 
     def extract(self, path: "io.path.Path"):
+        """Extract the decrypted data to a file.
+
+        Args:
+            path (io.path.Path): The path to extract the file to.
+        """
         path = path.add(self.file_name)
         path.write(self.dec_data)
 
     def serialize(self) -> dict[str, str]:
+        """Serialize the GameFile to a dictionary.
+
+        Returns:
+            dict[str, str]: The serialized GameFile.
+        """
         return {
             "data": self.dec_data.to_base_64(),
         }
@@ -57,6 +96,17 @@ class GameFile:
         pack_name: str,
         cc: country_code.CountryCode,
     ) -> "GameFile":
+        """Deserialize a GameFile from a dictionary.
+
+        Args:
+            data (dict[str, str]): The serialized GameFile.
+            file_name (str): The name of the file.
+            pack_name (str): The name of the pack the file is in.
+            cc (country_code.CountryCode): The country code of the game data.
+
+        Returns:
+            GameFile: The deserialized GameFile.
+        """
         return GameFile(
             io.data.Data.from_base_64(data["data"]),
             file_name,
@@ -71,39 +121,107 @@ class PackFile:
         pack_name: str,
         country_code: country_code.CountryCode,
     ):
+        """Initialize a new PackFile.
+
+        Args:
+            pack_name (str): The name of the pack.
+            country_code (country_code.CountryCode): The country code of the game data.
+        """
         self.pack_name = pack_name
         self.country_code = country_code
         self.files: dict[str, GameFile] = {}
 
     def add_file(self, file: GameFile):
+        """Add a file to the pack.
+
+        Args:
+            file (GameFile): The file to add.
+        """
         self.files[file.file_name] = file
 
     def add_files(self, files: list[GameFile]):
+        """Add multiple files to the pack.
+
+        Args:
+            files (list[GameFile]): The files to add.
+        """
         for file in files:
             self.add_file(file)
 
     def set_files(self, files: dict[str, GameFile]):
+        """Set the files in the pack.
+
+        Args:
+            files (dict[str, GameFile]): The files to set.
+        """
         self.files = files
 
     @staticmethod
     def is_server_pack(pack_name: str) -> bool:
+        """Check if a pack is a server pack.
+
+        Args:
+            pack_name (str): The name of the pack.
+
+        Returns:
+            bool: True if the pack is a server pack, False otherwise.
+        """
         return "Server" in pack_name
 
     @staticmethod
     def is_image_data_local_pack(pack_name: str) -> bool:
+        """Check if a pack is ImageDataLocal. This pack is not encrypted for some reason.
+
+        Args:
+            pack_name (str): The name of the pack.
+
+        Returns:
+            bool: True if the pack is ImageDataLocal, False otherwise.
+        """
         return "ImageDataLocal" in pack_name
 
     @staticmethod
     def get_cipher(cc: country_code.CountryCode, pack_name: str) -> crypto.AesCipher:
+        """Get the cipher for a pack.
+
+        Args:
+            cc (country_code.CountryCode): The country code of the game data.
+            pack_name (str): The name of the pack.
+
+        Returns:
+            crypto.AesCipher: The cipher for the pack.
+        """
         return crypto.AesCipher.get_cipher_from_pack(cc, pack_name)
 
     def get_file(self, file_name: str) -> Optional[GameFile]:
+        """Get a file from the pack.
+
+        Args:
+            file_name (str): The name of the file.
+
+        Returns:
+            Optional[GameFile]: The file if it exists, None otherwise.
+        """
         return self.files.get(file_name)
 
     def get_files(self) -> list[GameFile]:
+        """Get all the files in the pack.
+
+        Returns:
+            list[GameFile]: The files in the pack.
+        """
         return list(self.files.values())
 
     def set_file(self, file_name: str, file_data: "io.data.Data") -> Optional[GameFile]:
+        """Set a file in the pack.
+
+        Args:
+            file_name (str): The name of the file.
+            file_data (io.data.Data): The data of the file.
+
+        Returns:
+            Optional[GameFile]: The file if it exists, None otherwise.
+        """
         file = self.get_file(file_name)
         if file is None:
             file = GameFile(file_data, file_name, self.pack_name, self.country_code)
@@ -114,6 +232,14 @@ class PackFile:
 
     @staticmethod
     def convert_pack_name_server_local(pack_name: str) -> str:
+        """Convert a server pack name to a local pack name.
+
+        Args:
+            pack_name (str): The name of the pack.
+
+        Returns:
+            str: The converted pack name.
+        """
         packs = [
             "MapServer",
             "NumberServer",
@@ -139,7 +265,18 @@ class PackFile:
         enc_pack_data: "io.data.Data",
         country_code: country_code.CountryCode,
         pack_name: str,
-    ):
+    ) -> Optional["PackFile"]:
+        """Create a PackFile from a pack file.
+
+        Args:
+            enc_list_data (io.data.Data): Encrypted list data.
+            enc_pack_data (io.data.Data): Encrypted pack data.
+            country_code (country_code.CountryCode): The country code of the game data.
+            pack_name (str): The name of the pack.
+
+        Returns:
+            Optional[PackFile]: The PackFile if it was created successfully, None otherwise.
+        """
         key = (
             crypto.Hash(crypto.HashAlgorithm.MD5, io.data.Data("pack"))
             .get_hash(8)
@@ -171,6 +308,11 @@ class PackFile:
         return pack_file
 
     def to_pack_list_file(self) -> tuple[str, "io.data.Data", "io.data.Data"]:
+        """Convert the pack object to a pack file and a list file.
+
+        Returns:
+            tuple[str, io.data.Data, io.data.Data]: The pack name, encrypted pack data, and encrypted list data.
+        """
         ls_data = io.bc_csv.CSV()
         ls_data.add_line(io.data.Data.int_list_data_list([len(self.files)]))
         offset = 0
@@ -194,20 +336,42 @@ class PackFile:
         return self.pack_name, pack_data, ls_data
 
     def extract(self, path: "io.path.Path"):
+        """Extract the pack as separate files into a directory.
+
+        Args:
+            path (io.path.Path): The path to extract the pack to.
+        """
         path = path.add(self.pack_name)
         path.generate_dirs()
         for file in self.files.values():
             file.extract(path)
 
     def serialize(self) -> dict[str, Any]:
+        """Serialize the pack file to a dictionary.
+
+        Returns:
+            dict[str, Any]: The serialized pack file.
+        """
         return {
             "files": {file.file_name: file.serialize() for file in self.files.values()},
         }
 
     @staticmethod
     def deserialize(
-        data: dict[str, Any], pack_name: str, country_code: country_code.CountryCode
+        data: dict[str, Any],
+        pack_name: str,
+        country_code: country_code.CountryCode,
     ) -> Optional["PackFile"]:
+        """Deserialize a pack file from a dictionary.
+
+        Args:
+            data (dict[str, Any]): The serialized pack file.
+            pack_name (str): The name of the pack.
+            country_code (country_code.CountryCode): The country code of the game data.
+
+        Returns:
+            Optional[PackFile]: The deserialized pack file.
+        """
         pack_file = PackFile(pack_name, country_code)
         files: dict[str, GameFile] = {}
         for file_name, file_data in data["files"].items():
@@ -219,16 +383,41 @@ class PackFile:
 
 class GamePacks:
     def __init__(
-        self, packs: dict[str, PackFile], country_code: country_code.CountryCode
+        self,
+        packs: dict[str, PackFile],
+        country_code: country_code.CountryCode,
     ):
+        """Create a GamePacks object.
+
+        Args:
+            packs (dict[str, PackFile]): The packs.
+            country_code (country_code.CountryCode): The country code of the game data.
+        """
         self.packs = packs
         self.country_code = country_code
         self.modified_packs: dict[str, bool] = {}
 
     def get_pack(self, pack_name: str) -> Optional[PackFile]:
+        """Get a pack from the game packs.
+
+        Args:
+            pack_name (str): The name of the pack.
+
+        Returns:
+            Optional[PackFile]: The pack if it exists, None otherwise.
+        """
         return self.packs.get(pack_name, None)
 
     def find_file(self, file_name: str, show_error: bool = True) -> Optional[GameFile]:
+        """Find a file in the game packs.
+
+        Args:
+            file_name (str): The name of the file.
+            show_error (bool, optional): Whether to show an error if the file is not found. Defaults to True.
+
+        Returns:
+            Optional[GameFile]: The file if it exists, None otherwise.
+        """
         found_files: list[GameFile] = []
         for pack_name, pack in self.packs.items():
             file = pack.get_file(file_name)
@@ -266,7 +455,12 @@ class GamePacks:
             else:
                 return None
 
-    def to_packs_lists(self):
+    def to_packs_lists(self) -> list[tuple[str, "io.data.Data", "io.data.Data"]]:
+        """Convert the game packs to a list of pack lists.
+
+        Returns:
+            list[tuple[str, io.data.Data, io.data.Data]]: The pack lists. The first element is the pack name, the second is the encrypted pack data, the third is the encrypted list data.
+        """
         packs_lists: list[tuple[str, "io.data.Data", "io.data.Data"]] = []
         for pack_name, pack in self.packs.items():
             if pack_name in self.modified_packs:
@@ -274,6 +468,20 @@ class GamePacks:
         return packs_lists
 
     def set_file(self, file_name: str, data: "io.data.Data") -> Optional[GameFile]:
+        """Set a file in the game packs.
+
+        Args:
+            file_name (str): The name of the file.
+            data (io.data.Data): The data of the file.
+
+        Raises:
+            Exception: If the DownloadLocal pack is not found.
+            Exception: If the local equivalent of the server pack is not found.
+            Exception: If the file could not be set.
+
+        Returns:
+            Optional[GameFile]: The file if it exists, None otherwise.
+        """
         file = self.find_file(file_name)
         if file is None:
             pack = self.get_pack("DownloadLocal")
@@ -291,7 +499,15 @@ class GamePacks:
         return file
 
     @staticmethod
-    def from_apk(apk: "io.apk.Apk"):
+    def from_apk(apk: "io.apk.Apk") -> "GamePacks":
+        """Create a GamePacks object from an APK.
+
+        Args:
+            apk (io.apk.Apk): The APK.
+
+        Returns:
+            GamePacks: The GamePacks object.
+        """
         packs: dict[str, PackFile] = {}
         for pack_file, list_file in apk.get_packs_lists():
             pack_data = pack_file.read()
@@ -306,6 +522,11 @@ class GamePacks:
         return GamePacks(packs, apk.country_code)
 
     def apply_mod(self, mod: "mods.bc_mod.Mod"):
+        """Apply mod data to the game packs. Should be called after all mods have been imported into a single mod.
+
+        Args:
+            mod (mods.bc_mod.Mod): The mod.
+        """
         mod.gamototo.to_game_data(self)
         mod.battle.to_game_data(self)
         mod.cat_base.to_game_data(self)
@@ -313,10 +534,20 @@ class GamePacks:
         mod.localizable.to_game_data(self)
 
     def extract(self, path: "io.path.Path"):
+        """Extract the game packs to a path.
+
+        Args:
+            path (io.path.Path): The path.
+        """
         for pack in self.packs.values():
             pack.extract(path)
 
     def apply_mods(self, mods: list["mods.bc_mod.Mod"]):
+        """Apply a list of mods to the game packs.
+
+        Args:
+            mods (list[mods.bc_mod.Mod]): The mods.
+        """
         if not mods:
             return
         main_mod = mods[0]
@@ -324,6 +555,11 @@ class GamePacks:
         self.apply_mod(main_mod)
 
     def serialize(self) -> dict[str, Any]:
+        """Serialize the game packs to a dictionary.
+
+        Returns:
+            dict[str, Any]: The serialized game packs.
+        """
         return {
             "country_code": self.country_code.get_code(),
             "packs": {
@@ -333,6 +569,14 @@ class GamePacks:
 
     @staticmethod
     def deserialize(data: dict[str, Any]) -> "GamePacks":
+        """Deserialize a dictionary to a GamePacks object.
+
+        Args:
+            data (dict[str, Any]): The serialized game packs.
+
+        Returns:
+            GamePacks: The GamePacks object.
+        """
         cc = country_code.CountryCode.from_code(data["country_code"])
         packs: dict[str, PackFile] = {}
         for pack_name, pack_data in data["packs"].items():
@@ -343,19 +587,32 @@ class GamePacks:
         return GamePacks(packs, cc)
 
     def copy(self) -> "GamePacks":
+        """Deep copy the game packs.
+
+        Returns:
+            GamePacks: The copied game packs.
+        """
         data = copy.deepcopy(self)
         return data
 
 
 class LocalItem:
     def __init__(self, key: str, value: str):
+        """Initialize a LocalItem.
+
+        Args:
+            key (str): The key of the text.
+            value (str): The text itself.
+        """
         self.key = key
         self.value = value
 
-    def get_formatted_text(self) -> str:
-        return self.value.replace("<br>", "\n")
-
     def serialize(self) -> dict[str, Any]:
+        """Serialize the LocalItem to a dictionary.
+
+        Returns:
+            dict[str, Any]: The serialized LocalItem.
+        """
         return {
             "key": self.key,
             "value": self.value,
@@ -363,15 +620,38 @@ class LocalItem:
 
     @staticmethod
     def deserialize(data: dict[str, Any]) -> "LocalItem":
+        """Deserialize a dictionary to a LocalItem.
+
+        Args:
+            data (dict[str, Any]): The serialized LocalItem.
+
+        Returns:
+            LocalItem: The LocalItem.
+        """
         return LocalItem(data["key"], data["value"])
 
 
 class Localizable:
+    """A class to handle the localizable.tsv file."""
+
     def __init__(self, localizable: dict[str, LocalItem]):
+        """Initialize a Localizable object.
+
+        Args:
+            localizable (dict[str, LocalItem]): The localizable data.
+        """
         self.localizable = localizable
 
     @staticmethod
     def from_game_data(game_data: "GamePacks") -> "Localizable":
+        """Create a Localizable object from a GamePacks object.
+
+        Args:
+            game_data (GamePacks): The GamePacks object.
+
+        Returns:
+            Localizable: The Localizable object.
+        """
         file_name = Localizable.get_file_name()
 
         file = game_data.find_file(file_name)
@@ -391,9 +671,20 @@ class Localizable:
 
     @staticmethod
     def get_file_name() -> str:
+        """Get the file name of the localizable.tsv file.
+
+        Returns:
+            str: The file name.
+        """
         return "localizable.tsv"
 
     def to_game_data(self, game_data: "GamePacks"):
+        """Apply the localizable data to a GamePacks object.
+
+        Args:
+            game_data (GamePacks): The GamePacks object.
+        """
+
         if len(self.localizable) == 0:
             return
         file_name = self.get_file_name()
@@ -419,9 +710,19 @@ class Localizable:
 
     @staticmethod
     def create_empty() -> "Localizable":
+        """Create an empty Localizable object.
+
+        Returns:
+            Localizable: The empty Localizable object.
+        """
         return Localizable({})
 
     def serialize(self) -> dict[str, Any]:
+        """Serialize the Localizable object to a dictionary.
+
+        Returns:
+            dict[str, Any]: The serialized Localizable object.
+        """
         return {
             "localizable": {
                 key: item.serialize() for key, item in self.localizable.items()
@@ -430,6 +731,14 @@ class Localizable:
 
     @staticmethod
     def deserialize(data: dict[str, Any]) -> "Localizable":
+        """Deserialize a dictionary to a Localizable object.
+
+        Args:
+            data (dict[str, Any]): The serialized Localizable object.
+
+        Returns:
+            Localizable: The Localizable object.
+        """
         localizable: dict[str, LocalItem] = {}
         for key, item_data in data["localizable"].items():
             localizable[key] = LocalItem.deserialize(item_data)
@@ -437,20 +746,44 @@ class Localizable:
 
     @staticmethod
     def get_json_file_name() -> "io.path.Path":
+        """Get the file name of the localizable.json file.
+
+        Returns:
+            io.path.Path: The file name.
+        """
         return io.path.Path("localizable.json")
 
     def add_to_zip(self, zip: "io.zip.Zip"):
+        """Add the localizable.json file to a zip file.
+
+        Args:
+            zip (io.zip.Zip): The zip file.
+        """
         json = io.json_file.JsonFile.from_json(self.serialize())
         zip.add_file(Localizable.get_json_file_name(), json.to_data())
 
     @staticmethod
     def from_zip(zip: "io.zip.Zip") -> "Localizable":
+        """Create a Localizable object from a zip file.
+
+        Args:
+            zip (io.zip.Zip): The zip file.
+
+        Returns:
+            Localizable: The Localizable object.
+        """
         json = zip.get_file(Localizable.get_json_file_name())
         if json is None:
             return Localizable.create_empty()
         return Localizable.deserialize(io.json_file.JsonFile.from_data(json).get_json())
 
     def import_localizable(self, localizable: "Localizable", game_data: "GamePacks"):
+        """Import localizable data from another Localizable object.
+
+        Args:
+            localizable (Localizable): The Localizable object to import from.
+            game_data (pack.GamePacks): The game data to check if the imported data is different from the game data. This is used to prevent overwriting the current data with base game data.
+        """
         gd_localizable = Localizable.from_game_data(game_data)
         all_keys = set(self.localizable.keys())
         all_keys.update(localizable.localizable.keys())
@@ -467,21 +800,46 @@ class Localizable:
                 self.set(key, other_item)
 
     def get(self, key: str) -> Optional[str]:
+        """Get the value of a localizable item.
+
+        Args:
+            key (str): The key of the localizable item.
+
+        Returns:
+            Optional[str]: The value of the localizable item. None if the item does not exist.
+        """
         try:
             return self.localizable[key].value
         except KeyError:
             return None
 
     def set(self, key: str, value: str):
+        """Set the value of a localizable item.
+
+        Args:
+            key (str): The key of the localizable item.
+            value (str): The value of the localizable item.
+        """
         self.localizable[key] = LocalItem(key, value)
 
     def remove(self, key: str):
+        """Remove a localizable item.
+
+        Args:
+            key (str): The key of the localizable item to remove.
+        """
         try:
             del self.localizable[key]
         except KeyError:
             pass
 
     def rename(self, key: str, new_key: str):
+        """Rename a localizable item.
+
+        Args:
+            key (str): The key of the localizable item to rename.
+            new_key (str): The new key of the localizable item.
+        """
         try:
             old = self.localizable[key]
             new = LocalItem(new_key, old.value)
@@ -491,4 +849,6 @@ class Localizable:
             pass
 
     def sort(self):
+        """Sort the localizable items by key alphabetically in ascending order."""
+
         self.localizable = dict(sorted(self.localizable.items()))
