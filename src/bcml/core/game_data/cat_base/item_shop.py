@@ -348,14 +348,28 @@ class ItemShop:
         all_keys.update(other.items.keys())
         all_keys.update(gd_item_shop.items.keys())
 
+        attrs = [
+            "gatya_item_id",
+            "count",
+            "price",
+            "draw_item_value",
+            "category_name",
+            "imgcut_id",
+            "cut",
+        ]
+
         for id in all_keys:
             other_item = other.get_item(id)
             if other_item is None:
                 continue
             gd_item = gd_item_shop.get_item(id)
+            current_item = self.get_item(id)
             if gd_item is not None:
-                if other_item != gd_item:
-                    self.set_item(id, other_item)
+                for attr in attrs:
+                    other_value = getattr(other_item, attr)
+                    gd_value = getattr(gd_item, attr)
+                    if other_value != gd_value:
+                        setattr(current_item, attr, other_value)
             else:
                 self.set_item(id, other_item)
 
