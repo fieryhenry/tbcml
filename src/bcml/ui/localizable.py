@@ -133,18 +133,28 @@ class TextComponent(QtWidgets.QLabel):
         self.color = color
         self.new_line = new_line
         self.backslash_n = backslash_n
+        self.flash_setup = False
         if self.flash and self.color is not None:
             raise ValueError("Cannot flash and set color at the same time")
+
+    def start_flash(self):
+        if self.flash_setup or not self.flash:
+            return
+        self.frame_rate = 15  # the game runs at 30 fps and flashes every 2 frames, so 15 fps flashing every frame is equivalent and less taxing
+        self.flash_timer = QtCore.QTimer(self)
+        self.flash_timer.timeout.connect(self.on_flash)
+        self.flash_timer.start(1000 // self.frame_rate)
+        self.flash_count = 0
+        self.flash_setup = True
+
+    def stop_flash(self):
+        if self.flash_setup:
+            self.flash_timer.stop()
+            self.flash_setup = False
 
     def setup_ui(self):
         self.setContentsMargins(0, 0, 0, 0)
 
-        if self.flash:
-            self.frame_rate = 30
-            self.flash_timer = QtCore.QTimer(self)
-            self.flash_timer.timeout.connect(self.on_flash)
-            self.flash_timer.start(1000 // self.frame_rate)
-            self.flash_count = 0
         if self.color is not None:
             self.setStyleSheet(
                 f"color: rgb({self.color[0]}, {self.color[1]}, {self.color[2]});"
@@ -156,7 +166,7 @@ class TextComponent(QtWidgets.QLabel):
         self.setText(self.txt.replace("\\n", "\n"))
 
     def on_flash(self):
-        if self.flash_count % 4 < 2:
+        if self.flash_count % 2 == 0:
             self.setObjectName("flash_label_on")
         else:
             self.setObjectName("flash_label_off")
@@ -312,19 +322,25 @@ class TextRenderBox(QtWidgets.QWidget):
     def get_text(self) -> str:
         return self.text
 
+    def start_flash(self):
+        for component in self.components:
+            component.start_flash()
+
+    def stop_flash(self):
+        for component in self.components:
+            component.stop_flash()
+
 
 class TextEditor(QtWidgets.QWidget):
     def __init__(
         self,
         mod: mods.bc_mod.Mod,
         game_packs: game_data.pack.GamePacks,
-        original_game_packs: game_data.pack.GamePacks,
         parent: Optional[QtWidgets.QWidget] = None,
     ):
         super(TextEditor, self).__init__(parent)
         self.mod = mod
         self.game_packs = game_packs
-        self.original_game_packs = original_game_packs
         self.setup = False
         self.locale_manager = locale_handler.LocalManager.from_config()
 
@@ -354,6 +370,15 @@ class TextEditor(QtWidgets.QWidget):
         self._layout.addWidget(self.reset_button)
 
         self.create_search_box()
+
+        # enable mouse tracking to get mouse move events
+        self.setMouseTracking(True)
+        self.text_editor_table.setMouseTracking(True)
+        self.timer = QtCore.QTimer(self)
+        self.timer.timeout.connect(self.tick)
+        fps = 5
+        self.text_editor_table.mouseMoveEvent = self.on_mouse_move  # type: ignore
+        self.timer.start(1000 // fps)
 
     def on_context_menu(self, pos: QtCore.QPoint):
         menu = QtWidgets.QMenu()
@@ -394,11 +419,8 @@ class TextEditor(QtWidgets.QWidget):
             else:
                 self.text_editor_table.hideRow(i)
 
-    def setup_table(self, game_packs: Optional[game_data.pack.GamePacks] = None):
-        if game_packs is None:
-            game_packs = self.game_packs
+    def setup_table(self):
         if hasattr(self, "text_editor_table"):
-            # remove the old table
             self._layout.removeWidget(self.text_editor_table)
             self.text_editor_table.deleteLater()
 
@@ -427,14 +449,12 @@ class TextEditor(QtWidgets.QWidget):
         self._layout.insertWidget(1, self.text_editor_table)
 
         self._thread = ui_thread.ThreadWorker.run_in_thread_on_finished(
-            self.setup_data, self.fill_table, game_packs
+            self.setup_data, self.fill_table
         )
 
-    def setup_data(self, game_packs: Optional[game_data.pack.GamePacks] = None):
-        if game_packs is None:
-            game_packs = self.game_packs
-
-        self.localizable = game_data.pack.Localizable.from_game_data(game_packs)
+    def setup_data(self):
+        self.localizable = game_data.pack.Localizable.from_game_data(self.game_packs)
+        self.localizable.import_localizable(self.mod.localizable, self.game_packs)
 
     def fill_table(self):
         self.localizable.sort()
@@ -485,7 +505,7 @@ class TextEditor(QtWidgets.QWidget):
 
     def reset(self):
         self._thread = ui_thread.ThreadWorker.run_in_thread_on_finished(
-            self.setup_data, self.fill_table, self.original_game_packs
+            self.setup_data, self.fill_table
         )
 
     def on_add_row_clicked(self):
@@ -508,3 +528,77 @@ class TextEditor(QtWidgets.QWidget):
     def save(self):
         if self.setup:
             self.mod.localizable = self.localizable
+
+    def get_current_rows(self) -> list[int]:
+        return [
+            i
+            for i in range(self.text_editor_table.rowCount())
+            if self.text_editor_table.isRowHidden(i) is False
+        ]
+
+    def get_row_by_key_current(self, key: str) -> int:
+        current_rows = self.get_current_rows()
+        for relative_index in range(len(current_rows)):
+            row = current_rows[relative_index]
+            if self.text_editor_table.item(row, 0).text() == key:
+                return relative_index
+        return -1
+
+    def flash_around_rows(self, *rows_current: int):
+        if sum(rows_current) == len(rows_current) * -1:
+            return
+
+        current_rows = self.get_current_rows()
+        max_range = 20
+        min_row = min(rows_current)
+        max_row = max(rows_current)
+        min_row = max(min_row - max_range, 0)
+        max_row = min(max_row + max_range, len(current_rows) - 1)
+        valid_rows: list[int] = []
+        for i in range(min_row, max_row):
+            element = self.get_text_item(current_rows[i])
+            if isinstance(element, TextRenderBox):
+                element.start_flash()
+                valid_rows.append(current_rows[i])
+
+        all_rows = range(self.text_editor_table.rowCount())
+        for i in all_rows:
+            if i in valid_rows:
+                continue
+            element = self.get_text_item(i)
+            if isinstance(element, TextRenderBox):
+                element.stop_flash()
+
+    def tick(self):
+        pos = self.text_editor_table.mapFromGlobal(QtGui.QCursor.pos())
+        if not self.text_editor_table.rect().contains(pos):
+            return
+        row_mouse = self.text_editor_table.rowAt(pos.y())
+        element_mouse = self.get_text_item(row_mouse)
+        mouse_key = None
+        if isinstance(element_mouse, TextRenderBox):
+            mouse_key = element_mouse.key
+
+        selected = self.text_editor_table.selectedIndexes()
+        row_select = -1
+        if selected:
+            row_select = selected[0].row()
+        element_select = self.get_text_item(row_select)
+        select_key = None
+        if isinstance(element_select, TextRenderBox):
+            select_key = element_select.key
+
+        mouse_index = -1
+
+        if mouse_key is not None:
+            mouse_index = self.get_row_by_key_current(mouse_key)
+
+        select_index = -1
+
+        if select_key is not None:
+            select_index = self.get_row_by_key_current(select_key)
+
+        self.flash_around_rows(mouse_index, select_index)
+
+    def on_mouse_move(self, event: QtGui.QMouseEvent):
+        self.tick()
