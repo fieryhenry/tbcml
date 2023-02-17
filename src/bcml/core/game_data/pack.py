@@ -1,5 +1,6 @@
 from typing import Any, Optional
 from bcml.core import io, country_code, crypto, langs, mods
+import copy
 
 
 class GameFile:
@@ -7,12 +8,13 @@ class GameFile:
         self,
         dec_data: "io.data.Data",
         file_name: str,
-        pack: "PackFile",
+        pack_name: str,
+        cc: country_code.CountryCode,
     ):
         self.dec_data = dec_data
         self.file_name = file_name
-        self.pack = pack
-        self.country_code = country_code
+        self.pack_name = pack_name
+        self.cc = cc
 
     def set_data(self, data: "io.data.Data"):
         self.dec_data = data
@@ -21,20 +23,21 @@ class GameFile:
     def from_enc_data(
         enc_data: "io.data.Data",
         file_name: str,
-        pack: "PackFile",
+        pack_name: str,
+        cc: country_code.CountryCode,
     ) -> "GameFile":
-        cipher = pack.get_cipher()
+        cipher = PackFile.get_cipher(cc, pack_name)
         data = cipher.decrypt(enc_data)
         try:
             data = data.unpad_pkcs7()
         except ValueError:
             pass
-        return GameFile(data, file_name, pack)
+        return GameFile(data, file_name, pack_name, cc)
 
     def encrypt(self) -> "io.data.Data":
-        if self.pack.is_image_data_local_pack():
+        if PackFile.is_image_data_local_pack(self.pack_name):
             return self.dec_data
-        cipher = self.pack.get_cipher()
+        cipher = PackFile.get_cipher(self.cc, self.pack_name)
         data = self.dec_data.pad_pkcs7()
         return cipher.encrypt(data)
 
@@ -49,12 +52,16 @@ class GameFile:
 
     @staticmethod
     def deserialize(
-        data: dict[str, str], file_name: str, pack: "PackFile"
+        data: dict[str, str],
+        file_name: str,
+        pack_name: str,
+        cc: country_code.CountryCode,
     ) -> "GameFile":
         return GameFile(
             io.data.Data.from_base_64(data["data"]),
             file_name,
-            pack,
+            pack_name,
+            cc,
         )
 
 
@@ -78,14 +85,17 @@ class PackFile:
     def set_files(self, files: dict[str, GameFile]):
         self.files = files
 
-    def is_server_pack(self) -> bool:
-        return "Server" in self.pack_name
+    @staticmethod
+    def is_server_pack(pack_name: str) -> bool:
+        return "Server" in pack_name
 
-    def is_image_data_local_pack(self) -> bool:
-        return "ImageDataLocal" in self.pack_name
+    @staticmethod
+    def is_image_data_local_pack(pack_name: str) -> bool:
+        return "ImageDataLocal" in pack_name
 
-    def get_cipher(self) -> crypto.AesCipher:
-        return crypto.AesCipher.get_cipher_from_pack(self)
+    @staticmethod
+    def get_cipher(cc: country_code.CountryCode, pack_name: str) -> crypto.AesCipher:
+        return crypto.AesCipher.get_cipher_from_pack(cc, pack_name)
 
     def get_file(self, file_name: str) -> Optional[GameFile]:
         return self.files.get(file_name)
@@ -96,13 +106,14 @@ class PackFile:
     def set_file(self, file_name: str, file_data: "io.data.Data") -> Optional[GameFile]:
         file = self.get_file(file_name)
         if file is None:
-            file = GameFile(file_data, file_name, self)
+            file = GameFile(file_data, file_name, self.pack_name, self.country_code)
             self.add_file(file)
         else:
             file.dec_data = file_data
         return file
 
-    def convert_pack_name_server_local(self) -> str:
+    @staticmethod
+    def convert_pack_name_server_local(pack_name: str) -> str:
         packs = [
             "MapServer",
             "NumberServer",
@@ -111,7 +122,7 @@ class PackFile:
             "ImageDataServer",
         ]
         lgs = langs.Languages.get_all()
-        file_name = self.pack_name
+        file_name = pack_name
         for pack in packs:
             if pack in file_name:
                 file_name = pack.replace("Server", "Local")
@@ -153,7 +164,8 @@ class PackFile:
             files[file_name] = GameFile.from_enc_data(
                 enc_pack_data[start : start + size],
                 file_name,
-                pack_file,
+                pack_name,
+                country_code,
             )
         pack_file.set_files(files)
         return pack_file
@@ -199,7 +211,7 @@ class PackFile:
         pack_file = PackFile(pack_name, country_code)
         files: dict[str, GameFile] = {}
         for file_name, file_data in data["files"].items():
-            file = GameFile.deserialize(file_data, file_name, pack_file)
+            file = GameFile.deserialize(file_data, file_name, pack_name, country_code)
             files[file_name] = file
         pack_file.set_files(files)
         return pack_file
@@ -238,9 +250,9 @@ class GamePacks:
         elif len(found_files) == 1:
             return found_files[0]
         elif len(found_files) == 2:
-            if not found_files[0].pack.is_server_pack():
+            if not PackFile.is_server_pack(found_files[0].pack_name):
                 return found_files[0]
-            elif not found_files[1].pack.is_server_pack():
+            elif not PackFile.is_server_pack(found_files[1].pack_name):
                 return found_files[1]
             elif len(found_files[0].dec_data) > len(found_files[1].dec_data):
                 return found_files[0]
@@ -267,15 +279,15 @@ class GamePacks:
             pack = self.get_pack("DownloadLocal")
             if pack is None:
                 raise Exception(f"Could not find pack DownloadLocal")
-            file = GameFile(data, file_name, pack)
-        new_pack_name = file.pack.convert_pack_name_server_local()
+            file = GameFile(data, file_name, pack.pack_name, self.country_code)
+        new_pack_name = PackFile.convert_pack_name_server_local(file.pack_name)
         pack = self.get_pack(new_pack_name)
         if pack is None:
             raise Exception(f"Could not find pack {new_pack_name}")
         file = pack.set_file(file_name, data)
         if file is None:
             raise Exception(f"Could not set file {file_name}")
-        self.modified_packs[file.pack.pack_name] = True
+        self.modified_packs[file.pack_name] = True
         return file
 
     @staticmethod
@@ -331,8 +343,8 @@ class GamePacks:
         return GamePacks(packs, cc)
 
     def copy(self) -> "GamePacks":
-        serialized = self.serialize()
-        return GamePacks.deserialize(serialized)
+        data = copy.deepcopy(self)
+        return data
 
 
 class LocalItem:
