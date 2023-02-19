@@ -415,14 +415,14 @@ class Apk:
             total_length = int(stream.headers.get("content-length"))  # type: ignore
             dl = 0
             chunk_size = 1024
-            buffer = b""
+            buffer: list[bytes] = []
             for d in stream.iter_content(chunk_size=chunk_size):
                 dl += len(d)
-                buffer += d
+                buffer.append(d)
                 progress_callback(dl / total_length, dl, total_length, True)
             progress_callback(1, total_length, total_length, True)
 
-            apk = data.Data(buffer)
+            apk = data.Data(b"".join(buffer))
             apk.to_file(self.apk_path)
             return True
 
