@@ -93,7 +93,16 @@ class Item:
         """
         return str(self)
 
-    def __eq__(self, other: object):
+    def __eq__(self, other: object) -> bool:
+        """Check if two Items are equal.
+
+        Args:
+            other (object): The other Item.
+
+        Returns:
+            bool: Whether the two Items are equal.
+        """
+
         if not isinstance(other, Item):
             return False
         return (
@@ -107,7 +116,15 @@ class Item:
             and self.cut.image == other.cut.image
         )
 
-    def __ne__(self, other: object):
+    def __ne__(self, other: object) -> bool:
+        """Check if two Items are not equal.
+
+        Args:
+            other (object): The other Item.
+
+        Returns:
+            bool: Whether the two Items are not equal.
+        """
         return not self.__eq__(other)
 
 
@@ -342,6 +359,7 @@ class ItemShop:
 
         Args:
             other (ItemShop): The ItemShop to import.
+            game_data (pack.GamePacks): The game data to check if the imported data is different from the game data. This is used to prevent overwriting the current data with base game data.
         """
         gd_item_shop = self.from_game_data(game_data)
         all_keys = set(self.items.keys())

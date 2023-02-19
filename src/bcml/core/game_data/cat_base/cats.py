@@ -6,12 +6,26 @@ from bcml.core import io, country_code
 
 
 class FormType(enum.Enum):
+    """Represents the different forms a cat has."""
+
     FIRST = "f"
+    """The first form of a cat."""
     SECOND = "c"
+    """The second form of a cat."""
     THIRD = "s"
+    """The third form of a cat."""
     FOURTH = "u"
+    """The fourth form of a cat. This is only half-supported by the game and does lead to crashes."""
 
     def get_index(self) -> int:
+        """Get the index of the form type.
+
+        Raises:
+            ValueError: If the form type is invalid.
+
+        Returns:
+            int: The index of the form type.
+        """
         if self == FormType.FIRST:
             return 0
         elif self == FormType.SECOND:
@@ -25,6 +39,17 @@ class FormType(enum.Enum):
 
     @staticmethod
     def from_index(index: int) -> "FormType":
+        """Get the form type from the index.
+
+        Args:
+            index (int): The index of the form type.
+
+        Raises:
+            ValueError: If the index is invalid.
+
+        Returns:
+            FormType: The form type.
+        """
         if index == 0:
             return FormType.FIRST
         elif index == 1:
@@ -38,33 +63,251 @@ class FormType(enum.Enum):
 
 
 class Stats:
+    """Represents the stats of a cat."""
+
+    hp: int
+    """The HP of the cat.Index 0."""
+    kbs: int
+    """The number of knockbacks the cat has. Index 1."""
+    speed: unit.Speed
+    """The movement speed of the cat, real value is 2x what is stored. Index 2."""
+    attack_interval: unit.Frames
+    """The interval between attacks of the cat, real value is 2x what is stored. Index 4."""
+    range: unit.Range
+    """The attack range of the cat. real value is 4x what is stored. Index 5."""
+    cost: int
+    """The cost of the cat to deploy. Index 6."""
+    recharge_time: unit.Frames
+    """The time it takes for the cat to recharge after being used, real value is 2x what is stored. Index 7."""
+    collision_start: int
+    """The X coordinate of the start of the collision box of the cat. Index 8."""
+    collision_width: unit.Range
+    """The width of the collision box, real value is 4x what is stored. Seemingly unused? Index 9."""
+    target_red: bool
+    """Whether the cat has the target red trait. Index 10."""
+    unused: int
+    """Unused. Index 11."""
+    area_attack: bool
+    """Whether the cat has the area attack ability. Index 12."""
+    z_layers: unit.ZLayers
+    """The Z layers of the cat. Index 14 min layer and index 15 max layer."""
+    target_floating: bool
+    """Whether the cat has the target floating trait. Index 16."""
+    target_black: bool
+    """Whether the cat has the target black trait. Index 17."""
+    target_metal: bool
+    """Whether the cat has the target metal trait. Index 18."""
+    target_traitless: bool
+    """Whether the cat has the target traitless trait. Index 19."""
+    target_angel: bool
+    """Whether the cat has the target angel trait. Index 20."""
+    target_alien: bool
+    """Whether the cat has the target alien trait. Index 21."""
+    target_zombie: bool
+    """Whether the cat has the target zombie trait. Index 22."""
+    strong: bool
+    """Whether the cat has the strong against ability. Index 23."""
+    knockback: unit.Knockback
+    """The probability of knockback. Index 24."""
+    freeze: unit.Freeze
+    """The probability and duration of a freeze attack. Index 25 and 26."""
+    slow: unit.Slow
+    """The probability and duration of a slow attack. Index 27 and 28."""
+    resistant: bool
+    """Whether the cat has the resistant against ability. Index 29."""
+    massive_damage: bool
+    """Whether the cat has the massive damage ability. Index 30."""
+    crit: unit.Crit
+    """The probability of a crit attack. Index 31."""
+    attacks_only: bool
+    """Whether the cat has the attacks only ability. Index 32."""
+    extra_money: bool
+    """Whether the cat has the extra money ability. Index 33."""
+    base_destroyer: bool
+    """Whether the cat has the base destroyer ability. Index 34."""
+    wave: unit.Wave
+    """The wave attack of the cat.
+    Probability: Index 35
+    Level: Index 36
+    IsMini: Index 94
+    """
+    weaken: unit.Weaken
+    """The weaken attack of the cat.
+    Probability: Index 37
+    Duration: Index 38
+    Percentage: Index 39
+    """
+    strengthen: unit.Strengthen
+    """The strengthen ability of the cat.
+    HP percentage to activate: Index 40
+    HP percentage to strengthen: Index 41
+    """
+    lethal_strike: unit.LethalStrike
+    """The probability of a lethal strike attack. Index 42."""
+    is_metal: bool
+    """Whether the cat is metal. Index 43."""
+    wave_immunity: bool
+    """Whether the cat has the wave immunity ability. Index 46."""
+    wave_blocker: bool
+    """Whether the cat has the wave blocker ability. Index 47."""
+    knockback_immunity: bool
+    """Whether the cat has the knockback immunity ability. Index 48."""
+    freeze_immunity: bool
+    """Whether the cat has the freeze immunity ability. Index 49."""
+    slow_immunity: bool
+    """Whether the cat has the slow immunity ability. Index 50."""
+    weaken_immunity: bool
+    """Whether the cat has the weaken immunity ability. Index 51."""
+    zombie_killer: bool
+    """Whether the cat has the zombie killer ability. Index 52."""
+    witch_killer: bool
+    """Whether the cat has the witch killer ability. Index 53."""
+    target_witch: bool
+    """Whether the cat has the target witch trait. Index 54."""
+    attack_state: unit.AttackState
+    """The attack state of the cat.
+    Attacks before state change: Index 55
+    State: Index 58
+    """
+    attack_1: unit.Attack
+    """The first attack of the cat.
+    Attack: Index 3
+    Foreswing: Index 13
+    Use Ability: Index 63
+    LongDistanceFlag: True
+    LongDistanceStartRange: Index 44
+    LongDistanceRangeRange: Index 45"""
+    attack_2: unit.Attack
+    """The second attack of the cat.
+    Attack: Index 59
+    Foreswing: Index 61
+    Use Ability: Index 64
+    LogDistanceFlag: Index 99
+    LongDistanceStartRange: Index 100
+    LongDistanceRangeRange: Index 101"""
+    attack_3: unit.Attack
+    """The third attack of the cat.
+    Attack: Index 60
+    Foreswing: Index 62
+    Use Ability: Index 65
+    LongDistanceFlag: Index 102
+    LongDistanceStartRange: Index 103
+    LongDistanceRangeRange: Index 104"""
+    spawn_anim: unit.SpawnAnim
+    """The spawn animation of the cat.
+    ModelID: Index 66
+    HasEntryMaanim: Index 68
+    """
+    soul_anim: unit.SoulAnim
+    """The soul animation of the cat.
+    ModelID: Index 67
+    HasDeathMaanim: Index 69
+    """
+    barrier_breaker: unit.BarrierBreak
+    """The barrier break ability of the cat.
+    Probability: Index 70
+    """
+    warp: unit.Warp
+    """The warp ability of the cat.
+    Probability: Index 71
+    duration: Index 72
+    min range: Index 73
+    max range: Index 74
+    """
+    warp_blocker: bool
+    """Whether the cat has the warp blocker ability. Index 75."""
+    target_eva: bool
+    """Whether the cat has the target eva trait. Index 76."""
+    eva_killer: bool
+    """Whether the cat has the eva killer ability. Index 77."""
+    target_relic: bool
+    """Whether the cat has the target relic trait. Index 78."""
+    curse_immunity: bool
+    """Whether the cat has the curse immunity ability. Index 79."""
+    insanely_tough: bool
+    """Whether the cat has the insanely tough ability. Index 80."""
+    insane_damage: bool
+    """Whether the cat has the insane damage ability. Index 81."""
+    savage_blow: unit.SavageBlow
+    """The savage blow ability of the cat.
+    Probability: Index 82
+    Damage Addition: Index 83
+    """
+    dodge: unit.Dodge
+    """The dodge ability of the cat.
+    Probability: Index 84
+    Duration: Index 85
+    """
+    surge: unit.Surge
+    """The surge ability of the cat.
+    Probability: Index 86
+    start range: Index 87
+    range range: Index 88
+    level: Index 89
+    """
+    toxic_immunity: bool
+    """Whether the cat has the toxic immunity ability. Index 90."""
+    surge_immunity: bool
+    """Whether the cat has the surge immunity ability. Index 91."""
+    curse: unit.Curse
+    """The curse ability of the cat.
+    Probability: Index 92
+    Duration: Index 93
+    """
+    shield_pierce: unit.ShieldPierce
+    """The shield pierce ability of the cat.
+    Probability: Index 95
+    """
+    target_aku: bool
+    """Whether the cat has the target aku trait. Index 96."""
+    collossus_slayer: bool
+    """Whether the cat has the collossus slayer ability. Index 97."""
+    soul_strike: bool
+    """Whether the cat has the soul strike ability. Index 98."""
+    behemoth_slayer: bool
+    """Whether the cat has the behemoth slayer ability. Index 105."""
+    behemoth_dodge: unit.BehemothDodge
+    """The behemoth dodge ability of the cat.
+    Probability: Index 106
+    Duration: Index 107
+    """
+
     def __init__(self, cat_id: int, form: FormType, raw_data: list[int]):
+        """Initialize a new Stats object.
+
+        Args:
+            cat_id (int): The ID of the cat.
+            form (FormType): The form of the cat.
+            raw_data (list[int]): The raw stats data.
+        """
         self.cat_id = cat_id
         self.form = form
         raw_data = self.extend(raw_data)
         self.assign(raw_data)
 
-    def extend(self, raw_data: list[int]):
+    def extend(self, raw_data: list[int]) -> list[int]:
+        """Extend the raw stats data to the max length.
+
+        Args:
+            raw_data (list[int]): The raw stats data.
+
+        Returns:
+            list[int]: The extended raw stats data.
+        """
         length = 108
         raw_data = raw_data + [0] * (length - len(raw_data))
         return raw_data
 
-    def set_required(self):
-        self.attacks_before_state = -1
-        self.time_before_death.frames = -1
-        self.attack_1.use_ability = True
-        self.spawn_anim_id = -1
-
     def assign(self, raw_data: list[int]):
         self.hp = raw_data[0]
         self.kbs = raw_data[1]
-        self.speed = raw_data[2]
+        self.speed = unit.Speed.from_raw(raw_data[2])
         self.attack_interval = unit.Frames.from_pair_frames(raw_data[4])
-        self.range = raw_data[5]
+        self.range = unit.Range.from_raw(raw_data[5])
         self.cost = raw_data[6]
         self.recharge_time = unit.Frames.from_pair_frames(raw_data[7])
-        self.hitbox_pos = raw_data[8]
-        self.hitbox_width = raw_data[9]
+        self.collision_start = raw_data[8]
+        self.collision_width = unit.Range.from_raw(raw_data[9])
         self.target_red = bool(raw_data[10])
         self.unused = raw_data[11]
         self.area_attack = bool(raw_data[12])
@@ -102,10 +345,9 @@ class Stats:
         self.zombie_killer = bool(raw_data[52])
         self.witch_killer = bool(raw_data[53])
         self.target_witch = bool(raw_data[54])
-        self.attacks_before_state = raw_data[55]
         self.shockwave_immune = bool(raw_data[56])
         self.time_before_death = unit.Frames(raw_data[57])
-        self.unit_state = raw_data[58]
+        self.attack_state = unit.AttackState.from_values(raw_data[55], raw_data[58])
         self.attack_1 = unit.Attack.from_values(
             raw_data[3],
             raw_data[13],
@@ -130,10 +372,8 @@ class Stats:
             raw_data[103],
             raw_data[104],
         )
-        self.spawn_anim_id = raw_data[66]
-        self.soul_anim = unit.SoulAnim(raw_data[67])
-        self.custom_spawn_anim = bool(raw_data[68])
-        self.custom_soul_anim = not bool(raw_data[69])
+        self.spawn_anim = unit.SpawnAnim.from_values(raw_data[66], bool(raw_data[68]))
+        self.soul_anim = unit.SoulAnim.from_values(raw_data[67], bool(raw_data[69]))
         self.barrier_breaker = unit.BarrierBreak.from_values(raw_data[70])
         self.warp = unit.Warp.from_values(
             raw_data[71], raw_data[72], raw_data[73], raw_data[74]
@@ -166,14 +406,14 @@ class Stats:
         return [
             self.hp,  # 0
             self.kbs,  # 1
-            self.speed,  # 2
+            self.speed.raw,  # 2
             self.attack_1.damage,  # 3
             self.attack_interval.pair_frames,  # 4
-            self.range,  # 5
+            self.range.raw,  # 5
             self.cost,  # 6
             self.recharge_time.pair_frames,  # 7
-            self.hitbox_pos,  # 8
-            self.hitbox_width,  # 9
+            self.collision_start,  # 8
+            self.collision_width.raw,  # 9
             int(self.target_red),  # 10
             self.unused,  # 11
             int(self.area_attack),  # 12
@@ -208,8 +448,8 @@ class Stats:
             self.strengthen.multiplier_percent,  # 41
             self.lethal_strike.prob.percent,  # 42
             int(self.is_metal),  # 43
-            self.attack_1.long_distance_start,  # 44
-            self.attack_1.long_distance_range,  # 45
+            self.attack_1.long_distance_start.raw,  # 44
+            self.attack_1.long_distance_range.raw,  # 45
             int(self.wave_immunity),  # 46
             int(self.wave_blocker),  # 47
             int(self.knockback_immunity),  # 48
@@ -219,10 +459,10 @@ class Stats:
             int(self.zombie_killer),  # 52
             int(self.witch_killer),  # 53
             int(self.target_witch),  # 54
-            self.attacks_before_state,  # 55
+            self.attack_state.attacks_before,  # 55
             int(self.shockwave_immune),  # 56
             self.time_before_death.frames,  # 57
-            self.unit_state,  # 58
+            self.attack_state.state_id,  # 58
             self.attack_2.damage,  # 59
             self.attack_3.damage,  # 60
             self.attack_2.foreswing.frames,  # 61
@@ -230,10 +470,10 @@ class Stats:
             int(self.attack_1.use_ability),  # 63
             int(self.attack_2.use_ability),  # 64
             int(self.attack_3.use_ability),  # 65
-            self.spawn_anim_id,  # 66
-            self.soul_anim.anim_type,  # 67
-            int(self.custom_spawn_anim),  # 68
-            int(not self.custom_soul_anim),  # 69
+            self.spawn_anim.model_id,  # 66
+            self.soul_anim.model_id,  # 67
+            int(self.spawn_anim.has_entry_maanim),  # 68
+            int(self.soul_anim.has_death_maanim),  # 69
             self.barrier_breaker.prob.percent,  # 70
             self.warp.prob.percent,  # 71
             self.warp.time.frames,  # 72
@@ -251,8 +491,8 @@ class Stats:
             self.dodge.prob.percent,  # 84
             self.dodge.time.frames,  # 85
             self.surge.prob.percent,  # 86
-            self.surge.start,  # 87
-            self.surge.range,  # 88
+            self.surge.start.raw,  # 87
+            self.surge.range.raw,  # 88
             self.surge.level,  # 89
             int(self.toxic_immunity),  # 90
             int(self.surge_immunity),  # 91
@@ -264,11 +504,11 @@ class Stats:
             int(self.collossus_slayer),  # 97
             int(self.soul_strike),  # 98
             int(self.attack_2.long_distance_flag),  # 99
-            self.attack_2.long_distance_start,  # 100
-            self.attack_2.long_distance_range,  # 101
+            self.attack_2.long_distance_start.raw,  # 100
+            self.attack_2.long_distance_range.raw,  # 101
             int(self.attack_3.long_distance_flag),  # 102
-            self.attack_3.long_distance_start,  # 103
-            self.attack_3.long_distance_range,  # 104
+            self.attack_3.long_distance_start.raw,  # 103
+            self.attack_3.long_distance_range.raw,  # 104
             int(self.behemoth_slayer),  # 105
             self.behemoth_dodge.prob.percent,  # 106
             self.behemoth_dodge.time.frames,  # 107
@@ -304,60 +544,6 @@ class Stats:
         ]
         return any(to_check)
 
-    def import_enemy_stats(self, enemy_stats: "enemies.Stats"):
-        self.wipe()
-        self.hp = enemy_stats.hp
-        self.kbs = enemy_stats.kbs
-        self.speed = enemy_stats.speed
-        self.attack_interval = enemy_stats.attack_interval
-        self.range = enemy_stats.range
-        self.cost = enemy_stats.money_drop // 4
-        self.hitbox_pos = enemy_stats.hitbox_pos
-        self.hitbox_width = enemy_stats.hitbox_width
-        self.area_attack = enemy_stats.area_attack
-        self.knockback = enemy_stats.knockback.copy()
-        self.freeze = enemy_stats.freeze.copy()
-        self.slow = enemy_stats.slow.copy()
-        self.weaken = enemy_stats.weaken.copy()
-        self.crit = enemy_stats.crit.copy()
-        self.base_destroyer = enemy_stats.base_destroyer
-        self.wave = enemy_stats.wave.copy()
-        self.strengthen = enemy_stats.strengthen.copy()
-        self.is_metal = enemy_stats.metal
-        self.wave_immunity = enemy_stats.wave_immunity
-        self.wave_blocker = enemy_stats.wave_blocker
-        self.knockback_immunity = enemy_stats.knockback_immunity
-        self.freeze_immunity = enemy_stats.freeze_immunity
-        self.slow_immunity = enemy_stats.slow_immunity
-        self.weaken_immunity = enemy_stats.weaken_immunity
-        self.attacks_before_state = enemy_stats.attacks_before_state
-        self.time_before_death = enemy_stats.time_before_death
-        self.unit_state = enemy_stats.enemy_state
-        self.attack_1 = enemy_stats.attack_1.copy()
-        self.attack_2 = enemy_stats.attack_2.copy()
-        self.attack_3 = enemy_stats.attack_3.copy()
-        self.spawn_anim_id = enemy_stats.spawn_anim_id
-        self.soul_anim = enemy_stats.soul_anim.copy()
-        self.custom_spawn_anim = enemy_stats.custom_spawn_anim
-        self.custom_soul_anim = enemy_stats.custom_soul_anim
-        self.warp = enemy_stats.warp.copy()
-        self.warp_blocker = enemy_stats.warp_blocker
-        self.savage_blow = enemy_stats.savage_blow.copy()
-        self.dodge = enemy_stats.dodge.copy()
-        self.surge = enemy_stats.surge.copy()
-        self.surge_immunity = enemy_stats.surge_immunity
-        has_targeted_effect = self.has_targeted_effect()
-        self.target_aku = has_targeted_effect
-        self.target_alien = has_targeted_effect
-        self.target_angel = has_targeted_effect
-        self.target_black = has_targeted_effect
-        self.target_floating = has_targeted_effect
-        self.target_metal = has_targeted_effect
-        self.target_red = has_targeted_effect
-        self.target_relic = has_targeted_effect
-        self.target_traitless = has_targeted_effect
-        self.target_zombie = has_targeted_effect
-
     def copy(self) -> "Stats":
         return Stats(
             self.cat_id,
@@ -373,6 +559,60 @@ class Stats:
     def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
 
+    def import_enemy_stats(self, enemy_stats: "enemies.Stats"):
+        has_targeted_effect = self.has_targeted_effect()
+        self.wipe()
+        self.hp = enemy_stats.hp
+        self.kbs = enemy_stats.kbs
+        self.speed = enemy_stats.speed.copy()
+        self.attack_1 = enemy_stats.attack_1.copy()
+        self.range = enemy_stats.range.copy()
+        self.cost = enemy_stats.money_drop // 2
+        self.recharge_time.frames = 0
+        self.collision_start = enemy_stats.collision_start
+        self.collision_width = enemy_stats.collision_width.copy()
+        self.target_red = has_targeted_effect
+        self.unused = enemy_stats.unused
+        self.area_attack = enemy_stats.area_attack
+        self.target_floating = has_targeted_effect
+        self.target_black = has_targeted_effect
+        self.target_metal = has_targeted_effect
+        self.target_traitless = has_targeted_effect
+        self.target_angel = has_targeted_effect
+        self.target_alien = has_targeted_effect
+        self.target_zombie = has_targeted_effect
+        self.knockback = enemy_stats.knockback.copy()
+        self.freeze = enemy_stats.freeze.copy()
+        self.slow = enemy_stats.slow.copy()
+        self.crit = enemy_stats.crit.copy()
+        self.base_destroyer = enemy_stats.base_destroyer
+        self.wave = enemy_stats.wave.copy()
+        self.weaken = enemy_stats.weaken.copy()
+        self.strengthen = enemy_stats.strengthen.copy()
+        self.is_metal = enemy_stats.metal
+        self.wave_immunity = enemy_stats.wave_immunity
+        self.wave_blocker = enemy_stats.wave_blocker
+        self.knockback_immunity = enemy_stats.knockback_immunity
+        self.freeze_immunity = enemy_stats.freeze_immunity
+        self.slow_immunity = enemy_stats.slow_immunity
+        self.weaken_immunity = enemy_stats.weaken_immunity
+        self.target_witch = has_targeted_effect
+        self.attack_state = enemy_stats.attack_state.copy()
+        self.time_before_death = enemy_stats.time_before_death.copy()
+        self.attack_2 = enemy_stats.attack_2.copy()
+        self.attack_3 = enemy_stats.attack_3.copy()
+        self.spawn_anim = enemy_stats.spawn_anim.copy()
+        self.soul_anim = enemy_stats.soul_anim.copy()
+        self.warp = enemy_stats.warp.copy()
+        self.warp_blocker = enemy_stats.warp_blocker
+        self.target_eva = has_targeted_effect
+        self.target_relic = has_targeted_effect
+        self.savage_blow = enemy_stats.savage_blow.copy()
+        self.dodge = enemy_stats.dodge.copy()
+        self.surge = enemy_stats.surge.copy()
+        self.surge_immunity = enemy_stats.surge_immunity
+        self.curse = enemy_stats.curse.copy()
+        self.target_aku = has_targeted_effect
 
 class Anim:
     def __init__(self, cat_id: int, form: FormType, anim: "bc_anim.Anim"):
@@ -424,6 +664,9 @@ class Anim:
         maanim_paths: list[str] = []
         for anim_type in bc_anim.AnimType:
             maanim_paths.append(Anim.get_maanim_path(cat_id, form, anim_type))
+        cat_id_str = Anim.get_cat_id_str(cat_id)
+        maanim_paths.append(f"{cat_id_str}_{form.value}_entry.maanim")
+        maanim_paths.append(f"{cat_id_str}_{form.value}_soul.maanim")
         return maanim_paths
 
     @staticmethod
@@ -747,6 +990,15 @@ class UnitBuyData:
     def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
 
+    def set_obtainable(self, obtainable: bool):
+        if not obtainable:
+            self.game_version = -1
+        else:
+            self.game_version = 0 if self.game_version == -1 else self.game_version
+
+    def is_obtainable(self) -> bool:
+        return self.game_version != -1
+
 
 class UnitBuy:
     def __init__(self, unit_buy_data: dict[int, UnitBuyData]):
@@ -977,6 +1229,18 @@ class NyankoPictureBookData:
     def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
 
+    def __str__(self):
+        return f"obtainable: {self.obtainable}, limited: {self.limited}, total_forms: {self.total_forms}, unknown: {self.unknown}, scale_0: {self.scale_0}, scale_1: {self.scale_1}, scale_2: {self.scale_2}, scale_3: {self.scale_3}, other: {self.other}"
+
+    def __repr__(self):
+        return self.__str__()
+
+    def set_obtainable(self, obtainable: bool):
+        self.obtainable = obtainable
+
+    def is_obtainable(self) -> bool:
+        return self.obtainable
+
 
 class NyankoPictureBook:
     def __init__(self, data: dict[int, NyankoPictureBookData]):
@@ -1109,7 +1373,7 @@ class EvolveText:
         )
 
     def set(self, cat: "Cat"):
-        self.text[cat.cat_id] = cat.evolve_text
+        self.text[cat.cat_id] = cat.evolve_text or []
 
     @staticmethod
     def create_empty() -> "EvolveText":
@@ -1132,7 +1396,7 @@ class Cat:
         unit_buy_data: UnitBuyData,
         talent: Optional["Talent"],
         nyanko_picture_book_data: NyankoPictureBookData,
-        evolve_text: list[str],
+        evolve_text: Optional[list[str]],
     ):
         if isinstance(cat_id, str):
             raise ValueError("cat_id must be an int")
@@ -1212,7 +1476,7 @@ class Cat:
         talent = talents.talents.get(cat_id)
         nyanko_picture_book_data = nyanko_picture_book.data.get(cat_id)
         evt = evolve_text.text.get(cat_id)
-        if unit_buy_data is None or nyanko_picture_book_data is None or evt is None:
+        if unit_buy_data is None or nyanko_picture_book_data is None:
             return None
         forms: dict[FormType, Form] = {}
         total_forms = nyanko_picture_book_data.total_forms
@@ -1311,6 +1575,16 @@ class Cat:
     def __ne__(self, other: object):
         return not self == other
 
+    def set_obtainable(self, obtainable: bool):
+        self.unit_buy_data.set_obtainable(obtainable)
+        self.nyanko_picture_book_data.set_obtainable(obtainable)
+
+    def is_obtainable(self) -> bool:
+        return (
+            self.unit_buy_data.is_obtainable()
+            and self.nyanko_picture_book_data.is_obtainable()
+        )
+
 
 class Cats:
     def __init__(self, cats: dict[int, Cat]):
@@ -1390,6 +1664,12 @@ class Cats:
         return Cats({})
 
     def import_cats(self, other: "Cats", game_data: "pack.GamePacks"):
+        """_summary_
+
+        Args:
+            other (Cats): _description_
+            game_data (pack.GamePacks): The game data to check if the imported data is different from the game data. This is used to prevent overwriting the current data with base game data.
+        """
         gd_cats = Cats.from_game_data(game_data)
         all_keys = set(self.cats.keys())
         all_keys.update(other.cats.keys())

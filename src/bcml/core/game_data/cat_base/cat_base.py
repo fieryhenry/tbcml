@@ -108,6 +108,11 @@ class CatBase:
         )
 
     def to_game_data(self, game_data: "pack.GamePacks"):
+        """Write the CatBase object to a GamePacks object.
+
+        Args:
+            game_data (pack.GamePacks): The GamePacks object to write to.
+        """
         self.cats.to_game_data(game_data)
         self.enemies.to_game_data(game_data)
         self.gatya.to_game_data(game_data)
@@ -117,6 +122,11 @@ class CatBase:
         self.gatya_items.to_game_data(game_data)
 
     def add_to_zip(self, zip: "io.zip.Zip"):
+        """Add the CatBase object to a Zip object.
+
+        Args:
+            zip (io.zip.Zip): The Zip object to add to.
+        """
         self.cats.add_to_zip(zip)
         self.enemies.add_to_zip(zip)
         self.gatya.add_to_zip(zip)
@@ -127,6 +137,14 @@ class CatBase:
 
     @staticmethod
     def from_zip(zip: "io.zip.Zip") -> "CatBase":
+        """Create a CatBase object from a Zip object.
+
+        Args:
+            zip (io.zip.Zip): The Zip object to create the CatBase object from.
+
+        Returns:
+            CatBase: The CatBase object.
+        """
         cts = cats.Cats.from_zip(zip)
         enem = enemies.Enemies.from_zip(zip)
         gt = gatya.Gatya.from_zip(zip)
@@ -146,6 +164,11 @@ class CatBase:
 
     @staticmethod
     def create_empty() -> "CatBase":
+        """Create an empty CatBase object.
+
+        Returns:
+            CatBase: The empty CatBase object.
+        """
         return CatBase(
             cats.Cats.create_empty(),
             enemies.Enemies.create_empty(),
@@ -157,6 +180,12 @@ class CatBase:
         )
 
     def import_cat_base(self, other: "CatBase", game_data: "pack.GamePacks"):
+        """Import the data from another CatBase object into this one.
+
+        Args:
+            other (CatBase): The CatBase object to import data from.
+            game_data (pack.GamePacks): The game data to check if the imported data is different from the game data. This is used to prevent overwriting the current data with base game data.
+        """
         self.cats.import_cats(other.cats, game_data)
         self.enemies.import_enemies(other.enemies, game_data)
         self.gatya.import_gatya(other.gatya, game_data)
