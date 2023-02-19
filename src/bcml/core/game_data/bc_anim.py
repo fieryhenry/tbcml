@@ -75,6 +75,15 @@ class MaanimMove:
     def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
 
+    def __str__(self) -> str:
+        return (
+            f"MaanimMove(frame={self.frame}, change_in_value={self.change_in_value}, "
+            f"ease={self.ease}, ease_power={self.ease_power})"
+        )
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
 
 class ModificationType(enum.Enum):
     PARENT = 0
@@ -227,6 +236,12 @@ class MaanimPart:
     def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
 
+    def __str__(self) -> str:
+        return f"MaanimPart(model_id={self.model_id}, modification_type={self.modification_type}, loop={self.loop}, min_value={self.min_value}, max_value={self.max_value}, name={self.name}, moves={self.moves})"
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
 
 class Maanim:
     def __init__(self, parts: list[MaanimPart], name: str):
@@ -308,6 +323,12 @@ class Maanim:
 
     def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
+
+    def __str__(self) -> str:
+        return f"Maanim(parts={self.parts}, name={self.name})"
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
 
 class MamodelPart:
@@ -983,7 +1004,7 @@ class Anim:
             for path in self.__maanims_path:
                 data = self.__game_data.find_file(path)
                 if data is None:
-                    raise Exception("Maanim not found")
+                    continue
                 maanims.append(Maanim.from_data(data.dec_data, path))
             self.__maanims = maanims
             self.__maanims_path = None
@@ -1116,6 +1137,9 @@ class Anim:
             self.mamodel.copy(),
             [maanim.copy() for maanim in self.maanims],
         )
+
+    def get_maanim_names(self):
+        return [maanim.name for maanim in self.maanims]
 
     def set_cat_id(self, cat_id: int, form_st: str):
         for part in self.mamodel.parts:
