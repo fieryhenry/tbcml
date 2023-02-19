@@ -1,4 +1,3 @@
-import enum
 import random
 
 
@@ -131,6 +130,61 @@ class Prob:
             bool: True if the probability is successful, False otherwise.
         """
         return random.randint(0, 100) <= self.percent
+
+
+class Range:
+    def __init__(self, range: int):
+        self.range = range
+
+    @staticmethod
+    def from_raw(raw: int) -> "Range":
+        return Range(raw * 4)
+
+    @property
+    def raw(self) -> int:
+        return self.range // 4
+
+    @raw.setter
+    def raw(self, raw: int) -> None:
+        self.range = raw * 4
+
+    def __str__(self) -> str:
+        return f"{self.range} units"
+
+    def __repr__(self) -> str:
+        return str(self)
+
+    def __add__(self, other: "Range") -> "Range":
+        return Range(self.range + other.range)
+
+    def copy(self) -> "Range":
+        return Range(self.range)
+
+
+class Speed:
+    def __init__(self, speed: int):
+        self.speed = speed
+
+    @staticmethod
+    def from_raw(raw: int) -> "Speed":
+        return Speed(raw * 2)
+
+    @property
+    def raw(self) -> int:
+        return self.speed // 2
+
+    @raw.setter
+    def raw(self, raw: int) -> None:
+        self.speed = raw * 2
+
+    def __str__(self) -> str:
+        return f"{self.speed} units per frame"
+
+    def __repr__(self) -> str:
+        return str(self)
+
+    def copy(self) -> "Speed":
+        return Speed(self.speed)
 
 
 class Knockback:
@@ -903,8 +957,8 @@ class Attack:
         foreswing: Frames,
         use_ability: bool,
         long_distance_flag: bool,
-        long_distance_start: int,
-        long_distance_range: int,
+        long_distance_start: Range,
+        long_distance_range: Range,
     ):
         """Initializes a new Attack object.
 
@@ -913,8 +967,8 @@ class Attack:
             foreswing (Frames): The number of frames before the attack hits.
             use_ability (bool): Whether or not the attack uses any of the character's abilities.
             long_distance_flag (bool): Whether or not the attack is a long distance attack.
-            long_distance_start (int): The start range of the long distance attack.
-            long_distance_range (int): The range of the long distance attack. The end range is long_distance_start + long_distance_range.
+            long_distance_start (Range): The start range of the long distance attack.
+            long_distance_range (Range): The range of the long distance attack. The end range is long_distance_start + long_distance_range.
         """
         self.damage = damage
         self.foreswing = foreswing
@@ -950,18 +1004,18 @@ class Attack:
             Frames(foreswing),
             use_ability,
             long_distance_flag,
-            long_distance_start,
-            long_distance_range,
+            Range.from_raw(long_distance_start),
+            Range.from_raw(long_distance_range),
         )
 
-    def set_ld(self, long_distance_start: int, long_distance_range: int):
+    def set_ld(self, long_distance_start: Range, long_distance_range: Range):
         """Sets the long distance values of the attack.
 
         Args:
             long_distance_start (int): Start range of the long distance attack.
             long_distance_range (int): Range of the long distance attack. The end range is long_distance_start + long_distance_range.
         """
-        if long_distance_start == 0 and long_distance_range == 0:
+        if long_distance_start.raw == 0 and long_distance_range.raw == 0:
             self.long_distance_flag = False
         else:
             self.long_distance_flag = True
@@ -999,6 +1053,110 @@ class Attack:
             self.long_distance_start,
             self.long_distance_range,
         )
+
+
+class AttackState:
+    """Represents an attack state."""
+
+    def __init__(self, attacks_before: int, state_id: int):
+        """Initializes a new AttackState object.
+
+        Args:
+            attacks_before (int): The number of attacks before the unit enters this state.
+            state_id (int): The ID of the state.
+        """
+        self.attacks_before = attacks_before
+        self.state_id = state_id
+
+    @staticmethod
+    def from_values(attacks_before: int, state_id: int) -> "AttackState":
+        """Creates a new AttackState object from values.
+
+        Args:
+            attacks_before (int): The number of attacks before the unit enters this state.
+            state_id (int): The ID of the state.
+
+        Returns:
+            AttackState: The new AttackState object.
+        """
+        return AttackState(attacks_before, state_id)
+
+    def __str__(self) -> str:
+        """Gets a string representation of the AttackState object.
+
+        Returns:
+            str: The string representation of the AttackState object.
+        """
+        return f"Attacks Before: {self.attacks_before}, State ID: {self.state_id}"
+
+    def __repr__(self) -> str:
+        """Gets a string representation of the AttackState object.
+
+        Returns:
+            str: The string representation of the AttackState object.
+        """
+        return str(self)
+
+    def copy(self) -> "AttackState":
+        """Creates a copy of the AttackState object.
+
+        Returns:
+            AttackState: The copy of the AttackState object.
+        """
+        return AttackState(self.attacks_before, self.state_id)
+
+
+class SpawnAnim:
+    """Represents a spawn animation."""
+
+    def __init__(self, model_id: int, has_entry_maanim: bool):
+        """Initializes a new SpawnAnim object.
+
+        Args:
+            model_id (int): The ID of a new model to add when spawned. (disable when -1)
+            has_entry_maanim (bool): Whether or not the unit has a custom spawn animation applied to the main unit model.
+        """
+
+        self.model_id = model_id
+        self.has_entry_maanim = has_entry_maanim
+
+    @staticmethod
+    def from_values(model_id: int, has_entry_maanim: bool) -> "SpawnAnim":
+        """Creates a new SpawnAnim object from values.
+
+        Args:
+            model_id (int): The ID of a new model to add when spawned. (disable when -1)
+            has_entry_maanim (bool): Whether or not the unit has a custom spawn animation applied to the main unit model.
+
+        Returns:
+            SpawnAnim: The new SpawnAnim object.
+        """
+        return SpawnAnim(model_id, has_entry_maanim)
+
+    def __str__(self) -> str:
+        """Gets a string representation of the SpawnAnim object.
+
+        Returns:
+            str: The string representation of the SpawnAnim object.
+        """
+        return f"Model ID: {self.model_id}, Has Entry maanim: {self.has_entry_maanim}"
+
+    def __repr__(self) -> str:
+        """Gets a string representation of the SpawnAnim object.
+
+        Returns:
+            str: The string representation of the SpawnAnim object.
+        """
+
+        return str(self)
+
+    def copy(self) -> "SpawnAnim":
+        """Creates a copy of the SpawnAnim object.
+
+        Returns:
+            SpawnAnim: The copy of the SpawnAnim object.
+        """
+        return SpawnAnim(self.model_id, self.has_entry_maanim)
 
 
 class Warp:
@@ -1175,8 +1333,8 @@ class Surge:
     def __init__(
         self,
         prob: Prob,
-        start: int,
-        range: int,
+        start: Range,
+        range: Range,
         level: int,
     ):
         """Initializes a new Surge object.
@@ -1210,7 +1368,7 @@ class Surge:
         Returns:
             Surge: The new Surge object.
         """
-        return Surge(Prob(prob), start, range, level)
+        return Surge(Prob(prob), Range.from_raw(start), Range.from_raw(range), level)
 
     def __str__(self) -> str:
         """Gets a string representation of the Surge object.
@@ -1218,7 +1376,7 @@ class Surge:
         Returns:
             str: The string representation of the Surge object.
         """
-        return f"{self.prob} chance to surge at level {self.level} by {self.start // 4}-{(self.range + self.start) // 4}"
+        return f"{self.prob} chance to surge at level {self.level} by {self.range}-{(self.range + self.start)}"
 
     def __repr__(self) -> str:
         """Gets a string representation of the Surge object.
@@ -1464,66 +1622,18 @@ class BehemothDodge:
         return BehemothDodge(self.prob.copy(), self.time.copy())
 
 
-class SoulAnimType(enum.Enum):
-    """Represents the type of a soul animation.
-    Files are in the format `battle_soul_{id:03}` e.g `battle_soul_001`."""
-
-    NONE = -1
-    """No soul animation."""
-    DEFAULT = 0
-    """The default soul animation."""
-    UNCOLORED_MONEKO = 1
-    """The uncolored moneko soul animation."""
-    GUDETAMA_EGG = 2
-    """The gudetama egg soul animation."""
-    GUDETAMA_PUDDING = 3
-    """The gudetama pudding soul animation."""
-    ENEMY_NISETAMA_ARMY = 4
-    """The enemy nisetama army soul animation."""
-    NISETAMA_ARMY = 5
-    """The nisetama army soul animation."""
-    NISETAMA_CAT_ARMY = 6
-    """The nisetama cat army soul animation."""
-    CRAZED_MONEKO = 7
-    """The crazed moneko soul animation."""
-    ENEMY_EVA_ANGEL = 8
-    """The enemy eva angel soul animation."""
-    ENEMY_GUDETAMA_EGG = 9
-    """The enemy gudetama egg soul animation."""
-    BIG_LEGEND_RARE = 10
-    """The big legend rare soul animation."""
-    SMALL_LEGEND_RARE = 11
-    """The small legend rare soul animation."""
-    BIG_MIKU_COLLAB = 12
-    """The big miku collab soul animation."""
-    SMALL_MIKU_COLLAB = 13
-    """The small miku collab soul animation."""
-    EVA = 14
-    """The eva soul animation."""
-    UNUSED_EVA = 15
-    """The unused eva soul animation."""
-    COLORED_MONEKO = 16
-    """The colored moneko soul animation."""
-    YONSHAKUDAMA_FIREWORK_ENEMY = 17
-    """The yonshakudama firework enemy soul animation."""
-    WORLD_TRIGGER = 18
-    """The world trigger soul animation."""
-
-
 class SoulAnim:
     """Represents a soul animation."""
 
-    def __init__(self, anim_type: int):
+    def __init__(self, model_id: int, has_death_maanim: bool):
         """Initializes a new SoulAnim object.
 
         Args:
-            anim_type (int): The type of the soul animation.
+            model_id (int): The ID of a new model to add when dead. (disable when -1)
+            has_entry_maanim (bool): Whether or not the unit has a custom death animation applied to the main model itself.
         """
-        self.anim_type = anim_type
-        try:
-            self.soul_anim_type = SoulAnimType(anim_type)
-        except ValueError:
-            self.soul_anim_type = SoulAnimType.NONE
+        self.model_id = model_id
+        self.has_death_maanim = has_death_maanim
 
     def set(self, anim_type: int):
         """Sets the type of the soul animation.
@@ -1531,11 +1641,7 @@ class SoulAnim:
         Args:
             anim_type (int): The type of the soul animation.
         """
-        self.anim_type = anim_type
-        try:
-            self.soul_anim_type = SoulAnimType(anim_type)
-        except ValueError:
-            self.soul_anim_type = SoulAnimType.NONE
+        self.model_id = anim_type
 
     def __str__(self) -> str:
         """Gets a string representation of the SoulAnim object.
@@ -1543,7 +1649,7 @@ class SoulAnim:
         Returns:
             str: The string representation of the SoulAnim object.
         """
-        return f"Soul anim type: {self.soul_anim_type}, {self.anim_type}"
+        return f"Model ID: {self.model_id}, Has Death maanim: {self.has_death_maanim}"
 
     def __repr__(self) -> str:
         """Gets a string representation of the SoulAnim object.
@@ -1559,7 +1665,23 @@ class SoulAnim:
         Returns:
             SoulAnim: The copy of the SoulAnim object.
         """
-        return SoulAnim(self.anim_type)
+        return SoulAnim(self.model_id, self.has_death_maanim)
+
+    @staticmethod
+    def from_values(
+        model_id: int,
+        has_soul_maanim: bool,
+    ) -> "SoulAnim":
+        """Creates a new SoulAnim object from values.
+
+        Args:
+            model_id (int): The ID of a new model to add when dead. (disable when -1)
+            has_soul_maanim (bool): Whether or not the unit has a custom death animation applied to the main model itself.
+
+        Returns:
+            SoulAnim: The new SoulAnim object.
+        """
+        return SoulAnim(model_id, has_soul_maanim)
 
 
 class EvolveItem:
