@@ -173,13 +173,13 @@ class BCUForm:
         traits = sorted(traits, key=lambda x: x["id"])
         stats.hp = base_stats["hp"]
         stats.kbs = base_stats["hb"]
-        stats.speed = base_stats["speed"]
+        stats.speed.raw = base_stats["speed"]
         stats.attack_1.damage = base_stats["atks"]["pool"][0]["atk"]
         stats.attack_interval = cat_base.unit.Frames(base_stats["tba"])
-        stats.range = base_stats["range"]
+        stats.range.raw = base_stats["range"]
         stats.cost = base_stats["price"]
         stats.recharge_time = cat_base.unit.Frames(base_stats["resp"])
-        stats.hitbox_width = base_stats["width"]
+        stats.collision_width.raw = base_stats["width"]
         stats.target_red = self.get_trait_by_id(traits, 0)
         stats.area_attack = base_stats["atks"]["pool"][0]["range"]
         stats.z_layers.min = base_stats["front"]
@@ -218,8 +218,8 @@ class BCUForm:
         stats.strengthen.multiplier_percent = self.get_proc_mult(procs, "STRONG")
         stats.lethal_strike.prob = self.get_proc_prob(procs, "LETHAL")
         stats.is_metal = self.check_ability(base_stats["abi"], 4)
-        stats.attack_1.long_distance_start = base_stats["atks"]["pool"][0]["ld0"]
-        stats.attack_1.long_distance_range = (
+        stats.attack_1.long_distance_start.raw = base_stats["atks"]["pool"][0]["ld0"]
+        stats.attack_1.long_distance_range.raw = (
             base_stats["atks"]["pool"][0]["ld1"] - stats.attack_1.long_distance_start
         )
         stats.wave_immunity = bool(self.get_proc_mult(procs, "IMUWAVE"))
@@ -231,8 +231,10 @@ class BCUForm:
         stats.zombie_killer = self.check_ability(base_stats["abi"], 9)
         stats.witch_killer = self.check_ability(base_stats["abi"], 10)
         stats.target_witch = self.check_ability(base_stats["abi"], 10)
-        stats.attacks_before_state = base_stats["loop"]
-        stats.unit_state = 2 if self.check_ability(base_stats["abi"], 11) else 0
+        stats.attack_state.attacks_before = base_stats["loop"]
+        stats.attack_state.state_id = (
+            2 if self.check_ability(base_stats["abi"], 11) else 0
+        )
         stats.attack_2.damage = self.get_attack(base_stats["atks"]["pool"], 1, "atk")
         stats.attack_3.damage = self.get_attack(base_stats["atks"]["pool"], 2, "atk")
         stats.attack_1.foreswing = cat_base.unit.Frames(
@@ -246,7 +248,7 @@ class BCUForm:
         )
         stats.attack_2.use_ability = True
         stats.attack_3.use_ability = True
-        stats.soul_anim = cat_base.unit.SoulAnim(base_stats["death"]["id"])
+        stats.soul_anim.model_id = base_stats["death"]["id"]
         stats.barrier_breaker.prob = self.get_proc_prob(procs, "BREAK")
         stats.warp.prob = self.get_proc_prob(procs, "WARP")
         stats.warp.time = self.get_proc_time(procs, "WARP")
@@ -264,12 +266,10 @@ class BCUForm:
         stats.dodge.prob = self.get_proc_prob(procs, "IMUATK")
         stats.dodge.time = self.get_proc_time(procs, "IMUATK")
         stats.surge.prob = self.get_proc_prob(procs, "VOLC")
-        stats.surge.start = int(self.get_proc_value(procs, "VOLC", "dis_0"))
-        stats.surge.range = (
-            int(self.get_proc_value(procs, "VOLC", "dis_1")) - stats.surge.start
+        stats.surge.start.raw = int(self.get_proc_value(procs, "VOLC", "dis_0"))
+        stats.surge.range.raw = (
+            int(self.get_proc_value(procs, "VOLC", "dis_1")) - stats.surge.start.range
         )
-        stats.surge.start *= 4
-        stats.surge.range *= 4
         stats.surge.level = self.get_proc_value(procs, "VOLC", "time") // 20
         stats.toxic_immunity = bool(self.get_proc_mult(procs, "IMUPOIATK"))
         stats.surge_immunity = bool(self.get_proc_mult(procs, "IMUVOLC"))
@@ -283,27 +283,27 @@ class BCUForm:
         stats.attack_2.long_distance_flag = (
             self.get_attack(base_stats["atks"]["pool"], 1, "ld") != 0
         )
-        stats.attack_2.long_distance_start = self.get_attack(
+        stats.attack_2.long_distance_start.raw = self.get_attack(
             base_stats["atks"]["pool"], 1, "ld0"
         )
-        stats.attack_2.long_distance_range = (
+        stats.attack_2.long_distance_range.raw = (
             self.get_attack(base_stats["atks"]["pool"], 1, "ld1")
-            - stats.attack_2.long_distance_start
+            - stats.attack_2.long_distance_start.raw
         )
         stats.attack_3.long_distance_flag = (
             self.get_attack(base_stats["atks"]["pool"], 2, "ld") != 0
         )
-        stats.attack_3.long_distance_start = self.get_attack(
+        stats.attack_3.long_distance_start.raw = self.get_attack(
             base_stats["atks"]["pool"], 2, "ld0"
         )
-        stats.attack_3.long_distance_range = (
+        stats.attack_3.long_distance_range.raw = (
             self.get_attack(base_stats["atks"]["pool"], 2, "ld1")
-            - stats.attack_3.long_distance_start
+            - stats.attack_3.long_distance_start.raw
         )
         stats.behemoth_slayer = self.get_proc_prob(procs, "BSTHUNT").percent != 0
         stats.behemoth_dodge.prob = self.get_proc_prob(procs, "BSTHUNT")
         stats.behemoth_dodge.time = self.get_proc_time(procs, "BSTHUNT")
-        stats.set_required()
+        stats.attack_1.use_ability = True
 
         return stats
 
@@ -479,12 +479,12 @@ class BCUEnemy:
 
         stats.hp = base_stats["hp"]
         stats.kbs = base_stats["hb"]
-        stats.speed = base_stats["speed"]
+        stats.speed.raw = base_stats["speed"]
         stats.attack_1.damage = base_stats["atks"]["pool"][0]["atk"]
         stats.attack_interval = cat_base.unit.Frames(base_stats["tba"])
-        stats.range = base_stats["range"]
+        stats.range.raw = base_stats["range"]
         stats.money_drop = base_stats["drop"]
-        stats.hitbox_width = base_stats["width"]
+        stats.collision_width.raw = base_stats["width"]
         stats.red = BCUForm.get_trait_by_id(traits, 0)
         stats.area_attack = base_stats["atks"]["pool"][0]["range"]
         stats.floating = BCUForm.get_trait_by_id(traits, 1)
@@ -517,8 +517,9 @@ class BCUEnemy:
         stats.strengthen.multiplier_percent = BCUForm.get_proc_mult(procs, "STRONG")
         stats.survive_lethal_strike.prob = BCUForm.get_proc_prob(procs, "LETHAL")
         stats.attack_1.long_distance_start = base_stats["atks"]["pool"][0]["ld0"]
-        stats.attack_1.long_distance_range = (
-            base_stats["atks"]["pool"][0]["ld1"] - stats.attack_1.long_distance_start
+        stats.attack_1.long_distance_range.raw = (
+            base_stats["atks"]["pool"][0]["ld1"]
+            - stats.attack_1.long_distance_start.raw
         )
         stats.wave_immunity = bool(BCUForm.get_proc_mult(procs, "IMUWAVE"))
         stats.wave_blocker = BCUForm.check_ability(base_stats["abi"], 5)
@@ -533,8 +534,10 @@ class BCUEnemy:
         stats.revive.hp_remain_percent = BCUForm.get_proc_health(procs, "REVIVE")
         stats.witch = BCUForm.get_trait_by_id(traits, 10)
         stats.base = BCUForm.get_trait_by_id(traits, 14)
-        stats.attacks_before_state = base_stats["loop"]
-        stats.enemy_state = 2 if BCUForm.check_ability(base_stats["abi"], 11) else 0
+        stats.attack_state.attacks_before = base_stats["loop"]
+        stats.attack_state.state_id = (
+            2 if BCUForm.check_ability(base_stats["abi"], 11) else 0
+        )
         stats.attack_2.damage = BCUForm.get_attack(base_stats["atks"]["pool"], 1, "atk")
         stats.attack_3.damage = BCUForm.get_attack(base_stats["atks"]["pool"], 2, "atk")
         stats.attack_1.foreswing = cat_base.unit.Frames(
@@ -548,7 +551,7 @@ class BCUEnemy:
         )
         stats.attack_2.use_ability = True
         stats.attack_3.use_ability = True
-        stats.soul_anim = cat_base.unit.SoulAnim(base_stats["death"]["id"])
+        stats.soul_anim.model_id = base_stats["death"]["id"]
         stats.barrier.hp = BCUForm.get_proc_health(procs, "BARRIER")
         stats.warp.prob = BCUForm.get_proc_prob(procs, "WARP")
         stats.warp.time = BCUForm.get_proc_time(procs, "WARP")
@@ -567,56 +570,52 @@ class BCUEnemy:
         stats.dodge.time = BCUForm.get_proc_time(procs, "IMUATK")
         stats.toxic.prob = BCUForm.get_proc_prob(procs, "POIATK")
         stats.toxic.hp_percent = BCUForm.get_proc_mult(procs, "POIATK")
-        stats.surge.start = int(BCUForm.get_proc_value(procs, "VOLC", "dis_0"))
-        stats.surge.range = (
-            int(BCUForm.get_proc_value(procs, "VOLC", "dis_1")) - stats.surge.start
+        stats.surge.start.raw = int(BCUForm.get_proc_value(procs, "VOLC", "dis_0"))
+        stats.surge.range.raw = (
+            int(BCUForm.get_proc_value(procs, "VOLC", "dis_1"))
+            - stats.surge.start.range
         )
-        stats.surge.start *= 4
-        stats.surge.range *= 4
         stats.surge.level = BCUForm.get_proc_value(procs, "VOLC", "time") // 20
         stats.surge_immunity = bool(BCUForm.get_proc_mult(procs, "IMUVOLC"))
         stats.wave.is_mini = BCUForm.get_proc_prob(procs, "MINIWAVE").percent != 0
         stats.shield.hp = BCUForm.get_proc_health(procs, "SHIELD")
         stats.shield.percent_heal_kb = BCUForm.get_proc_value(procs, "SHIELD", "regen")
         stats.death_surge.prob = BCUForm.get_proc_prob(procs, "DEATHSURGE")
-        stats.death_surge.start = int(
+        stats.death_surge.start.raw = int(
             BCUForm.get_proc_value(procs, "DEATHSURGE", "dis_0")
         )
-        stats.death_surge.range = (
+        stats.death_surge.range.raw = (
             int(BCUForm.get_proc_value(procs, "DEATHSURGE", "dis_1"))
-            - stats.death_surge.start
+            - stats.death_surge.start.range
         )
         stats.death_surge.level = (
             BCUForm.get_proc_value(procs, "DEATHSURGE", "time") // 20
         )
-        stats.death_surge.start *= 4
-        stats.death_surge.range *= 4
         stats.aku = BCUForm.get_trait_by_id(traits, 7)
         stats.baron = BCUForm.get_trait_by_id(traits, 12)
         stats.attack_2.long_distance_flag = (
             BCUForm.get_attack(base_stats["atks"]["pool"], 1, "ld0") != 0
             or BCUForm.get_attack(base_stats["atks"]["pool"], 1, "ld1") != 0
         )
-        stats.attack_2.long_distance_start = BCUForm.get_attack(
+        stats.attack_2.long_distance_start.raw = BCUForm.get_attack(
             base_stats["atks"]["pool"], 1, "ld0"
         )
-        stats.attack_2.long_distance_range = (
+        stats.attack_2.long_distance_range.raw = (
             BCUForm.get_attack(base_stats["atks"]["pool"], 1, "ld1")
-            - stats.attack_2.long_distance_start
+            - stats.attack_2.long_distance_start.raw
         )
         stats.attack_3.long_distance_flag = (
             BCUForm.get_attack(base_stats["atks"]["pool"], 2, "ld0") != 0
             or BCUForm.get_attack(base_stats["atks"]["pool"], 2, "ld1") != 0
         )
-        stats.attack_3.long_distance_start = BCUForm.get_attack(
+        stats.attack_3.long_distance_start.raw = BCUForm.get_attack(
             base_stats["atks"]["pool"], 2, "ld0"
         )
-        stats.attack_3.long_distance_range = (
+        stats.attack_3.long_distance_range.raw = (
             BCUForm.get_attack(base_stats["atks"]["pool"], 2, "ld1")
-            - stats.attack_3.long_distance_start
+            - stats.attack_3.long_distance_start.raw
         )
         stats.behemoth = BCUForm.get_trait_by_id(traits, 13)
-        stats.set_required()
 
         return stats
 

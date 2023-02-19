@@ -9,18 +9,11 @@ class Stats:
         self.enemy_id = enemy_id
         raw_data = self.extend(raw_data)
         self.assign(raw_data)
-        self.set_required()
 
     def serialize(self) -> dict[str, Any]:
         return {
             "raw_data": self.to_raw_data(),
         }
-
-    def set_required(self):
-        self.attacks_before_state = -1
-        self.time_before_death.frames = -1
-        self.spawn_anim_id = -1
-        self.attack_1.use_ability = True
 
     def extend(self, raw_data: list[int]):
         length = 102
@@ -37,12 +30,12 @@ class Stats:
     def assign(self, raw_data: list[int]):
         self.hp = raw_data[0]
         self.kbs = raw_data[1]
-        self.speed = raw_data[2]
+        self.speed = unit.Speed.from_raw(raw_data[2])
         self.attack_interval = unit.Frames.from_pair_frames(raw_data[4])
-        self.range = raw_data[5]
+        self.range = unit.Range.from_raw(raw_data[5])
         self.money_drop = raw_data[6]
-        self.hitbox_pos = raw_data[7]
-        self.hitbox_width = raw_data[8]
+        self.collision_start = raw_data[7]
+        self.collision_width = unit.Range.from_raw(raw_data[8])
         self.unused = raw_data[9]
         self.red = bool(raw_data[10])
         self.area_attack = bool(raw_data[11])
@@ -74,13 +67,10 @@ class Stats:
         self.revive = unit.Revive.from_values(raw_data[45], raw_data[46], raw_data[47])
         self.witch = bool(raw_data[48])
         self.base = bool(raw_data[49])
-        self.attacks_before_state = raw_data[50]
+        self.attack_state = unit.AttackState.from_values(raw_data[50], raw_data[52])
         self.time_before_death = unit.Frames(raw_data[51])
-        self.enemy_state = raw_data[52]
-        self.spawn_anim_id = raw_data[53]
-        self.soul_anim = unit.SoulAnim(raw_data[54])
-        self.custom_spawn_anim = bool(raw_data[62])
-        self.custom_soul_anim = not bool(raw_data[63])
+        self.spawn_anim = unit.SpawnAnim.from_values(raw_data[53], bool(raw_data[62]))
+        self.soul_anim = unit.SoulAnim(raw_data[54], bool(raw_data[63]))
         self.barrier = unit.Barrier.from_values(raw_data[64])
         self.warp = unit.Warp.from_values(
             raw_data[65], raw_data[66], raw_data[67], raw_data[68]
@@ -134,13 +124,13 @@ class Stats:
         return [
             self.hp,  # 0
             self.kbs,  # 1
-            self.speed,  # 2
+            self.speed.raw,  # 2
             self.attack_1.damage,  # 3
             self.attack_interval.pair_frames,  # 4
-            self.range,  # 5
+            self.range.raw,  # 5
             self.money_drop,  # 6
-            self.hitbox_pos,  # 7
-            self.hitbox_width,  # 8
+            self.collision_start,  # 7
+            self.collision_width.raw,  # 8
             self.unused,  # 9
             int(self.red),  # 10
             int(self.area_attack),  # 11
@@ -167,8 +157,8 @@ class Stats:
             self.strengthen.hp_percent,  # 32
             self.strengthen.multiplier_percent,  # 33
             self.survive_lethal_strike.prob.percent,  # 34
-            self.attack_1.long_distance_start,  # 35
-            self.attack_1.long_distance_range,  # 36
+            self.attack_1.long_distance_start.raw,  # 35
+            self.attack_1.long_distance_range.raw,  # 36
             int(self.wave_immunity),  # 37
             int(self.wave_blocker),  # 38
             int(self.knockback_immunity),  # 39
@@ -182,11 +172,11 @@ class Stats:
             self.revive.hp_remain_percent,  # 47
             int(self.witch),  # 48
             int(self.base),  # 49
-            self.attacks_before_state,  # 50
+            self.attack_state.attacks_before,  # 50
             self.time_before_death.frames,  # 51
-            self.enemy_state,  # 52
-            self.spawn_anim_id,  # 53
-            self.soul_anim.anim_type,  # 54
+            self.attack_state.state_id,  # 52
+            self.spawn_anim.model_id,  # 53
+            self.soul_anim.model_id,  # 54
             self.attack_2.damage,  # 55
             self.attack_3.damage,  # 56
             self.attack_2.foreswing.frames,  # 57
@@ -194,8 +184,8 @@ class Stats:
             int(self.attack_1.use_ability),  # 59
             int(self.attack_2.use_ability),  # 60
             int(self.attack_3.use_ability),  # 61
-            int(self.custom_spawn_anim),  # 62
-            int(not self.custom_soul_anim),  # 63
+            int(self.spawn_anim.has_entry_maanim),  # 62
+            int(self.soul_anim.has_death_maanim),  # 63
             self.barrier.hp,  # 64
             self.warp.prob.percent,  # 65
             self.warp.time.frames,  # 66
@@ -214,25 +204,25 @@ class Stats:
             self.toxic.prob.percent,  # 79
             self.toxic.hp_percent,  # 80
             self.surge.prob.percent,  # 81
-            self.surge.start,  # 82
-            self.surge.range,  # 83
+            self.surge.start.raw,  # 82
+            self.surge.range.raw,  # 83
             self.surge.level,  # 84
             int(self.surge_immunity),  # 85
             int(self.wave.is_mini),  # 86
             self.shield.hp,  # 87
             self.shield.percent_heal_kb,  # 88
             self.death_surge.prob.percent,  # 89
-            self.death_surge.start,  # 90
-            self.death_surge.range,  # 91
+            self.death_surge.start.raw,  # 90
+            self.death_surge.range.raw,  # 91
             self.death_surge.level,  # 92
             int(self.aku),  # 93
             int(self.baron),  # 94
             int(self.attack_2.long_distance_flag),  # 95
-            self.attack_2.long_distance_start,  # 96
-            self.attack_2.long_distance_range,  # 97
+            self.attack_2.long_distance_start.raw,  # 96
+            self.attack_2.long_distance_range.raw,  # 97
             int(self.attack_3.long_distance_flag),  # 98
-            self.attack_3.long_distance_start,  # 99
-            self.attack_3.long_distance_range,  # 100
+            self.attack_3.long_distance_start.raw,  # 99
+            self.attack_3.long_distance_range.raw,  # 100
             int(self.behemoth),  # 101
         ]
 
@@ -699,6 +689,12 @@ class Enemies:
         self.enemies[enemy.enemy_id] = enemy
 
     def import_enemies(self, other: "Enemies", game_data: "pack.GamePacks"):
+        """_summary_
+
+        Args:
+            other (Enemies): _description_
+            game_data (pack.GamePacks): The game data to check if the imported data is different from the game data. This is used to prevent overwriting the current data with base game data.
+        """
         gd_enemies = Enemies.from_game_data(game_data)
         all_keys = set(self.enemies.keys())
         all_keys.update(other.enemies.keys())
