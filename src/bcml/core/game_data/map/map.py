@@ -1547,6 +1547,12 @@ class Maps:
         self.maps[map.map_option.stage_id] = map
 
     def import_maps(self, other: "Maps", game_data: "pack.GamePacks"):
+        """_summary_
+
+        Args:
+            other (Maps): _description_
+            game_data (pack.GamePacks): The game data to check if the imported data is different from the game data. This is used to prevent overwriting the current data with base game data.
+        """        
         gd_maps = Maps.from_game_data(game_data)
         all_keys = set(gd_maps.maps.keys())
         all_keys.update(other.maps.keys())

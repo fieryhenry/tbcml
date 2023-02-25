@@ -531,6 +531,12 @@ class Gatya:
         self.gatya_data_sets = gatya.gatya_data_sets
 
     def import_gatya(self, other: "Gatya", game_data: "pack.GamePacks"):
+        """_summary_
+
+        Args:
+            other (Gatya): _description_
+            game_data (pack.GamePacks): The game data to check if the imported data is different from the game data. This is used to prevent overwriting the current data with base game data.
+        """
         gd_gatya = self.from_game_data(game_data)
         for gatyta_type in GatyaType:
             other_options = other.gatya_options.gatya_options.get(gatyta_type)

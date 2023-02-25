@@ -191,6 +191,12 @@ class EngineerAnim:
         return EngineerAnim(anim)
 
     def import_engineer_anim(self, other: "EngineerAnim", game_data: "pack.GamePacks"):
+        """_summary_
+
+        Args:
+            other (EngineerAnim): _description_
+            game_data (pack.GamePacks): The game data to check if the imported data is different from the game data. This is used to prevent overwriting the current data with base game data.
+        """
         gd_anim = EngineerAnim.from_game_data(game_data)
         if gd_anim.anim != other.anim:
             self.anim = other.anim

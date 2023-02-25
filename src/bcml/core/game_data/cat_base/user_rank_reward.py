@@ -213,6 +213,12 @@ class UserRankReward:
     def import_user_rank_rewards(
         self, other: "UserRankReward", game_data: "pack.GamePacks"
     ) -> None:
+        """_summary_
+
+        Args:
+            other (UserRankReward): _description_
+            game_data (pack.GamePacks): The game data to check if the imported data is different from the game data. This is used to prevent overwriting the current data with base game data.
+        """
         gd_rewards = self.from_game_data(game_data)
         all_keys = set(gd_rewards.reward_sets.keys())
         all_keys.update(other.reward_sets.keys())

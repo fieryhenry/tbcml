@@ -779,6 +779,12 @@ class Cannons:
         self.cannons[cannon.castle_type] = cannon
 
     def import_cannons(self, cannons: "Cannons", game_data: "pack.GamePacks") -> None:
+        """_summary_
+
+        Args:
+            cannons (Cannons): _description_
+            game_data (pack.GamePacks): The game data to check if the imported data is different from the game data. This is used to prevent overwriting the current data with base game data.
+        """
         gd_cannons = Cannons.from_game_data(game_data)
         for castle_type in CastleType:
             gd_cannon = gd_cannons.cannons.get(castle_type)

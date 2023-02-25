@@ -1,7 +1,17 @@
+import enum
 from typing import Callable, Optional
-from PyQt5 import QtWidgets, QtCore
-from bcml.core import io, mods, game_data, locale_handler
-from bcml.ui import ui_thread, shop_editor, progress, localizable
+
+from PyQt5 import QtCore, QtWidgets
+
+from bcml.core import game_data, io, locale_handler, mods
+from bcml.ui.editor import cat_editor, localizable, shop_editor
+from bcml.ui.utils import ui_progress, ui_thread
+
+
+class Tabs(enum.Enum):
+    CAT = 0
+    LOCALIZABLE = 1
+    SHOP = 2
 
 
 class GameEditor(QtWidgets.QWidget):
@@ -48,7 +58,7 @@ class GameEditor(QtWidgets.QWidget):
         self._layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self._layout)
 
-        self.progress_bar = progress.ProgressBar(
+        self.progress_bar = ui_progress.ProgressBar(
             self.local_manager.search_key("loading_game_data_progress"), None, self
         )
         self._layout.addWidget(self.progress_bar)
@@ -86,13 +96,20 @@ class GameEditor(QtWidgets.QWidget):
         self.back_button.setText(self.local_manager.search_key("back"))
         self.back_button.clicked.connect(self.back)  # type: ignore
         self._layout.addWidget(self.back_button)
+        self.insert_tabs()
 
+    def insert_tabs(self):
         self._tab_widget.addTab(
-            self.create_item_shop_tab(), self.local_manager.search_key("item_shop_tab")
+            self.create_cat_tab(),
+            self.local_manager.search_key("cats_tab"),
         )
         self._tab_widget.addTab(
             self.create_text_tab(),
             self.local_manager.search_key("text_tab"),
+        )
+        self._tab_widget.addTab(
+            self.create_item_shop_tab(),
+            self.local_manager.search_key("item_shop_tab"),
         )
 
         self.tab_changed(0)
@@ -111,6 +128,12 @@ class GameEditor(QtWidgets.QWidget):
         self.text_editor = localizable.TextEditor(self.mod, self.game_data, self)
         return self.text_editor
 
+    def create_cat_tab(self):
+        if self.game_data is None:
+            return
+        self.cat_editor = cat_editor.CatEditor(self.mod, self.game_data, self)
+        return self.cat_editor
+
     def save(self):
         self._save_thread = ui_thread.ThreadWorker.run_in_thread(self.save_thread)
 
@@ -124,18 +147,16 @@ class GameEditor(QtWidgets.QWidget):
 
     def refresh_tabs(self):
         current_tab = self._tab_widget.currentIndex()
-        self._tab_widget.removeTab(0)
-        self._tab_widget.removeTab(0)
-        self._tab_widget.addTab(
-            self.create_item_shop_tab(), self.local_manager.search_key("item_shop_tab")
-        )
-        self._tab_widget.addTab(
-            self.create_text_tab(), self.local_manager.search_key("text_tab")
-        )
+        for _ in range(self._tab_widget.count()):
+            self._tab_widget.removeTab(0)
+
+        self.insert_tabs()
         self._tab_widget.setCurrentIndex(current_tab)
 
     def tab_changed(self, index: int):
-        if index == 0:
+        if index == Tabs.SHOP.value:
             self.shop_editor.setup_ui()
-        elif index == 1:
+        elif index == Tabs.LOCALIZABLE.value:
             self.text_editor.setup_ui()
+        elif index == Tabs.CAT.value:
+            self.cat_editor.setup_ui()

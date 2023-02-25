@@ -1,8 +1,11 @@
-from typing import Optional
-from PyQt5 import QtWidgets, QtCore, QtGui
-from bcml.core import mods, game_data, io, locale_handler
-from bcml.ui import ui_thread, gatya_item, ui_dialog, ui_file_dialog, localizable
 import enum
+from typing import Optional
+
+from PyQt5 import QtCore, QtGui, QtWidgets
+
+from bcml.core import game_data, io, locale_handler, mods
+from bcml.ui.editor import gatya_item, localizable
+from bcml.ui.utils import ui_dialog, ui_file_dialog, ui_thread
 
 
 class Rows(enum.Enum):

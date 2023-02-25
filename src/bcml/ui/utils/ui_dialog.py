@@ -1,5 +1,7 @@
 from typing import Any, Callable, Optional
+
 from PyQt5 import QtWidgets
+
 from bcml.core import locale_handler
 
 

@@ -99,6 +99,12 @@ class MainChara:
         return MainChara(bc_anim.Anim.create_empty())
 
     def import_main_chara(self, other: "MainChara", game_data: "pack.GamePacks"):
+        """_summary_
+
+        Args:
+            other (MainChara): _description_
+            game_data (pack.GamePacks): The game data to check if the imported data is different from the game data. This is used to prevent overwriting the current data with base game data.
+        """
         gd_chara = self.from_game_data(game_data)
         if gd_chara != other:
             self.anim = other.anim

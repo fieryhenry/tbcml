@@ -499,6 +499,12 @@ class GatyaItems:
         return GatyaItems({})
 
     def import_items(self, other: "GatyaItems", game_data: "pack.GamePacks"):
+        """_summary_
+
+        Args:
+            other (GatyaItems): _description_
+            game_data (pack.GamePacks): The game data to check if the imported data is different from the game data. This is used to prevent overwriting the current data with base game data.
+        """        
         gd_items = GatyaItems.from_game_data(game_data)
         all_keys = set(gd_items.items.keys())
         all_keys.update(other.items.keys())

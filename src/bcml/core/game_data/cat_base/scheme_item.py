@@ -188,6 +188,12 @@ class SchemeItems:
         self.items[item.id] = item
 
     def import_scheme_items(self, other: "SchemeItems", game_data: "pack.GamePacks"):
+        """_summary_
+
+        Args:
+            other (SchemeItems): _description_
+            game_data (pack.GamePacks): The game data to check if the imported data is different from the game data. This is used to prevent overwriting the current data with base game data.
+        """
         gd_items = self.from_game_data(game_data)
         all_keys = set(gd_items.items.keys())
         all_keys.update(other.items.keys())

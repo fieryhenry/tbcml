@@ -1,6 +1,7 @@
 from PyQt5 import QtCore, QtWidgets
-from bcml.core import io, country_code, game_version, locale_handler
-from bcml.ui import progress, ui_thread
+
+from bcml.core import country_code, game_version, io, locale_handler
+from bcml.ui.utils import ui_progress, ui_thread
 
 
 class ServerFilesManager(QtWidgets.QDialog):
@@ -53,7 +54,7 @@ class ServerFilesManager(QtWidgets.QDialog):
         self.download_button.clicked.connect(self.download_server_files_wrapper)  # type: ignore
         self._layout.addWidget(self.download_button)
 
-        self.progress_bar = progress.ProgressBar(
+        self.progress_bar = ui_progress.ProgressBar(
             self.locale_manager.search_key("downloading_missing_server_files_progress"),
             self.on_progress,
             self,

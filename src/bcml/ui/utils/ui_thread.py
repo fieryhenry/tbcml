@@ -1,4 +1,5 @@
 from typing import Any, Callable, Optional
+
 from PyQt5 import QtCore
 
 

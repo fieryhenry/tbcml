@@ -173,6 +173,12 @@ class ItemPacks:
         self.packs[pack.user_rank] = pack
 
     def import_item_packs(self, item_packs: "ItemPacks", game_data: "pack.GamePacks"):
+        """_summary_
+
+        Args:
+            item_packs (ItemPacks): _description_
+            game_data (pack.GamePacks): The game data to check if the imported data is different from the game data. This is used to prevent overwriting the current data with base game data.
+        """
         gd_item_packs = ItemPacks.from_game_data(game_data)
         all_keys = set(self.packs.keys())
         all_keys.update(item_packs.packs.keys())

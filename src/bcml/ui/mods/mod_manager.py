@@ -1,7 +1,11 @@
 from typing import Callable, Optional
-from PyQt5 import QtWidgets, QtCore, QtGui
-from bcml.core import io, country_code, game_version, mods, locale_handler
-from bcml.ui import ui_dialog, ui_file_dialog, game_editor, apk_manager
+
+from PyQt5 import QtCore, QtGui, QtWidgets
+
+from bcml.core import country_code, game_version, io, locale_handler, mods
+from bcml.ui import apk_manager
+from bcml.ui.editor import game_editor
+from bcml.ui.utils import ui_dialog, ui_file_dialog
 
 
 class ModView(QtWidgets.QWidget):

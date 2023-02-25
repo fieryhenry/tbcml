@@ -84,6 +84,12 @@ class Ototo:
         )
 
     def import_ototo(self, other: "Ototo", game_data: "pack.GamePacks"):
+        """_summary_
+
+        Args:
+            other (Ototo): _description_
+            game_data (pack.GamePacks): The game data to check if the imported data is different from the game data. This is used to prevent overwriting the current data with base game data.
+        """
         self.engineer.import_engineer(other.engineer, game_data)
         self.cannons.import_cannons(other.cannons, game_data)
         self.item_packs.import_item_packs(other.item_packs, game_data)

@@ -1,5 +1,7 @@
 from typing import Callable
-from PyQt5 import QtWidgets, QtCore, QtGui
+
+from PyQt5 import QtCore, QtGui, QtWidgets
+
 from bcml.core import game_data, locale_handler
 
 

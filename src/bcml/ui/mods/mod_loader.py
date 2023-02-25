@@ -1,6 +1,8 @@
 from PyQt5 import QtCore, QtWidgets
-from bcml.core import io, game_data, mods, locale_handler
-from bcml.ui import progress, ui_thread, apk_manager
+
+from bcml.core import game_data, io, locale_handler, mods
+from bcml.ui import apk_manager
+from bcml.ui.utils import ui_progress, ui_thread
 
 
 class ModLoader(QtWidgets.QDialog):
@@ -18,7 +20,7 @@ class ModLoader(QtWidgets.QDialog):
         self._layout = QtWidgets.QVBoxLayout(self)
         self.setLayout(self._layout)
 
-        self.loading_progress_bar = progress.ProgressBar(
+        self.loading_progress_bar = ui_progress.ProgressBar(
             self.locale_manager.search_key("preparing_apk"), None, self
         )
         self._layout.addWidget(self.loading_progress_bar)
@@ -94,7 +96,7 @@ class ModLoader(QtWidgets.QDialog):
     def load_mods_wrapper(self, mod_names: list[str]):
         if self.loading_mods:
             return
-        self.progress_bar = progress.ProgressBar(
+        self.progress_bar = ui_progress.ProgressBar(
             self.locale_manager.search_key("loading_mods_progress"), None, self
         )
         self._layout.addWidget(self.progress_bar)

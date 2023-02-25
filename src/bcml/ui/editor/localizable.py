@@ -1,7 +1,10 @@
 from typing import Callable, Optional
-from PyQt5 import QtWidgets, QtCore, QtGui
-from bcml.core import game_data, mods, locale_handler
-from bcml.ui import ui_thread, main
+
+from PyQt5 import QtCore, QtGui, QtWidgets
+
+from bcml.core import game_data, locale_handler, mods
+from bcml.ui import main
+from bcml.ui.utils import ui_thread
 
 
 class LocalizableSelector(QtWidgets.QDialog):

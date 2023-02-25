@@ -1,9 +1,12 @@
 """Dialog for managing APKs""" ""
-from typing import Any, Callable, Optional
 import webbrowser
-from PyQt5 import QtCore, QtWidgets, QtGui
-from bcml.core import io, country_code, game_version, game_data, mods, locale_handler
-from bcml.ui import main, progress, ui_thread, ui_dialog, ui_file_dialog
+from typing import Any, Callable, Optional
+
+from PyQt5 import QtCore, QtGui, QtWidgets
+
+from bcml.core import country_code, game_data, game_version, io, locale_handler, mods
+from bcml.ui import main
+from bcml.ui.utils import ui_dialog, ui_file_dialog, ui_progress, ui_thread
 
 
 class ApkManager(QtWidgets.QDialog):
@@ -151,7 +154,7 @@ class ApkManager(QtWidgets.QDialog):
         else:
             return
 
-        self.progress_bar = progress.ProgressBar(
+        self.progress_bar = ui_progress.ProgressBar(
             self.locale_manager.search_key("decrypt_progress_bar_title"), None, self
         )
         self._layout.addWidget(self.progress_bar)
@@ -333,7 +336,7 @@ class ApkDownloader(QtWidgets.QWidget):
             return
         title = self.locale_manager.search_key("downloading_apk") % apk.format()
         self.downloading_apks.append(apk_id)
-        self.progress_bar = progress.ProgressBar(title, None, self)
+        self.progress_bar = ui_progress.ProgressBar(title, None, self)
         self._layout.addWidget(self.progress_bar)
         self.progress_bar.show()
         self._thread = ui_thread.ThreadWorker.run_in_thread_on_finished_args(
@@ -348,7 +351,7 @@ class ApkDownloader(QtWidgets.QWidget):
             self.add_call(apk)
 
     def download_thread(self, apk: io.apk.Apk):
-        apk.download_apk(self.progress_bar.set_progress_full)
+        apk.download_apk()  # self.progress_bar.set_progress_full)
 
     def select_element(self, apk: io.apk.Apk):
         for i in range(self.downloadable_apks_layout.count()):

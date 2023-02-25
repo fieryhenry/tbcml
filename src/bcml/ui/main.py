@@ -1,12 +1,10 @@
 from typing import Optional
+
 from PyQt5 import QtCore, QtGui, QtWidgets
-from bcml.ui import (
-    apk_manager,
-    mod_manager,
-    server_files_manager,
-    mod_loader,
-)
+
 from bcml.core import io, locale_handler
+from bcml.ui import apk_manager, server_files_manager
+from bcml.ui.mods import mod_loader, mod_manager
 
 
 class MainWindow(QtWidgets.QMainWindow):
