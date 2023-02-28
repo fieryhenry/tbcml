@@ -94,7 +94,6 @@ class CSV:
         try:
             self.lines[index] = new_line
         except IndexError:
-            print("Index out of range")
             self.lines.append(new_line)
 
     def to_data(self) -> "data.Data":
