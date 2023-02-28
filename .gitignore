@@ -1,9 +1,12 @@
 /dist
 __pycache__
-*.
 *.egg-info
 .vscode
 .mypy_cache
 /test.py
 /decrypted
+/dec
 /test_mod.zip
+/.frida
+/ui
+/row.py
