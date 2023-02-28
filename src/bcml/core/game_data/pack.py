@@ -114,6 +114,11 @@ class GameFile:
             cc,
         )
 
+    @staticmethod
+    def is_anim(file_name: str) -> bool:
+        extensions = [".maanim", ".mamodel", ".imgcut"]
+        return any(file_name.endswith(ext) for ext in extensions)
+
 
 class PackFile:
     def __init__(
@@ -396,6 +401,18 @@ class GamePacks:
         self.packs = packs
         self.country_code = country_code
         self.modified_packs: dict[str, bool] = {}
+        self.__localizable: Optional[Localizable] = None
+
+    @property
+    def localizable(self) -> "Localizable":
+        """Get the localizable object.
+
+        Returns:
+            Localizable: The localizable object.
+        """
+        if self.__localizable is None:
+            self.__localizable = Localizable.from_game_data(self)
+        return self.__localizable
 
     def get_pack(self, pack_name: str) -> Optional[PackFile]:
         """Get a pack from the game packs.
@@ -475,18 +492,21 @@ class GamePacks:
             data (io.data.Data): The data of the file.
 
         Raises:
-            Exception: If the DownloadLocal pack is not found.
-            Exception: If the local equivalent of the server pack is not found.
-            Exception: If the file could not be set.
+            Exception: If the pack could not be found.
 
         Returns:
             Optional[GameFile]: The file if it exists, None otherwise.
         """
         file = self.find_file(file_name)
         if file is None:
-            pack = self.get_pack("DownloadLocal")
+            if GameFile.is_anim(file_name):
+                pack = self.get_pack("ImageDataLocal")
+            elif file_name.endswith(".png"):
+                pack = self.get_pack("ImageLocal")
+            else:
+                pack = self.get_pack("DataLocal")
             if pack is None:
-                raise Exception(f"Could not find pack DownloadLocal")
+                raise Exception("Could not find pack")
             file = GameFile(data, file_name, pack.pack_name, self.country_code)
         new_pack_name = PackFile.convert_pack_name_server_local(file.pack_name)
         pack = self.get_pack(new_pack_name)
@@ -812,6 +832,12 @@ class Localizable:
             return self.localizable[key].value
         except KeyError:
             return None
+
+    def get_lang(self) -> str:
+        lang = self.get("lang")
+        if lang is None:
+            raise ValueError("lang is not set")
+        return lang
 
     def set(self, key: str, value: str):
         """Set the value of a localizable item.
