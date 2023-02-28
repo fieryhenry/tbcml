@@ -22,17 +22,17 @@ class Lib:
 class LibFiles:
     def __init__(self, apk: "apk.Apk"):
         self.libs_folder = apk.extracted_path.add("lib")
-        self.so_files = self.get_so_files()
         self.apk = apk
+        self.so_files = self.get_so_files()
         self.modified_packs = self.get_modified_packs()
         self.modified_packs_hashes = self.get_all_pack_list_hashes()
 
     def get_so_files(self):
         files: dict[str, data.Data] = {}
         for arc in self.libs_folder.get_dirs():
-            for file in arc.get_files():
-                if file.basename() == "libnative-lib.so":
-                    files[arc.basename()] = file.read()
+            arc_name = arc.basename()
+            lib_path = self.apk.get_libnative_path(arc_name)
+            files[arc_name] = lib_path.read()
         return files
 
     def get_modified_packs(self) -> list[path.Path]:
@@ -96,7 +96,8 @@ class LibFiles:
 
     def write(self):
         for arc, so in self.so_files.items():
-            self.libs_folder.add(arc).add("libnative-lib.so").write(so)
+            lib_path = self.apk.get_libnative_path(arc)
+            lib_path.write(so)
 
     def overwrite_duplicate_packs(self):
         duplicates = self.get_duplicate_packs_lists()
