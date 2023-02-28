@@ -1,4 +1,3 @@
-import subprocess
 from typing import Any, Callable, Optional
 
 import bs4
@@ -13,7 +12,17 @@ from bcml.core import (
     request,
     locale_handler,
 )
-from bcml.core.io import command, config, data, file_handler, json_file, lib, path
+from bcml.core.io import (
+    command,
+    config,
+    data,
+    file_handler,
+    json_file,
+    lib,
+    path,
+    xml_parse,
+    audio,
+)
 
 
 class Apk:
@@ -147,6 +156,7 @@ class Apk:
         if self.original_extracted_path.has_files():
             self.copy_extracted()
             self.copy_packs()
+            self.libs = self.get_libs()
             return
 
         if not self.check_display_apktool_error():
@@ -593,15 +603,9 @@ class Apk:
 
     @staticmethod
     def from_apk_path(apk_path: path.Path) -> "Apk":
-        command = f"aapt dump badging {apk_path}"
-        process = subprocess.Popen(
-            command,
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            stdin=subprocess.PIPE,
-        )
-        output = process.communicate()[0].decode("utf-8")
+        cmd = f'aapt dump badging "{apk_path}"'
+        result = command.Command(cmd).run()
+        output = result.result
         version_name = ""
         package_name = ""
         for line in output.splitlines():
@@ -635,7 +639,9 @@ class Apk:
         return self.get_display_string()
 
     def get_libnative_path(self, architecture: str) -> "path.Path":
-        return self.get_lib_path(architecture).add("libnative-lib.so")
+        if self.game_version >= game_version.GameVersion.from_string("7.0.0"):
+            return self.get_lib_path(architecture).add("libnative-lib.so")
+        return self.get_lib_path(architecture).add("libbattlecats-jni.so")
 
     def parse_libnative(self, architecture: str) -> Optional["lib.Lib"]:
         path = self.get_libnative_path(architecture)
@@ -648,8 +654,8 @@ class Apk:
         if libnative is None:
             print(f"Could not find libnative for {architecture}")
             return
-        libnative.add_library(library_path)  # type: ignore
-        libnative.write()  # type: ignore
+        libnative.add_library(library_path)
+        libnative.write()
         self.add_to_lib_folder(architecture, library_path)
 
     def get_lib_path(self, architecture: str) -> "path.Path":
@@ -742,3 +748,24 @@ class Apk:
         if not selected_apk:
             return None
         return Apk.from_format_string(selected_apk)
+
+    def get_manifest_path(self) -> "path.Path":
+        return self.extracted_path.add("AndroidManifest.xml")
+
+    def parse_manifest(self) -> "xml_parse.XML":
+        return xml_parse.XML(self.get_manifest_path().read())
+
+    def set_manifest(self, manifest: "xml_parse.XML"):
+        manifest.to_file(self.get_manifest_path())
+
+    def remove_arcs(self, arcs: list[str]):
+        for arc in arcs:
+            self.get_lib_path(arc).remove()
+
+    def add_asset(self, asset_path: "path.Path"):
+        asset_path.copy(self.extracted_path.add("assets"))
+
+    def add_audio(self, audio: "audio.AudioFile"):
+        audio.caf_to_little_endian().save(
+            self.extracted_path.add("assets").add(audio.get_bc_file_name())
+        )
