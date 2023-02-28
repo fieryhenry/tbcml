@@ -124,7 +124,10 @@ class Path:
 
     def remove(self):
         if self.exists():
-            os.remove(self.path)
+            if self.is_directory():
+                self.remove_tree()
+            else:
+                os.remove(self.path)
 
     def has_files(self) -> bool:
         return len(os.listdir(self.path)) > 0
