@@ -1730,7 +1730,7 @@ class EvolveItems:
         self.evolve_items = evolve_items
 
     @staticmethod
-    def from_unit_buy_list(raw_data: list[int]) -> "EvolveItems":
+    def from_unit_buy_list(raw_data: list[int], start_index: int) -> "EvolveItems":
         """Creates a new EvolveItems object from a row from unitbuy.csv.
 
         Args:
@@ -1740,9 +1740,9 @@ class EvolveItems:
             EvolveItems: The EvolveItems object.
         """
         items: list[EvolveItem] = []
-        for i in range(10):
-            item_id = raw_data[28 + i * 2]
-            amount = raw_data[29 + i * 2]
+        for i in range(5):
+            item_id = raw_data[start_index + i * 2]
+            amount = raw_data[start_index + 1 + i * 2]
             items.append(EvolveItem(item_id, amount))
         return EvolveItems(items)
 
