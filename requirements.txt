@@ -1,5 +1,7 @@
 beautifulsoup4==4.11.2
 cloudscraper==1.2.68
+cryptography==39.0.0
+ffmpeg_python==0.2.0
 lief==0.12.3
 numpy==1.24.1
 opencv_python_headless==4.7.0.68
