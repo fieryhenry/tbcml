@@ -11,6 +11,7 @@ from bcml.core import (
     mods,
     request,
     locale_handler,
+    server_handler,
 )
 from bcml.core.io import (
     command,
@@ -411,8 +412,13 @@ class Apk:
             progress_callback = self.progress
         if self.apk_path.exists():
             return True
-        if self.country_code == country_code.CountryCode.EN:
-            return self.download_apk_en(progress_callback)
+        if (
+            self.country_code == country_code.CountryCode.EN
+            or self.country_code == country_code.CountryCode.JP
+        ):
+            return self.download_apk_en(
+                self.country_code == country_code.CountryCode.EN, progress_callback
+            )
         else:
             url = self.get_download_url()
             scraper = cloudscraper.create_scraper()  # type: ignore
@@ -438,11 +444,12 @@ class Apk:
 
     def download_apk_en(
         self,
+        is_en: bool = True,
         progress_callback: Optional[Callable[[float, int, int, bool], None]] = None,
     ) -> bool:
         if progress_callback is None:
             progress_callback = self.progress
-        urls = Apk.get_en_apk_urls("the-battle-cats")
+        urls = Apk.get_en_apk_urls("the-battle-cats" if is_en else "the-battle-cats-jp")
         if not urls:
             print("Failed to get APK URLs")
             return False
@@ -552,7 +559,7 @@ class Apk:
     def get_display_string(self) -> str:
         return f"{self.game_version.format()} <dark_green>({self.country_code})</>"
 
-    def download_server_files(
+    def download_server_files_v1(
         self, progress_callback: Optional[Callable[[float, int, int], None]] = None
     ):
         if progress_callback is None:
@@ -587,6 +594,14 @@ class Apk:
             res = request.RequestHandler(url).get()
             file_path.write(data.Data(res.content))
             progress_callback(i / total, i, total - 1)
+        self.copy_server_files()
+
+    def download_server_files(
+        self,
+        progress_callback: Optional[Callable[[float, int, int, bool], None]] = None,
+    ):
+        sfh = server_handler.ServerFileHandler(self)
+        sfh.extract_all(progress_callback)
         self.copy_server_files()
 
     def copy_server_files(self):
@@ -688,7 +703,7 @@ class Apk:
                 "on_change": "reload",
             }
         }
-        json = json_file.JsonFile.from_json(json_data)
+        json = json_file.JsonFile.from_object(json_data)
         return json
 
     def add_libgadget_config(self, used_arcs: list[str]):
@@ -769,3 +784,18 @@ class Apk:
         audio.caf_to_little_endian().save(
             self.extracted_path.add("assets").add(audio.get_bc_file_name())
         )
+
+    def get_asset(self, asset_name: str) -> "path.Path":
+        return self.extracted_path.add("assets").add(asset_name)
+
+    def get_download_tsvs(self) -> list["path.Path"]:
+        base_name = "download_%s.tsv"
+        files: list["path.Path"] = []
+        counter = 0
+        while True:
+            file = self.get_asset(base_name % counter)
+            if not file.exists():
+                break
+            files.append(file)
+            counter += 1
+        return files

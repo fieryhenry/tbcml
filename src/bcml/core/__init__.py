@@ -8,6 +8,7 @@ from bcml.core import (
     request,
     game_version,
     mods,
+    server_handler,
 )
 
 __all__ = [
@@ -20,4 +21,5 @@ __all__ = [
     "request",
     "game_version",
     "mods",
+    "server_handler",
 ]
