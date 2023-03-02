@@ -2,7 +2,7 @@ import enum
 from typing import Any, Optional, Union
 from bcml.core.game_data.cat_base import unit, enemies
 from bcml.core.game_data import pack, bc_anim
-from bcml.core import io, country_code
+from bcml.core import io
 
 
 class FormType(enum.Enum):
@@ -295,7 +295,21 @@ class Stats:
             list[int]: The extended raw stats data.
         """
         length = 108
-        raw_data = raw_data + [0] * (length - len(raw_data))
+        amount = length - len(raw_data)
+        required = (
+            [55, -1],
+            [57, -1],
+            [63, 1],
+            [66, -1],
+        )
+        original_length = len(raw_data)
+
+        raw_data = raw_data + [0] * amount
+        for index, value in required:
+            if index < original_length:
+                continue
+            raw_data[index] = value
+
         return raw_data
 
     def assign(self, raw_data: list[int]):
@@ -614,6 +628,7 @@ class Stats:
         self.curse = enemy_stats.curse.copy()
         self.target_aku = has_targeted_effect
 
+
 class Anim:
     def __init__(self, cat_id: int, form: FormType, anim: "bc_anim.Anim"):
         self.cat_id = cat_id
@@ -694,6 +709,10 @@ class Anim:
     def set_cat_id(self, cat_id: int):
         self.cat_id = cat_id
         self.anim.set_cat_id(cat_id, self.form.value)
+
+    def set_form(self, form: FormType):
+        self.form = form
+        self.anim.set_cat_id(self.cat_id, form.value)
 
     def import_enemy_anim(self, enemy_anim: "enemies.Anim"):
         self.anim.imgcut = enemy_anim.anim.imgcut.copy()
@@ -832,6 +851,11 @@ class Form:
         self.stats.cat_id = cat_id
         self.anim.set_cat_id(cat_id)
 
+    def set_form(self, form: FormType):
+        self.form = form
+        self.stats.form = form
+        self.anim.set_form(form)
+
     def import_enemy(self, enemy: "enemies.Enemy"):
         self.name = enemy.name
         self.description = enemy.description[1:]
@@ -902,6 +926,8 @@ class UnitBuyData:
         return raw_data
 
     def assign(self, raw_data: list[int]):
+        # tf = true form
+        # ff = forth form
         self.stage_unlock = raw_data[0]
         self.purchase_cost = raw_data[1]
         self.upgrade_costs = raw_data[2:12]
@@ -911,16 +937,18 @@ class UnitBuyData:
         self.chapter_unlock = raw_data[15]
         self.sell_price = raw_data[16]
         self.gatya_rarity = GatchaRarity(raw_data[17])
-        self.original_max_level = raw_data[18]
-        self.unknown_19 = raw_data[19]
+        self.original_max_levels = raw_data[18], raw_data[19]
         self.force_true_form_level = raw_data[20]
-        self.second_form_levels = raw_data[21], raw_data[22]
-        self.true_form_id = raw_data[23]
-        self.unknown_24 = raw_data[24]
-        self.third_form_levels = raw_data[25], raw_data[26]
-        self.evolve_cost = raw_data[27]
-        self.evolve_items = unit.EvolveItems.from_unit_buy_list(raw_data)
-        self.unknown_48 = raw_data[48]
+        self.second_form_unlock_level = raw_data[21]
+        self.unknown_22 = raw_data[22]
+        self.tf_id = raw_data[23]
+        self.ff_id = raw_data[24]
+        self.evolve_level_tf = raw_data[25]
+        self.evolve_level_ff = raw_data[26]
+        self.evolve_cost_tf = raw_data[27]
+        self.evolve_items_tf = unit.EvolveItems.from_unit_buy_list(raw_data, 28)
+        self.evolve_cost_ff = raw_data[38]
+        self.evolve_items_ff = unit.EvolveItems.from_unit_buy_list(raw_data, 39)
         self.max_upgrade_level_no_catseye = raw_data[49]
         self.max_upgrade_level_catseye = raw_data[50]
         self.max_plus_upgrade_level = raw_data[51]
@@ -928,7 +956,7 @@ class UnitBuyData:
         self.unknown_53 = raw_data[53]
         self.unknown_54 = raw_data[54]
         self.unknown_55 = raw_data[55]
-        self.evolve_count = raw_data[56]
+        self.catseye_usage_pattern = raw_data[56]
         self.game_version = raw_data[57]
         self.np_sell_price = raw_data[58]
         self.unknown_59 = raw_data[59]
@@ -947,16 +975,18 @@ class UnitBuyData:
             self.chapter_unlock,
             self.sell_price,
             self.gatya_rarity.value,
-            self.original_max_level,
-            self.unknown_19,
+            *self.original_max_levels,
             self.force_true_form_level,
-            *self.second_form_levels,
-            self.true_form_id,
-            self.unknown_24,
-            *self.third_form_levels,
-            self.evolve_cost,
-            *self.evolve_items.to_list(),
-            self.unknown_48,
+            self.second_form_unlock_level,
+            self.unknown_22,
+            self.tf_id,
+            self.ff_id,
+            self.evolve_level_tf,
+            self.evolve_level_ff,
+            self.evolve_cost_tf,
+            *self.evolve_items_tf.to_list(),
+            self.evolve_cost_ff,
+            *self.evolve_items_ff.to_list(),
             self.max_upgrade_level_no_catseye,
             self.max_upgrade_level_catseye,
             self.max_plus_upgrade_level,
@@ -964,7 +994,7 @@ class UnitBuyData:
             self.unknown_53,
             self.unknown_54,
             self.unknown_55,
-            self.evolve_count,
+            self.catseye_usage_pattern,
             self.game_version,
             self.np_sell_price,
             self.unknown_59,
@@ -998,6 +1028,27 @@ class UnitBuyData:
 
     def is_obtainable(self) -> bool:
         return self.game_version != -1
+
+    def set_max_level(
+        self,
+        max_base: int,
+        max_plus: int,
+        level_until_catsye_req: Optional[int] = None,
+        original_base_max: Optional[int] = None,
+        original_plus_max: Optional[int] = None,
+    ):
+        self.max_upgrade_level_catseye = max_base
+        self.max_plus_upgrade_level = max_plus
+        if level_until_catsye_req is not None:
+            self.max_upgrade_level_no_catseye = level_until_catsye_req
+        if original_base_max is not None:
+            self.original_max_levels = original_base_max, self.original_max_levels[1]
+        if original_plus_max is not None:
+            self.original_max_levels = self.original_max_levels[0], original_plus_max
+
+    def reset_upgrade_costs(self):
+        for i in range(len(self.upgrade_costs)):
+            self.upgrade_costs[i] = 0
 
 
 class UnitBuy:
@@ -1324,24 +1375,46 @@ class NyankoPictureBook:
         return not self.__eq__(other)
 
 
+class EvolveTextText:
+    def __init__(self, evolve: int, text: list[str]):
+        self.text = text
+        self.evolve = evolve
+
+    def serialize(self) -> dict[str, Any]:
+        return {"text": self.text}
+
+    @staticmethod
+    def deserialize(evolve: int, data: dict[str, Any]) -> "EvolveTextText":
+        return EvolveTextText(evolve, data["text"])
+
+    def __str__(self):
+        return f"evolve: {self.evolve}, text: {self.text}"
+
+    def __repr__(self):
+        return self.__str__()
+
+
 class EvolveText:
-    def __init__(self, text: dict[int, list[str]]):
+    def __init__(self, text: dict[int, dict[int, EvolveTextText]]):
         self.text = text
 
     def serialize(self) -> dict[str, Any]:
-        return {"text": {cat_id: text for cat_id, text in self.text.items()}}
+        return {
+            "text": {
+                cat_id: {evolve: text.serialize() for evolve, text in evolves.items()}
+                for cat_id, evolves in self.text.items()
+            }
+        }
 
     @staticmethod
-    def deserialize(data: dict[str, Any]) -> "EvolveText":
-        return EvolveText({cat_id: text for cat_id, text in data["text"].items()})
-
-    @staticmethod
-    def get_file_name(cc: "country_code.CountryCode") -> str:
-        return f"unitevolve_{cc.get_language()}.csv"
+    def get_file_name(lang: str) -> str:
+        return f"unitevolve_{lang}.csv"
 
     @staticmethod
     def from_game_data(game_data: "pack.GamePacks") -> "EvolveText":
-        file = game_data.find_file(EvolveText.get_file_name(game_data.country_code))
+        file = game_data.find_file(
+            EvolveText.get_file_name(game_data.localizable.get_lang())
+        )
         if file is None:
             return EvolveText.create_empty()
 
@@ -1350,13 +1423,26 @@ class EvolveText:
             delimeter=io.bc_csv.Delimeter.from_country_code_res(game_data.country_code),
             remove_empty=False,
         )
-        text: dict[int, list[str]] = {}
+        text: dict[int, dict[int, EvolveTextText]] = {}
         for cat_id, line in enumerate(csv.lines):
-            text[cat_id] = io.data.Data.data_list_string_list(line)
+            text[cat_id] = {}
+            # 1st evolve is the first 3 items
+            # 2nd evolve is the next 3 items
+
+            # 1st evolve
+            text[cat_id][0] = EvolveTextText(
+                0, io.data.Data.data_list_string_list(line[:3])
+            )
+            # 2nd evolve
+            text[cat_id][1] = EvolveTextText(
+                1, io.data.Data.data_list_string_list(line[3:6])
+            )
         return EvolveText(text)
 
     def to_game_data(self, game_data: "pack.GamePacks"):
-        file = game_data.find_file(EvolveText.get_file_name(game_data.country_code))
+        file = game_data.find_file(
+            EvolveText.get_file_name(game_data.localizable.get_lang())
+        )
         if file is None:
             return None
 
@@ -1366,14 +1452,19 @@ class EvolveText:
             remove_empty=False,
         )
         for cat_id, line in self.text.items():
-            csv.set_line(cat_id, line)
+            first_evolve = line[0]
+            second_evolve = line[1]
+            csv.set_line(
+                cat_id,
+                first_evolve.text + second_evolve.text,
+            )
 
         game_data.set_file(
-            EvolveText.get_file_name(game_data.country_code), csv.to_data()
+            EvolveText.get_file_name(game_data.localizable.get_lang()), csv.to_data()
         )
 
     def set(self, cat: "Cat"):
-        self.text[cat.cat_id] = cat.evolve_text or []
+        self.text[cat.cat_id] = cat.evolve_text or {}
 
     @staticmethod
     def create_empty() -> "EvolveText":
@@ -1396,7 +1487,7 @@ class Cat:
         unit_buy_data: UnitBuyData,
         talent: Optional["Talent"],
         nyanko_picture_book_data: NyankoPictureBookData,
-        evolve_text: Optional[list[str]],
+        evolve_text: Optional[dict[int, EvolveTextText]],
     ):
         if isinstance(cat_id, str):
             raise ValueError("cat_id must be an int")
@@ -1439,8 +1530,8 @@ class Cat:
         return f"unit{io.data.PaddedInt(cat_id+1, 3)}.csv"
 
     @staticmethod
-    def get_name_file_name(cat_id: int, cc: "country_code.CountryCode"):
-        return f"Unit_Explanation{cat_id+1}_{cc.get_language()}.csv"
+    def get_name_file_name(cat_id: int, lang: str):
+        return f"Unit_Explanation{cat_id+1}_{lang}.csv"
 
     @staticmethod
     def from_game_data(
@@ -1453,7 +1544,7 @@ class Cat:
     ) -> Optional["Cat"]:
         stat_file = game_data.find_file(Cat.get_stat_file_name(cat_id))
         name_file = game_data.find_file(
-            Cat.get_name_file_name(cat_id, game_data.country_code)
+            Cat.get_name_file_name(cat_id, game_data.localizable.get_lang())
         )
         if stat_file is None:
             return None
@@ -1514,7 +1605,7 @@ class Cat:
     def to_game_data(self, game_data: "pack.GamePacks"):
         stat_file = game_data.find_file(Cat.get_stat_file_name(self.cat_id))
         name_file = game_data.find_file(
-            Cat.get_name_file_name(self.cat_id, game_data.country_code)
+            Cat.get_name_file_name(self.cat_id, game_data.localizable.get_lang())
         )
         if stat_file is None or name_file is None:
             return None
@@ -1535,7 +1626,7 @@ class Cat:
 
         game_data.set_file(Cat.get_stat_file_name(self.cat_id), stat_csv.to_data())
         game_data.set_file(
-            Cat.get_name_file_name(self.cat_id, game_data.country_code),
+            Cat.get_name_file_name(self.cat_id, game_data.localizable.get_lang()),
             name_csv.to_data(),
         )
 
@@ -1547,9 +1638,11 @@ class Cat:
     def set_form(self, form: Union[FormType, int], value: Form):
         if isinstance(form, int):
             form = FormType.from_index(form)
-        value.form = form
-        value.set_cat_id(self.cat_id)
-        self.forms[form] = value
+        new_form = value.copy()
+        new_form.form = form
+        new_form.set_form(form)
+        new_form.set_cat_id(self.cat_id)
+        self.forms[form] = new_form
 
     def set_cat_id(self, cat_id: int):
         self.cat_id = cat_id
@@ -1649,7 +1742,7 @@ class Cats:
         return io.path.Path("catbase").add("cats.json")
 
     def add_to_zip(self, zip: "io.zip.Zip"):
-        cats_json = io.json_file.JsonFile.from_json(self.serialize())
+        cats_json = io.json_file.JsonFile.from_object(self.serialize())
         zip.add_file(Cats.get_cats_json_file_name(), cats_json.to_data())
 
     @staticmethod
