@@ -602,10 +602,12 @@ class Apk:
             Callable[[float, int, int], None]
         ] = None,
         progress_callback: Optional[Callable[[int, int], None]] = None,
+        copy: bool = True,
     ):
         sfh = server_handler.ServerFileHandler(self)
         sfh.extract_all(progress_callback_individual, progress_callback)
-        self.copy_server_files()
+        if copy:
+            self.copy_server_files()
 
     def copy_server_files(self):
         server_path = self.get_server_path(self.country_code)

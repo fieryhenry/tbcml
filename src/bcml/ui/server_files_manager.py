@@ -31,9 +31,6 @@ class ServerFilesManager(QtWidgets.QDialog):
         self._cc_combo.currentTextChanged.connect(self.on_cc_changed)  # type: ignore
         self._layout.addWidget(self._cc_combo)
 
-        self._layout.addWidget(
-            QtWidgets.QLabel(self.locale_manager.search_key("server_files_label"))
-        )
         self._server_files = ServerFilesList(
             country_code.CountryCode.from_code(ccs[0]), self
         )
@@ -96,8 +93,10 @@ class ServerFilesManager(QtWidgets.QDialog):
         apk.download_server_files(
             self.progress_bar.set_progress_full_no_text,
             self.progress_bar.set_progress_no_bar,
+            False,
         )
         self.progress_bar.hide()
+        apk.copy_packs()
 
 
 class ServerFilesList(QtWidgets.QWidget):
