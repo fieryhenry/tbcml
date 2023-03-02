@@ -779,7 +779,7 @@ class Localizable:
         Args:
             zip (io.zip.Zip): The zip file.
         """
-        json = io.json_file.JsonFile.from_json(self.serialize())
+        json = io.json_file.JsonFile.from_object(self.serialize())
         zip.add_file(Localizable.get_json_file_name(), json.to_data())
 
     @staticmethod

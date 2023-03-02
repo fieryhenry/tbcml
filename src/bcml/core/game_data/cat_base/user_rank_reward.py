@@ -188,7 +188,7 @@ class UserRankReward:
         return io.path.Path("catbase").add("user_rank_reward.json")
 
     def add_to_zip(self, zip_file: "io.zip.Zip"):
-        json = io.json_file.JsonFile.from_json(self.serialize())
+        json = io.json_file.JsonFile.from_object(self.serialize())
         zip_file.add_file(UserRankReward.get_json_file_path(), json.to_data())
 
     @staticmethod

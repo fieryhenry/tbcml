@@ -305,7 +305,7 @@ class ItemShop:
         Args:
             zip_file (io.zip.Zip): The zip file.
         """
-        json = io.json_file.JsonFile.from_json(self.serialize())
+        json = io.json_file.JsonFile.from_object(self.serialize())
         zip_file.add_file(ItemShop.get_json_file_path(), json.to_data())
 
     @staticmethod

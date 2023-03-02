@@ -757,7 +757,7 @@ class Cannons:
         return Cannons.get_zip_folder().add("cannons.json")
 
     def add_to_zip(self, zip: "io.zip.Zip"):
-        json = io.json_file.JsonFile.from_json(self.serialize())
+        json = io.json_file.JsonFile.from_object(self.serialize())
         zip.add_file(Cannons.get_zip_json_file_path(), json.to_data())
 
     @staticmethod

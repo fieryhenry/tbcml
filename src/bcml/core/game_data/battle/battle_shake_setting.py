@@ -257,7 +257,7 @@ class ShakeEffects:
         Args:
             zip (io.zip.Zip): The mod zip to add the ShakeEffects to.
         """
-        json = io.json_file.JsonFile.from_json(self.serialize())
+        json = io.json_file.JsonFile.from_object(self.serialize())
         path = self.get_zip_json_file_path()
         zip.add_file(path, json.to_data())
 

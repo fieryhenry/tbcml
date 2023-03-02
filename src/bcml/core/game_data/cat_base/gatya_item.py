@@ -484,7 +484,7 @@ class GatyaItems:
         return io.path.Path("catbase").add("gatya_items.json")
 
     def add_to_zip(self, zip: "io.zip.Zip"):
-        items_json = io.json_file.JsonFile.from_json(self.serialize())
+        items_json = io.json_file.JsonFile.from_object(self.serialize())
         zip.add_file(GatyaItems.get_items_json_file_name(), items_json.to_data())
 
     @staticmethod
@@ -504,7 +504,7 @@ class GatyaItems:
         Args:
             other (GatyaItems): _description_
             game_data (pack.GamePacks): The game data to check if the imported data is different from the game data. This is used to prevent overwriting the current data with base game data.
-        """        
+        """
         gd_items = GatyaItems.from_game_data(game_data)
         all_keys = set(gd_items.items.keys())
         all_keys.update(other.items.keys())

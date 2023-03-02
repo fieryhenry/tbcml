@@ -28,7 +28,7 @@ class ModManager:
             self.save_mod_json()
 
     def init_new_json(self):
-        self.json_file = io.json_file.JsonFile.from_json({"mods": {}})
+        self.json_file = io.json_file.JsonFile.from_object({"mods": {}})
 
     def save_mod_json(self):
         self.json_file.save(self.mod_info_json)

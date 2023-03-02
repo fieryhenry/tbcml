@@ -370,7 +370,7 @@ class Bgs:
         Args:
             zip (io.zip.Zip): The mod zip to add the Bgs object to.
         """
-        json = io.json_file.JsonFile.from_json(self.serialize())
+        json = io.json_file.JsonFile.from_object(self.serialize())
         path = Bgs.get_zip_json_file_path()
         zip.add_file(path, json.to_data())
 

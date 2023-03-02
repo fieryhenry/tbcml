@@ -667,7 +667,7 @@ class Enemies:
         return io.path.Path("catbase").add("enemies.json")
 
     def add_to_zip(self, zip: "io.zip.Zip"):
-        enemies_json = io.json_file.JsonFile.from_json(self.serialize())
+        enemies_json = io.json_file.JsonFile.from_object(self.serialize())
         zip.add_file(Enemies.get_enemies_json_file_name(), enemies_json.to_data())
 
     @staticmethod

@@ -165,7 +165,7 @@ class SchemeItems:
         return io.path.Path("catbase").add("scheme_items.json")
 
     def add_to_zip(self, zip_file: "io.zip.Zip"):
-        json = io.json_file.JsonFile.from_json(self.serialize())
+        json = io.json_file.JsonFile.from_object(self.serialize())
         zip_file.add_file(SchemeItems.get_json_file_path(), json.to_data())
 
     @staticmethod

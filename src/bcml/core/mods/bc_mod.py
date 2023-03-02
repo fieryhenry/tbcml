@@ -75,7 +75,7 @@ class Mod:
 
         self.scripts.add_to_zip(zip_file)
 
-        json = io.json_file.JsonFile.from_json(self.create_mod_json())
+        json = io.json_file.JsonFile.from_object(self.create_mod_json())
         zip_file.add_file(io.path.Path("mod.json"), json.to_data())
         return zip_file.to_data()
 

@@ -501,7 +501,7 @@ class Gatya:
         return io.path.Path("catbase").add("gatya.json")
 
     def add_to_zip(self, zip: "io.zip.Zip"):
-        json = io.json_file.JsonFile.from_json(self.serialize())
+        json = io.json_file.JsonFile.from_object(self.serialize())
         zip.add_file(self.get_json_file_path(), json.to_data())
 
     @staticmethod

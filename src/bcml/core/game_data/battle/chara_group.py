@@ -190,7 +190,7 @@ class CharaGroups:
         Args:
             zip (io.zip.Zip): The mod zip file to add the CharaGroups to.
         """
-        json = io.json_file.JsonFile.from_json(self.serialize())
+        json = io.json_file.JsonFile.from_object(self.serialize())
         zip.add_file(self.get_zip_json_file_path(), json.to_data())
 
     @staticmethod

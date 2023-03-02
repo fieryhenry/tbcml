@@ -40,7 +40,7 @@ class Engineer:
         return io.path.Path("gamototo").add("ototo").add("engineer.json")
 
     def add_to_zip(self, zip: "io.zip.Zip"):
-        json = io.json_file.JsonFile.from_json(self.serialize())
+        json = io.json_file.JsonFile.from_object(self.serialize())
         zip.add_file(Engineer.get_json_file_path(), json.to_data())
 
     @staticmethod

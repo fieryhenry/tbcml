@@ -58,7 +58,7 @@ class MainChara:
 
     def to_zip(self, zip: "io.zip.Zip"):
         path = MainChara.get_zip_path()
-        json_data = io.json_file.JsonFile.from_json(self.serialize()).to_data()
+        json_data = io.json_file.JsonFile.from_object(self.serialize()).to_data()
         zip.add_file(path.add("main_chara.json"), json_data)
 
     @staticmethod

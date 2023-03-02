@@ -1529,7 +1529,7 @@ class Maps:
         return io.path.Path("maps").add("maps.json")
 
     def add_to_zip(self, zip: "io.zip.Zip"):
-        json = io.json_file.JsonFile.from_json(self.serialize())
+        json = io.json_file.JsonFile.from_object(self.serialize())
         zip.add_file(Maps.get_maps_json_file_name(), json.to_data())
 
     @staticmethod
@@ -1552,7 +1552,7 @@ class Maps:
         Args:
             other (Maps): _description_
             game_data (pack.GamePacks): The game data to check if the imported data is different from the game data. This is used to prevent overwriting the current data with base game data.
-        """        
+        """
         gd_maps = Maps.from_game_data(game_data)
         all_keys = set(gd_maps.maps.keys())
         all_keys.update(other.maps.keys())
