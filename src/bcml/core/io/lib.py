@@ -8,6 +8,7 @@ class Lib:
         self.architecture = architecture
         self.path = path
         self.lib = self.parse()  # type: ignore
+        self.data = path.read()
 
     def parse(self) -> lief.ELF.Binary:  # type: ignore
         return lief.parse(str(self.path))  # type: ignore
@@ -17,6 +18,13 @@ class Lib:
 
     def write(self):
         self.lib.write(str(self.path))  # type: ignore
+
+    def search(self, search: "data.Data", start: int = 0):
+        return self.data.search(search, start)
+
+    def read_int_list(self, start: int, length: int) -> list[int]:
+        self.data.set_pos(start)
+        return self.data.read_int_list(length)
 
 
 class LibFiles:
