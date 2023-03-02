@@ -1,6 +1,6 @@
 from typing import Any, Optional
 from bcml.core.game_data import pack, bc_anim
-from bcml.core import io, country_code
+from bcml.core import io
 
 
 class Item:
@@ -179,7 +179,7 @@ class ItemShop:
         return "itemShopData.tsv"
 
     @staticmethod
-    def get_imgname(cc: "country_code.CountryCode") -> str:
+    def get_imgname(lang: str) -> str:
         """Get the name of the file containing the ItemShop icons.
 
         Args:
@@ -188,7 +188,7 @@ class ItemShop:
         Returns:
             str: The name of the file containing the ItemShop icons.
         """
-        return f"item000_{cc.get_language()}.png"
+        return f"item000_{lang}.png"
 
     @staticmethod
     def from_game_data(game_data: "pack.GamePacks") -> "ItemShop":
@@ -202,10 +202,10 @@ class ItemShop:
         """
         tsv_data = game_data.find_file(ItemShop.get_file_name())
         png_data = game_data.find_file(
-            f"item000_{game_data.country_code.get_language()}.png"
+            f"item000_{game_data.localizable.get_lang()}.png"
         )
         imgcut_data = game_data.find_file(
-            f"item000_{game_data.country_code.get_language()}.imgcut"
+            f"item000_{game_data.localizable.get_lang()}.imgcut"
         )
         if tsv_data is None or png_data is None or imgcut_data is None:
             return ItemShop.create_empty()
@@ -283,10 +283,10 @@ class ItemShop:
             imgcut.reconstruct_image()
             csv_data, png_data = imgcut.to_data()
             game_data.set_file(
-                f"item000_{game_data.country_code.get_language()}.png", png_data
+                f"item000_{game_data.localizable.get_lang()}.png", png_data
             )
             game_data.set_file(
-                f"item000_{game_data.country_code.get_language()}.imgcut", csv_data
+                f"item000_{game_data.localizable.get_lang()}.imgcut", csv_data
             )
             game_data.set_file(f"item000.imgcut", csv_data)
 

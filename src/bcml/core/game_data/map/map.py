@@ -1,7 +1,7 @@
 import enum
 from typing import Any, Optional
 from bcml.core.game_data import pack
-from bcml.core import io, country_code
+from bcml.core import io
 
 
 class StageNameNameType(enum.Enum):
@@ -850,9 +850,7 @@ class StageNameImage:
         )
 
     @staticmethod
-    def get_file_name(
-        stage_id: int, stage_index: int, cc: "country_code.CountryCode"
-    ) -> Optional[str]:
+    def get_file_name(stage_id: int, stage_index: int, lang: str) -> Optional[str]:
         map_index_type = MapIndexType.from_index(stage_id)
         if map_index_type is None:
             return None
@@ -862,7 +860,7 @@ class StageNameImage:
         relative_stage_id = stage_id - map_index_type.value
         relative_stage_id_str = io.data.PaddedInt(relative_stage_id, 3).to_str()
         stage_index_str = io.data.PaddedInt(stage_index, 2).to_str()
-        return f"mapsn{relative_stage_id_str}_{stage_index_str}_{map_stage_data_type.value.lower()}_{cc.get_language()}.png"
+        return f"mapsn{relative_stage_id_str}_{stage_index_str}_{map_stage_data_type.value.lower()}_{lang}.png"
 
     @staticmethod
     def from_game_data(
@@ -871,7 +869,7 @@ class StageNameImage:
         stage_index: int,
     ):
         file_name = StageNameImage.get_file_name(
-            stage_id, stage_index, game_data.country_code
+            stage_id, stage_index, game_data.localizable.get_lang()
         )
         if file_name is None:
             return None
@@ -886,7 +884,7 @@ class StageNameImage:
 
     def to_game_data(self, game_data: "pack.GamePacks"):
         file_name = StageNameImage.get_file_name(
-            self.stage_id, self.stage_index, game_data.country_code
+            self.stage_id, self.stage_index, game_data.localizable.get_lang()
         )
         if file_name is None:
             return
@@ -927,7 +925,7 @@ class MapNameImage:
         )
 
     @staticmethod
-    def get_file_name(stage_id: int, cc: "country_code.CountryCode") -> Optional[str]:
+    def get_file_name(stage_id: int, lang: str) -> Optional[str]:
         map_index_type = MapIndexType.from_index(stage_id)
         if map_index_type is None:
             return None
@@ -936,14 +934,16 @@ class MapNameImage:
             return None
         relative_stage_id = stage_id - map_index_type.value
         relative_stage_id_str = io.data.PaddedInt(relative_stage_id, 3).to_str()
-        return f"mapname{relative_stage_id_str}_{map_stage_data_type.value.lower()}_{cc.get_language()}.png"
+        return f"mapname{relative_stage_id_str}_{map_stage_data_type.value.lower()}_{lang}.png"
 
     @staticmethod
     def from_game_data(
         game_data: "pack.GamePacks",
         stage_id: int,
     ):
-        file_name = MapNameImage.get_file_name(stage_id, game_data.country_code)
+        file_name = MapNameImage.get_file_name(
+            stage_id, game_data.localizable.get_lang()
+        )
         if file_name is None:
             return None
         file = game_data.find_file(file_name)
@@ -955,7 +955,9 @@ class MapNameImage:
         )
 
     def to_game_data(self, game_data: "pack.GamePacks"):
-        file_name = MapNameImage.get_file_name(self.stage_id, game_data.country_code)
+        file_name = MapNameImage.get_file_name(
+            self.stage_id, game_data.localizable.get_lang()
+        )
         if file_name is None:
             return
         game_data.set_file(file_name, self.image.to_data())
@@ -1077,14 +1079,14 @@ class StageNameSet:
         )
 
     @staticmethod
-    def get_file_name(base_stage_id: int, cc: "country_code.CountryCode"):
+    def get_file_name(base_stage_id: int, lang: str):
         map_index_type = MapIndexType.from_index(base_stage_id)
         if map_index_type is None:
             raise ValueError(f"Invalid base stage id {base_stage_id}")
         name_str = map_index_type.get_stage_name_name_type()
         if name_str is None:
             raise ValueError(f"Invalid base stage id {base_stage_id}")
-        return f"StageName_{name_str.value}_{cc.get_language()}.csv"
+        return f"StageName_{name_str.value}_{lang}.csv"
 
     @staticmethod
     def from_game_data(
@@ -1097,7 +1099,9 @@ class StageNameSet:
         name_str = map_index_type.get_stage_name_name_type()
         if name_str is None:
             return None
-        file_name = StageNameSet.get_file_name(base_stage_id, game_data.country_code)
+        file_name = StageNameSet.get_file_name(
+            base_stage_id, game_data.localizable.get_lang()
+        )
         file = game_data.find_file(file_name)
         if file is None:
             return None
@@ -1121,7 +1125,7 @@ class StageNameSet:
         game_data: "pack.GamePacks",
     ) -> None:
         file_name = StageNameSet.get_file_name(
-            self.base_stage_id, game_data.country_code
+            self.base_stage_id, game_data.localizable.get_lang()
         )
         file = game_data.find_file(file_name)
         if file is None:

@@ -1,7 +1,7 @@
 from typing import Any, Optional
 from bcml.core.game_data.cat_base import unit
 from bcml.core.game_data import pack, bc_anim
-from bcml.core import io, country_code
+from bcml.core import io
 
 
 class Stats:
@@ -452,14 +452,16 @@ class Descriptions:
         return Descriptions(data["descriptions"])
 
     @staticmethod
-    def get_file_name(cc: "country_code.CountryCode") -> str:
-        return f"EnemyPictureBook_{cc.get_language()}.csv"
+    def get_file_name(lang: str) -> str:
+        return f"EnemyPictureBook_{lang}.csv"
 
     @staticmethod
     def from_game_data(game_data: "pack.GamePacks") -> "Descriptions":
         descriptions: dict[int, list[str]] = {}
         cc = game_data.country_code
-        file = game_data.find_file(Descriptions.get_file_name(cc))
+        file = game_data.find_file(
+            Descriptions.get_file_name(game_data.localizable.get_lang())
+        )
         if file is None:
             return Descriptions.create_empty()
         csv = io.bc_csv.CSV(
@@ -473,7 +475,9 @@ class Descriptions:
 
     def to_game_data(self, game_data: "pack.GamePacks", names: dict[int, str]):
         cc = game_data.country_code
-        file = game_data.find_file(Descriptions.get_file_name(cc))
+        file = game_data.find_file(
+            Descriptions.get_file_name(game_data.localizable.get_lang())
+        )
         if file is None:
             return None
         csv = io.bc_csv.CSV(
@@ -488,7 +492,9 @@ class Descriptions:
             line.extend(description)
             csv.set_line(enemy_id, line)
 
-        game_data.set_file(Descriptions.get_file_name(cc), csv.to_data())
+        game_data.set_file(
+            Descriptions.get_file_name(game_data.localizable.get_lang()), csv.to_data()
+        )
 
     def set(self, enemy: "Enemy"):
         self.descriptions[enemy.enemy_id] = enemy.description

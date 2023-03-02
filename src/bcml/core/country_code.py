@@ -3,15 +3,12 @@ import enum
 
 class CountryCode(enum.Enum):
     EN = "en"
-    JP = "ja"
-    KR = "ko"
+    JP = "jp"
+    KR = "kr"
     TW = "tw"
 
-    def get_language(self) -> str:
-        return self.value
-
     def get_code(self) -> str:
-        return self.name.lower()
+        return self.value
 
     def get_patching_code(self) -> str:
         return self.get_code().replace("jp", "")
@@ -24,8 +21,9 @@ class CountryCode(enum.Enum):
 
     @staticmethod
     def from_code(code: str) -> "CountryCode":
+        code = code.lower()
         for country_code in CountryCode:
-            if country_code.get_code() == code.lower():
+            if country_code.get_code() == code:
                 return country_code
         return CountryCode.EN
 
@@ -35,10 +33,10 @@ class CountryCode(enum.Enum):
 
     @staticmethod
     def get_all_str() -> list[str]:
-        return [country_code.name.lower() for country_code in CountryCode.get_all()]
+        return [country_code.get_code() for country_code in CountryCode.get_all()]
 
     def __str__(self) -> str:
-        return self.name.lower()
+        return self.get_code()
 
     def __repr__(self) -> str:
         return f"CountryCode.{self.name}"
