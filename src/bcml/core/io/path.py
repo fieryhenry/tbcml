@@ -30,9 +30,8 @@ class Path:
         if os.name == "nt":
             os.startfile(self.path)
         elif os.name == "posix":
-            command.Command(
-                f"xdg-open {self.path} &", display_output=False
-            ).run_in_thread()
+            cmd = f"dbus-send --session --dest=org.freedesktop.FileManager1 --type=method_call --print-reply /org/freedesktop/FileManager1 org.freedesktop.FileManager1.ShowItems array:string:'file://{self.path}' string:''"
+            command.Command(cmd, display_output=False).run_in_thread()
         elif os.name == "mac":
             command.Command(f"open {self.path}", display_output=False).run()
         else:
@@ -167,11 +166,11 @@ class Path:
             if regex is None:
                 return [self.add(file) for file in os.listdir(self.path)]
             else:
-                return [
-                    self.add(file)
-                    for file in os.listdir(self.path)
-                    if re.match(regex, file)
-                ]
+                files: list["Path"] = []
+                for file in os.listdir(self.path):
+                    if re.search(regex, file):
+                        files.append(self.add(file))
+                return files
         return []
 
     def get_dirs(self) -> list["Path"]:

@@ -1,3 +1,4 @@
+from typing import Optional
 from PyQt5 import QtCore, QtWidgets
 
 from bcml.core import country_code, game_version, io, locale_handler
@@ -33,7 +34,9 @@ class ServerFilesManager(QtWidgets.QDialog):
         self._layout.addWidget(
             QtWidgets.QLabel(self.locale_manager.search_key("server_files_label"))
         )
-        self._server_files = ServerFilesList(self)
+        self._server_files = ServerFilesList(
+            country_code.CountryCode.from_code(ccs[0]), self
+        )
         self._layout.addWidget(self._server_files)
 
         self.refresh_button = QtWidgets.QPushButton(
@@ -56,7 +59,7 @@ class ServerFilesManager(QtWidgets.QDialog):
 
         self.progress_bar = ui_progress.ProgressBar(
             self.locale_manager.search_key("downloading_missing_server_files_progress"),
-            self.on_progress,
+            None,
             self,
         )
         self.progress_bar.hide()
@@ -88,51 +91,126 @@ class ServerFilesManager(QtWidgets.QDialog):
         self, gv: game_version.GameVersion, cc_obj: country_code.CountryCode
     ):
         apk = io.apk.Apk(gv, cc_obj)
-        apk.download_server_files(self.progress_bar.set_progress_full)
+        apk.extract()
+        apk.copy_packs()
+        apk.download_server_files(
+            self.progress_bar.set_progress_full_no_text,
+            self.progress_bar.set_progress_no_bar,
+        )
         self.progress_bar.hide()
-
-    def on_progress(self, progress: int, total: int):
-        self._server_files.refresh()
 
 
 class ServerFilesList(QtWidgets.QWidget):
-    def __init__(self, cc: country_code.CountryCode):
-        super(ServerFilesList, self).__init__()
+    def __init__(
+        self, cc: country_code.CountryCode, parent: Optional[QtWidgets.QWidget] = None
+    ):
+        super(ServerFilesList, self).__init__(parent)
         self._cc = cc
+        self.server_files_dir = io.apk.Apk.get_server_path(self._cc).generate_dirs()
+        self.locale_manager = locale_handler.LocalManager.from_config()
         self.setup_ui()
 
     def setup_ui(self):
         self._layout = QtWidgets.QVBoxLayout(self)
         self.setLayout(self._layout)
-        self._server_files_list = QtWidgets.QListWidget(self)
-        self._layout.addWidget(self._server_files_list)
+        self.tab_widget = QtWidgets.QTabWidget(self)
+        self._layout.addWidget(self.tab_widget)
 
-        self._server_files_list.setContextMenuPolicy(
-            QtCore.Qt.ContextMenuPolicy.CustomContextMenu
+        self.pack_file_tab = QtWidgets.QWidget()
+        self.tab_widget.addTab(
+            self.pack_file_tab, self.locale_manager.search_key("pack_files")
         )
-        self._server_files_list.customContextMenuRequested.connect(self.on_context_menu)  # type: ignore
+        self.pack_file_layout = QtWidgets.QVBoxLayout(self.pack_file_tab)
+        self.pack_file_tab.setLayout(self.pack_file_layout)
+        self.pack_file_list = FileList(self.pack_file_tab)
+        self.pack_file_layout.addWidget(self.pack_file_list)
 
-        # scroll to bottom on new item
-        self._server_files_list.itemChanged.connect(  # type: ignore
-            lambda x: self._server_files_list.scrollToBottom()  # type: ignore
+        self.list_file_tab = QtWidgets.QWidget()
+        self.tab_widget.addTab(
+            self.list_file_tab, self.locale_manager.search_key("list_files")
         )
+        self.list_file_layout = QtWidgets.QVBoxLayout(self.list_file_tab)
+        self.list_file_tab.setLayout(self.list_file_layout)
+        self.list_file_list = FileList(self.list_file_tab)
+        self.list_file_layout.addWidget(self.list_file_list)
+
+        self.audio_file_tab = QtWidgets.QWidget()
+        self.tab_widget.addTab(
+            self.audio_file_tab, self.locale_manager.search_key("audio_files")
+        )
+        self.audio_file_layout = QtWidgets.QVBoxLayout(self.audio_file_tab)
+        self.audio_file_tab.setLayout(self.audio_file_layout)
+        self.audio_file_list = FileList(self.audio_file_tab)
+        self.audio_file_layout.addWidget(self.audio_file_list)
+
+        self.tab_widget.currentChanged.connect(self.on_tab_changed)  # type: ignore
 
     def refresh(self):
-        server_files_dir = io.apk.Apk.get_server_path(self._cc).generate_dirs()
+        self.refresh_pack_files()
+        self.refresh_list_files()
+        self.refresh_audio_files()
 
-        self._server_files_list.clear()
-        files = server_files_dir.get_files(".*\\.pack.*")
-        files = sorted(files, key=lambda x: x.get_file_name_without_extension())
-        for file in files:
-            self._server_files_list.addItem(file.get_file_name_without_extension())
-            self._server_files_list.item(
-                self._server_files_list.count() - 1
-            ).setToolTip(file.to_str())
+    def refresh_pack_files(self):
+        pack_files = self.server_files_dir.get_files("\\.(pack)$")
+        self.pack_file_list.set_files(pack_files)
+
+    def refresh_list_files(self):
+        list_files = self.server_files_dir.get_files("\\.(list)$")
+        self.list_file_list.set_files(list_files)
+
+    def refresh_audio_files(self):
+        audio_files = self.server_files_dir.get_files("\\.(ogg|caf)$")
+        self.audio_file_list.set_files(audio_files)
 
     def set_cc(self, cc: country_code.CountryCode):
         self._cc = cc
+        self.server_files_dir = io.apk.Apk.get_server_path(self._cc).generate_dirs()
         self.refresh()
 
-    def on_context_menu(self, pos: QtCore.QPoint):
-        menu = QtWidgets.QMenu()
-        menu.exec_(self._server_files_list.mapToGlobal(pos))
+    def on_tab_changed(self, index: int):
+        if index == 0:
+            self.refresh_pack_files()
+        elif index == 1:
+            self.refresh_list_files()
+        elif index == 2:
+            self.refresh_audio_files()
+
+
+class FileList(QtWidgets.QListWidget):
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None):
+        super(FileList, self).__init__(parent)
+        self._files = []
+        self.locale_manager = locale_handler.LocalManager.from_config()
+        self.setup_ui()
+
+    def setup_ui(self):
+        self.setSortingEnabled(True)
+        self.addItems([f.get_file_name() for f in self._files])
+        self.context_menu = QtWidgets.QMenu(self)
+        self.context_menu.addAction(
+            self.locale_manager.search_key("reveal_in_explorer"),
+            self.reveal_in_explorer,
+        )
+        self.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.show_context_menu)
+
+    def get_files(self) -> list[io.path.Path]:
+        return self._files
+
+    def get_selected_file(self) -> io.path.Path:
+        name = self.selectedItems()[0].text()
+        return next(f for f in self._files if f.get_file_name() == name)
+
+    def reveal_in_explorer(self):
+        self.get_selected_file().open()
+
+    def show_context_menu(self, pos: QtCore.QPoint):
+        self.context_menu.exec_(self.mapToGlobal(pos))
+
+    def set_files(self, files: list[io.path.Path]):
+        self._files = files
+        self.clear()
+        self.addItems([f.get_file_name() for f in self._files])
+
+    def refresh(self):
+        self.set_files(self._files)

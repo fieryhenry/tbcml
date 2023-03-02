@@ -598,10 +598,13 @@ class Apk:
 
     def download_server_files(
         self,
-        progress_callback: Optional[Callable[[float, int, int, bool], None]] = None,
+        progress_callback_individual: Optional[
+            Callable[[float, int, int], None]
+        ] = None,
+        progress_callback: Optional[Callable[[int, int], None]] = None,
     ):
         sfh = server_handler.ServerFileHandler(self)
-        sfh.extract_all(progress_callback)
+        sfh.extract_all(progress_callback_individual, progress_callback)
         self.copy_server_files()
 
     def copy_server_files(self):

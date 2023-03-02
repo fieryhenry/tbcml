@@ -48,7 +48,7 @@ class ServerFileHandler:
     def download(
         self,
         index: int,
-        progress_callback: Optional[Callable[[float, int, int, bool], None]] = None,
+        progress_callback: Optional[Callable[[float, int, int], None]] = None,
     ) -> "io.zip.Zip":
         url = self.get_url(index)
         cloudfront = CloudFront()
@@ -66,8 +66,7 @@ class ServerFileHandler:
         if progress_callback is None:
             resp = req.get()
         else:
-            print(url)
-            resp = req.get_stream(progress_callback)
+            resp = req.get_stream_no_file_size(progress_callback)
         data = resp.content
         try:
             zipf = io.zip.Zip(io.data.Data(data))
@@ -78,7 +77,7 @@ class ServerFileHandler:
     def extract(
         self,
         index: int,
-        progress_callback: Optional[Callable[[float, int, int, bool], None]] = None,
+        progress_callback: Optional[Callable[[float, int, int], None]] = None,
         force: bool = False,
     ) -> bool:
         tsv = self.parse_tsv(index)
@@ -101,16 +100,20 @@ class ServerFileHandler:
 
     def extract_all(
         self,
-        progress_callback: Optional[Callable[[float, int, int, bool], None]] = None,
+        progress_callback_individual: Optional[
+            Callable[[float, int, int], None]
+        ] = None,
+        progress_callback: Optional[Callable[[int, int], None]] = None,
         force: bool = False,
     ):
+        if progress_callback:
+            progress_callback(0, len(self.tsv_paths))
         for i in range(len(self.tsv_paths)):
-            extracted = self.extract(i, progress_callback, force)
-            if progress_callback:
-                if extracted:
-                    print(f"\nExtracted: {i+1}/{len(self.tsv_paths)}")
-                else:
-                    print(f"\nAlready extracted: {i+1}/{len(self.tsv_paths)}")
+            if progress_callback_individual:
+                progress_callback_individual(0, 0, 0)
+            self.extract(i, progress_callback_individual, force)
+            if progress_callback is not None:
+                progress_callback(i + 1, len(self.tsv_paths))
 
     def find_game_versions(self):
         arcs = self.apk.get_architectures()
