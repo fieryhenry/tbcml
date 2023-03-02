@@ -14,7 +14,7 @@ class AudioFile:
         return file_name
 
     def save(self, path: io.path.Path):
-        self._audio.output(str(path)).run()
+        self._audio.output(str(path), loglevel="quiet").run()
 
     def caf_to_little_endian(self):
         if self.path.get_extension() == "caf":
@@ -31,8 +31,8 @@ class AudioFile:
 
     def convert_to_ogg(self):
         temp_path = self.path.parent().add("temp.ogg")
+        temp_path.remove()
         self.save(temp_path)
         self.path = temp_path
         self._audio = ffmpeg.input(str(self.path))
-        temp_path.remove()
         return self
