@@ -51,7 +51,7 @@ class Path:
         if os_name == "nt":
             path = Path.join(os.environ["APPDATA"], app_name)
         elif os_name == "posix":
-            path = Path.join(os.environ["HOME"], app_name)
+            path = Path.join(os.environ["HOME"], "Documents", app_name)
         elif os_name == "mac":
             path = Path.join(
                 os.environ["HOME"], "Library", "Application Support", app_name
