@@ -519,3 +519,9 @@ class GatyaItems:
                     self.set_item(id, other_item)
             else:
                 self.set_item(id, other_item)
+
+    def get_item_stage_drop_id(self, id: int) -> Optional[int]:
+        item = self.get_item(id)
+        if item is None:
+            return None
+        return item.gatya_item_buy_item.stage_drop_item_id
