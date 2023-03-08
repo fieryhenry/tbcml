@@ -749,6 +749,78 @@ class Stage:
         return not self.__eq__(other)
 
 
+class ItemDrop:
+    def __init__(self, probability: int, item_id: int, amount: int):
+        self.item_id = item_id
+        self.amount = amount
+        self.probability = probability
+
+    def serialize(self) -> dict[str, Any]:
+        return {
+            "item_id": self.item_id,
+            "amount": self.amount,
+            "probability": self.probability,
+        }
+
+    @staticmethod
+    def deserialize(data: dict[str, Any]) -> "ItemDrop":
+        return ItemDrop(data["item_id"], data["amount"], data["probability"])
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, ItemDrop):
+            return False
+        return (
+            self.item_id == other.item_id
+            and self.amount == other.amount
+            and self.probability == other.probability
+        )
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
+    def __str__(self) -> str:
+        return f"ItemDrop(item_id={self.item_id}, amount={self.amount}, probability={self.probability})"
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+
+class TimeScoreReward:
+    def __init__(self, score: int, item_id: int, amount: int):
+        self.score = score
+        self.item_id = item_id
+        self.amount = amount
+
+    def serialize(self) -> dict[str, Any]:
+        return {
+            "score": self.score,
+            "item_id": self.item_id,
+            "amount": self.amount,
+        }
+
+    @staticmethod
+    def deserialize(data: dict[str, Any]) -> "TimeScoreReward":
+        return TimeScoreReward(data["score"], data["item_id"], data["amount"])
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, TimeScoreReward):
+            return False
+        return (
+            self.score == other.score
+            and self.item_id == other.item_id
+            and self.amount == other.amount
+        )
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
+    def __str__(self) -> str:
+        return f"TimeScoreReward(score={self.score}, item_id={self.item_id}, amount={self.amount})"
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+
 class MapStageDataStage:
     def __init__(
         self,
@@ -759,9 +831,10 @@ class MapStageDataStage:
         start_music: int,
         base_percentage_boss_music: int,
         boss_music: int,
-        item_probability: int,
-        stage_drop_item_id: int,
-        amount: int,
+        rand: int,
+        item_drops: list[ItemDrop],
+        max_reward_claims: int,
+        time_score_rewards: list[TimeScoreReward],
     ):
         self.stage_id = stage_id
         self.stage_index = stage_index
@@ -770,9 +843,10 @@ class MapStageDataStage:
         self.start_music = start_music
         self.base_percentage_boss_music = base_percentage_boss_music
         self.boss_music = boss_music
-        self.item_probability = item_probability
-        self.stage_drop_item_id = stage_drop_item_id
-        self.stage_drop_item_amount = amount
+        self.item_drops = item_drops
+        self.max_reward_claims = max_reward_claims
+        self.time_score_rewards = time_score_rewards
+        self.rand = rand
 
     def serialize(self) -> dict[str, Any]:
         return {
@@ -781,9 +855,13 @@ class MapStageDataStage:
             "start_music": self.start_music,
             "base_percentage_boss_music": self.base_percentage_boss_music,
             "boss_music": self.boss_music,
-            "item_probability": self.item_probability,
-            "stage_drop_item_id": self.stage_drop_item_id,
-            "stage_drop_item_amount": self.stage_drop_item_amount,
+            "item_drops": [item_drop.serialize() for item_drop in self.item_drops],
+            "max_reward_claims": self.max_reward_claims,
+            "time_score_rewards": [
+                time_score_reward.serialize()
+                for time_score_reward in self.time_score_rewards
+            ],
+            "rand": self.rand,
         }
 
     @staticmethod
@@ -798,9 +876,13 @@ class MapStageDataStage:
             data["start_music"],
             data["base_percentage_boss_music"],
             data["boss_music"],
-            data["item_probability"],
-            data["stage_drop_item_id"],
-            data["stage_drop_item_amount"],
+            data["rand"],
+            [ItemDrop.deserialize(item_drop) for item_drop in data["item_drops"]],
+            data["max_reward_claims"],
+            [
+                TimeScoreReward.deserialize(time_score_reward)
+                for time_score_reward in data["time_score_rewards"]
+            ],
         )
 
     def __eq__(self, other: object) -> bool:
@@ -814,13 +896,17 @@ class MapStageDataStage:
             and self.start_music == other.start_music
             and self.base_percentage_boss_music == other.base_percentage_boss_music
             and self.boss_music == other.boss_music
-            and self.item_probability == other.item_probability
-            and self.stage_drop_item_id == other.stage_drop_item_id
-            and self.stage_drop_item_amount == other.stage_drop_item_amount
+            and self.item_drops == other.item_drops
+            and self.max_reward_claims == other.max_reward_claims
+            and self.time_score_rewards == other.time_score_rewards
+            and self.rand == other.rand
         )
 
     def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
+
+    def clear_item_drops(self):
+        self.item_drops = []
 
 
 class StageNameImage:
@@ -1009,6 +1095,12 @@ class StageName:
     def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
 
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return f"StageName({self.stage_id}, {self.stage_index}, {self.name})"
+
 
 class StageNames:
     def __init__(
@@ -1044,6 +1136,12 @@ class StageNames:
 
     def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
+
+    def __str__(self) -> str:
+        return f"StageNames({self.stage_id}, {self.names})"
+
+    def __repr__(self) -> str:
+        return f"StageNames({self.stage_id}, {self.names})"
 
 
 class StageNameSet:
@@ -1092,32 +1190,32 @@ class StageNameSet:
     def from_game_data(
         base_stage_id: int,
         game_data: "pack.GamePacks",
-    ) -> Optional["StageNameSet"]:
+    ) -> "StageNameSet":
         map_index_type = MapIndexType.from_index(base_stage_id)
         if map_index_type is None:
             raise ValueError(f"Invalid base stage id {base_stage_id}")
         name_str = map_index_type.get_stage_name_name_type()
         if name_str is None:
-            return None
+            return StageNameSet.create_empty(base_stage_id)
         file_name = StageNameSet.get_file_name(
             base_stage_id, game_data.localizable.get_lang()
         )
         file = game_data.find_file(file_name)
         if file is None:
-            return None
+            return StageNameSet.create_empty(base_stage_id)
         csv = io.bc_csv.CSV(
             file.dec_data,
             delimeter=io.bc_csv.Delimeter.from_country_code_res(game_data.country_code),
-            remove_empty=True,
         )
         all_names: dict[int, StageNames] = {}
         for stage_index, line in enumerate(csv.lines):
             stage_id = base_stage_id + stage_index
             names: dict[int, StageName] = {}
-            for name_str in line:
-                name = StageName(stage_id, stage_index, name_str.to_str())
+            for i, name_str in enumerate(line):
+                name = StageName(stage_id, i, name_str.to_str())
                 names[name.stage_index] = name
             all_names[stage_id] = StageNames(stage_id, names)
+
         return StageNameSet(base_stage_id, all_names)
 
     def to_game_data(
@@ -1164,6 +1262,10 @@ class StageNameSet:
     def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
 
+    @staticmethod
+    def create_empty(base_stage_id: int) -> "StageNameSet":
+        return StageNameSet(base_stage_id, {})
+
 
 class StageNameSets:
     def __init__(
@@ -1196,8 +1298,6 @@ class StageNameSets:
         ids = MapIndexType.get_all()
         for base_stage_id in ids:
             set = StageNameSet.from_game_data(base_stage_id.value, game_data)
-            if set is None:
-                continue
             sets[base_stage_id] = set
         return StageNameSets(sets)
 
@@ -1323,19 +1423,66 @@ class MapStageData:
         map_pattern = line_2[0].to_int()
 
         for i, line in enumerate(csv.lines[2:]):
-            stage = MapStageDataStage(
+            energy = line[0].to_int()
+            xp = line[1].to_int()
+            mus_id0 = line[2].to_int()
+            mus_hp = line[3].to_int()
+            mus_id1 = line[4].to_int()
+            reward_once = line[-1].to_int()
+            is_time = len(line) > 15
+            time: list[TimeScoreReward] = []
+            item_drops: list[ItemDrop] = []
+            rand = 0
+
+            if is_time:
+                for i in range(8, 15):
+                    if line[i].to_int() != -2:
+                        is_time = False
+                        break
+            if is_time:
+                length = (len(line) - 17) // 3
+                for i in range(length):
+                    time.append(
+                        TimeScoreReward(
+                            line[16 + i * 3].to_int(),
+                            line[17 + i * 3].to_int(),
+                            line[18 + i * 3].to_int(),
+                        )
+                    )
+            is_multi = (not is_time) and len(line) > 9
+            if (len(line) != 6) and is_multi:
+                rand = line[8].to_int()
+                drop_length = (len(line) - 7) // 3
+                for i in range(1, drop_length):
+                    item_drops.append(
+                        ItemDrop(
+                            line[6 + i * 3].to_int(),
+                            line[7 + i * 3].to_int(),
+                            line[8 + i * 3].to_int(),
+                        )
+                    )
+            if (len(item_drops) > 0) or not is_multi:
+                if len(item_drops) == 0:
+                    item_drops.append(
+                        ItemDrop(line[5].to_int(), line[6].to_int(), line[7].to_int())
+                    )
+                else:
+                    item_drops[0] = ItemDrop(
+                        line[5].to_int(), line[6].to_int(), line[7].to_int()
+                    )
+            data[i] = MapStageDataStage(
                 stage_id,
                 i,
-                line[0].to_int(),
-                line[1].to_int(),
-                line[2].to_int(),
-                line[3].to_int(),
-                line[4].to_int(),
-                line[5].to_int(),
-                line[6].to_int(),
-                line[7].to_int(),
+                energy,
+                xp,
+                mus_id0,
+                mus_hp,
+                mus_id1,
+                rand,
+                item_drops,
+                reward_once,
+                time,
             )
-            data[i] = stage
         return MapStageData(
             stage_id,
             map_number,
@@ -1372,10 +1519,30 @@ class MapStageData:
                 stage.start_music,
                 stage.base_percentage_boss_music,
                 stage.boss_music,
-                stage.item_probability,
-                stage.stage_drop_item_id,
-                stage.stage_drop_item_amount,
             ]
+            if len(stage.item_drops) > 0:
+                line.append(stage.item_drops[0].probability)
+                line.append(stage.item_drops[0].item_id)
+                line.append(stage.item_drops[0].amount)
+            else:
+                line.append(0)
+                line.append(0)
+                line.append(0)
+            if len(stage.item_drops) > 1:
+                line.append(stage.rand)
+            if len(stage.item_drops) > 1:
+                for drop in stage.item_drops[1:]:
+                    line.append(drop.probability)
+                    line.append(drop.item_id)
+                    line.append(drop.amount)
+            if stage.time_score_rewards:
+                line[8:15] = [-2] * 7
+                line.append(1)
+            for time in stage.time_score_rewards:
+                line.append(time.score)
+                line.append(time.item_id)
+                line.append(time.amount)
+            line.append(stage.max_reward_claims)
             csv.set_line(i + 2, line)
 
         game_data.set_file(file_name, csv.to_data())
