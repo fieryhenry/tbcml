@@ -2,7 +2,6 @@ import os
 import shutil
 import typing
 
-import pkg_resources
 from bcml.core.io import data, command
 import re
 
@@ -19,8 +18,12 @@ class Path:
 
     @staticmethod
     def get_files_folder() -> "Path":
-        path = pkg_resources.resource_filename("bcml", "files")
-        return Path(path)
+        file = Path(os.path.realpath(__file__))
+        if file.get_extension() == "pyc":
+            path = file.parent().parent().parent().parent().add("files")
+        else:
+            path = file.parent().parent().parent().add("files")
+        return path
 
     def strip_trailing_slash(self) -> "Path":
         return Path(self.path.rstrip("/"))

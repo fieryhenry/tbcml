@@ -1,4 +1,5 @@
 /dist
+/build
 __pycache__
 *.egg-info
 .vscode
@@ -9,3 +10,4 @@ __pycache__
 /test_mod.zip
 /.frida
 /row.py
+*.spec
