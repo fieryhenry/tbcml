@@ -17,12 +17,12 @@ jobs:
     - name: Package Application Linux
       uses: JackMcKew/pyinstaller-action-linux@main
       with:
-        path: src
+        path: .
 
     - uses: actions/upload-artifact@v2
       with:
         name: Battle Cats Mod Loader
-        path: src/dist/linux
+        path: dist/linux
 
   build_windows:
 
@@ -34,9 +34,9 @@ jobs:
     - name: Package Application Windows
       uses: JackMcKew/pyinstaller-action-windows@main
       with:
-        path: src
+        path: .
 
     - uses: actions/upload-artifact@v2
       with:
         name: Battle Cats Mod Loader
-        path: src/dist/windows
+        path: dist/windows
