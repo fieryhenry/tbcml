@@ -23,4 +23,9 @@ jobs:
     - name: Build
       run: |
           pyinstaller bcml.spec
+    - name: Upload
+      uses: actions/upload-artifact@v1
+      with:
+        name: bcml-linux
+        path: dist/bcml
     
