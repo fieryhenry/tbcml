@@ -28,8 +28,6 @@ setuptools.setup(
         "cryptography",
         "ffmpeg-python",
         "lief",
-        "numpy",
-        "opencv-python-headless",
         "Pillow",
         "pycryptodomex",
         "PyYAML",
