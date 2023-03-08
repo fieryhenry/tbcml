@@ -9,3 +9,4 @@ Pillow
 pycryptodomex
 PyQt5
 requests
+pyYAML

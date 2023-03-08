@@ -34,6 +34,7 @@ setuptools.setup(
         "pycryptodomex",
         "PyYAML",
         "requests",
+        "PyQt5",
     ],
     include_package_data=True,
     extras_require={
