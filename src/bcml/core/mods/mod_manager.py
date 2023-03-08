@@ -5,20 +5,28 @@ from bcml.core.mods import bc_mod
 
 class ModManager:
     def __init__(self):
-        self.mods: dict[str, bc_mod.Mod] = {}
+        self.__mods: Optional[dict[str, bc_mod.Mod]] = None
         self.mod_folder = io.path.Path(io.config.Config().get(io.config.Key.MOD_FOLDER))
         self.mod_folder.generate_dirs()
         self.mod_info_json = self.mod_folder.add("mod_info.json")
         self.load_mod_json()
-        self.load_mods()
 
-    def load_mods(self):
+    @property
+    def mods(self) -> dict[str, bc_mod.Mod]:
+        if self.__mods is not None:
+            return self.__mods
+        mods: dict[str, bc_mod.Mod] = {}
         for path in self.mod_folder.get_files():
             if path.get_extension() != "bcmod":
                 continue
             mod = bc_mod.Mod.load(path)
             if mod is not None:
-                self.mods[mod.get_file_name()] = mod
+                mods[mod.get_file_name()] = mod
+        return mods
+
+    @mods.setter
+    def mods(self, mods: dict[str, bc_mod.Mod]):
+        self.__mods = mods
 
     def load_mod_json(self):
         if self.mod_info_json.exists():
