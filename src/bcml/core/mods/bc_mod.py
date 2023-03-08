@@ -3,6 +3,27 @@ import zipfile
 from bcml.core import io, game_version, country_code, crypto, game_data, mods
 
 
+class ModError:
+    def __init__(self, message: str):
+        self.message = message
+
+    def __str__(self):
+        return self.message
+
+
+class ModErrors:
+    def __init__(self, errors: Optional[list[ModError]] = None):
+        if errors is None:
+            errors = []
+        self.errors = errors
+
+    def __str__(self):
+        return "\n".join([str(error) for error in self.errors])
+
+    def add_error(self, error: ModError):
+        self.errors.append(error)
+
+
 class Mod:
     def __init__(
         self,
@@ -23,6 +44,8 @@ class Mod:
         self.mod_id = mod_id
         self.mod_version = mod_version
         self.mod_url = mod_url
+
+        self.errors: Optional[ModErrors] = None
         self.init_custom()
         self.init_scripts()
 
@@ -91,11 +114,19 @@ class Mod:
         json = io.json_file.JsonFile.from_data(json_file)
         mod = Mod.from_mod_json(json.get_json())
 
-        mod.gamototo = game_data.gamototo.gamototo.Gamototo.from_zip(zip_file)
-        mod.battle = game_data.battle.battle.Battle.from_zip(zip_file)
-        mod.cat_base = game_data.cat_base.cat_base.CatBase.from_zip(zip_file)
-        mod.maps = game_data.map.map.Maps.from_zip(zip_file)
-        mod.localizable = game_data.pack.Localizable.from_zip(zip_file)
+        try:
+            mod.gamototo = game_data.gamototo.gamototo.Gamototo.from_zip(zip_file)
+            mod.battle = game_data.battle.battle.Battle.from_zip(zip_file)
+            mod.cat_base = game_data.cat_base.cat_base.CatBase.from_zip(zip_file)
+            mod.maps = game_data.map.map.Maps.from_zip(zip_file)
+            mod.localizable = game_data.pack.Localizable.from_zip(zip_file)
+        except Exception as e:
+            mod.add_error(
+                ModError(
+                    f"Error loading mod: {mod.name} by {mod.author} ({mod.mod_id}): {e}"
+                )
+            )
+            return mod
 
         mod.scripts = mods.frida_script.Scripts.from_zip(
             zip_file, mod.country_code, mod.game_version
@@ -137,3 +168,8 @@ class Mod:
         return (
             crypto.Hash(crypto.HashAlgorithm.SHA256, self.to_data()).get_hash().to_hex()
         )
+
+    def add_error(self, error: "ModError"):
+        if self.errors is None:
+            self.errors = ModErrors()
+        self.errors.add_error(error)
