@@ -27,5 +27,5 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: bcml-linux
-        path: dist/linux
+        path: dist/Battle Cats Mod Loader
     
