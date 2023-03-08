@@ -21,7 +21,7 @@ jobs:
 
     - uses: actions/upload-artifact@v2
       with:
-        name: Battle Cats Mod Loader
+        name: Battle Cats Mod Loader Linux
         path: dist/linux
 
   build_windows:
@@ -38,5 +38,5 @@ jobs:
 
     - uses: actions/upload-artifact@v2
       with:
-        name: Battle Cats Mod Loader
+        name: Battle Cats Mod Loader Windows
         path: dist/windows
