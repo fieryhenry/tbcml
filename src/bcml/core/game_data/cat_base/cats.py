@@ -961,8 +961,8 @@ class UnitBuyData:
         self.np_sell_price = raw_data[58]
         self.unknown_59 = raw_data[59]
         self.unknown_60 = raw_data[60]
-        self.unknown_61 = raw_data[61]
-        self.unknown_62 = raw_data[62]
+        self.egg_val = raw_data[61]
+        self.egg_id = raw_data[62]
 
     def to_raw_data(self) -> list[int]:
         return [
@@ -999,8 +999,8 @@ class UnitBuyData:
             self.np_sell_price,
             self.unknown_59,
             self.unknown_60,
-            self.unknown_61,
-            self.unknown_62,
+            self.egg_val,
+            self.egg_id,
         ]
 
     def serialize(self) -> dict[str, Any]:
@@ -1680,7 +1680,10 @@ class Cat:
 
 
 class Cats:
-    def __init__(self, cats: dict[int, Cat]):
+    def __init__(
+        self,
+        cats: dict[int, Cat],
+    ):
         self.cats = cats
 
     def serialize(self) -> dict[str, Any]:
@@ -1690,9 +1693,11 @@ class Cats:
 
     @staticmethod
     def deserialize(data: dict[str, Any]) -> "Cats":
-        return Cats(
-            {cat: Cat.deserialize(data["cats"][cat], int(cat)) for cat in data["cats"]},
-        )
+        cats = {
+            cat_id: Cat.deserialize(cat_data, cat_id)
+            for cat_id, cat_data in data["cats"].items()
+        }
+        return Cats(cats)
 
     @staticmethod
     def from_game_data(
@@ -1713,6 +1718,7 @@ class Cats:
             if cat is None:
                 continue
             cats[cat_id] = cat
+
         return Cats(cats)
 
     def to_game_data(self, game_data: "pack.GamePacks"):
