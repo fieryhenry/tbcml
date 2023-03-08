@@ -4,9 +4,9 @@ cryptography
 ffmpeg_python
 lief
 numpy
+PyQt5
 opencv_python_headless
 Pillow
 pycryptodomex
-PyQt5
 requests
 pyYAML
