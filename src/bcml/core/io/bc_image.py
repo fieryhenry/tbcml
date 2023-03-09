@@ -136,5 +136,10 @@ class BCImage:
     def image(self, image: Image.Image):
         self.__image = image
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, BCImage):
+            return False
+        return self.to_data() == other.to_data()
+
     def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
