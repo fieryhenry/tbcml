@@ -1,11 +1,10 @@
 import time
-from typing import Optional
+from typing import Callable, Optional
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 from bcml.core import game_data, io, locale_handler, mods
-from bcml.ui.editor import gatya_item, localizable
-from bcml.ui.utils import ui_dialog, ui_file_dialog, ui_thread
+from bcml.ui.utils import ui_thread
 
 
 class CatEditor(QtWidgets.QWidget):
@@ -46,6 +45,9 @@ class CatEditor(QtWidgets.QWidget):
     def load_cats(self):
         self.all_cats = game_data.cat_base.cats.Cats.from_game_data(self.game_packs)
         self.all_cats.import_cats(self.mod.cat_base.cats, self.game_packs)
+        self.edited_cats: list[game_data.cat_base.cats.Cat] = list(
+            self.mod.cat_base.cats.cats.values()
+        )
         self.blank_uni_path = io.path.Path("assets", True)
         names = ["uni_c.png", "uni_f.png", "uni_s.png"]
         paths = [self.blank_uni_path.add(name) for name in names]
@@ -72,7 +74,7 @@ class CatEditor(QtWidgets.QWidget):
             self._cat_list.addItem(item)
             self._cat_list.setItemWidget(item, cat_widget)
 
-        self._cat_list.itemDoubleClicked.connect(self.edit_cat)
+        self._cat_list.itemDoubleClicked.connect(self.on_edit)
 
         self.last_time = time.time()
         self._cat_list.verticalScrollBar().valueChanged.connect(self.check_items)
@@ -109,25 +111,44 @@ class CatEditor(QtWidgets.QWidget):
             item = self._cat_list.item(i)
             cat_widget = self._cat_list.itemWidget(item)
             try:
-                cat_widget.add_ui()
+                cat_widget.add_ui()  # type: ignore
             except AttributeError:
                 pass
-
-    def edit_cat(self, item: QtWidgets.QListWidgetItem):
-        cat_widget = self._cat_list.itemWidget(item)
-        cat_widget.edit_cat()
 
     def search(self, text: str):
         for i in range(self._cat_list.count()):
             item = self._cat_list.item(i)
             cat_widget = self._cat_list.itemWidget(item)
             if isinstance(cat_widget, CatListItem):
-                if cat_widget.has_name(text):
+                if cat_widget.has_name(text):  # type: ignore
                     item.setHidden(False)
                 else:
                     item.setHidden(True)
 
         self.check_items(True)
+
+    def on_edit(self, widget: QtWidgets.QListWidgetItem):
+        cat_widget = self._cat_list.itemWidget(widget)
+        if not isinstance(cat_widget, CatListItem):
+            return
+        cat: "game_data.cat_base.cats.Cat" = cat_widget.cat  # type: ignore
+
+        self.cat_editor = CatEditScreen(cat, self.on_save, self)
+        self.cat_editor.show()
+
+    def save(self):
+        for cat in self.edited_cats:
+            self.mod.cat_base.cats.set_cat(cat)
+
+    def on_save(self, cat: "game_data.cat_base.cats.Cat"):
+        for i, edited_cat in enumerate(self.edited_cats):
+            if edited_cat.cat_id == cat.cat_id:
+                self.edited_cats[i] = cat
+                break
+        else:
+            self.edited_cats.append(cat)
+
+        self.save()
 
 
 class CatListItem(QtWidgets.QListWidget):
@@ -217,13 +238,213 @@ class CatListItem(QtWidgets.QListWidget):
             widget.setObjectName("spacer")
             self.cat_form_layout.addWidget(widget, 0, total_forms + i)
 
-    def edit_cat(self):
-        print("open cat editor")
-        print(self.cat.unit_buy_data.egg_id)
-        print(self.cat.unit_buy_data.egg_val)
-
     def has_name(self, name: str):
         for form in self.cat.forms.values():
             if name.lower() in form.name.lower():
                 return True
         return False
+
+
+class CatEditScreen(QtWidgets.QDialog):
+    def __init__(
+        self,
+        cat: "game_data.cat_base.cats.Cat",
+        on_save: Callable[["game_data.cat_base.cats.Cat"], None],
+        parent: Optional[QtWidgets.QWidget] = None,
+    ):
+        super(CatEditScreen, self).__init__(parent)
+        self.cat = cat
+        self.on_save = on_save
+        self.locale_manager = locale_handler.LocalManager.from_config()
+        self.setup_ui()
+
+    def setup_ui(self):
+        self.setObjectName("CatEditScreen")
+        self.setWindowTitle(self.locale_manager.search_key("cat_editor_title"))
+        self.resize(800, 600)
+        self.setContentsMargins(0, 0, 0, 0)
+
+        self._layout = QtWidgets.QGridLayout(self)
+        self._layout.setContentsMargins(0, 0, 0, 0)
+        self._layout.setSpacing(0)
+        self._layout.setObjectName("layout")
+
+        self._tab_widget = QtWidgets.QTabWidget(self)
+        self._tab_widget.setObjectName("tab_widget")
+        self._layout.addWidget(self._tab_widget, 0, 0)
+
+        self._tab_widget.addTab(
+            self._create_general_tab(),
+            self.locale_manager.search_key("cat_editor_general_tab"),
+        )
+        self._tab_widget.addTab(
+            self._create_forms_tab(),
+            self.locale_manager.search_key("cat_editor_forms_tab"),
+        )
+
+        self.save_button = QtWidgets.QPushButton(self)
+        self.save_button.setObjectName("save_button")
+        self.save_button.setText(self.locale_manager.search_key("apply"))
+        self.save_button.clicked.connect(self.save)
+        self._layout.addWidget(self.save_button, 1, 0)
+
+    def _create_general_tab(self):
+        tab = QtWidgets.QWidget()
+        tab.setObjectName("general_tab")
+        tab_layout = QtWidgets.QGridLayout(tab)
+        tab_layout.setContentsMargins(0, 0, 0, 0)
+        tab_layout.setSpacing(0)
+        tab_layout.setObjectName("tab_layout")
+
+        self._general_tab = GeneralTab(self.cat, tab)
+        tab_layout.addWidget(self._general_tab, 0, 0)
+
+        return tab
+
+    def _create_forms_tab(self):
+        tab = QtWidgets.QWidget()
+        tab.setObjectName("forms_tab")
+        tab_layout = QtWidgets.QGridLayout(tab)
+        tab_layout.setContentsMargins(0, 0, 0, 0)
+        tab_layout.setSpacing(0)
+        tab_layout.setObjectName("tab_layout")
+
+        self._forms_tab = FormsTab(self.cat, tab)
+        tab_layout.addWidget(self._forms_tab, 0, 0)
+
+        return tab
+
+    def save(self):
+        self._forms_tab.save()
+        self.on_save(self.cat)
+
+
+class GeneralTab(QtWidgets.QWidget):
+    def __init__(
+        self,
+        cat: "game_data.cat_base.cats.Cat",
+        parent: Optional[QtWidgets.QWidget] = None,
+    ):
+        super(GeneralTab, self).__init__(parent)
+        self.cat = cat
+        self.locale_manager = locale_handler.LocalManager.from_config()
+        self.setup_ui()
+
+    def setup_ui(self):
+        self.setObjectName("GeneralTab")
+        self.setContentsMargins(0, 0, 0, 0)
+
+        self._layout = QtWidgets.QGridLayout(self)
+        self._layout.setContentsMargins(0, 0, 0, 0)
+        self._layout.setSpacing(0)
+        self._layout.setObjectName("layout")
+
+
+class FormsTab(QtWidgets.QWidget):
+    def __init__(
+        self,
+        cat: "game_data.cat_base.cats.Cat",
+        parent: Optional[QtWidgets.QWidget] = None,
+    ):
+        super(FormsTab, self).__init__(parent)
+        self.cat = cat
+        self.locale_manager = locale_handler.LocalManager.from_config()
+        self.setup_ui()
+
+    def setup_ui(self):
+        self.setObjectName("FormsTab")
+        self.setContentsMargins(0, 0, 0, 0)
+
+        self._layout = QtWidgets.QGridLayout(self)
+        self._layout.setContentsMargins(0, 0, 0, 0)
+        self._layout.setSpacing(0)
+        self._layout.setObjectName("layout")
+
+        self.form_tabs = QtWidgets.QTabWidget(self)
+        self.form_tabs.setObjectName("form_tabs")
+        self._layout.addWidget(self.form_tabs, 0, 0)
+
+        for form in self.cat.forms.values():
+            self.form_tabs.addTab(
+                FormTab(form),
+                form.name,
+            )
+
+    def save(self):
+        for index in range(self.form_tabs.count()):
+            tab = self.form_tabs.widget(index)
+            if isinstance(tab, FormTab):
+                tab.save()  # type: ignore
+
+
+class FormTab(QtWidgets.QWidget):
+    def __init__(
+        self,
+        form: "game_data.cat_base.cats.Form",
+        parent: Optional[QtWidgets.QWidget] = None,
+    ):
+        super(FormTab, self).__init__(parent)
+        self.form = form
+        self.locale_manager = locale_handler.LocalManager.from_config()
+        self.setup_ui()
+
+    def setup_ui(self):
+        self.setObjectName("FormTab")
+        self.setContentsMargins(0, 0, 0, 0)
+
+        self._layout = QtWidgets.QGridLayout(self)
+        self._layout.setContentsMargins(0, 0, 0, 0)
+        self._layout.setSpacing(0)
+        self._layout.setObjectName("layout")
+
+        self.name_group = QtWidgets.QGroupBox(self)
+        self.name_group.setObjectName("name_group")
+        self.name_group_layout = QtWidgets.QGridLayout(self.name_group)
+        self.name_group_layout.setObjectName("name_group_layout")
+        self._layout.addWidget(self.name_group, 0, 0)
+
+        self.name_label = QtWidgets.QLabel(self)
+        self.name_label.setObjectName("name_label")
+        self.name_label.setText(
+            self.locale_manager.search_key("cat_editor_form_name"),
+        )
+        self.name_group_layout.addWidget(self.name_label, 0, 0)
+
+        self.name_edit = QtWidgets.QLineEdit(self)
+        self.name_edit.setObjectName("name_edit")
+        self.name_edit.setText(self.form.name)
+        self.name_group_layout.addWidget(self.name_edit, 1, 0)
+        self.name_edit.setPlaceholderText(
+            self.locale_manager.search_key("cat_editor_form_name"),
+        )
+
+        self.description_group = QtWidgets.QGroupBox(self)
+        self.description_group.setObjectName("description_group")
+        self.description_group_layout = QtWidgets.QGridLayout(self.description_group)
+        self.description_group_layout.setObjectName("description_group_layout")
+        self._layout.addWidget(self.description_group, 1, 0)
+
+        self.description_label = QtWidgets.QLabel(self)
+        self.description_label.setObjectName("description_label")
+        self.description_label.setText(
+            self.locale_manager.search_key("cat_editor_form_description"),
+        )
+        self.description_group_layout.addWidget(self.description_label, 0, 0)
+
+        self.description_edit = QtWidgets.QTextEdit(self)
+        self.description_edit.setObjectName("description_edit")
+        self.description_edit.setText("\n".join(self.form.description))
+        self.description_group_layout.addWidget(self.description_edit, 1, 0)
+        self.description_edit.setPlaceholderText(
+            self.locale_manager.search_key("cat_editor_form_description"),
+        )
+
+        self._layout.setRowStretch(2, 1)
+
+    def save(self):
+        name = self.name_edit.text()
+        if name:
+            self.form.name = name
+        description = self.description_edit.toPlainText()
+        if description:
+            self.form.description = description.split("\n")

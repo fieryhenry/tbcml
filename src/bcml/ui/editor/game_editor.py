@@ -140,6 +140,7 @@ class GameEditor(QtWidgets.QWidget):
     def save_thread(self):
         self.shop_editor.save()
         self.text_editor.save()
+        self.cat_editor.save()
         mods.mod_manager.ModManager().save_mod(self.mod)
 
     def back(self):
