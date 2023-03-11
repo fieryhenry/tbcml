@@ -390,7 +390,15 @@ class BCUCat:
         unit_buy.max_upgrade_level_no_catseye = self.max_base_level
         unit_buy.max_plus_upgrade_level = self.max_plus_level
         unit_buy.max_upgrade_level_catseye = self.max_base_level
-        unit = cat_base.cats.Cat(cat_id, forms, unit_buy, talent, npbd, evov_text)
+
+        unit = cat_base.cats.Cat(
+            cat_id,
+            forms,
+            unit_buy,
+            talent,
+            npbd,
+            cat_base.cats.EvolveText.create_text_line(evov_text),
+        )
         unit.nyanko_picture_book_data.obtainable = True
         unit.unit_buy_data.game_version = (
             0

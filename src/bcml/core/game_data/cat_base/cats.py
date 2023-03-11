@@ -1490,6 +1490,15 @@ class EvolveText:
     def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
 
+    @staticmethod
+    def create_text_line(text: list[str]) -> dict[int, EvolveTextText]:
+        first_evolve = text[:3]
+        second_evolve = text[3:6]
+        return {
+            0: EvolveTextText(0, first_evolve),
+            1: EvolveTextText(1, second_evolve),
+        }
+
 
 class Cat:
     def __init__(
