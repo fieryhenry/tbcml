@@ -1407,6 +1407,18 @@ class EvolveText:
         }
 
     @staticmethod
+    def deserialize(data: dict[str, Any]) -> "EvolveText":
+        return EvolveText(
+            {
+                cat_id: {
+                    evolve: EvolveTextText.deserialize(evolve, text)
+                    for evolve, text in evolves.items()
+                }
+                for cat_id, evolves in data["text"].items()
+            }
+        )
+
+    @staticmethod
     def get_file_name(lang: str) -> str:
         return f"unitevolve_{lang}.csv"
 
@@ -1452,11 +1464,11 @@ class EvolveText:
             remove_empty=False,
         )
         for cat_id, line in self.text.items():
-            first_evolve = line[0]
-            second_evolve = line[1]
+            first_evolve = line[0].text
+            second_evolve = line[1].text
             csv.set_line(
                 cat_id,
-                first_evolve.text + second_evolve.text,
+                first_evolve + second_evolve,
             )
 
         game_data.set_file(
@@ -1499,6 +1511,10 @@ class Cat:
         self.evolve_text = evolve_text
 
     def serialize(self) -> dict[str, Any]:
+        evolve_text = {}
+        if self.evolve_text is not None:
+            for evolve, text in self.evolve_text.items():
+                evolve_text[evolve] = text.serialize()
         return {
             "forms": {
                 form.form.value: form.serialize() for form in self.forms.values()
@@ -1506,11 +1522,17 @@ class Cat:
             "unit_buy_data": self.unit_buy_data.serialize(),
             "talent": self.talent.serialize() if self.talent is not None else None,
             "nyanko_picture_book_data": self.nyanko_picture_book_data.serialize(),
-            "evolve_text": self.evolve_text,
+            "evolve_text": evolve_text,
         }
 
     @staticmethod
     def deserialize(data: dict[str, Any], cat_id: int) -> "Cat":
+        evolve_text: Optional[dict[int, EvolveTextText]] = None
+        if data["evolve_text"] is not None:
+            evolve_text = {
+                int(evolve): EvolveTextText.deserialize(int(evolve), text)
+                for evolve, text in data["evolve_text"].items()
+            }
         return Cat(
             cat_id,
             {
@@ -1522,7 +1544,7 @@ class Cat:
             if data["talent"] is not None
             else None,
             NyankoPictureBookData.deserialize(data["nyanko_picture_book_data"], cat_id),
-            data["evolve_text"],
+            evolve_text,
         )
 
     @staticmethod
@@ -1694,7 +1716,7 @@ class Cats:
     @staticmethod
     def deserialize(data: dict[str, Any]) -> "Cats":
         cats = {
-            cat_id: Cat.deserialize(cat_data, cat_id)
+            cat_id: Cat.deserialize(cat_data, int(cat_id))
             for cat_id, cat_data in data["cats"].items()
         }
         return Cats(cats)
@@ -1780,6 +1802,6 @@ class Cats:
                 continue
             if gd_cat is not None:
                 if gd_cat != other_cat:
-                    self.cats[cat_id] = gd_cat
+                    self.cats[cat_id] = other_cat
             else:
                 self.cats[cat_id] = other_cat
