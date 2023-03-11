@@ -100,7 +100,7 @@ class Data:
 
     def read_int_list(self, length: int) -> list[int]:
         result: list[int] = []
-        for i in range(length):
+        for _ in range(length):
             result.append(self.read_int())
         return result
 
