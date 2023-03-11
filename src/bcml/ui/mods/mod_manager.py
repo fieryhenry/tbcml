@@ -480,6 +480,8 @@ class ModList(QtWidgets.QWidget):
         self.mod_list.customContextMenuRequested.connect(self.show_context_menu)  # type: ignore
 
     def show_context_menu(self, pos: QtCore.QPoint):
+        if self.get_selected_mod() is None:
+            return
         menu = QtWidgets.QMenu()
         menu.addAction(
             f"{self.locale_manager.search_key('delete_mod')}",
