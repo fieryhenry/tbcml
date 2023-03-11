@@ -128,3 +128,9 @@ class ModManager:
 
     def get_mod_path(self, mod: bc_mod.Mod) -> io.path.Path:
         return self.mod_folder.add(mod.get_file_name())
+
+    def regenerate_mod_json(self):
+        self.init_new_json()
+        for mod in self.mods.values():
+            self.json_file.get_json()["mods"][mod.get_file_name()] = True
+        self.save_mod_json()

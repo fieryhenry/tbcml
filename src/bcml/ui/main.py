@@ -2,7 +2,7 @@ from typing import Optional
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-from bcml.core import io, locale_handler
+from bcml.core import io, locale_handler, mods
 from bcml.ui import apk_manager, server_files_manager
 from bcml.ui.mods import mod_loader, mod_manager
 
@@ -12,6 +12,7 @@ class MainWindow(QtWidgets.QMainWindow):
         super(MainWindow, self).__init__(parent)
         self.locale_manager = locale_handler.LocalManager.from_config()
         self.locale_manager.check_duplicates()
+        mods.mod_manager.ModManager().regenerate_mod_json()
         self.setup_ui()
 
     def load_stylesheet(self, theme: str = "dark"):
@@ -20,7 +21,6 @@ class MainWindow(QtWidgets.QMainWindow):
             "assets", "styles", theme, "stylesheet.qss"
         )
         data = style_path.read().to_str()
-        # change all url() paths to absolute paths and replace colons in the path with forward slashes
         data = data.replace(f"url({theme}:", f"url({str(style_path.parent())}/")
 
         self.setStyleSheet(data)
