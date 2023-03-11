@@ -247,6 +247,8 @@ class ShopEditor(QtWidgets.QWidget):
         self.fill_table()
 
     def save(self):
+        if not self.setup:
+            return
         self.mod.cat_base.item_shop = self.item_shop
 
     def setup_data(self):
