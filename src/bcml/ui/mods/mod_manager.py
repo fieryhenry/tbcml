@@ -485,6 +485,10 @@ class ModList(QtWidgets.QWidget):
             f"{self.locale_manager.search_key('delete_mod')}",
             self.delete_mod_wrapper,
         )
+        menu.addAction(
+            f"{self.locale_manager.search_key('open_mod_in_explorer')}",
+            self.open_mod_in_explorer,
+        )
         menu.exec_(self.mod_list.mapToGlobal(pos))
 
     def delete_mod_wrapper(self):
@@ -506,13 +510,16 @@ class ModList(QtWidgets.QWidget):
                 )
 
     def delete_mod(self):
-        items = self.mod_list.selectedItems()
-        if len(items) > 0:
-            md = mods.mod_manager.ModManager().get_mod_by_full_name(items[0].text())
-            if md is not None:
-                mods.mod_manager.ModManager().remove_mod(md)
-                self.refresh_mods()
-                self.on_delete_mod()
+        md = self.get_selected_mod()
+        if md is not None:
+            mods.mod_manager.ModManager().remove_mod(md)
+            self.refresh_mods()
+            self.on_delete_mod()
+
+    def open_mod_in_explorer(self):
+        md = self.get_selected_mod()
+        if md is not None:
+            mods.mod_manager.ModManager().get_mod_path(md).open()
 
     def show_mod_info_wrapper(self, item: QtWidgets.QListWidgetItem):
         mod_name = item.text()
@@ -524,6 +531,13 @@ class ModList(QtWidgets.QWidget):
         items = self.mod_list.selectedItems()
         if len(items) > 0:
             self.show_mod_info_wrapper(items[0])
+
+    def get_selected_mod(self) -> Optional[mods.bc_mod.Mod]:
+        items = self.mod_list.selectedItems()
+        if len(items) > 0:
+            md = mods.mod_manager.ModManager().get_mod_by_full_name(items[0].text())
+            return md
+        return None
 
     def get_add_mods(self):
         mds = mods.mod_manager.ModManager().get_mods()

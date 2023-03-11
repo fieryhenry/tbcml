@@ -125,3 +125,6 @@ class ModManager:
     def save_mods(self):
         for mod in self.mods.values():
             self.save_mod(mod)
+
+    def get_mod_path(self, mod: bc_mod.Mod) -> io.path.Path:
+        return self.mod_folder.add(mod.get_file_name())
