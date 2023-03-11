@@ -22,6 +22,7 @@ class ModManager:
             mod = bc_mod.Mod.load(path)
             if mod is not None:
                 mods[mod.get_file_name()] = mod
+        self.__mods = mods
         return mods
 
     @mods.setter
