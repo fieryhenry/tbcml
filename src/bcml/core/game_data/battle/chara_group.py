@@ -64,7 +64,15 @@ class CharaGroupSet:
             data["chara_ids"],
         )
 
-    def __eq__(self, other: object):
+    def __eq__(self, other: object) -> bool:
+        """Checks if the CharaGroupSet is equal to another object.
+
+        Args:
+            other (object): The object to compare to.
+
+        Returns:
+            bool: True if the CharaGroupSet is equal to the other object, False otherwise.
+        """
         if not isinstance(other, CharaGroupSet):
             return False
         return (
@@ -74,7 +82,15 @@ class CharaGroupSet:
             and self.chara_ids == other.chara_ids
         )
 
-    def __ne__(self, other: object):
+    def __ne__(self, other: object) -> bool:
+        """Checks if the CharaGroupSet is not equal to another object.
+
+        Args:
+            other (object): The object to compare to.
+
+        Returns:
+            bool: True if the CharaGroupSet is not equal to the other object, False otherwise.
+        """
         return not self.__eq__(other)
 
 
