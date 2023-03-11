@@ -14,6 +14,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.locale_manager.check_duplicates()
         self.setup_ui()
 
+    def load_stylesheet(self, theme: str = "dark"):
+        # themes provided by https://github.com/Alexhuszagh/BreezeStyleSheets
+        style_path = io.path.Path(is_relative=True).add(
+            "assets", "styles", theme, "stylesheet.qss"
+        )
+        data = style_path.read().to_str()
+        # change all url() paths to absolute paths and replace colons in the path with forward slashes
+        data = data.replace(f"url({theme}:", f"url({str(style_path.parent())}/")
+
+        self.setStyleSheet(data)
+
     def create_toolbar(self):
         self.toolbar = QtWidgets.QToolBar()
         self.toolbar.setToolButtonStyle(
