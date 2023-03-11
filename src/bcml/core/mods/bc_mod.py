@@ -114,19 +114,11 @@ class Mod:
         json = io.json_file.JsonFile.from_data(json_file)
         mod = Mod.from_mod_json(json.get_json())
 
-        try:
-            mod.gamototo = game_data.gamototo.gamototo.Gamototo.from_zip(zip_file)
-            mod.battle = game_data.battle.battle.Battle.from_zip(zip_file)
-            mod.cat_base = game_data.cat_base.cat_base.CatBase.from_zip(zip_file)
-            mod.maps = game_data.map.map.Maps.from_zip(zip_file)
-            mod.localizable = game_data.pack.Localizable.from_zip(zip_file)
-        except Exception as e:
-            mod.add_error(
-                ModError(
-                    f"Error loading mod: {mod.name} by {mod.author} ({mod.mod_id}): {e}"
-                )
-            )
-            return mod
+        mod.gamototo = game_data.gamototo.gamototo.Gamototo.from_zip(zip_file)
+        mod.battle = game_data.battle.battle.Battle.from_zip(zip_file)
+        mod.cat_base = game_data.cat_base.cat_base.CatBase.from_zip(zip_file)
+        mod.maps = game_data.map.map.Maps.from_zip(zip_file)
+        mod.localizable = game_data.pack.Localizable.from_zip(zip_file)
 
         mod.scripts = mods.frida_script.Scripts.from_zip(
             zip_file, mod.country_code, mod.game_version
