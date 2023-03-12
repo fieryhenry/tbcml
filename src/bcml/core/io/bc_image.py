@@ -1,6 +1,6 @@
 from typing import Any, Optional
 from bcml.core.io import data, path
-from PIL import Image, ImageDraw
+from PIL import Image
 
 
 class BCImage:
@@ -76,37 +76,6 @@ class BCImage:
 
     def flip_y(self):
         self.__image = self.image.transpose(Image.FLIP_TOP_BOTTOM)
-
-    def rotate(self, angle: float, center: tuple[int, int]):
-        # self.extend_image_transparent(self.width * 2, self.height * 2)
-        self.draw_circle(center[0], center[1], 10, (255, 0, 0, 255))
-        print(angle)
-        self.save(path.Path(f"test{angle}.png"))
-        # self.image = self.image.rotate(angle, expand=False, center=center, resample=Image.BICUBIC)
-        # self.update()
-        # self.save(path.Path(f"test_after{angle}.png"))
-
-    def draw_circle(
-        self, x: int, y: int, radius: int, color: tuple[int, int, int, int]
-    ):
-        self.__image = self.image.convert("RGBA")
-        draw = ImageDraw.Draw(self.image)
-        draw.ellipse((x - radius, y - radius, x + radius, y + radius), fill=color)
-
-    def extend_image_transparent(self, width: int, height: int):
-        new_image = Image.new("RGBA", (width, height))
-        center = (self.width // 2, self.height // 2)
-        new_image.paste(self.image, center)
-        self.__image = new_image
-
-    def move(self, x: int, y: int):
-        self.__image = self.image.crop((x, y, x + self.width, y + self.height))
-
-    def set_opacity(self, opacity: float):
-        # set opacity without making the background black
-        im2 = self.image.copy()
-        im2.putalpha(int(255 * opacity))
-        self.image.paste(im2, self.image)  # type: ignore
 
     def add_image(self, image: "BCImage", x: int, y: int):
         self.image.paste(image.image, (x, y), image.image)
