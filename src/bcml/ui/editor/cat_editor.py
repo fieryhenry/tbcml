@@ -1,10 +1,179 @@
 import time
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 from bcml.core import game_data, io, locale_handler, mods
 from bcml.ui.utils import ui_thread
+
+
+class SearchFilter:
+    def __init__(self, form_name: str, rarities: Optional[list[int]] = None):
+        self.form_name = form_name
+        self.rarities = rarities
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, SearchFilter):
+            return False
+        return self.form_name == other.form_name and self.rarities == other.rarities
+
+    def __ne__(self, other: Any) -> bool:
+        return not self.__eq__(other)
+
+    def __str__(self) -> str:
+        return f"SearchFilter(form_name={self.form_name}, rarities={self.rarities})"
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+
+class CatSearchBox(QtWidgets.QWidget):
+    def __init__(
+        self,
+        rarities: dict[int, str],
+        on_search: Callable[[SearchFilter], None],
+        parent: Optional[QtWidgets.QWidget] = None,
+    ):
+        super(CatSearchBox, self).__init__(parent)
+        self.on_search = on_search
+        self.rarities = rarities
+        self.setup_ui()
+
+    def setup_ui(self):
+        self.locale_manager = locale_handler.LocalManager.from_config()
+        self._layout = QtWidgets.QHBoxLayout(self)
+        self._layout.setContentsMargins(0, 0, 0, 0)
+        self._layout.setSpacing(0)
+
+        self._search_box = QtWidgets.QLineEdit(self)
+        self._search_box.setPlaceholderText(
+            self.locale_manager.search_key("search_placeholder")
+        )
+        self._layout.addWidget(self._search_box)
+
+        self._search_box.textChanged.connect(self.on_search_text)
+
+        self.filter_button = QtWidgets.QPushButton(self)
+        self.filter_button.setText(self.locale_manager.search_key("filter"))
+        self.filter_button.setFixedWidth(100)
+        self.filter_button.clicked.connect(self.on_filter)
+        self.filter: Optional[SearchFilter] = None
+        self._layout.addWidget(self.filter_button)
+
+    def on_search_text(self, text: str):
+        if self.filter is None:
+            self.filter = SearchFilter(text)
+        else:
+            self.filter.form_name = text
+        self.on_search(self.filter)
+
+    def on_filter(self):
+        self.filter_window = FilterWindow(self.rarities, self.on_search_window, self)
+        self.filter_window.show()
+
+    def on_search_window(self, filter: SearchFilter):
+        if filter == SearchFilter("") or filter == SearchFilter(
+            "", list(self.rarities.keys())
+        ):
+            self.set_filter_changed(False)
+        else:
+            self.set_filter_changed(True)
+        self.filter = filter
+        self.on_search(filter)
+
+    def set_filter_changed(self, changed: bool):
+        if changed:
+            self.filter_button.setText(self.locale_manager.search_key("filter_applied"))
+        else:
+            self.filter_button.setText(self.locale_manager.search_key("filter"))
+
+
+class FilterWindow(QtWidgets.QDialog):
+    def __init__(
+        self,
+        rarities: dict[int, str],
+        on_change: Callable[[SearchFilter], None],
+        parent: Optional[QtWidgets.QWidget] = None,
+    ):
+        super(FilterWindow, self).__init__(parent)
+        self.on_change = on_change
+        self.rarities = rarities
+        self.setup_ui()
+
+    def setup_ui(self):
+        self.locale_manager = locale_handler.LocalManager.from_config()
+        self.setWindowTitle(self.locale_manager.search_key("filter_title"))
+        self.resize(300, 400)
+
+        self._layout = QtWidgets.QVBoxLayout(self)
+
+        self._form_name = QtWidgets.QLineEdit(self)
+        self._form_name.setPlaceholderText(
+            self.locale_manager.search_key("cat_editor_form_name")
+        )
+        self._layout.addWidget(self._form_name)
+
+        self._form_name.textChanged.connect(self.on_form_name)
+        self.form_name = ""
+
+        self._rarity_layout = QtWidgets.QGridLayout()
+        self._layout.addLayout(self._rarity_layout)
+
+        self._rarity_label = QtWidgets.QLabel(self)
+        self._rarity_label.setText(self.locale_manager.search_key("cat_editor_rarity"))
+        self._rarity_layout.addWidget(self._rarity_label, 0, 0, 1, 2)
+
+        # a way to select specific rarities to filter by
+        self._rarity_buttons: dict[int, QtWidgets.QCheckBox] = {}
+        for rarity_id, name in self.rarities.items():
+            button = QtWidgets.QCheckBox(self)
+            button.setText(name)
+            button.setChecked(True)
+            button.stateChanged.connect(self.on_rarity)
+            row = rarity_id // 2 + 1
+            column = rarity_id % 2
+            self._rarity_layout.addWidget(button, row, column)
+            self._rarity_buttons[rarity_id] = button
+
+        self.select_all_rarities = QtWidgets.QPushButton(self)
+        self.select_all_rarities.setText(
+            self.locale_manager.search_key("cat_editor_select_all_rarities")
+        )
+        self.select_all_rarities.clicked.connect(self.on_select_all_rarities)
+        self._rarity_layout.addWidget(self.select_all_rarities, 4, 0, 1, 2)
+
+        self.rarities_selected: list[int] = list(self.rarities.keys())
+
+        self._layout.addStretch()
+
+    def on_form_name(self, text: str):
+        self.form_name = text
+        self.update_filter()
+
+    def update_filter(self):
+        self.filter = SearchFilter(
+            self.form_name,
+            self.rarities_selected,
+        )
+        self.on_change(self.filter)
+
+    def on_rarity(self):
+        rarities: list[int] = []
+        for rarity_id, button in self._rarity_buttons.items():
+            if button.isChecked():
+                rarities.append(rarity_id)
+        self.rarities_selected = rarities
+        self.update_filter()
+
+    def on_select_all_rarities(self):
+        flip = True
+        if len(self.rarities_selected) == len(self.rarities):
+            flip = False
+        for button in self._rarity_buttons.values():
+            button.disconnect()
+            button.setChecked(flip)
+            button.stateChanged.connect(self.on_rarity)
+        self.on_rarity()
 
 
 class CatEditor(QtWidgets.QWidget):
@@ -28,23 +197,27 @@ class CatEditor(QtWidgets.QWidget):
         self._layout = QtWidgets.QVBoxLayout(self)
         self._layout.setObjectName("layout")
         self._layout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(self._layout)
         self._cat_list = QtWidgets.QListWidget(self)
         self._cat_list.setObjectName("cat_list")
         self._layout.addWidget(self._cat_list)
-
-        self.search_bar = QtWidgets.QLineEdit(self)
-        self.search_bar.setPlaceholderText("Search")
-        self.search_bar.textChanged.connect(self.search)
-        self._layout.addWidget(self.search_bar)
 
         self.load_cat_thread = ui_thread.ThreadWorker.run_in_thread_on_finished(
             self.load_cats, self.load_cats_finished
         )
 
     def load_cats(self):
-        self.all_cats = game_data.cat_base.cats.Cats.from_game_data(self.game_packs)
-        self.all_cats.import_cats(self.mod.cat_base.cats, self.game_packs)
+        self.total_cats = game_data.cat_base.cats.Cats.get_total_cats(self.game_packs)
+        self.unit_buy = game_data.cat_base.cats.UnitBuy.from_game_data(self.game_packs)
+        self.localizable = self.game_packs.localizable
+        self.rarities = self.unit_buy.get_rarities(self.localizable)
+        self.talents = game_data.cat_base.cats.Talents.from_game_data(self.game_packs)
+        self.nyanko_picture_book = (
+            game_data.cat_base.cats.NyankoPictureBook.from_game_data(self.game_packs)
+        )
+        self.evolve_text = game_data.cat_base.cats.EvolveText.from_game_data(
+            self.game_packs
+        )
+
         self.edited_cats: list[game_data.cat_base.cats.Cat] = list(
             self.mod.cat_base.cats.cats.values()
         )
@@ -64,9 +237,11 @@ class CatEditor(QtWidgets.QWidget):
         }
 
     def load_cats_finished(self):
+        self.search_bar = CatSearchBox(self.rarities, self.search, self)
+        self._layout.addWidget(self.search_bar)
         self._cat_list.clear()
-        for cat in self.all_cats.cats.values():
-            cat_widget = CatListItem(cat, self.blank_icons, self._cat_list)
+        for cat_id in range(self.total_cats):
+            cat_widget = CatListItem(cat_id, self.blank_icons, self._cat_list)
             item = QtWidgets.QListWidgetItem(self._cat_list)
             size_hint = cat_widget.sizeHint()
             size_hint.setHeight(size_hint.height() // 2)
@@ -109,21 +284,38 @@ class CatEditor(QtWidgets.QWidget):
 
         for i in range(start - 1, stop + 1):
             item = self._cat_list.item(i)
-            cat_widget = self._cat_list.itemWidget(item)
+            cat_widget: CatListItem = self._cat_list.itemWidget(item)
             try:
-                cat_widget.add_ui()  # type: ignore
+                cat_widget.load_cat(  # type: ignore
+                    self.game_packs,
+                    self.unit_buy,
+                    self.talents,
+                    self.nyanko_picture_book,
+                    self.evolve_text,
+                )
+
             except AttributeError:
                 pass
 
-    def search(self, text: str):
+    def search(self, filter: SearchFilter):
         for i in range(self._cat_list.count()):
             item = self._cat_list.item(i)
             cat_widget = self._cat_list.itemWidget(item)
             if isinstance(cat_widget, CatListItem):
-                if cat_widget.has_name(text):  # type: ignore
-                    item.setHidden(False)
-                else:
+                cat_widget.load_cat(  # type: ignore
+                    self.game_packs,
+                    self.unit_buy,
+                    self.talents,
+                    self.nyanko_picture_book,
+                    self.evolve_text,
+                )
+                if not cat_widget.has_name(filter.form_name):  # type: ignore
                     item.setHidden(True)
+                    continue
+                if not cat_widget.is_rarities(filter.rarities):  # type: ignore
+                    item.setHidden(True)
+                    continue
+                item.setHidden(False)
 
         self.check_items(True)
 
@@ -154,14 +346,15 @@ class CatEditor(QtWidgets.QWidget):
 class CatListItem(QtWidgets.QListWidget):
     def __init__(
         self,
-        cat: "game_data.cat_base.cats.Cat",
+        cat_id: int,
         blank_icons: dict["game_data.cat_base.cats.FormType", "io.bc_image.BCImage"],
         parent: Optional[QtWidgets.QWidget] = None,
     ):
         super(CatListItem, self).__init__(parent)
-        self.cat = cat
         self.blank_icons = blank_icons
+        self.cat_id = cat_id
         self.ui_added = False
+        self.cat: Optional["game_data.cat_base.cats.Cat"] = None
         self.setup_ui()
 
     def setup_ui(self):
@@ -182,8 +375,34 @@ class CatListItem(QtWidgets.QListWidget):
         self.wrapper_layout.setColumnStretch(1, 10)
         self._layout.addWidget(self.wrapper, 0, 0)
 
+    def set_cat(self, cat: "game_data.cat_base.cats.Cat"):
+        self.cat = cat
+        self.add_ui()
+
+    def load_cat(
+        self,
+        game_packs: game_data.pack.GamePacks,
+        unit_buy: game_data.cat_base.cats.UnitBuy,
+        talents: game_data.cat_base.cats.Talents,
+        nyanko_pic_book: game_data.cat_base.cats.NyankoPictureBook,
+        evov_text: game_data.cat_base.cats.EvolveText,
+    ):
+        if self.cat is not None:
+            return
+        cat = game_data.cat_base.cats.Cat.from_game_data(
+            game_packs,
+            self.cat_id,
+            unit_buy,
+            talents,
+            nyanko_pic_book,
+            evov_text,
+        )
+        if cat is None:
+            return
+        self.set_cat(cat)
+
     def add_ui(self):
-        if self.ui_added:
+        if self.ui_added or self.cat is None:
             return
         self.ui_added = True
         self.id_label = QtWidgets.QLabel()
@@ -239,10 +458,24 @@ class CatListItem(QtWidgets.QListWidget):
             self.cat_form_layout.addWidget(widget, 0, total_forms + i)
 
     def has_name(self, name: str):
+        if self.cat is None:
+            return False
         for form in self.cat.forms.values():
             if name.lower() in form.name.lower():
                 return True
         return False
+
+    def is_rarity(self, rarity: int):
+        if self.cat is None:
+            return False
+        return self.cat.unit_buy_data.rarity.value == rarity
+
+    def is_rarities(self, rarities: Optional[list[int]]):
+        if self.cat is None:
+            return False
+        if rarities is None:
+            return True
+        return self.cat.unit_buy_data.rarity.value in rarities
 
 
 class CatEditScreen(QtWidgets.QDialog):
@@ -262,11 +495,8 @@ class CatEditScreen(QtWidgets.QDialog):
         self.setObjectName("CatEditScreen")
         self.setWindowTitle(self.locale_manager.search_key("cat_editor_title"))
         self.resize(800, 600)
-        self.setContentsMargins(0, 0, 0, 0)
 
         self._layout = QtWidgets.QGridLayout(self)
-        self._layout.setContentsMargins(0, 0, 0, 0)
-        self._layout.setSpacing(0)
         self._layout.setObjectName("layout")
 
         self._tab_widget = QtWidgets.QTabWidget(self)
@@ -292,8 +522,6 @@ class CatEditScreen(QtWidgets.QDialog):
         tab = QtWidgets.QWidget()
         tab.setObjectName("general_tab")
         tab_layout = QtWidgets.QGridLayout(tab)
-        tab_layout.setContentsMargins(0, 0, 0, 0)
-        tab_layout.setSpacing(0)
         tab_layout.setObjectName("tab_layout")
 
         self._general_tab = GeneralTab(self.cat, tab)
@@ -305,8 +533,6 @@ class CatEditScreen(QtWidgets.QDialog):
         tab = QtWidgets.QWidget()
         tab.setObjectName("forms_tab")
         tab_layout = QtWidgets.QGridLayout(tab)
-        tab_layout.setContentsMargins(0, 0, 0, 0)
-        tab_layout.setSpacing(0)
         tab_layout.setObjectName("tab_layout")
 
         self._forms_tab = FormsTab(self.cat, tab)
@@ -332,11 +558,8 @@ class GeneralTab(QtWidgets.QWidget):
 
     def setup_ui(self):
         self.setObjectName("GeneralTab")
-        self.setContentsMargins(0, 0, 0, 0)
 
         self._layout = QtWidgets.QGridLayout(self)
-        self._layout.setContentsMargins(0, 0, 0, 0)
-        self._layout.setSpacing(0)
         self._layout.setObjectName("layout")
 
 
@@ -353,11 +576,8 @@ class FormsTab(QtWidgets.QWidget):
 
     def setup_ui(self):
         self.setObjectName("FormsTab")
-        self.setContentsMargins(0, 0, 0, 0)
 
         self._layout = QtWidgets.QGridLayout(self)
-        self._layout.setContentsMargins(0, 0, 0, 0)
-        self._layout.setSpacing(0)
         self._layout.setObjectName("layout")
 
         self.form_tabs = QtWidgets.QTabWidget(self)
@@ -390,11 +610,8 @@ class FormTab(QtWidgets.QWidget):
 
     def setup_ui(self):
         self.setObjectName("FormTab")
-        self.setContentsMargins(0, 0, 0, 0)
 
         self._layout = QtWidgets.QGridLayout(self)
-        self._layout.setContentsMargins(0, 0, 0, 0)
-        self._layout.setSpacing(0)
         self._layout.setObjectName("layout")
 
         self.name_group = QtWidgets.QGroupBox(self)
