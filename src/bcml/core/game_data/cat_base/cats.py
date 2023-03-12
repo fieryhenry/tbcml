@@ -1117,6 +1117,23 @@ class UnitBuy:
         return not self.__eq__(other)
 
 
+    def get_rarities(
+        self, localizable: "pack.Localizable",
+    ) -> dict[int, str]:
+        rarity_ids: set[int] = set()
+        for cat in self.unit_buy_data.values():
+            rarity_ids.add(cat.rarity.value)
+
+        rarity_names: list[str] = []
+
+        for rarity_id in rarity_ids:
+            name = localizable.get(f"rarity_name_{rarity_id+1}")
+            if name is None:
+                name = f"Rarity {rarity_id+1}"
+            rarity_names.append(name)
+
+        return {rarity_id: rarity_names[rarity_id] for rarity_id in rarity_ids}
+
 class Talent:
     def __init__(self, cat_id: int, raw_data: list[int]):
         self.cat_id = cat_id
@@ -1814,3 +1831,8 @@ class Cats:
                     self.cats[cat_id] = other_cat
             else:
                 self.cats[cat_id] = other_cat
+
+    @staticmethod
+    def get_total_cats(game_data: "pack.GamePacks") -> int:
+        return len(NyankoPictureBook.from_game_data(game_data).data)
+
