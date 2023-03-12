@@ -8,20 +8,30 @@ from bcml.ui.utils import ui_thread
 
 
 class SearchFilter:
-    def __init__(self, form_name: str, rarities: Optional[list[int]] = None):
+    def __init__(
+        self,
+        form_name: str,
+        rarities: Optional[list[int]] = None,
+        or_mode: bool = False,
+    ):
         self.form_name = form_name
         self.rarities = rarities
+        self.or_mode = or_mode
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, SearchFilter):
             return False
-        return self.form_name == other.form_name and self.rarities == other.rarities
+        return (
+            self.form_name == other.form_name
+            and self.rarities == other.rarities
+            and self.or_mode == other.or_mode
+        )
 
     def __ne__(self, other: Any) -> bool:
         return not self.__eq__(other)
 
     def __str__(self) -> str:
-        return f"SearchFilter(form_name={self.form_name}, rarities={self.rarities})"
+        return f"SearchFilter(form_name={self.form_name}, rarities={self.rarities}, or_mode={self.or_mode})"
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -144,6 +154,12 @@ class FilterWindow(QtWidgets.QDialog):
 
         self.rarities_selected: list[int] = list(self.rarities.keys())
 
+        self.or_mode = QtWidgets.QCheckBox(self)
+        self.or_mode.setText(self.locale_manager.search_key("or_filter_mode"))
+        self.or_mode.setChecked(False)
+        self.or_mode.stateChanged.connect(self.update_filter)
+        self._layout.addWidget(self.or_mode)
+
         self._layout.addStretch()
 
     def on_form_name(self, text: str):
@@ -154,6 +170,7 @@ class FilterWindow(QtWidgets.QDialog):
         self.filter = SearchFilter(
             self.form_name,
             self.rarities_selected,
+            self.or_mode.isChecked(),
         )
         self.on_change(self.filter)
 
@@ -302,20 +319,28 @@ class CatEditor(QtWidgets.QWidget):
             item = self._cat_list.item(i)
             cat_widget = self._cat_list.itemWidget(item)
             if isinstance(cat_widget, CatListItem):
-                cat_widget.load_cat(  # type: ignore
+                cat_widget = CatListItem.fix_type_hint(cat_widget)
+                cat_widget.load_cat(
                     self.game_packs,
                     self.unit_buy,
                     self.talents,
                     self.nyanko_picture_book,
                     self.evolve_text,
                 )
-                if not cat_widget.has_name(filter.form_name):  # type: ignore
-                    item.setHidden(True)
-                    continue
-                if not cat_widget.is_rarities(filter.rarities):  # type: ignore
-                    item.setHidden(True)
-                    continue
-                item.setHidden(False)
+                if filter.or_mode:
+                    if cat_widget.has_name(filter.form_name) or cat_widget.is_rarities(
+                        filter.rarities
+                    ):
+                        item.setHidden(False)
+                    else:
+                        item.setHidden(True)
+                else:
+                    if cat_widget.has_name(filter.form_name) and cat_widget.is_rarities(
+                        filter.rarities
+                    ):
+                        item.setHidden(False)
+                    else:
+                        item.setHidden(True)
 
         self.check_items(True)
 
@@ -356,6 +381,10 @@ class CatListItem(QtWidgets.QListWidget):
         self.ui_added = False
         self.cat: Optional["game_data.cat_base.cats.Cat"] = None
         self.setup_ui()
+
+    @staticmethod
+    def fix_type_hint(widget: "CatListItem"):
+        return widget
 
     def setup_ui(self):
         self.setObjectName("CatListItem")
