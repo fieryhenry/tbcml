@@ -271,13 +271,6 @@ class Data:
             data_list.append(Data(line))
         return data_list
 
-    # def remove_comments(self) -> "Data":
-    #    comments = ["//"]
-    #    data_list = self.split("\n")
-    #    for comment in comments:
-    #        data_list = [data.split(comment)[0] for data in data_list]
-    #    return Data.from_many(data_list, Data("\n"))
-
     def to_int(self) -> int:
         return int(self.data.decode())
 

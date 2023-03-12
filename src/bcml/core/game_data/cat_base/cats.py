@@ -1116,9 +1116,9 @@ class UnitBuy:
     def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
 
-
     def get_rarities(
-        self, localizable: "pack.Localizable",
+        self,
+        localizable: "pack.Localizable",
     ) -> dict[int, str]:
         rarity_ids: set[int] = set()
         for cat in self.unit_buy_data.values():
@@ -1133,6 +1133,7 @@ class UnitBuy:
             rarity_names.append(name)
 
         return {rarity_id: rarity_names[rarity_id] for rarity_id in rarity_ids}
+
 
 class Talent:
     def __init__(self, cat_id: int, raw_data: list[int]):
@@ -1455,14 +1456,9 @@ class EvolveText:
         text: dict[int, dict[int, EvolveTextText]] = {}
         for cat_id, line in enumerate(csv.lines):
             text[cat_id] = {}
-            # 1st evolve is the first 3 items
-            # 2nd evolve is the next 3 items
-
-            # 1st evolve
             text[cat_id][0] = EvolveTextText(
                 0, io.data.Data.data_list_string_list(line[:3])
             )
-            # 2nd evolve
             text[cat_id][1] = EvolveTextText(
                 1, io.data.Data.data_list_string_list(line[3:6])
             )
@@ -1835,4 +1831,3 @@ class Cats:
     @staticmethod
     def get_total_cats(game_data: "pack.GamePacks") -> int:
         return len(NyankoPictureBook.from_game_data(game_data).data)
-

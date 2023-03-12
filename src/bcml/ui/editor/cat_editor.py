@@ -165,7 +165,6 @@ class FilterWindow(QtWidgets.QDialog):
         self._rarity_label.setText(self.locale_manager.search_key("cat_editor_rarity"))
         self._rarity_layout.addWidget(self._rarity_label, 0, 0, 1, 2)
 
-        # a way to select specific rarities to filter by
         self._rarity_buttons: dict[int, QtWidgets.QCheckBox] = {}
         for rarity_id, name in self.rarities.items():
             button = QtWidgets.QCheckBox(self)

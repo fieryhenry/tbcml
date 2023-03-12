@@ -63,8 +63,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.mod_view = mod_manager.ModView(self)
         self._layout.addWidget(self.mod_view)
 
-        # self.check_apk_selected()
-
     def run(self):
         self.show()
         self.raise_()

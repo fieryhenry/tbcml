@@ -169,7 +169,6 @@ class BCUForm:
         base_stats = self.form_data["du"]
         traits = base_stats["traits"]
         procs = base_stats["rep"]["proc"]
-        # sort by trait id
         traits = sorted(traits, key=lambda x: x["id"])
         stats.hp = base_stats["hp"]
         stats.kbs = base_stats["hb"]
