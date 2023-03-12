@@ -1,4 +1,5 @@
 import time
+import enum
 from typing import Any, Callable, Optional
 
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -7,16 +8,27 @@ from bcml.core import game_data, io, locale_handler, mods
 from bcml.ui.utils import ui_thread
 
 
+class SearchMode(enum.Enum):
+    CONTAINS = 0
+    STARTS_WITH = 1
+    ENDS_WITH = 2
+    EXACT = 3
+
+
 class SearchFilter:
     def __init__(
         self,
         form_name: str,
         rarities: Optional[list[int]] = None,
         or_mode: bool = False,
+        name_mode: SearchMode = SearchMode.CONTAINS,
+        case_sensitive: bool = False,
     ):
         self.form_name = form_name
         self.rarities = rarities
         self.or_mode = or_mode
+        self.name_mode = name_mode
+        self.case_sensitive = case_sensitive
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, SearchFilter):
@@ -25,13 +37,15 @@ class SearchFilter:
             self.form_name == other.form_name
             and self.rarities == other.rarities
             and self.or_mode == other.or_mode
+            and self.name_mode == other.name_mode
+            and self.case_sensitive == other.case_sensitive
         )
 
     def __ne__(self, other: Any) -> bool:
         return not self.__eq__(other)
 
     def __str__(self) -> str:
-        return f"SearchFilter(form_name={self.form_name}, rarities={self.rarities}, or_mode={self.or_mode})"
+        return f"SearchFilter(form_name={self.form_name}, rarities={self.rarities}, or_mode={self.or_mode}, name_mode={self.name_mode}, case_sensitive={self.case_sensitive})"
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -113,18 +127,36 @@ class FilterWindow(QtWidgets.QDialog):
     def setup_ui(self):
         self.locale_manager = locale_handler.LocalManager.from_config()
         self.setWindowTitle(self.locale_manager.search_key("filter_title"))
-        self.resize(300, 400)
+        self.resize(400, 300)
 
         self._layout = QtWidgets.QVBoxLayout(self)
+
+        self.form_name_layout = QtWidgets.QHBoxLayout()
+        self._layout.addLayout(self.form_name_layout)
 
         self._form_name = QtWidgets.QLineEdit(self)
         self._form_name.setPlaceholderText(
             self.locale_manager.search_key("cat_editor_form_name")
         )
-        self._layout.addWidget(self._form_name)
+        self.form_name_layout.addWidget(self._form_name)
 
         self._form_name.textChanged.connect(self.on_form_name)
         self.form_name = ""
+
+        self.case_sensitive = QtWidgets.QCheckBox(self)
+        self.case_sensitive.setText(self.locale_manager.search_key("case_sensitive"))
+        self.case_sensitive.setChecked(False)
+        self.case_sensitive.stateChanged.connect(self.update_filter)
+        self.form_name_layout.addWidget(self.case_sensitive)
+
+        self.name_search_mode = QtWidgets.QComboBox(self)
+        self.name_search_mode.addItem(self.locale_manager.search_key("contains"))
+        self.name_search_mode.addItem(self.locale_manager.search_key("starts_with"))
+        self.name_search_mode.addItem(self.locale_manager.search_key("ends_with"))
+        self.name_search_mode.addItem(self.locale_manager.search_key("exact_match"))
+        self.name_search_mode.currentIndexChanged.connect(self.on_name_search_mode)
+        self.name_mode = 0
+        self.form_name_layout.addWidget(self.name_search_mode)
 
         self._rarity_layout = QtWidgets.QGridLayout()
         self._layout.addLayout(self._rarity_layout)
@@ -154,13 +186,18 @@ class FilterWindow(QtWidgets.QDialog):
 
         self.rarities_selected: list[int] = list(self.rarities.keys())
 
+        self._layout.addStretch()
+
         self.or_mode = QtWidgets.QCheckBox(self)
         self.or_mode.setText(self.locale_manager.search_key("or_filter_mode"))
         self.or_mode.setChecked(False)
         self.or_mode.stateChanged.connect(self.update_filter)
         self._layout.addWidget(self.or_mode)
 
-        self._layout.addStretch()
+        self.clear_filter = QtWidgets.QPushButton(self)
+        self.clear_filter.setText(self.locale_manager.search_key("reset"))
+        self.clear_filter.clicked.connect(self.on_clear_filter)
+        self._layout.addWidget(self.clear_filter)
 
     def on_form_name(self, text: str):
         self.form_name = text
@@ -171,6 +208,8 @@ class FilterWindow(QtWidgets.QDialog):
             self.form_name,
             self.rarities_selected,
             self.or_mode.isChecked(),
+            SearchMode(self.name_mode),
+            self.case_sensitive.isChecked(),
         )
         self.on_change(self.filter)
 
@@ -189,6 +228,21 @@ class FilterWindow(QtWidgets.QDialog):
         for button in self._rarity_buttons.values():
             button.disconnect()
             button.setChecked(flip)
+            button.stateChanged.connect(self.on_rarity)
+        self.on_rarity()
+
+    def on_name_search_mode(self, index: int):
+        self.name_mode = index
+        self.update_filter()
+
+    def on_clear_filter(self):
+        self._form_name.setText("")
+        self.or_mode.setChecked(False)
+        self.case_sensitive.setChecked(False)
+        self.name_search_mode.setCurrentIndex(0)
+        for button in self._rarity_buttons.values():
+            button.disconnect()
+            button.setChecked(True)
             button.stateChanged.connect(self.on_rarity)
         self.on_rarity()
 
@@ -327,20 +381,14 @@ class CatEditor(QtWidgets.QWidget):
                     self.nyanko_picture_book,
                     self.evolve_text,
                 )
+                has_name = cat_widget.has_name(
+                    filter.form_name, filter.name_mode, filter.case_sensitive
+                )
+                is_rarities = cat_widget.is_rarities(filter.rarities)
                 if filter.or_mode:
-                    if cat_widget.has_name(filter.form_name) or cat_widget.is_rarities(
-                        filter.rarities
-                    ):
-                        item.setHidden(False)
-                    else:
-                        item.setHidden(True)
+                    item.setHidden(not (has_name or is_rarities))
                 else:
-                    if cat_widget.has_name(filter.form_name) and cat_widget.is_rarities(
-                        filter.rarities
-                    ):
-                        item.setHidden(False)
-                    else:
-                        item.setHidden(True)
+                    item.setHidden(not (has_name and is_rarities))
 
         self.check_items(True)
 
@@ -486,12 +534,24 @@ class CatListItem(QtWidgets.QListWidget):
             widget.setObjectName("spacer")
             self.cat_form_layout.addWidget(widget, 0, total_forms + i)
 
-    def has_name(self, name: str):
+    def has_name(self, name: str, mode: SearchMode, case_sensitive: bool):
         if self.cat is None:
             return False
         for form in self.cat.forms.values():
-            if name.lower() in form.name.lower():
-                return True
+            form_name = form.name.lower() if not case_sensitive else form.name
+            search_name = name.lower() if not case_sensitive else name
+            if mode == SearchMode.EXACT:
+                if form_name == search_name:
+                    return True
+            elif mode == SearchMode.CONTAINS:
+                if search_name in form_name:
+                    return True
+            elif mode == SearchMode.STARTS_WITH:
+                if form_name.startswith(search_name):
+                    return True
+            elif mode == SearchMode.ENDS_WITH:
+                if form_name.endswith(search_name):
+                    return True
         return False
 
     def is_rarity(self, rarity: int):
