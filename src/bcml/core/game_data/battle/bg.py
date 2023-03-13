@@ -160,6 +160,14 @@ class Bg:
         )
 
     def __eq__(self, other: object) -> bool:
+        """Compares two Bg objects.
+
+        Args:
+            other (object): The other Bg object to compare to.
+
+        Returns:
+            bool: Whether or not the two Bg objects are equal.
+        """
         if not isinstance(other, Bg):
             return False
         return (
@@ -174,6 +182,14 @@ class Bg:
         )
 
     def __ne__(self, other: object) -> bool:
+        """Compares two Bg objects.
+
+        Args:
+            other (object): The other Bg object to compare to.
+
+        Returns:
+            bool: Whether or not the two Bg objects are not equal.
+        """
         return not self.__eq__(other)
 
 
