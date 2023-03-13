@@ -350,24 +350,21 @@ class Apk:
         Returns:
             game_version.GameVersion: List of APK versions
         """
-        if cc == country_code.CountryCode.EN:
-            return Apk.get_all_versions_en()
+        if cc == country_code.CountryCode.EN or cc == country_code.CountryCode.JP:
+            return Apk.get_all_versions_en(cc)
         url = Apk.get_apk_version_url(cc)
         scraper = cloudscraper.create_scraper()  # type: ignore
         resp = scraper.get(url)
         soup = bs4.BeautifulSoup(resp.text, "html.parser")
         versionwrapp = soup.find("ul", {"class": "ver-wrap"})
         if not isinstance(versionwrapp, bs4.element.Tag):
-            print("Could not find versionwrapp")
             return []
         versions: list[game_version.GameVersion] = []
         for version in versionwrapp.find_all("li"):
             if not isinstance(version, bs4.element.Tag):
-                print("Version is not a tag")
                 continue
             version_anchor = version.find("a")
             if not isinstance(version_anchor, bs4.element.Tag):
-                print("Version anchor is not a tag")
                 continue
             version = version_anchor.get_attribute_list("data-dt-versioncode")[0]
             versions.append(game_version.GameVersion(int(version[:-1])))
@@ -522,8 +519,14 @@ class Apk:
         return f"https://d.apkpure.com/b/APK/jp.co.ponos.battlecats{self.country_code.get_patching_code()}?versionCode={self.game_version.game_version}0"
 
     @staticmethod
-    def get_all_versions_en() -> list[game_version.GameVersion]:
-        apk_urls = Apk.get_en_apk_urls("the-battle-cats")
+    def get_all_versions_en(
+        cc: country_code.CountryCode,
+    ) -> list[game_version.GameVersion]:
+        apk_urls = Apk.get_en_apk_urls(
+            "the-battle-cats-jp"
+            if cc == country_code.CountryCode.JP
+            else "the-battle-cats"
+        )
         if apk_urls is None:
             return []
         versions: list[game_version.GameVersion] = []
