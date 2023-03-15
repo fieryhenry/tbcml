@@ -2,7 +2,7 @@ import base64
 import json
 import time
 from typing import Optional, Callable
-from bcml.core import io, request, country_code
+from bcml.core import io, request, country_code, crypto
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
@@ -90,6 +90,20 @@ class ServerFileHandler:
                 path = io.apk.Apk.get_server_path(self.apk.country_code).add(name)
                 if not path.exists():
                     found = False
+                    break
+                file_size = row[1].to_str().strip()
+                if file_size != str(path.get_file_size()):
+                    found = False
+                    break
+                md5_hash = row[2].to_str().strip()
+                file_hash = (
+                    crypto.Hash(crypto.HashAlgorithm.MD5, path.read())
+                    .get_hash()
+                    .to_hex()
+                )
+                if md5_hash != file_hash:
+                    found = False
+                    break
 
             if found:
                 return False
