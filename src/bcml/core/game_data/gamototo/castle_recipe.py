@@ -1,6 +1,5 @@
 import enum
 from typing import Any, Optional
-from bcml.core.game_data.gamototo import cannon
 from bcml.core.game_data import pack, bc_anim
 from bcml.core import io
 
@@ -156,7 +155,7 @@ class CastleRecipe:
     def __init__(
         self,
         recipies: dict[int, Recipe],
-        castle_type: "cannon.CastleType",
+        castle_type: int,
         recipe_id: int,
         dev_level: int,
         stage_unlocked: int,
@@ -189,7 +188,7 @@ class CastleRecipe:
             "user_rank_unlocked": self.user_rank_unlocked,
             "attack_level": self.attack_level,
             "charge_level": self.charge_level,
-            "castle_type": self.castle_type.value,
+            "castle_type": self.castle_type,
             "recipies": {
                 level: recipie.serialize() for level, recipie in self.recipies.items()
             },
@@ -208,7 +207,7 @@ class CastleRecipe:
                 level: Recipe.deserialize(recipie)
                 for level, recipie in data["recipies"].items()
             },
-            cannon.CastleType(data["castle_type"]),
+            data["castle_type"],
             data["recipe_id"],
             data["dev_level"],
             data["stage_unlocked"],
@@ -222,17 +221,17 @@ class CastleRecipe:
         )
 
     @staticmethod
-    def get_file_name_recipe(castle_type: "cannon.CastleType") -> str:
-        return f"CastleRecipe_{io.data.PaddedInt(castle_type.value, 3)}.csv"
+    def get_file_name_recipe(castle_type: int) -> str:
+        return f"CastleRecipe_{io.data.PaddedInt(castle_type, 3)}.csv"
 
     @staticmethod
-    def get_name_png_file_name(castle_type: "cannon.CastleType") -> str:
-        return f"castleCustom_name_{io.data.PaddedInt(castle_type.value, 2)}.png"
+    def get_name_png_file_name(castle_type: int) -> str:
+        return f"castleCustom_name_{io.data.PaddedInt(castle_type, 2)}.png"
 
     @staticmethod
     def from_game_data(
         game_data: "pack.GamePacks",
-        castle_type: "cannon.CastleType",
+        castle_type: int,
         recipe_id: int,
         dev_level: int,
         stage_unlocked: int,
@@ -282,7 +281,7 @@ class CastleRecipe:
 
     def to_game_data(
         self,
-        castle_type: "cannon.CastleType",
+        castle_type: int,
         game_data: "pack.GamePacks",
     ) -> None:
         file_name = CastleRecipe.get_file_name_recipe(castle_type)
@@ -332,15 +331,15 @@ class CastleRecipe:
 
 
 class CastleRecipies:
-    def __init__(self, recipies: dict["cannon.CastleType", CastleRecipe]):
+    def __init__(self, recipies: dict[int, CastleRecipe]):
         self.recipies = recipies
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> dict[int, Any]:
         return {
-            castle_type.value: castle_recipe.serialize()
+            castle_type: castle_recipe.serialize()
             for castle_type, castle_recipe in self.recipies.items()
         }
-    
+
     def get_recipe(self) -> Optional[CastleRecipe]:
         recipie_lst = list(self.recipies.values())
         try:
@@ -354,7 +353,7 @@ class CastleRecipies:
     ) -> "CastleRecipies":
         recipies = {}
         for castle_type, castle_recipe in data.items():
-            recipies[cannon.CastleType(castle_type)] = CastleRecipe.deserialize(castle_recipe)
+            recipies[castle_type] = CastleRecipe.deserialize(castle_recipe)
         return CastleRecipies(recipies)
 
     @staticmethod
@@ -423,10 +422,13 @@ class CastleRecipies:
 
         unlock_data_csv = io.bc_csv.CSV(unlock_data_csv_file.dec_data)
 
-        unlock_sets: dict[cannon.CastleType, CastleRecipeUnlockSet] = {}
-        for i in range(0, len(unlock_csv.lines), 3):
+        unlock_sets: dict[int, CastleRecipeUnlockSet] = {}
+        i = 0
+        while i < len(unlock_csv.lines):
             castle_recipe_unlocks: dict[int, CastleRecipeUnlock] = {}
-            for j in range(3):
+            j = 0
+            id = unlock_csv.lines[i + j][0].to_int()
+            while unlock_csv.lines[i + j][0].to_int() == id:
                 castle_id = unlock_csv.lines[i + j][0].to_int()
                 unknown_1 = unlock_csv.lines[i + j][1].to_int()
                 unknown_2 = unlock_csv.lines[i + j][2].to_int()
@@ -434,14 +436,15 @@ class CastleRecipies:
                 castle_recipe_unlocks[j] = CastleRecipeUnlock(
                     castle_id, unknown_1, unknown_2, max_level, j
                 )
-            castle_type = cannon.CastleType(i // 3)
-            unlock_sets[castle_type] = CastleRecipeUnlockSet(
-                i // 3, castle_recipe_unlocks
-            )
+                j += 1
+            castle_type = id
+            unlock_sets[castle_type] = CastleRecipeUnlockSet(id, castle_recipe_unlocks)
+            i += 1
 
-        castle_recipies: dict[cannon.CastleType, CastleRecipe] = {}
+        print(unlock_data_csv_file.dec_data)
+        castle_recipies: dict[int, CastleRecipe] = {}
         for i, line in enumerate(unlock_data_csv.lines[1:]):
-            castle_type = cannon.CastleType(line[0].to_int())
+            castle_type = line[0].to_int()
             recipe_id = line[1].to_int()
             dev_level = line[2].to_int()
             stage_unlocked = line[3].to_int()
@@ -467,8 +470,8 @@ class CastleRecipies:
                 attack_level,
                 charge_level,
                 unlock_sets[castle_type],
-                names[castle_type.value],
-                descriptions[castle_type.value],
+                names[castle_type],
+                descriptions[castle_type],
                 name_imgcut,
             )
         return CastleRecipies(castle_recipies)
@@ -508,37 +511,43 @@ class CastleRecipies:
 
         remaining_recipies = self.recipies.copy()
 
-        for i in range(0, len(unlock_csv.lines), 3):
-            castle_type = cannon.CastleType(i // 3)
+        for i, line in enumerate(unlock_csv.lines):
+            castle_type = line[0].to_int()
             try:
-                castle_recipe_unlock_set = self.recipies[castle_type].unlock_set
+                castle_recipe = self.recipies[castle_type]
             except KeyError:
                 continue
-            for j in range(3):
-                castle_recipe_unlock = castle_recipe_unlock_set.castle_recipe_unlocks[j]
-                unlock_csv.lines[i + j][0].set(castle_recipe_unlock.castle_id)
-                unlock_csv.lines[i + j][1].set(castle_recipe_unlock.unknown_1)
-                unlock_csv.lines[i + j][2].set(castle_recipe_unlock.unknown_2)
-                unlock_csv.lines[i + j][3].set(castle_recipe_unlock.max_level)
+            castle_recipe_unlock_set = castle_recipe.unlock_set
+            for (
+                j,
+                castle_recipe_unlock,
+            ) in castle_recipe_unlock_set.castle_recipe_unlocks.items():
+                line[0].set(castle_recipe_unlock_set.castle_id)
+                line[1].set(castle_recipe_unlock.unknown_1)
+                line[2].set(castle_recipe_unlock.unknown_2)
+                line[3].set(castle_recipe_unlock.max_level)
+                unlock_csv.set_line(i + j, line)
             remaining_recipies.pop(castle_type)
 
         for castle_type, castle_recipe in remaining_recipies.items():
             castle_recipe_unlock_set = castle_recipe.unlock_set
-            for j in range(3):
-                castle_recipe_unlock = castle_recipe_unlock_set.castle_recipe_unlocks[j]
+            for (
+                j,
+                castle_recipe_unlock,
+            ) in castle_recipe_unlock_set.castle_recipe_unlocks.items():
                 unlock_csv.add_line(
                     [
-                        castle_recipe_unlock.castle_id,
+                        castle_recipe_unlock_set.castle_id,
                         castle_recipe_unlock.unknown_1,
                         castle_recipe_unlock.unknown_2,
                         castle_recipe_unlock.max_level,
                     ]
                 )
-
         remaining_recipies = self.recipies.copy()
+        # print(unlock_data_csv_file.dec_data)
 
         for i, line in enumerate(unlock_data_csv.lines[1:]):
-            castle_type = cannon.CastleType(line[0].to_int())
+            castle_type = line[0].to_int()
             try:
                 castle_recipe = self.recipies[castle_type]
             except KeyError:
@@ -572,7 +581,7 @@ class CastleRecipies:
                 continue
             castle_id = line[0].to_int()
             try:
-                castle_recipe = self.recipies[cannon.CastleType(castle_id)]
+                castle_recipe = self.recipies[castle_id]
             except KeyError:
                 continue
             line[1].set(castle_recipe.name)
@@ -580,7 +589,7 @@ class CastleRecipies:
             for j, description_line in enumerate(castle_recipe.description):
                 line.append(io.data.Data(description_line))
             description_csv.set_line(i, line)
-            remaining_recipies.pop(cannon.CastleType(i))
+            remaining_recipies.pop(i)
 
         for castle_type, castle_recipe in remaining_recipies.items():
             description_csv.add_line(
@@ -600,7 +609,7 @@ class CastleRecipies:
         game_data.set_file(
             CastleRecipies.get_description_file_name(), description_csv.to_data()
         )
-        
+
         for castle_type, castle_recipe in self.recipies.items():
             castle_recipe.to_game_data(castle_type, game_data)
 
@@ -609,13 +618,8 @@ class CastleRecipies:
             imgcut = recipe.name_imgcut.to_data()
             game_data.set_file("castleCustom_name_ALL.imgcut", imgcut[0])
 
-
-    def get_castle_recipe(
-        self, castle_type: cannon.CastleType
-    ) -> Optional[CastleRecipe]:
+    def get_castle_recipe(self, castle_type: int) -> Optional[CastleRecipe]:
         return self.recipies.get(castle_type, None)
 
-    def set_castle_recipe(
-        self, castle_type: cannon.CastleType, castle_recipe: CastleRecipe
-    ):
+    def set_castle_recipe(self, castle_type: int, castle_recipe: CastleRecipe):
         self.recipies[castle_type] = castle_recipe

@@ -5,22 +5,11 @@ from bcml.core.game_data import pack, bc_anim
 from bcml.core import io
 
 
-class CastleType(enum.Enum):
-    NORMAL_BASE = 0
-    SLOW_BEAM = 1
-    IRON_WALL = 2
-    THUNDER_BOLT = 3
-    WATER_BLAST = 4
-    HOLY_BLAST = 5
-    BREAKER_BLAST = 6
-    CURSE_BLAST = 7
-
-
 class CannonStatus:
     def __init__(
         self,
-        id: CastleType,
-        type: CastleType,
+        id: int,
+        type: int,
         wave: bool,
         option: int,
         knockback: bool,
@@ -37,8 +26,8 @@ class CannonStatus:
 
     def serialize(self) -> dict[str, Any]:
         return {
-            "id": self.id.value,
-            "type": self.type.value,
+            "id": self.id,
+            "type": self.type,
             "wave": self.wave,
             "option": self.option,
             "knockback": self.knockback,
@@ -49,8 +38,8 @@ class CannonStatus:
     @staticmethod
     def deserialize(data: dict[str, Any]) -> "CannonStatus":
         return CannonStatus(
-            id=CastleType(data["id"]),
-            type=CastleType(data["type"]),
+            id=data["id"],
+            type=data["type"],
             wave=data["wave"],
             option=data["option"],
             knockback=data["knockback"],
@@ -76,7 +65,7 @@ class CannonStatus:
 
 
 class CannonStatuses:
-    def __init__(self, statuses: dict[CastleType, CannonStatus]):
+    def __init__(self, statuses: dict[int, CannonStatus]):
         self.statuses = statuses
 
     def serialize(self) -> dict[str, dict[str, Any]]:
@@ -86,8 +75,7 @@ class CannonStatuses:
     def deserialize(data: dict[str, dict[str, Any]]) -> "CannonStatuses":
         return CannonStatuses(
             statuses={
-                CastleType(int(k)): CannonStatus.deserialize(v)
-                for k, v in data["statuses"].items()
+                int(k): CannonStatus.deserialize(v) for k, v in data["statuses"].items()
             }
         )
 
@@ -103,10 +91,10 @@ class CannonStatuses:
             return CannonStatuses.create_empty()
 
         csv = io.bc_csv.CSV(file.dec_data)
-        statuses: dict[CastleType, CannonStatus] = {}
+        statuses: dict[int, CannonStatus] = {}
         for line in csv.lines[1:]:
-            id = CastleType(line[0].to_int())
-            type = CastleType(line[1].to_int())
+            id = line[0].to_int()
+            type = line[1].to_int()
             wave = line[2].to_bool()
             option = line[3].to_int()
             knockback = line[4].to_bool()
@@ -127,10 +115,10 @@ class CannonStatuses:
         csv = io.bc_csv.CSV(file.dec_data)
         remaining_statuses = set(self.statuses.keys())
         for i, line in enumerate(csv.lines[1:]):
-            id = CastleType(line[0].to_int())
+            id = line[0].to_int()
             if id in self.statuses:
                 status = self.statuses[id]
-                line[1].set(status.type.value)
+                line[1].set(status.type)
                 line[2].set(status.wave)
                 line[3].set(status.option)
                 line[4].set(status.knockback)
@@ -142,8 +130,8 @@ class CannonStatuses:
         for id in remaining_statuses:
             status = self.statuses[id]
             line = [
-                status.id.value,
-                status.type.value,
+                status.id,
+                status.type,
                 status.wave,
                 status.option,
                 status.knockback,
@@ -305,7 +293,7 @@ class CannonEffectType(enum.Enum):
 class CannonEffect:
     def __init__(
         self,
-        castle_type: CastleType,
+        castle_type: int,
         effect_type: CannonEffectType,
         level: int,
         start: int,
@@ -321,7 +309,7 @@ class CannonEffect:
 
     def serialize(self) -> dict[str, Any]:
         return {
-            "castle_type": self.castle_type.value,
+            "castle_type": self.castle_type,
             "effect_type": self.effect_type.value,
             "level": self.level,
             "start": self.start,
@@ -332,7 +320,7 @@ class CannonEffect:
     @staticmethod
     def deserialize(data: dict[str, Any]) -> "CannonEffect":
         return CannonEffect(
-            castle_type=CastleType(data["castle_type"]),
+            castle_type=data["castle_type"],
             effect_type=CannonEffectType(data["effect_type"]),
             level=data["level"],
             start=data["start"],
@@ -357,7 +345,7 @@ class CannonEffect:
 
 
 class CannonEffects:
-    def __init__(self, effects: dict[CastleType, dict[int, CannonEffect]]):
+    def __init__(self, effects: dict[int, dict[int, CannonEffect]]):
         self.effects = effects
 
     def serialize(self) -> dict[str, dict[str, dict[str, Any]]]:
@@ -372,9 +360,7 @@ class CannonEffects:
     def deserialize(data: dict[str, dict[str, dict[str, Any]]]) -> "CannonEffects":
         return CannonEffects(
             effects={
-                CastleType(int(k)): {
-                    int(k2): CannonEffect.deserialize(v2) for k2, v2 in v.items()
-                }
+                int(k): {int(k2): CannonEffect.deserialize(v2) for k2, v2 in v.items()}
                 for k, v in data["effects"].items()
             }
         )
@@ -391,9 +377,9 @@ class CannonEffects:
             return CannonEffects.create_empty()
 
         csv = io.bc_csv.CSV(file.dec_data)
-        effects: dict[CastleType, dict[int, CannonEffect]] = {}
+        effects: dict[int, dict[int, CannonEffect]] = {}
         for line in csv.lines[1:]:
-            castle_type = CastleType(line[0].to_int())
+            castle_type = line[0].to_int()
             effect_type = CannonEffectType(line[1].to_int())
             level = line[2].to_int()
             start = line[3].to_int()
@@ -416,7 +402,7 @@ class CannonEffects:
         csv = io.bc_csv.CSV(file.dec_data)
         remaining_effects = self.effects.copy()
         for i, line in enumerate(csv.lines[1:]):
-            castle_type = CastleType(line[0].to_int())
+            castle_type = line[0].to_int()
             level = line[2].to_int()
             if castle_type in self.effects and level in self.effects[castle_type]:
                 effect = self.effects[castle_type][level]
@@ -433,7 +419,7 @@ class CannonEffects:
             for level, effect in levels.items():
                 csv.add_line(
                     [
-                        castle_type.value,
+                        castle_type,
                         effect.effect_type.value,
                         level,
                         effect.start,
@@ -466,7 +452,7 @@ class Part(enum.Enum):
 class Cannon:
     def __init__(
         self,
-        castle_type: CastleType,
+        castle_type: int,
         status: CannonStatus,
         effects: dict[int, "CannonEffect"],
         recipe: "castle_recipe.CastleRecipe",
@@ -482,7 +468,7 @@ class Cannon:
 
     def serialize(self) -> dict[str, Any]:
         return {
-            "castle_type": self.castle_type.value,
+            "castle_type": self.castle_type,
             "status": self.status.serialize(),
             "effect": {str(k): v.serialize() for k, v in self.effects.items()},
             "recipe": self.recipe.serialize(),
@@ -500,7 +486,7 @@ class Cannon:
         data: dict[str, Any],
     ) -> "Cannon":
         return Cannon(
-            castle_type=CastleType(data["castle_type"]),
+            castle_type=data["castle_type"],
             status=CannonStatus.deserialize(data["status"]),
             effects={
                 int(k): CannonEffect.deserialize(v) for k, v in data["effect"].items()
@@ -521,12 +507,12 @@ class Cannon:
     @staticmethod
     def parts_anims_from_game_data(
         game_data: "pack.GamePacks",
-        castle_type: CastleType,
+        castle_type: int,
     ) -> tuple[dict[Part, dict[int, "bc_anim.Anim"]], dict[Part, "bc_anim.Imgcut"]]:
         imgcuts: dict[Part, "bc_anim.Imgcut"] = {}
         anims: dict[Part, dict[int, "bc_anim.Anim"]] = {}
         for part in Part:
-            png_name = f"nyankoCastle_{io.data.PaddedInt(part.value, 3)}_{io.data.PaddedInt(castle_type.value, 2)}.png"
+            png_name = f"nyankoCastle_{io.data.PaddedInt(part.value, 3)}_{io.data.PaddedInt(castle_type, 2)}.png"
             file = game_data.find_file(png_name, show_error=False)
             if file is None:
                 continue
@@ -538,7 +524,7 @@ class Cannon:
             imgcut = bc_anim.Imgcut.from_data(file.dec_data, image)
             imgcuts[part] = imgcut
 
-            png_name_2 = f"nyankoCastle_{io.data.PaddedInt(part.value, 3)}_{io.data.PaddedInt(castle_type.value, 2)}_00.png"
+            png_name_2 = f"nyankoCastle_{io.data.PaddedInt(part.value, 3)}_{io.data.PaddedInt(castle_type, 2)}_00.png"
             file = game_data.find_file(png_name_2, show_error=False)
             if file is None:
                 continue
@@ -564,7 +550,7 @@ class Cannon:
             anims[part] = {}
             anims[part][0] = bc_anim.Anim(imgcut_2, mamodel, [maanim])
 
-            png_name_3 = f"nyankoCastle_{io.data.PaddedInt(part.value, 3)}_{io.data.PaddedInt(castle_type.value, 2)}_01.png"
+            png_name_3 = f"nyankoCastle_{io.data.PaddedInt(part.value, 3)}_{io.data.PaddedInt(castle_type, 2)}_01.png"
 
             mamodel_name_2 = png_name_3.replace(".png", ".mamodel")
             file = game_data.find_file(mamodel_name_2, show_error=False)
@@ -588,7 +574,7 @@ class Cannon:
         game_data: "pack.GamePacks",
     ):
         for part in Part:
-            png_name = f"nyankoCastle_{io.data.PaddedInt(part.value, 3)}_{io.data.PaddedInt(self.castle_type.value, 2)}.png"
+            png_name = f"nyankoCastle_{io.data.PaddedInt(part.value, 3)}_{io.data.PaddedInt(self.castle_type, 2)}.png"
 
             imgcut = self.parts_imgcut[part]
             imgcut_data = imgcut.to_data()
@@ -599,7 +585,7 @@ class Cannon:
                 imgcut_name = png_name.replace(".png", ".imgcut")
                 game_data.set_file(imgcut_name, imgcut_data[0])
 
-            png_name_2 = f"nyankoCastle_{io.data.PaddedInt(part.value, 3)}_{io.data.PaddedInt(self.castle_type.value, 2)}_00.png"
+            png_name_2 = f"nyankoCastle_{io.data.PaddedInt(part.value, 3)}_{io.data.PaddedInt(self.castle_type, 2)}_00.png"
             try:
                 anim = self.parts_anims[part][0]
                 if anim.is_empty():
@@ -621,7 +607,7 @@ class Cannon:
             maanim_data = maanim.to_data()
             game_data.set_file(png_name_2.replace(".png", ".maanim"), maanim_data)
 
-            png_name_3 = f"nyankoCastle_{io.data.PaddedInt(part.value, 3)}_{io.data.PaddedInt(self.castle_type.value, 2)}_01.png"
+            png_name_3 = f"nyankoCastle_{io.data.PaddedInt(part.value, 3)}_{io.data.PaddedInt(self.castle_type, 2)}_01.png"
             try:
                 anim_2 = self.parts_anims[part][1]
                 if anim_2.is_empty():
@@ -653,7 +639,7 @@ class Cannon:
 class Cannons:
     def __init__(
         self,
-        cannons: dict[CastleType, Cannon],
+        cannons: dict[int, Cannon],
         map_png: "io.bc_image.BCImage",
         silhouette_imgcut: "bc_anim.Imgcut",
     ):
@@ -680,10 +666,7 @@ class Cannons:
         data: dict[str, dict[str, Any]],
     ) -> "Cannons":
         return Cannons(
-            cannons={
-                CastleType(int(k)): Cannon.deserialize(v)
-                for k, v in data["cannons"].items()
-            },
+            cannons={int(k): Cannon.deserialize(v) for k, v in data["cannons"].items()},
             map_png=io.bc_image.BCImage.deserialize(data["map_png"]),
             silhouette_imgcut=bc_anim.Imgcut.deserialize(data["silhouette_imgcut"]),
         )
@@ -706,8 +689,9 @@ class Cannons:
         map_png_data = map_png.dec_data if map_png else io.data.Data()
         imgcut = bc_anim.Imgcut.from_data(imgcut_data, io.bc_image.BCImage(png_data))
 
-        cannons: dict[CastleType, Cannon] = {}
-        for castle_type in CastleType:
+        cannons: dict[int, Cannon] = {}
+        castle_type = 0
+        while True:
             anims, imgcuts = Cannon.parts_anims_from_game_data(game_data, castle_type)
             cannons[castle_type] = Cannon(
                 castle_type,
@@ -717,6 +701,7 @@ class Cannons:
                 anims,
                 imgcuts,
             )
+            castle_type += 1
         return Cannons(cannons, io.bc_image.BCImage(map_png_data), imgcut)
 
     @staticmethod
@@ -786,7 +771,9 @@ class Cannons:
             game_data (pack.GamePacks): The game data to check if the imported data is different from the game data. This is used to prevent overwriting the current data with base game data.
         """
         gd_cannons = Cannons.from_game_data(game_data)
-        for castle_type in CastleType:
+        all_keys = set(self.cannons.keys())
+        all_keys.update(cannons.cannons.keys())
+        for castle_type in all_keys:
             gd_cannon = gd_cannons.cannons.get(castle_type)
             other_cannon = cannons.cannons.get(castle_type)
             if other_cannon is None:
@@ -806,3 +793,6 @@ class Cannons:
         gd_silhouette_imgcut = gd_cannons.silhouette_imgcut
         if gd_silhouette_imgcut != other_silhouette_imgcut:
             self.silhouette_imgcut = other_silhouette_imgcut
+
+    def get_cannon_types(self) -> list[int]:
+        return list(self.cannons.keys())
