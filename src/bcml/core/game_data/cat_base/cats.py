@@ -1460,7 +1460,7 @@ class EvolveText:
                 0, io.data.Data.data_list_string_list(line[:3])
             )
             text[cat_id][1] = EvolveTextText(
-                1, io.data.Data.data_list_string_list(line[3:6])
+                1, io.data.Data.data_list_string_list(line[4:7])
             )
         return EvolveText(text)
 
@@ -1479,9 +1479,10 @@ class EvolveText:
         for cat_id, line in self.text.items():
             first_evolve = line[0].text
             second_evolve = line[1].text
+            print(first_evolve + ["＠"] + second_evolve)
             csv.set_line(
                 cat_id,
-                first_evolve + second_evolve,
+                first_evolve + ["＠"] + second_evolve,
             )
 
         game_data.set_file(

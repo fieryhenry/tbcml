@@ -630,6 +630,7 @@ class CatEditScreen(QtWidgets.QDialog):
 
     def save(self):
         self._forms_tab.save()
+        self._general_tab.save()
         self.on_save(self.cat)
 
 
@@ -649,6 +650,53 @@ class GeneralTab(QtWidgets.QWidget):
 
         self._layout = QtWidgets.QGridLayout(self)
         self._layout.setObjectName("layout")
+
+        self.evolve_text_group = QtWidgets.QGroupBox(self)
+        self.evolve_text_group.setObjectName("evolve_text_group")
+        self.evolve_text_group.setTitle(
+            self.locale_manager.search_key("cat_editor_evolve_text"),
+        )
+        self._layout.addWidget(self.evolve_text_group, 0, 0)
+
+        self.evolve_text_layout = QtWidgets.QGridLayout(self.evolve_text_group)
+        self.evolve_text_layout.setObjectName("evolve_text_layout")
+
+        self.evolve_text_1_label = QtWidgets.QLabel(self.evolve_text_group)
+        self.evolve_text_1_label.setObjectName("evolve_text_1_label")
+        self.evolve_text_1_label.setText(
+            self.locale_manager.search_key("cat_editor_evolve_text_1_label"),
+        )
+        self.evolve_text_layout.addWidget(self.evolve_text_1_label, 0, 0)
+
+        self.evolve_text_1_edit = QtWidgets.QTextEdit(self.evolve_text_group)
+        self.evolve_text_1_edit.setObjectName("evolve_text_1_edit")
+        evolve_text = self.cat.evolve_text
+        evolve_text_1 = "\n".join(evolve_text[0].text) if evolve_text else ""
+        self.evolve_text_1_edit.setText(evolve_text_1)
+        self.evolve_text_layout.addWidget(self.evolve_text_1_edit, 0, 1)
+
+        self.evolve_text_2_label = QtWidgets.QLabel(self.evolve_text_group)
+        self.evolve_text_2_label.setObjectName("evolve_text_2_label")
+        self.evolve_text_2_label.setText(
+            self.locale_manager.search_key("cat_editor_evolve_text_2_label"),
+        )
+        self.evolve_text_layout.addWidget(self.evolve_text_2_label, 1, 0)
+
+        evolve_text_2 = "\n".join(evolve_text[1].text) if evolve_text else ""
+        self.evolve_text_2_edit = QtWidgets.QTextEdit(self.evolve_text_group)
+        self.evolve_text_2_edit.setObjectName("evolve_text_2_edit")
+        self.evolve_text_2_edit.setText(evolve_text_2)
+        self.evolve_text_layout.addWidget(self.evolve_text_2_edit, 1, 1)
+
+    def save(self):
+        text_1 = self.evolve_text_1_edit.toPlainText().splitlines()
+        text_2 = self.evolve_text_2_edit.toPlainText().splitlines()
+        text_1_obj = game_data.cat_base.cats.EvolveTextText(0, text_1)
+        text_2_obj = game_data.cat_base.cats.EvolveTextText(1, text_2)
+        self.cat.evolve_text = {
+            0: text_1_obj,
+            1: text_2_obj,
+        }
 
 
 class FormsTab(QtWidgets.QWidget):
