@@ -688,6 +688,9 @@ class GeneralTab(QtWidgets.QWidget):
         self.evolve_text_2_edit.setText(evolve_text_2)
         self.evolve_text_layout.addWidget(self.evolve_text_2_edit, 1, 1)
 
+        self._layout.setRowStretch(0, 1)
+        self._layout.setRowStretch(1, 1)
+
     def save(self):
         text_1 = self.evolve_text_1_edit.toPlainText().splitlines()
         text_2 = self.evolve_text_2_edit.toPlainText().splitlines()
@@ -750,6 +753,45 @@ class FormTab(QtWidgets.QWidget):
         self._layout = QtWidgets.QGridLayout(self)
         self._layout.setObjectName("layout")
 
+        self.form_tabs = QtWidgets.QTabWidget(self)
+        self.form_tabs.setObjectName("form_tabs")
+        self._layout.addWidget(self.form_tabs, 0, 0)
+
+        self.form_tabs.addTab(
+            FormDataTab(self.form),
+            self.locale_manager.search_key("cat_editor_form_data_tab"),
+        )
+        self.form_tabs.addTab(
+            StatsTab(self.form),
+            self.locale_manager.search_key("cat_editor_form_stats_tab"),
+        )
+
+    def save(self):
+        for index in range(self.form_tabs.count()):
+            tab = self.form_tabs.widget(index)
+            if isinstance(tab, FormDataTab):
+                tab.save()  # type: ignore
+            elif isinstance(tab, StatsTab):
+                tab.save()  # type: ignore
+
+
+class FormDataTab(QtWidgets.QWidget):
+    def __init__(
+        self,
+        form: "game_data.cat_base.cats.Form",
+        parent: Optional[QtWidgets.QWidget] = None,
+    ):
+        super(FormDataTab, self).__init__(parent)
+        self.form = form
+        self.locale_manager = locale_handler.LocalManager.from_config()
+        self.setup_ui()
+
+    def setup_ui(self):
+        self.setObjectName("FormTab")
+
+        self._layout = QtWidgets.QGridLayout(self)
+        self._layout.setObjectName("layout")
+
         self.name_group = QtWidgets.QGroupBox(self)
         self.name_group.setObjectName("name_group")
         self.name_group_layout = QtWidgets.QGridLayout(self.name_group)
@@ -801,3 +843,237 @@ class FormTab(QtWidgets.QWidget):
         description = self.description_edit.toPlainText()
         if description:
             self.form.description = description.split("\n")
+
+
+class StatsTab(QtWidgets.QWidget):
+    def __init__(
+        self,
+        form: "game_data.cat_base.cats.Form",
+        parent: Optional[QtWidgets.QWidget] = None,
+    ):
+        super(StatsTab, self).__init__(parent)
+        self.form = form
+        self.locale_manager = locale_handler.LocalManager.from_config()
+        self.setup_ui()
+
+    def setup_ui(self):
+        self.setObjectName("StatsTab")
+
+        self._layout = QtWidgets.QVBoxLayout(self)
+        self._layout.setObjectName("layout")
+
+        self.stats_scroll = QtWidgets.QScrollArea(self)
+        self.stats_scroll.setObjectName("stats_scroll")
+        self.stats_scroll.setWidgetResizable(True)
+        self.stats_scroll_widget = QtWidgets.QWidget(self.stats_scroll)
+        self.stats_scroll_widget.setObjectName("stats_scroll_widget")
+        self.stats_scroll_layout = QtWidgets.QVBoxLayout(self.stats_scroll_widget)
+        self.stats_scroll_layout.setObjectName("stats_scroll_layout")
+        self.stats_scroll.setWidget(self.stats_scroll_widget)
+
+        self.stats_scroll.setContentsMargins(0, 0, 0, 0)
+        self.stats_scroll_layout.setContentsMargins(0, 0, 0, 0)
+        self.stats_scroll_layout.setSpacing(0)
+        self.stats_scroll.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
+
+        self.stats_group = QtWidgets.QGroupBox(self)
+        self.stats_group.setObjectName("stats_group")
+        self.stats_group_layout = QtWidgets.QGridLayout(self.stats_group)
+        self.stats_group_layout.setObjectName("stats_group_layout")
+        self.stats_scroll_layout.addWidget(self.stats_group)
+
+        self._layout.addWidget(self.stats_scroll)
+
+        self.column_0_layout = QtWidgets.QVBoxLayout()
+        self.column_0_layout.setObjectName("column_0_layout")
+        self.stats_group_layout.addLayout(self.column_0_layout, 0, 0)
+
+        self.column_1_layout = QtWidgets.QVBoxLayout()
+        self.column_1_layout.setObjectName("column_1_layout")
+        self.stats_group_layout.addLayout(self.column_1_layout, 0, 1)
+
+        self.hp_edit = SpinBoxEdit(
+            self.locale_manager.search_key("hp"),
+            self.form.stats.hp,
+            self,
+        )
+        self.column_0_layout.addWidget(self.hp_edit)
+
+        self.attack_tabs = QtWidgets.QTabWidget(self)
+        self.attack_tabs.setObjectName("attack_tabs")
+        self.column_1_layout.addWidget(self.attack_tabs)
+
+        self.attack_1_tab = AttackTab(self.form.stats.attack_1, self)
+        self.attack_tabs.addTab(
+            self.attack_1_tab, self.locale_manager.search_key("attack_1")
+        )
+
+        self.attack_2_tab = AttackTab(self.form.stats.attack_2, self)
+        self.attack_tabs.addTab(
+            self.attack_2_tab, self.locale_manager.search_key("attack_2")
+        )
+
+        self.attack_3_tab = AttackTab(self.form.stats.attack_3, self)
+        self.attack_tabs.addTab(
+            self.attack_3_tab, self.locale_manager.search_key("attack_3")
+        )
+
+        self.range_edit = SpinBoxEdit(
+            self.locale_manager.search_key("range"),
+            self.form.stats.range.raw,
+            self,
+        )
+        self.column_0_layout.addWidget(self.range_edit)
+
+        self.column_0_layout.addStretch(1)
+        self.column_1_layout.addStretch(1)
+        self._layout.addStretch(1)
+
+    def save(self):
+        self.form.stats.hp = self.hp_edit.value_int()
+        self.form.stats.range.raw = self.range_edit.value_int()
+        self.attack_1_tab.save()
+        self.attack_2_tab.save()
+        self.attack_3_tab.save()
+
+
+class AttackTab(QtWidgets.QWidget):
+    def __init__(
+        self,
+        attack: game_data.cat_base.unit.Attack,
+        parent: Optional[QtWidgets.QWidget] = None,
+    ):
+        super(AttackTab, self).__init__(parent)
+        self.locale_manager = locale_handler.LocalManager.from_config()
+        self.attack = attack
+        self._layout = QtWidgets.QVBoxLayout(self)
+        self._layout.setObjectName("layout")
+
+        self._damage_edit = SpinBoxEdit(
+            self.locale_manager.search_key("damage"),
+            self.attack.damage,
+            self,
+        )
+
+        self._layout.addWidget(self._damage_edit)
+
+        self._foreswing_edit = SpinBoxEdit(
+            self.locale_manager.search_key("foreswing"),
+            self.attack.foreswing.frames,
+            self,
+            show_seconds=True,
+        )
+
+        self._layout.addWidget(self._foreswing_edit)
+
+        self._use_ability_box = QtWidgets.QCheckBox(self)
+        self._use_ability_box.setObjectName("use_ability_box")
+        self._use_ability_box.setText(
+            self.locale_manager.search_key("use_ability"),
+        )
+        self._use_ability_box.setChecked(self.attack.use_ability)
+        self._layout.addWidget(self._use_ability_box)
+
+        self.long_distance_group = QtWidgets.QGroupBox(self)
+        self.long_distance_group.setObjectName("long_distance_group")
+        self.long_distance_group_layout = QtWidgets.QHBoxLayout(
+            self.long_distance_group
+        )
+        self.long_distance_group_layout.setObjectName("long_distance_group_layout")
+        self._layout.addWidget(self.long_distance_group)
+        self.long_distance_line_edit = QtWidgets.QLineEdit(self.long_distance_group)
+        self.long_distance_line_edit.setObjectName("long_distance_line_edit")
+        self.long_distance_line_edit.setReadOnly(True)
+        self.long_distance_line_edit.setText(
+            self.locale_manager.search_key("long_distance"),
+        )
+        self.long_distance_group_layout.addWidget(self.long_distance_line_edit)
+
+        self.long_distance_group_layout.addStretch(1)
+
+        self._long_distance_start_edit = SpinBoxEdit(
+            "",
+            self.attack.long_distance_start.raw,
+            self,
+        )
+
+        self.long_distance_group_layout.addWidget(self._long_distance_start_edit)
+
+        self.long_distance_dash = QtWidgets.QLabel(self.long_distance_group)
+        self.long_distance_dash.setObjectName("long_distance_dash")
+        self.long_distance_dash.setText("-")
+        self.long_distance_group_layout.addWidget(self.long_distance_dash)
+
+        self._long_distance_end_edit = SpinBoxEdit(
+            "",
+            self.attack.long_distance_range.raw + self.attack.long_distance_start.raw,
+            self,
+        )
+
+        self.long_distance_group_layout.addWidget(self._long_distance_end_edit)
+
+    def save(self):
+        self.attack.damage = self._damage_edit.value_int()
+        self.attack.foreswing.frames = self._foreswing_edit.value_int()
+        self.attack.use_ability = self._use_ability_box.isChecked()
+        self.attack.long_distance_start.raw = self._long_distance_start_edit.value_int()
+        self.attack.long_distance_range.raw = (
+            self._long_distance_end_edit.value_int()
+            - self._long_distance_start_edit.value_int()
+        )
+
+
+class SpinBoxEdit(QtWidgets.QWidget):
+    def __init__(
+        self,
+        name: str,
+        value: int,
+        parent: Optional[QtWidgets.QWidget] = None,
+        min: int = -2147483648,
+        max: int = 2147483647,
+        show_seconds: bool = False,
+    ):
+        super(SpinBoxEdit, self).__init__(parent)
+        self._layout = QtWidgets.QHBoxLayout(self)
+        self._layout.setContentsMargins(0, 0, 0, 0)
+        self._layout.setSpacing(0)
+        self._layout.setObjectName("layout")
+
+        if name:
+            self.line_edit = QtWidgets.QLineEdit(self)
+            self.line_edit.setObjectName("line_edit")
+            self.line_edit.setReadOnly(True)
+            self.line_edit.setText(name)
+            self._layout.addWidget(self.line_edit)
+            self._layout.addStretch(1)
+
+        self._spin_box = QtWidgets.QSpinBox(self)
+        self._spin_box.setObjectName("spin_box")
+        self._spin_box.setRange(min, max)
+
+        self._spin_box.setValue(value)
+
+        self._layout.addWidget(self._spin_box)
+
+        self.raw_value = value
+
+        self._spin_box.valueChanged.connect(self._on_spin_box_value_changed)
+        self.show_seconds = show_seconds
+        if show_seconds:
+            self.locale_manager = locale_handler.LocalManager.from_config()
+            self.seconds_text_edit = QtWidgets.QLineEdit(self)
+            self.seconds_text_edit.setObjectName("seconds_text_edit")
+            self.seconds_text_edit.setReadOnly(True)
+            self._layout.addWidget(self.seconds_text_edit)
+            self._on_spin_box_value_changed(value)
+
+    def _on_spin_box_value_changed(self, value: int):
+        self.raw_value = value
+        if self.show_seconds:
+            val = game_data.cat_base.unit.Frames(value).seconds_float
+            self.seconds_text_edit.setText(
+                f"{val:.2f} {self.locale_manager.search_key('seconds')}"
+            )
+
+    def value_int(self) -> int:
+        return self.raw_value
