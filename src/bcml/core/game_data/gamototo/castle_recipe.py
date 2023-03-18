@@ -441,7 +441,6 @@ class CastleRecipies:
             unlock_sets[castle_type] = CastleRecipeUnlockSet(id, castle_recipe_unlocks)
             i += 1
 
-        print(unlock_data_csv_file.dec_data)
         castle_recipies: dict[int, CastleRecipe] = {}
         for i, line in enumerate(unlock_data_csv.lines[1:]):
             castle_type = line[0].to_int()
@@ -544,7 +543,6 @@ class CastleRecipies:
                     ]
                 )
         remaining_recipies = self.recipies.copy()
-        # print(unlock_data_csv_file.dec_data)
 
         for i, line in enumerate(unlock_data_csv.lines[1:]):
             castle_type = line[0].to_int()
