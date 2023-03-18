@@ -518,6 +518,28 @@ class GamePacks:
         self.modified_packs[file.pack_name] = True
         return file
 
+    def set_file_from_path(self, file_path: "io.path.Path") -> Optional[GameFile]:
+        """Set a file in the game packs from a path.
+
+        Args:
+            file_path (io.path.Path): The path of the file.
+
+        Returns:
+            Optional[GameFile]: The file if it exists, None otherwise.
+        """
+        file_name = file_path.get_file_name()
+        data = io.data.Data.from_file(file_path)
+        return self.set_file(file_name, data)
+
+    def set_file_from_folder(self, folder_path: "io.path.Path") -> None:
+        """Set a file in the game packs from a folder.
+
+        Args:
+            folder_path (io.path.Path): The path of the folder.
+        """
+        for file_path in folder_path.get_files():
+            self.set_file_from_path(file_path)
+
     @staticmethod
     def from_apk(apk: "io.apk.Apk") -> "GamePacks":
         """Create a GamePacks object from an APK.
