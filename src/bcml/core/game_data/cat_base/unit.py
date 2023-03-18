@@ -4,13 +4,13 @@ import random
 class Frames:
     """Represents a number of frames, and provides methods for converting to and from seconds, and pair frames."""
 
-    def __init__(self, frames: int):
+    def __init__(self, frames: float):
         """Initializes a new Frames object.
 
         Args:
-            frames (int): The number of frames.
+            frames (float): The number of frames.
         """
-        self.frames = frames
+        self.__frames = frames
 
     @staticmethod
     def get_frame_rate() -> int:
@@ -28,7 +28,25 @@ class Frames:
         Returns:
             int: The number of seconds represented by the number of frames.
         """
-        return self.frames // self.get_frame_rate()
+        return int(self.__frames / self.get_frame_rate())
+
+    @property
+    def seconds_float(self) -> float:
+        """Gets the number of seconds represented by the number of frames.
+
+        Returns:
+            float: The number of seconds represented by the number of frames.
+        """
+        return self.__frames / self.get_frame_rate()
+
+    @seconds.setter
+    def seconds(self, seconds: float) -> None:
+        """Sets the number of frames from a number of seconds.
+
+        Args:
+            seconds (float): The number of seconds.
+        """
+        self.__frames = seconds * self.get_frame_rate()
 
     @property
     def pair_frames(self) -> int:
@@ -37,14 +55,41 @@ class Frames:
         Returns:
             int: The number of pair frames represented by the number of frames.
         """
-        return self.frames // 2
+        return int(self.__frames / 2)
+
+    @property
+    def frames(self) -> int:
+        """Gets the number of frames.
+
+        Returns:
+            int: The number of frames.
+        """
+        return int(self.__frames)
+
+    @frames.setter
+    def frames(self, frames: float) -> None:
+        """Sets the number of frames.
+
+        Args:
+            frames (float): The number of frames.
+        """
+        self.__frames = frames
+
+    @property
+    def frames_float(self) -> float:
+        """Gets the number of frames.
+
+        Returns:
+            float: The number of frames.
+        """
+        return self.__frames
 
     @staticmethod
-    def from_seconds(seconds: int) -> "Frames":
+    def from_seconds(seconds: float) -> "Frames":
         """Creates a new Frames object from a number of seconds.
 
         Args:
-            seconds (int): The number of seconds.
+            seconds (float): The number of seconds.
 
         Returns:
             Frames: The new Frames object.
@@ -52,11 +97,11 @@ class Frames:
         return Frames(seconds * Frames.get_frame_rate())
 
     @staticmethod
-    def from_pair_frames(pair_frames: int) -> "Frames":
+    def from_pair_frames(pair_frames: float) -> "Frames":
         """Creates a new Frames object from a number of pair frames.
 
         Args:
-            pair_frames (int): The number of pair frames.
+            pair_frames (float): The number of pair frames.
 
         Returns:
             Frames: The new Frames object.
@@ -69,7 +114,7 @@ class Frames:
         Returns:
             str: The string representation of the Frames object.
         """
-        return f"{self.frames} frames ({self.seconds} seconds)"
+        return f"{self.__frames} frames ({self.seconds} seconds)"
 
     def __repr__(self) -> str:
         """Gets a string representation of the Frames object.
@@ -85,7 +130,7 @@ class Frames:
         Returns:
             Frames: The copy of the Frames object.
         """
-        return Frames(self.frames)
+        return Frames(self.__frames)
 
 
 class Prob:
