@@ -1479,7 +1479,6 @@ class EvolveText:
         for cat_id, line in self.text.items():
             first_evolve = line[0].text
             second_evolve = line[1].text
-            print(first_evolve + ["＠"] + second_evolve)
             csv.set_line(
                 cat_id,
                 first_evolve + ["＠"] + second_evolve,
@@ -1688,6 +1687,7 @@ class Cat:
         new_form.set_form(form)
         new_form.set_cat_id(self.cat_id)
         self.forms[form] = new_form
+        self.nyanko_picture_book_data.total_forms = len(self.forms)
 
     def set_cat_id(self, cat_id: int):
         self.cat_id = cat_id
