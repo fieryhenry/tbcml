@@ -1336,6 +1336,182 @@ class StageNameSets:
         return not self.__eq__(other)
 
 
+class StageOptionSet:
+    def __init__(
+        self,
+        map_id: int,
+        support: int,
+        stage_index: int,
+        rarity_limit: int,
+        deploy_limit: int,
+        row_limit: int,
+        cost_limit_lower: int,
+        cost_limit_upper: int,
+        cat_group_id: int,
+    ):
+        self.map_id = map_id
+        self.support = support
+        self.stage_index = stage_index
+        self.rarity_limit = rarity_limit
+        self.deploy_limit = deploy_limit
+        self.row_limit = row_limit
+        self.cost_limit_lower = cost_limit_lower
+        self.cost_limit_upper = cost_limit_upper
+        self.cat_group_id = cat_group_id
+
+    def serialize(self) -> dict[str, Any]:
+        return {
+            "map_id": self.map_id,
+            "support": self.support,
+            "stage_index": self.stage_index,
+            "rarity_limit": self.rarity_limit,
+            "deploy_limit": self.deploy_limit,
+            "row_limit": self.row_limit,
+            "cost_limit_lower": self.cost_limit_lower,
+            "cost_limit_upper": self.cost_limit_upper,
+            "cat_group_id": self.cat_group_id,
+        }
+
+    @staticmethod
+    def deserialize(
+        data: dict[str, Any],
+    ) -> "StageOptionSet":
+        return StageOptionSet(
+            data["map_id"],
+            data["support"],
+            data["stage_index"],
+            data["rarity_limit"],
+            data["deploy_limit"],
+            data["row_limit"],
+            data["cost_limit_lower"],
+            data["cost_limit_upper"],
+            data["cat_group_id"],
+        )
+
+    @staticmethod
+    def from_row(
+        row: list[int],
+    ) -> "StageOptionSet":
+        return StageOptionSet(
+            row[0],
+            row[1],
+            row[2],
+            row[3],
+            row[4],
+            row[5],
+            row[6],
+            row[7],
+            row[8],
+        )
+
+    def to_row(self) -> list[int]:
+        return [
+            self.map_id,
+            self.support,
+            self.stage_index,
+            self.rarity_limit,
+            self.deploy_limit,
+            self.row_limit,
+            self.cost_limit_lower,
+            self.cost_limit_upper,
+            self.cat_group_id,
+        ]
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, StageOptionSet):
+            return False
+        return (
+            self.map_id == other.map_id
+            and self.support == other.support
+            and self.stage_index == other.stage_index
+            and self.rarity_limit == other.rarity_limit
+            and self.deploy_limit == other.deploy_limit
+            and self.row_limit == other.row_limit
+            and self.cost_limit_lower == other.cost_limit_lower
+            and self.cost_limit_upper == other.cost_limit_upper
+            and self.cat_group_id == other.cat_group_id
+        )
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
+
+class StageOption:
+    def __init__(
+        self,
+        sets: dict[int, StageOptionSet],
+    ):
+        self.sets = sets
+
+    def serialize(self) -> dict[str, Any]:
+        return {
+            "sets": {k: v.serialize() for k, v in self.sets.items()},
+        }
+
+    @staticmethod
+    def deserialize(
+        data: dict[str, Any],
+    ) -> "StageOption":
+        return StageOption(
+            {int(k): StageOptionSet.deserialize(v) for k, v in data["sets"].items()},
+        )
+
+    @staticmethod
+    def get_file_name() -> str:
+        return "Stage_option.csv"
+
+    @staticmethod
+    def from_game_data(game_packs: "pack.GamePacks") -> "StageOption":
+        file = game_packs.find_file(StageOption.get_file_name())
+        if file is None:
+            return StageOption.create_empty()
+
+        csv_file = io.bc_csv.CSV(file.dec_data)
+        sets: dict[int, StageOptionSet] = {}
+        for line in csv_file.lines:
+            set = StageOptionSet.from_row(io.data.Data.data_list_int_list(line))
+            sets[set.map_id] = set
+        return StageOption(sets)
+
+    def to_game_data(self, game_packs: "pack.GamePacks") -> None:
+        file = game_packs.find_file(self.get_file_name())
+        if file is None:
+            return
+
+        csv_file = io.bc_csv.CSV(file.dec_data)
+        remaining = self.sets.copy()
+        for i, line in enumerate(csv_file.lines):
+            map_id = io.data.Data.data_list_int_list(line)[0]
+            if map_id in remaining:
+                csv_file.set_line(i, remaining[map_id].to_row())
+                del remaining[map_id]
+        for set in remaining.values():
+            csv_file.add_line(set.to_row())
+
+        game_packs.set_file(self.get_file_name(), csv_file.to_data())
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, StageOption):
+            return False
+        return self.sets == other.sets
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
+    def get(self, map_id: int) -> Optional[StageOptionSet]:
+        if map_id in self.sets:
+            return self.sets[map_id]
+        return None
+
+    def set(self, map_id: int, set: StageOptionSet) -> None:
+        set.map_id = map_id
+        self.sets[map_id] = set
+
+    @staticmethod
+    def create_empty() -> "StageOption":
+        return StageOption({})
+
+
 class MapStageData:
     def __init__(
         self,
@@ -1572,12 +1748,14 @@ class Map:
         map_stage_data: MapStageData,
         stages: dict[int, "Stage"],
         map_name_image: MapNameImage,
+        restriction: Optional[StageOptionSet] = None,
     ):
         self.stage_id = stage_id
         self.map_option = map_option
         self.map_stage_data = map_stage_data
         self.stages = stages
         self.map_name_image = map_name_image
+        self.restriction = restriction
 
     def serialize(self) -> dict[str, Any]:
         return {
@@ -1585,6 +1763,7 @@ class Map:
             "map_stage_data": self.map_stage_data.serialize(),
             "stages": {k: v.serialize() for k, v in self.stages.items()},
             "map_name_image": self.map_name_image.serialize(),
+            "restriction": self.restriction.serialize() if self.restriction else None,
         }
 
     @staticmethod
@@ -1595,6 +1774,9 @@ class Map:
             MapStageData.deserialize(data["map_stage_data"], stage_id),
             {k: Stage.deserialize(v, stage_id, k) for k, v in data["stages"].items()},
             MapNameImage.deserialize(data["map_name_image"], stage_id),
+            StageOptionSet.deserialize(data["restriction"])
+            if data["restriction"]
+            else None,
         )
 
     @staticmethod
@@ -1603,10 +1785,12 @@ class Map:
         stage_id: int,
         map_options: MapOptions,
         stage_names: StageNames,
+        stage_options: StageOption,
     ) -> Optional["Map"]:
         map_option = map_options.get(stage_id)
         map_stage_data = MapStageData.from_game_data(game_data, stage_id)
         map_name_image = MapNameImage.from_game_data(game_data, stage_id)
+        restriction = stage_options.get(stage_id)
         i = 0
         stages: dict[int, Stage] = {}
         while True:
@@ -1621,7 +1805,9 @@ class Map:
         if map_option is None or map_stage_data is None or map_name_image is None:
             return None
 
-        return Map(stage_id, map_option, map_stage_data, stages, map_name_image)
+        return Map(
+            stage_id, map_option, map_stage_data, stages, map_name_image, restriction
+        )
 
     def to_game_data(self, game_data: "pack.GamePacks"):
         self.map_stage_data.to_game_data(game_data)
@@ -1672,13 +1858,16 @@ class Maps:
     def from_game_data(game_data: "pack.GamePacks"):
         map_options = MapOptions.from_game_data(game_data)
         stage_name_sets = StageNameSets.from_game_data(game_data)
+        stage_options = StageOption.from_game_data(game_data)
         maps: dict[int, Map] = {}
         stage_id = 0
         while True:
             stage_names = stage_name_sets.get(stage_id)
             if stage_names is None:
                 break
-            map = Map.from_game_data(game_data, stage_id, map_options, stage_names)
+            map = Map.from_game_data(
+                game_data, stage_id, map_options, stage_names, stage_options
+            )
             if map is None:
                 break
             maps[stage_id] = map
@@ -1688,12 +1877,17 @@ class Maps:
     def to_game_data(self, game_data: "pack.GamePacks"):
         map_options = MapOptions({})
         stage_name_sets = StageNameSets({})
+        stage_options = StageOption({})
         for map in self.maps.values():
             map.to_game_data(game_data)
             map_options.set(map.map_option)
             stage_name_sets.set(map.map_option.stage_id, map.get_names())
+            if map.restriction is not None:
+                stage_options.set(map.restriction.map_id, map.restriction)
+
         map_options.to_game_data(game_data)
         stage_name_sets.to_game_data(game_data)
+        stage_options.to_game_data(game_data)
 
     @staticmethod
     def get_maps_json_file_name() -> "io.path.Path":
