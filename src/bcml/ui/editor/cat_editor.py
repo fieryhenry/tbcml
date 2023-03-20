@@ -513,7 +513,7 @@ class CatListItem(QtWidgets.QListWidget):
             icon = form.deploy_icon
             if icon.is_empty() or icon.width == 1 or icon.height == 1:
                 icon = self.blank_icons[form.form]
-            img_data = icon.to_data().to_bytes()
+            img_data = icon.fix_libpng_warning().to_data().to_bytes()
             img = QtGui.QImage.fromData(img_data)
             img = img.copy(img.width() // 2 - 55, img.height() // 2 - 42, 110, 85)
             img = img.scaled(

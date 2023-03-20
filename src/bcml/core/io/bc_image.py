@@ -112,3 +112,11 @@ class BCImage:
 
     def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
+
+    def fix_libpng_warning(self):
+        """Fixes the libpng warning: iCCP: known incorrect sRGB profile"""
+
+        if "icc_profile" in self.image.info:
+            del self.image.info["icc_profile"]
+
+        return self
