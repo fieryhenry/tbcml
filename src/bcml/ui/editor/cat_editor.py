@@ -614,6 +614,7 @@ class CatEditScreen(QtWidgets.QDialog):
         self.setObjectName("CatEditScreen")
         self.setWindowTitle(self.locale_manager.search_key("cat_editor_title"))
         self.resize(800, 600)
+        self.showMaximized()
 
         self._layout = QtWidgets.QGridLayout(self)
         self._layout.setObjectName("layout")
@@ -932,7 +933,6 @@ class StatsTab(QtWidgets.QWidget):
 
         self.attack_tabs = QtWidgets.QTabWidget(self)
         self.attack_tabs.setObjectName("attack_tabs")
-        self.column_1_layout.addWidget(self.attack_tabs)
 
         self.attack_1_tab = AttackTab(self.form.stats.attack_1, self)
         self.attack_tabs.addTab(
@@ -954,7 +954,46 @@ class StatsTab(QtWidgets.QWidget):
             self.form.stats.range.raw,
             self,
         )
-        self.column_0_layout.addWidget(self.range_edit)
+        self.column_1_layout.addWidget(self.range_edit)
+
+        self.kbs_edit = SpinBoxEdit(
+            self.locale_manager.search_key("kbs"),
+            self.form.stats.kbs,
+            self,
+        )
+        self.column_0_layout.addWidget(self.kbs_edit)
+
+        self.mv_speed_edit = SpinBoxEdit(
+            self.locale_manager.search_key("mv_speed"),
+            self.form.stats.speed.raw,
+            self,
+        )
+        self.column_0_layout.addWidget(self.mv_speed_edit)
+
+        self.tba_edit = SpinBoxEdit(
+            self.locale_manager.search_key("tba"),
+            self.form.stats.attack_interval.frames,
+            self,
+            show_seconds=True,
+        )
+        self.column_1_layout.addWidget(self.tba_edit)
+
+        self.cost_edit = SpinBoxEdit(
+            self.locale_manager.search_key("cost"),
+            self.form.stats.cost,
+            self,
+        )
+        self.column_0_layout.addWidget(self.cost_edit)
+
+        self.recharge_edit = SpinBoxEdit(
+            self.locale_manager.search_key("recharge"),
+            self.form.stats.recharge_time.frames,
+            self,
+            show_seconds=True,
+        )
+        self.column_0_layout.addWidget(self.recharge_edit)
+
+        self.column_1_layout.addWidget(self.attack_tabs)
 
         self.column_0_layout.addStretch(1)
         self.column_1_layout.addStretch(1)
@@ -963,6 +1002,12 @@ class StatsTab(QtWidgets.QWidget):
     def save(self):
         self.form.stats.hp = self.hp_edit.value_int()
         self.form.stats.range.raw = self.range_edit.value_int()
+        self.form.stats.kbs = self.kbs_edit.value_int()
+        self.form.stats.speed.raw = self.mv_speed_edit.value_int()
+        self.form.stats.attack_interval.frames = self.tba_edit.value_int()
+        self.form.stats.cost = self.cost_edit.value_int()
+        self.form.stats.recharge_time.frames = self.recharge_edit.value_int()
+
         self.attack_1_tab.save()
         self.attack_2_tab.save()
         self.attack_3_tab.save()
@@ -988,23 +1033,6 @@ class AttackTab(QtWidgets.QWidget):
 
         self._layout.addWidget(self._damage_edit)
 
-        self._foreswing_edit = SpinBoxEdit(
-            self.locale_manager.search_key("foreswing"),
-            self.attack.foreswing.frames,
-            self,
-            show_seconds=True,
-        )
-
-        self._layout.addWidget(self._foreswing_edit)
-
-        self._use_ability_box = QtWidgets.QCheckBox(self)
-        self._use_ability_box.setObjectName("use_ability_box")
-        self._use_ability_box.setText(
-            self.locale_manager.search_key("use_ability"),
-        )
-        self._use_ability_box.setChecked(self.attack.use_ability)
-        self._layout.addWidget(self._use_ability_box)
-
         self.long_distance_layout = QtWidgets.QHBoxLayout()
         self.long_distance_layout.setObjectName("long_distance_layout")
         self._layout.addLayout(self.long_distance_layout)
@@ -1014,6 +1042,12 @@ class AttackTab(QtWidgets.QWidget):
         self.long_distance_line_edit.setReadOnly(True)
         self.long_distance_line_edit.setText(
             self.locale_manager.search_key("long_distance"),
+        )
+        self.long_distance_line_edit.setFixedWidth(
+            self.long_distance_line_edit.fontMetrics()
+            .boundingRect(self.long_distance_line_edit.text())
+            .width()
+            + 20
         )
         self.long_distance_layout.addWidget(self.long_distance_line_edit)
 
@@ -1040,6 +1074,23 @@ class AttackTab(QtWidgets.QWidget):
 
         self.long_distance_layout.addWidget(self._long_distance_end_edit)
 
+        self._foreswing_edit = SpinBoxEdit(
+            self.locale_manager.search_key("foreswing"),
+            self.attack.foreswing.frames,
+            self,
+            show_seconds=True,
+        )
+
+        self._layout.addWidget(self._foreswing_edit)
+
+        self._use_ability_box = QtWidgets.QCheckBox(self)
+        self._use_ability_box.setObjectName("use_ability_box")
+        self._use_ability_box.setText(
+            self.locale_manager.search_key("use_ability"),
+        )
+        self._use_ability_box.setChecked(self.attack.use_ability)
+        self._layout.addWidget(self._use_ability_box)
+
     def save(self):
         self.attack.damage = self._damage_edit.value_int()
         self.attack.foreswing.frames = self._foreswing_edit.value_int()
@@ -1064,7 +1115,7 @@ class SpinBoxEdit(QtWidgets.QWidget):
         super(SpinBoxEdit, self).__init__(parent)
         self._layout = QtWidgets.QHBoxLayout(self)
         self._layout.setContentsMargins(0, 0, 0, 0)
-        self._layout.setSpacing(0)
+        self._layout.setSpacing(5)
         self._layout.setObjectName("layout")
 
         if name:
@@ -1072,6 +1123,9 @@ class SpinBoxEdit(QtWidgets.QWidget):
             self.line_edit.setObjectName("line_edit")
             self.line_edit.setReadOnly(True)
             self.line_edit.setText(name)
+            self.line_edit.setFixedWidth(
+                self.line_edit.fontMetrics().boundingRect(name).width() + 20,
+            )
             self._layout.addWidget(self.line_edit)
             self._layout.addStretch(1)
 
@@ -1089,19 +1143,47 @@ class SpinBoxEdit(QtWidgets.QWidget):
         self.show_seconds = show_seconds
         if show_seconds:
             self.locale_manager = locale_handler.LocalManager.from_config()
-            self.seconds_text_edit = QtWidgets.QLineEdit(self)
-            self.seconds_text_edit.setObjectName("seconds_text_edit")
-            self.seconds_text_edit.setReadOnly(True)
-            self._layout.addWidget(self.seconds_text_edit)
-            self._on_spin_box_value_changed(value)
+            self.seconds_label = QtWidgets.QLabel(self)
+            self.seconds_label.setObjectName("seconds_label")
+            self.seconds_label.setText(
+                self.locale_manager.search_key("seconds") + ":",
+            )
+            self._layout.addWidget(self.seconds_label)
+
+            self.seconds_spin_box = QtWidgets.QDoubleSpinBox(self)
+            self.seconds_spin_box.setObjectName("seconds_spin_box")
+            self.seconds_spin_box.setRange(0, 2147483647)
+            self.seconds_spin_box.setValue(
+                game_data.cat_base.unit.Frames(value).seconds_float,
+            )
+            self.seconds_spin_box.valueChanged.connect(
+                self._on_seconds_spin_box_value_changed,
+            )
+            self._layout.addWidget(self.seconds_spin_box)
+
+            self.frames_label = QtWidgets.QLabel(self)
+            self.frames_label.setObjectName("frames_label")
+            self.frames_label.setText(
+                self.locale_manager.search_key("frames") + ":",
+            )
+            self._layout.insertWidget(2, self.frames_label)
 
     def _on_spin_box_value_changed(self, value: int):
         self.raw_value = value
         if self.show_seconds:
             val = game_data.cat_base.unit.Frames(value).seconds_float
-            self.seconds_text_edit.setText(
-                f"{val:.2f} {self.locale_manager.search_key('seconds')}"
-            )
+            self.seconds_spin_box.blockSignals(True)
+            self.seconds_spin_box.setValue(val)
+            self.seconds_spin_box.blockSignals(False)
+
+    def _on_seconds_spin_box_value_changed(self, value: float):
+        frames = game_data.cat_base.unit.Frames.from_seconds(value).frames
+        frames = max(frames, 0)
+        frames = min(frames, 2147483647)
+        self.raw_value = frames
+        self._spin_box.blockSignals(True)
+        self._spin_box.setValue(frames)
+        self._spin_box.blockSignals(False)
 
     def value_int(self) -> int:
         return self.raw_value
