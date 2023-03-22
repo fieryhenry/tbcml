@@ -974,22 +974,19 @@ class AttackTab(QtWidgets.QWidget):
         self._use_ability_box.setChecked(self.attack.use_ability)
         self._layout.addWidget(self._use_ability_box)
 
-        self.long_distance_group = QtWidgets.QGroupBox(self)
-        self.long_distance_group.setObjectName("long_distance_group")
-        self.long_distance_group_layout = QtWidgets.QHBoxLayout(
-            self.long_distance_group
-        )
-        self.long_distance_group_layout.setObjectName("long_distance_group_layout")
-        self._layout.addWidget(self.long_distance_group)
-        self.long_distance_line_edit = QtWidgets.QLineEdit(self.long_distance_group)
+        self.long_distance_layout = QtWidgets.QHBoxLayout()
+        self.long_distance_layout.setObjectName("long_distance_layout")
+        self._layout.addLayout(self.long_distance_layout)
+
+        self.long_distance_line_edit = QtWidgets.QLineEdit(self)
         self.long_distance_line_edit.setObjectName("long_distance_line_edit")
         self.long_distance_line_edit.setReadOnly(True)
         self.long_distance_line_edit.setText(
             self.locale_manager.search_key("long_distance"),
         )
-        self.long_distance_group_layout.addWidget(self.long_distance_line_edit)
+        self.long_distance_layout.addWidget(self.long_distance_line_edit)
 
-        self.long_distance_group_layout.addStretch(1)
+        self.long_distance_layout.addStretch(1)
 
         self._long_distance_start_edit = SpinBoxEdit(
             "",
@@ -997,12 +994,12 @@ class AttackTab(QtWidgets.QWidget):
             self,
         )
 
-        self.long_distance_group_layout.addWidget(self._long_distance_start_edit)
+        self.long_distance_layout.addWidget(self._long_distance_start_edit)
 
-        self.long_distance_dash = QtWidgets.QLabel(self.long_distance_group)
+        self.long_distance_dash = QtWidgets.QLabel(self)
         self.long_distance_dash.setObjectName("long_distance_dash")
         self.long_distance_dash.setText("-")
-        self.long_distance_group_layout.addWidget(self.long_distance_dash)
+        self.long_distance_layout.addWidget(self.long_distance_dash)
 
         self._long_distance_end_edit = SpinBoxEdit(
             "",
@@ -1010,7 +1007,7 @@ class AttackTab(QtWidgets.QWidget):
             self,
         )
 
-        self.long_distance_group_layout.addWidget(self._long_distance_end_edit)
+        self.long_distance_layout.addWidget(self._long_distance_end_edit)
 
     def save(self):
         self.attack.damage = self._damage_edit.value_int()
