@@ -1,6 +1,6 @@
 import time
 import enum
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Union
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
@@ -92,7 +92,9 @@ class CatSearchBox(QtWidgets.QWidget):
         self.on_search(self.filter)
 
     def on_filter(self):
-        self.filter_window = FilterWindow(self.rarities, self.on_search_window, self)
+        self.filter_window = FilterWindow(
+            self.rarities, self.on_search_window, self, self.filter
+        )
         self.filter_window.show()
 
     def on_search_window(self, filter: SearchFilter):
@@ -118,10 +120,16 @@ class FilterWindow(QtWidgets.QDialog):
         rarities: dict[int, str],
         on_change: Callable[[SearchFilter], None],
         parent: Optional[QtWidgets.QWidget] = None,
+        current_filter: Optional[SearchFilter] = None,
     ):
         super(FilterWindow, self).__init__(parent)
         self.on_change = on_change
         self.rarities = rarities
+        if current_filter is None:
+            self.filter = SearchFilter("")
+        else:
+            self.filter = current_filter
+
         self.setup_ui()
 
     def setup_ui(self):
@@ -139,13 +147,14 @@ class FilterWindow(QtWidgets.QDialog):
             self.locale_manager.search_key("cat_editor_form_name")
         )
         self.form_name_layout.addWidget(self._form_name)
+        self._form_name.setText(self.filter.form_name)
 
         self._form_name.textChanged.connect(self.on_form_name)
-        self.form_name = ""
+        self.form_name = self._form_name.text()
 
         self.case_sensitive = QtWidgets.QCheckBox(self)
         self.case_sensitive.setText(self.locale_manager.search_key("case_sensitive"))
-        self.case_sensitive.setChecked(False)
+        self.case_sensitive.setChecked(self.filter.case_sensitive)
         self.case_sensitive.stateChanged.connect(self.update_filter)
         self.form_name_layout.addWidget(self.case_sensitive)
 
@@ -155,7 +164,8 @@ class FilterWindow(QtWidgets.QDialog):
         self.name_search_mode.addItem(self.locale_manager.search_key("ends_with"))
         self.name_search_mode.addItem(self.locale_manager.search_key("exact_match"))
         self.name_search_mode.currentIndexChanged.connect(self.on_name_search_mode)
-        self.name_mode = 0
+        self.name_mode = self.filter.name_mode.value
+        self.name_search_mode.setCurrentIndex(self.name_mode)
         self.form_name_layout.addWidget(self.name_search_mode)
 
         self._rarity_layout = QtWidgets.QGridLayout()
@@ -166,10 +176,14 @@ class FilterWindow(QtWidgets.QDialog):
         self._rarity_layout.addWidget(self._rarity_label, 0, 0, 1, 2)
 
         self._rarity_buttons: dict[int, QtWidgets.QCheckBox] = {}
+        rarities_selected = self.filter.rarities
+        if rarities_selected is None:
+            rarities_selected = list(self.rarities.keys())
+        self.rarities_selected = rarities_selected
         for rarity_id, name in self.rarities.items():
             button = QtWidgets.QCheckBox(self)
             button.setText(name)
-            button.setChecked(True)
+            button.setChecked(rarity_id in rarities_selected)
             button.stateChanged.connect(self.on_rarity)
             row = rarity_id // 2 + 1
             column = rarity_id % 2
@@ -183,13 +197,11 @@ class FilterWindow(QtWidgets.QDialog):
         self.select_all_rarities.clicked.connect(self.on_select_all_rarities)
         self._rarity_layout.addWidget(self.select_all_rarities, 4, 0, 1, 2)
 
-        self.rarities_selected: list[int] = list(self.rarities.keys())
-
         self._layout.addStretch()
 
         self.or_mode = QtWidgets.QCheckBox(self)
         self.or_mode.setText(self.locale_manager.search_key("or_filter_mode"))
-        self.or_mode.setChecked(False)
+        self.or_mode.setChecked(self.filter.or_mode)
         self.or_mode.stateChanged.connect(self.update_filter)
         self._layout.addWidget(self.or_mode)
 
@@ -203,14 +215,17 @@ class FilterWindow(QtWidgets.QDialog):
         self.update_filter()
 
     def update_filter(self):
-        self.filter = SearchFilter(
-            self.form_name,
-            self.rarities_selected,
-            self.or_mode.isChecked(),
-            SearchMode(self.name_mode),
-            self.case_sensitive.isChecked(),
-        )
-        self.on_change(self.filter)
+        try:
+            self.filter = SearchFilter(
+                self.form_name,
+                self.rarities_selected,
+                self.or_mode.isChecked(),
+                SearchMode(self.name_mode),
+                self.case_sensitive.isChecked(),
+            )
+            self.on_change(self.filter)
+        except AttributeError:
+            pass
 
     def on_rarity(self):
         rarities: list[int] = []
@@ -384,10 +399,11 @@ class CatEditor(QtWidgets.QWidget):
                     filter.form_name, filter.name_mode, filter.case_sensitive
                 )
                 is_rarities = cat_widget.is_rarities(filter.rarities)
+                has_id = cat_widget.has_id(filter.form_name, filter.name_mode)
                 if filter.or_mode:
-                    item.setHidden(not (has_name or is_rarities))
+                    item.setHidden(not (has_name or is_rarities or has_id))
                 else:
-                    item.setHidden(not (has_name and is_rarities))
+                    item.setHidden(not ((has_name or has_id) and is_rarities))
 
         self.check_items(True)
 
@@ -551,6 +567,21 @@ class CatListItem(QtWidgets.QListWidget):
             elif mode == SearchMode.ENDS_WITH:
                 if form_name.endswith(search_name):
                     return True
+        return False
+
+    def has_id(self, cat_id: Union[int, str], mode: SearchMode):
+        if self.cat is None:
+            return False
+        cat_cat_id = str(self.cat.cat_id)
+        cat_id = str(cat_id)
+        if mode == SearchMode.EXACT:
+            return cat_cat_id == cat_id
+        elif mode == SearchMode.CONTAINS:
+            return str(cat_id) in str(cat_cat_id)
+        elif mode == SearchMode.STARTS_WITH:
+            return str(cat_cat_id).startswith(str(cat_id))
+        elif mode == SearchMode.ENDS_WITH:
+            return str(cat_cat_id).endswith(str(cat_id))
         return False
 
     def is_rarity(self, rarity: int):
