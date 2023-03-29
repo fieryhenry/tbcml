@@ -1,7 +1,7 @@
 import enum
 from typing import Any
-from bcml.core.game_data import pack, bc_anim
-from bcml.core import io
+from bcml.core.game_data import pack
+from bcml.core import io, anim
 
 
 class Engineer:
@@ -152,43 +152,37 @@ class EngineerAnim:
                     all_maanims.append(maanim.value)
             return all_maanims
 
-    def __init__(self, anim: "bc_anim.Anim"):
-        self.anim = anim
+    def __init__(self, model: "anim.model.Model"):
+        self.model = model
 
     @staticmethod
     def from_game_data(game_data: "pack.GamePacks") -> "EngineerAnim":
-        anim = bc_anim.Anim.from_paths(
-            game_data,
-            EngineerAnim.FilePath.SPRITE.value,
-            EngineerAnim.FilePath.IMGCUT.value,
+        an = anim.model.Model.load(
             EngineerAnim.FilePath.MAMODEL.value,
+            EngineerAnim.FilePath.IMGCUT.value,
+            EngineerAnim.FilePath.SPRITE.value,
             EngineerAnim.FilePath.get_all_maanims_names(),
+            game_data,
         )
-        return EngineerAnim(anim)
+        return EngineerAnim(an)
 
     def to_game_data(self, game_data: "pack.GamePacks"):
-        self.anim.to_game_data(
-            game_data,
-            EngineerAnim.FilePath.SPRITE.value,
-            EngineerAnim.FilePath.IMGCUT.value,
-            EngineerAnim.FilePath.MAMODEL.value,
-            EngineerAnim.FilePath.get_all_maanims_names(),
-        )
+        self.model.save(game_data)
 
     def serialize(self) -> dict[str, Any]:
         return {
-            "anim": self.anim.serialize(),
+            "model": self.model.serialize(),
         }
 
     @staticmethod
     def deserialize(data: dict[str, Any]) -> "EngineerAnim":
-        anim = bc_anim.Anim.deserialize(data["anim"])
-        return EngineerAnim(anim)
+        an = anim.model.Model.deserialize(data["model"])
+        return EngineerAnim(an)
 
     @staticmethod
     def create_empty() -> "EngineerAnim":
-        anim = bc_anim.Anim.create_empty()
-        return EngineerAnim(anim)
+        an = anim.model.Model.create_empty()
+        return EngineerAnim(an)
 
     def import_engineer_anim(self, other: "EngineerAnim", game_data: "pack.GamePacks"):
         """_summary_
@@ -198,5 +192,5 @@ class EngineerAnim:
             game_data (pack.GamePacks): The game data to check if the imported data is different from the game data. This is used to prevent overwriting the current data with base game data.
         """
         gd_anim = EngineerAnim.from_game_data(game_data)
-        if gd_anim.anim != other.anim:
-            self.anim = other.anim
+        if gd_anim.model != other.model:
+            self.model = other.model

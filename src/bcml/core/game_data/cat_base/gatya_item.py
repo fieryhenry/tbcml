@@ -339,8 +339,8 @@ class GatyaItem:
         id: int,
         gatya_item_buy_item: GatyaItemBuyItem,
         gatya_item_name_item: GatyaItemNameItem,
-        image: io.bc_image.BCImage,
-        silhouette: io.bc_image.BCImage,
+        image: "io.bc_image.BCImage",
+        silhouette: "io.bc_image.BCImage",
     ):
         self.id = id
         self.gatya_item_buy_item = gatya_item_buy_item

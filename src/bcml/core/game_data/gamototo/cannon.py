@@ -1,8 +1,8 @@
 import enum
 from typing import Any, Optional
 from bcml.core.game_data.gamototo import castle_recipe
-from bcml.core.game_data import pack, bc_anim
-from bcml.core import io
+from bcml.core.game_data import pack
+from bcml.core import io, anim
 
 
 class CannonStatus:
@@ -456,15 +456,15 @@ class Cannon:
         status: CannonStatus,
         effects: dict[int, "CannonEffect"],
         recipe: "castle_recipe.CastleRecipe",
-        parts_anims: dict[Part, dict[int, "bc_anim.Anim"]],
-        parts_imgcut: dict[Part, "bc_anim.Imgcut"],
+        parts_models: dict[Part, dict[int, "anim.model.Model"]],
+        parts_texture: dict[Part, "anim.texture.Texture"],
     ):
         self.castle_type = castle_type
         self.status = status
         self.effects = effects
         self.recipe = recipe
-        self.parts_anims = parts_anims
-        self.parts_imgcut = parts_imgcut
+        self.parts_models = parts_models
+        self.parts_texture = parts_texture
 
     def serialize(self) -> dict[str, Any]:
         return {
@@ -472,12 +472,12 @@ class Cannon:
             "status": self.status.serialize(),
             "effect": {str(k): v.serialize() for k, v in self.effects.items()},
             "recipe": self.recipe.serialize(),
-            "parts_anim": {
+            "parts_models": {
                 str(k): {str(k2): v2.serialize() for k2, v2 in v.items()}
-                for k, v in self.parts_anims.items()
+                for k, v in self.parts_models.items()
             },
-            "parts_imgcut": {
-                str(k): v.serialize() for k, v in self.parts_imgcut.items()
+            "parts_texture": {
+                str(k): v.serialize() for k, v in self.parts_texture.items()
             },
         }
 
@@ -492,144 +492,104 @@ class Cannon:
                 int(k): CannonEffect.deserialize(v) for k, v in data["effect"].items()
             },
             recipe=castle_recipe.CastleRecipe.deserialize(data["recipe"]),
-            parts_anims={
+            parts_models={
                 Part(int(k)): {
-                    int(k2): bc_anim.Anim.deserialize(v2) for k2, v2 in v.items()
+                    int(k2): anim.model.Model.deserialize(v2) for k2, v2 in v.items()
                 }
-                for k, v in data["parts_anim"].items()
+                for k, v in data["parts_models"].items()
             },
-            parts_imgcut={
-                Part(int(k)): bc_anim.Imgcut.deserialize(v)
-                for k, v in data["parts_imgcut"].items()
+            parts_texture={
+                Part(int(k)): anim.texture.Texture.deserialize(v)
+                for k, v in data["parts_texture"].items()
             },
         )
 
     @staticmethod
-    def parts_anims_from_game_data(
+    def parts_models_from_game_data(
         game_data: "pack.GamePacks",
         castle_type: int,
-    ) -> tuple[dict[Part, dict[int, "bc_anim.Anim"]], dict[Part, "bc_anim.Imgcut"]]:
-        imgcuts: dict[Part, "bc_anim.Imgcut"] = {}
-        anims: dict[Part, dict[int, "bc_anim.Anim"]] = {}
+    ) -> tuple[
+        dict[Part, dict[int, "anim.model.Model"]], dict[Part, "anim.texture.Texture"]
+    ]:
+        models: dict[Part, dict[int, "anim.model.Model"]] = {}
+        textures: dict[Part, "anim.texture.Texture"] = {}
         for part in Part:
             png_name = f"nyankoCastle_{io.data.PaddedInt(part.value, 3)}_{io.data.PaddedInt(castle_type, 2)}.png"
-            file = game_data.find_file(png_name, show_error=False)
-            if file is None:
-                continue
-            image = io.bc_image.BCImage(file.dec_data)
             imgcut_name = png_name.replace(".png", ".imgcut")
-            file = game_data.find_file(imgcut_name, show_error=False)
-            if file is None:
-                continue
-            imgcut = bc_anim.Imgcut.from_data(file.dec_data, image)
-            imgcuts[part] = imgcut
+            tex = anim.texture.Texture.load(png_name, imgcut_name, game_data)
+            textures[part] = tex
 
             png_name_2 = f"nyankoCastle_{io.data.PaddedInt(part.value, 3)}_{io.data.PaddedInt(castle_type, 2)}_00.png"
-            file = game_data.find_file(png_name_2, show_error=False)
-            if file is None:
-                continue
-
-            image_2 = io.bc_image.BCImage(file.dec_data)
             imgcut_name_2 = png_name_2.replace(".png", ".imgcut")
-            file = game_data.find_file(imgcut_name_2, show_error=False)
-            if file is None:
-                continue
-            imgcut_2 = bc_anim.Imgcut.from_data(file.dec_data, image_2)
+
             mamodel_name = png_name_2.replace(".png", ".mamodel")
-            file = game_data.find_file(mamodel_name, show_error=False)
-            if file is None:
-                continue
 
-            mamodel = bc_anim.Mamodel.from_data(file.dec_data, imgcut_2.cuts)
             maanim_name = png_name_2.replace(".png", ".maanim")
-            file = game_data.find_file(maanim_name, show_error=False)
-            if file is None:
-                continue
-            maanim = bc_anim.Maanim.from_data(file.dec_data, maanim_name)
 
-            anims[part] = {}
-            anims[part][0] = bc_anim.Anim(imgcut_2, mamodel, [maanim])
+            models[part] = {}
+            models[part][0] = anim.model.Model.load(
+                mamodel_name, imgcut_name_2, png_name_2, [maanim_name], game_data
+            )
 
             png_name_3 = f"nyankoCastle_{io.data.PaddedInt(part.value, 3)}_{io.data.PaddedInt(castle_type, 2)}_01.png"
 
             mamodel_name_2 = png_name_3.replace(".png", ".mamodel")
-            file = game_data.find_file(mamodel_name_2, show_error=False)
-            if file is None:
-                continue
 
-            mamodel_2 = bc_anim.Mamodel.from_data(file.dec_data, imgcut_2.cuts)
             maanim_name_2 = png_name_3.replace(".png", ".maanim")
-            file = game_data.find_file(maanim_name_2, show_error=False)
-            if file is None:
-                anims[part] = {0: bc_anim.Anim(imgcut_2, mamodel, [maanim])}
+
+            model = None
+            try:
+                model = anim.model.Model.load(
+                    mamodel_name_2,
+                    imgcut_name_2,
+                    png_name_2,
+                    [maanim_name_2],
+                    game_data,
+                )
+            except ValueError:
+                pass
+
+            if model is None:
+                models[part] = {
+                    0: anim.model.Model.load(
+                        mamodel_name_2,
+                        imgcut_name_2,
+                        png_name_2,
+                        [maanim_name],
+                        game_data,
+                    )
+                }
                 continue
-            maanim_2 = bc_anim.Maanim.from_data(file.dec_data, maanim_name_2)
 
-            anims[part][1] = bc_anim.Anim(imgcut_2, mamodel_2, [maanim_2])
+            models[part][1] = model
 
-        return anims, imgcuts
+        return models, textures
 
     def parts_anims_to_game_data(
         self,
         game_data: "pack.GamePacks",
     ):
         for part in Part:
-            png_name = f"nyankoCastle_{io.data.PaddedInt(part.value, 3)}_{io.data.PaddedInt(self.castle_type, 2)}.png"
+            self.parts_texture[part].save(game_data)
+            self.parts_models[part][0].save(game_data)
 
-            imgcut = self.parts_imgcut[part]
-            imgcut_data = imgcut.to_data()
-            if not imgcut_data[1].is_empty():
-                game_data.set_file(png_name, imgcut_data[1])
-
-            if not imgcut.is_empty():
-                imgcut_name = png_name.replace(".png", ".imgcut")
-                game_data.set_file(imgcut_name, imgcut_data[0])
-
-            png_name_2 = f"nyankoCastle_{io.data.PaddedInt(part.value, 3)}_{io.data.PaddedInt(self.castle_type, 2)}_00.png"
-            try:
-                anim = self.parts_anims[part][0]
-                if anim.is_empty():
-                    continue
-            except KeyError:
+            if len(self.parts_models[part]) == 1:
+                self.parts_models[part][0].save(
+                    game_data,
+                )
                 continue
-            imgcut_data_2 = anim.imgcut.to_data()
-            mamodel = anim.mamodel
-            maanim = anim.maanims[0]
 
-            game_data.set_file(png_name_2, imgcut_data_2[1])
-
-            imgcut_name_2 = png_name_2.replace(".png", ".imgcut")
-            game_data.set_file(imgcut_name_2, imgcut_data_2[0])
-
-            mamodel_data = mamodel.to_data()
-            game_data.set_file(png_name_2.replace(".png", ".mamodel"), mamodel_data)
-
-            maanim_data = maanim.to_data()
-            game_data.set_file(png_name_2.replace(".png", ".maanim"), maanim_data)
-
-            png_name_3 = f"nyankoCastle_{io.data.PaddedInt(part.value, 3)}_{io.data.PaddedInt(self.castle_type, 2)}_01.png"
-            try:
-                anim_2 = self.parts_anims[part][1]
-                if anim_2.is_empty():
-                    continue
-            except KeyError:
-                continue
-            mamodel_2 = anim_2.mamodel
-            maanim_2 = anim_2.maanims[0]
-
-            mamodel_data_2 = mamodel_2.to_data()
-            game_data.set_file(png_name_3.replace(".png", ".mamodel"), mamodel_data_2)
-
-            maanim_data_2 = maanim_2.to_data()
-            game_data.set_file(png_name_3.replace(".png", ".maanim"), maanim_data_2)
+            self.parts_models[part][1].save(
+                game_data,
+            )
 
     def __eq__(self, __o: object) -> bool:
         if not isinstance(__o, Cannon):
             return False
         return (
             self.castle_type == __o.castle_type
-            and self.parts_imgcut == __o.parts_imgcut
-            and self.parts_anims == __o.parts_anims
+            and self.parts_texture == __o.parts_texture
+            and self.parts_models == __o.parts_models
         )
 
     def __ne__(self, __o: object) -> bool:
@@ -641,11 +601,11 @@ class Cannons:
         self,
         cannons: dict[int, Cannon],
         map_png: "io.bc_image.BCImage",
-        silhouette_imgcut: "bc_anim.Imgcut",
+        silhouette_tex: "anim.texture.Texture",
     ):
         self.cannons = cannons
         self.map_png = map_png
-        self.silhouette_imgcut = silhouette_imgcut
+        self.silhouette_tex = silhouette_tex
 
     def get_cannon(self) -> Optional[Cannon]:
         cannon_lst = list(self.cannons.values())
@@ -658,7 +618,7 @@ class Cannons:
         return {
             "cannons": {str(k): v.serialize() for k, v in self.cannons.items()},
             "map_png": self.map_png.serialize(),
-            "silhouette_imgcut": self.silhouette_imgcut.serialize(),
+            "silhouette_tex": self.silhouette_tex.serialize(),
         }
 
     @staticmethod
@@ -668,7 +628,7 @@ class Cannons:
         return Cannons(
             cannons={int(k): Cannon.deserialize(v) for k, v in data["cannons"].items()},
             map_png=io.bc_image.BCImage.deserialize(data["map_png"]),
-            silhouette_imgcut=bc_anim.Imgcut.deserialize(data["silhouette_imgcut"]),
+            silhouette_tex=anim.texture.Texture.deserialize(data["silhouette_tex"]),
         )
 
     @staticmethod
@@ -677,22 +637,17 @@ class Cannons:
         statuses = CannonStatuses.from_game_data(game_data)
         recipies = castle_recipe.CastleRecipies.from_game_data(game_data)
         map_png = game_data.find_file(Cannons.get_map_png_file_name())
-        silhouette_png = game_data.find_file(Cannons.get_silhouette_file_name())
-        silhouette_imgcut = game_data.find_file(
-            Cannons.get_silhouette_file_name().replace(".png", ".imgcut"),
-            show_error=True,
-        )
-        imgcut_data = (
-            silhouette_imgcut.dec_data if silhouette_imgcut else io.data.Data()
-        )
-        png_data = silhouette_png.dec_data if silhouette_png else io.data.Data()
         map_png_data = map_png.dec_data if map_png else io.data.Data()
-        imgcut = bc_anim.Imgcut.from_data(imgcut_data, io.bc_image.BCImage(png_data))
+        imgcut = anim.texture.Texture.load(
+            Cannons.get_silhouette_file_name(),
+            Cannons.get_silhouette_file_name().replace(".png", ".imgcut"),
+            game_data,
+        )
 
         cannons: dict[int, Cannon] = {}
         castle_type = 0
         while True:
-            anims, imgcuts = Cannon.parts_anims_from_game_data(game_data, castle_type)
+            anims, imgcuts = Cannon.parts_models_from_game_data(game_data, castle_type)
             cannons[castle_type] = Cannon(
                 castle_type,
                 statuses.statuses[castle_type],
@@ -723,12 +678,9 @@ class Cannons:
         recipies.to_game_data(game_data)
         if not self.map_png.is_empty():
             game_data.set_file(Cannons.get_map_png_file_name(), self.map_png.to_data())
-        if not self.silhouette_imgcut.is_empty():
-            imgcut_data = self.silhouette_imgcut.to_data()
-            game_data.set_file(Cannons.get_silhouette_file_name(), imgcut_data[1])
-            game_data.set_file(
-                Cannons.get_silhouette_file_name().replace(".png", ".imgcut"),
-                imgcut_data[0],
+        if not self.silhouette_tex.is_empty():
+            self.silhouette_tex.save(
+                game_data,
             )
         for cannon in self.cannons.values():
             cannon.parts_anims_to_game_data(game_data)
@@ -757,7 +709,7 @@ class Cannons:
     @staticmethod
     def create_empty() -> "Cannons":
         return Cannons(
-            {}, io.bc_image.BCImage.create_empty(), bc_anim.Imgcut.create_empty()
+            {}, io.bc_image.BCImage.create_empty(), anim.texture.Texture.create_empty()
         )
 
     def set_cannon(self, cannon: Cannon) -> None:
@@ -789,10 +741,10 @@ class Cannons:
         if gd_map_png != other_map_png:
             self.map_png = other_map_png
 
-        other_silhouette_imgcut = cannons.silhouette_imgcut
-        gd_silhouette_imgcut = gd_cannons.silhouette_imgcut
+        other_silhouette_imgcut = cannons.silhouette_tex
+        gd_silhouette_imgcut = gd_cannons.silhouette_tex
         if gd_silhouette_imgcut != other_silhouette_imgcut:
-            self.silhouette_imgcut = other_silhouette_imgcut
+            self.silhouette_tex = other_silhouette_imgcut
 
     def get_cannon_types(self) -> list[int]:
         return list(self.cannons.keys())

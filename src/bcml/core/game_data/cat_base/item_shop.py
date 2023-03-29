@@ -1,6 +1,6 @@
 from typing import Any, Optional
-from bcml.core.game_data import pack, bc_anim
-from bcml.core import io
+from bcml.core.game_data import pack
+from bcml.core import io, anim
 
 
 class Item:
@@ -14,8 +14,7 @@ class Item:
         price: int,
         draw_item_value: bool,
         category_name: str,
-        imgcut_id: int,
-        cut: "bc_anim.Cut",
+        rect_id: int,
     ):
         """Initialize a new Item.
 
@@ -26,8 +25,7 @@ class Item:
             price (int): The price of the item in catfood.
             draw_item_value (bool): Whether to draw the player's current item count of the item.
             category_name (str): The name of the category the item belongs to. e.g "Battle Items", "XP"
-            imgcut_id (int): The index in the imgcut of the item's icon.
-            cut (bc_anim.Cut): The image of the item in the shop.
+            rect (int): The index in the texture of the item's icon.
         """
         self.shop_id = shop_id
         self.gatya_item_id = gatya_item_id
@@ -35,8 +33,7 @@ class Item:
         self.price = price
         self.draw_item_value = draw_item_value
         self.category_name = category_name
-        self.imgcut_id = imgcut_id
-        self.cut = cut
+        self.rect_id = rect_id
 
     def serialize(self) -> dict[str, Any]:
         """Serialize the Item to a dict.
@@ -51,8 +48,7 @@ class Item:
             "price": self.price,
             "draw_item_value": self.draw_item_value,
             "category_name": self.category_name,
-            "imgcut_id": self.imgcut_id,
-            "cut": self.cut.serialize(img=True),
+            "rect_id": self.rect_id,
         }
 
     @staticmethod
@@ -72,8 +68,7 @@ class Item:
             data["price"],
             data["draw_item_value"],
             data["category_name"],
-            data["imgcut_id"],
-            bc_anim.Cut.deserialize(data["cut"]),
+            data["rect_id"],
         )
         return item
 
@@ -83,7 +78,7 @@ class Item:
         Returns:
             str: The string representation of the Item.
         """
-        return f"Item({self.shop_id}, {self.gatya_item_id}, {self.count}, {self.price}, {self.draw_item_value}, {self.category_name}, {self.imgcut_id}, {self.cut})"
+        return f"Item(shop_id={self.shop_id}, gatya_item_id={self.gatya_item_id}, count={self.count}, price={self.price}, draw_item_value={self.draw_item_value}, category_name={self.category_name}, rect_id={self.rect_id})"
 
     def __repr__(self) -> str:
         """Get a string representation of the Item.
@@ -112,8 +107,7 @@ class Item:
             and self.price == other.price
             and self.draw_item_value == other.draw_item_value
             and self.category_name == other.category_name
-            and self.imgcut_id == other.imgcut_id
-            and self.cut.image == other.cut.image
+            and self.rect_id == other.rect_id
         )
 
     def __ne__(self, other: object) -> bool:
@@ -131,19 +125,15 @@ class Item:
 class ItemShop:
     """Represents the Item Shop."""
 
-    def __init__(
-        self,
-        items: dict[int, Item],
-        imgname: str,
-    ):
+    def __init__(self, items: dict[int, Item], tex: "anim.texture.Texture"):
         """Initialize a new ItemShop.
 
         Args:
             items (dict[int, Item]): The items in the shop.
-            imgname (str): The name of the image file containing the shop's icons.
+            tex (anim.texture.Texture): The texture containing the icons for the items.
         """
         self.items = items
-        self.imgname = imgname
+        self.tex = tex
 
     def serialize(self) -> dict[str, Any]:
         """Serialize the ItemShop to a dict.
@@ -153,7 +143,7 @@ class ItemShop:
         """
         return {
             "items": {str(k): v.serialize() for k, v in self.items.items()},
-            "imgname": self.imgname,
+            "tex": self.tex.serialize(),
         }
 
     @staticmethod
@@ -167,7 +157,8 @@ class ItemShop:
             ItemShop: The deserialized ItemShop.
         """
         items = {int(k): Item.deserialize(v) for k, v in data["items"].items()}
-        return ItemShop(items, data["imgname"])
+        tex = anim.texture.Texture.deserialize(data["tex"])
+        return ItemShop(items, tex)
 
     @staticmethod
     def get_file_name() -> str:
@@ -201,21 +192,14 @@ class ItemShop:
             ItemShop: The ItemShop.
         """
         tsv_data = game_data.find_file(ItemShop.get_file_name())
-        png_data = game_data.find_file(
-            f"item000_{game_data.localizable.get_lang()}.png"
-        )
-        imgcut_data = game_data.find_file(
-            f"item000_{game_data.localizable.get_lang()}.imgcut"
-        )
-        if tsv_data is None or png_data is None or imgcut_data is None:
+        png_name = f"item000_{game_data.localizable.get_lang()}.png"
+        imgcut_name = f"item000_{game_data.localizable.get_lang()}.imgcut"
+        tex = anim.texture.Texture.load(png_name, imgcut_name, game_data)
+        if tsv_data is None:
             return ItemShop.create_empty()
-        img = io.bc_image.BCImage(png_data.dec_data)
-        imgcut = bc_anim.Imgcut.from_data(imgcut_data.dec_data, img)
         tsv = io.bc_csv.CSV(tsv_data.dec_data, delimeter="\t")
         items = {}
         for line in tsv.lines[1:]:
-            cut = imgcut.cuts[line[6].to_int()]
-            cut.get_image(img)
             items[line[0].to_int()] = Item(
                 line[0].to_int(),
                 line[1].to_int(),
@@ -224,22 +208,16 @@ class ItemShop:
                 line[4].to_bool(),
                 line[5].to_str(),
                 line[6].to_int(),
-                cut,
             )
-        return ItemShop(items, imgcut.image_name)
+        return ItemShop(items, tex)
 
-    def get_imgcut(self) -> "bc_anim.Imgcut":
+    def get_texture(self) -> "anim.texture.Texture":
         """Get the Imgcut of the ItemShop.
 
         Returns:
             bc_anim.Imgcut: The Imgcut of the ItemShop.
         """
-        cuts: list[bc_anim.Cut] = []
-        for item in self.items.values():
-            cuts.append(item.cut)
-        imgcut = bc_anim.Imgcut.from_cuts(cuts, self.imgname)
-        imgcut.cuts = bc_anim.Imgcut.regenerate_cuts(imgcut.cuts)
-        return imgcut
+        return self.tex
 
     def to_game_data(self, game_data: "pack.GamePacks"):
         """Write the ItemShop to the game data.
@@ -262,7 +240,7 @@ class ItemShop:
             line[3].set(item.price)
             line[4].set(item.draw_item_value)
             line[5].set(item.category_name)
-            line[6].set(item.imgcut_id)
+            line[6].set(item.rect_id)
             del remaning_items[line[0].to_int()]
             tsv.set_line(i + 1, line)
 
@@ -274,21 +252,13 @@ class ItemShop:
             line.append(item.price)
             line.append(item.draw_item_value)
             line.append(item.category_name)
-            line.append(item.imgcut_id)
+            line.append(item.rect_id)
             tsv.add_line(line)
 
         game_data.set_file(ItemShop.get_file_name(), tsv.to_data())
-        imgcut = self.get_imgcut()
-        if not imgcut.is_empty():
-            imgcut.reconstruct_image()
-            csv_data, png_data = imgcut.to_data()
-            game_data.set_file(
-                f"item000_{game_data.localizable.get_lang()}.png", png_data
-            )
-            game_data.set_file(
-                f"item000_{game_data.localizable.get_lang()}.imgcut", csv_data
-            )
-            game_data.set_file(f"item000.imgcut", csv_data)
+        tex = self.get_texture()
+        if not tex.is_empty():
+            tex.save(game_data)
 
     @staticmethod
     def get_json_file_path() -> "io.path.Path":
@@ -331,7 +301,7 @@ class ItemShop:
         Returns:
             ItemShop: The empty ItemShop.
         """
-        return ItemShop({}, "")
+        return ItemShop({}, anim.texture.Texture.create_empty())
 
     def get_item(self, shop_index: int) -> Optional[Item]:
         """Get an item from the ItemShop.

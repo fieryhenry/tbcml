@@ -1,6 +1,8 @@
 from typing import Any, Optional
 from bcml.core.io import data, path
+from bcml.core import anim
 from PIL import Image
+from PyQt5.QtGui import QImage
 
 
 class BCImage:
@@ -10,6 +12,8 @@ class BCImage:
         else:
             self.data = dt
         self.__image: Optional[Image.Image] = None
+        self._qimg: Optional[QImage] = None
+        self.__original_data = self.data.copy()
 
     @property
     def image(self) -> Image.Image:
@@ -18,6 +22,7 @@ class BCImage:
                 self.__image = Image.new("RGBA", (1, 1))
             else:
                 self.__image = Image.open(self.data.to_bytes_io())
+            self.__original_img = self.__image.copy()
         return self.__image
 
     def copy(self):
@@ -44,12 +49,15 @@ class BCImage:
         image.__image = Image.new("RGBA", (width, height))
         return image
 
-    def crop(self, x1: int, y1: int, x2: int, y2: int):
+    def crop(self, x1: int, y1: int, x2: int, y2: int) -> "BCImage":
         dt = self.image.crop((x1, y1, x2, y2))
         image_data = data.Data()
         bytes_io = image_data.to_bytes_io()
         dt.save(bytes_io, format="PNG")
         return BCImage(data.Data(bytes_io.getvalue()))
+
+    def get_subimage(self, rect: "anim.rect.Rect") -> "BCImage":
+        return self.crop(rect.x, rect.y, rect.x + rect.width, rect.y + rect.height)
 
     def __len__(self):
         return len(self.data)
@@ -58,18 +66,21 @@ class BCImage:
         if scale < 0:
             self.flip_x()
             scale *= -1
-        self.__image = self.image.resize((int(self.width * scale), self.height))
+        self.__image = self.image.resize(
+            (int(self.width * scale), self.height), resample=Image.BICUBIC
+        )
 
     def scale_y(self, scale: float):
         if scale < 0:
             self.flip_y()
             scale *= -1
-        self.__image = self.image.resize((self.width, int(self.height * scale)))
-
-    def scale(self, scale: float):
         self.__image = self.image.resize(
-            (int(self.width * scale), int(self.height * scale)), resample=Image.BICUBIC
+            (self.width, int(self.height * scale)), resample=Image.BICUBIC
         )
+
+    def scale(self, scale_x: float, scale_y: float):
+        self.scale_x(scale_x)
+        self.scale_y(scale_y)
 
     def flip_x(self):
         self.__image = self.image.transpose(Image.FLIP_LEFT_RIGHT)
@@ -101,10 +112,6 @@ class BCImage:
     def putpixel(self, x: int, y: int, color: tuple[int, int, int, int]):
         self.image.putpixel((x, y), color)
 
-    @image.setter
-    def image(self, image: Image.Image):
-        self.__image = image
-
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, BCImage):
             return False
@@ -120,3 +127,16 @@ class BCImage:
             del self.image.info["icc_profile"]
 
         return self
+
+    def to_qimage(self) -> QImage:
+        if self._qimg:
+            return self._qimg
+        self._qimg = QImage.fromData(self.to_data().to_bytes())
+        return self._qimg
+
+    def force_q_refresh(self):
+        self._qimg = None
+
+    def force_refresh(self):
+        self.__image = None
+        self.force_q_refresh()

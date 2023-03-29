@@ -4,8 +4,10 @@ from typing import Any, Callable, Optional, Union
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
-from bcml.core import game_data, io, locale_handler, mods
+from bcml.core import game_data, io, locale_handler, mods, anim
 from bcml.ui.utils import ui_thread
+
+import cProfile
 
 
 class SearchMode(enum.Enum):
@@ -597,14 +599,14 @@ class CatListItem(QtWidgets.QListWidget):
         return self.cat.unit_buy_data.rarity.value in rarities
 
 
-class CatEditScreen(QtWidgets.QDialog):
+class CatEditScreen(QtWidgets.QWidget):
     def __init__(
         self,
         cat: "game_data.cat_base.cats.Cat",
         on_save: Callable[["game_data.cat_base.cats.Cat"], None],
         parent: Optional[QtWidgets.QWidget] = None,
     ):
-        super(CatEditScreen, self).__init__(parent)
+        super().__init__()
         self.cat = cat
         self.on_save = on_save
         self.locale_manager = locale_handler.LocalManager.from_config()
@@ -613,8 +615,7 @@ class CatEditScreen(QtWidgets.QDialog):
     def setup_ui(self):
         self.setObjectName("CatEditScreen")
         self.setWindowTitle(self.locale_manager.search_key("cat_editor_title"))
-        self.resize(800, 600)
-        self.showMaximized()
+        self.setGeometry(0, 0, 800, 600)
 
         self._layout = QtWidgets.QGridLayout(self)
         self._layout.setObjectName("layout")
@@ -797,14 +798,18 @@ class FormTab(QtWidgets.QWidget):
             StatsTab(self.form),
             self.locale_manager.search_key("cat_editor_form_stats_tab"),
         )
+        self.form_tabs.addTab(
+            AnimsTab(self.form),
+            self.locale_manager.search_key("cat_editor_form_anims_tab"),
+        )
 
     def save(self):
         for index in range(self.form_tabs.count()):
             tab = self.form_tabs.widget(index)
-            if isinstance(tab, FormDataTab):
+            try:
                 tab.save()  # type: ignore
-            elif isinstance(tab, StatsTab):
-                tab.save()  # type: ignore
+            except AttributeError:
+                pass
 
 
 class FormDataTab(QtWidgets.QWidget):
@@ -1187,3 +1192,131 @@ class SpinBoxEdit(QtWidgets.QWidget):
 
     def value_int(self) -> int:
         return self.raw_value
+
+
+class AnimsTab(QtWidgets.QWidget):
+    def __init__(
+        self,
+        form: "game_data.cat_base.cats.Form",
+        parent: Optional[QtWidgets.QWidget] = None,
+    ):
+        super(AnimsTab, self).__init__(parent)
+        self.form = form
+        self.locale_manager = locale_handler.LocalManager.from_config()
+        self.setup_ui()
+
+    def setup_ui(self):
+        self.setObjectName("anims_tab")
+        self._layout = QtWidgets.QVBoxLayout(self)
+
+        self.anim_viewer = AnimViewer(self.form.anim.model, self)
+        self._layout.addWidget(self.anim_viewer)
+
+    def save(self):
+        self.anim_viewer.save()
+
+
+class AnimViewer(QtWidgets.QWidget):
+    def __init__(
+        self,
+        model: anim.model.Model,
+        parent: Optional[QtWidgets.QWidget] = None,
+    ):
+        super(AnimViewer, self).__init__(parent)
+        self.model = model
+
+        self.locale_manager = locale_handler.LocalManager.from_config()
+        self.setup_ui()
+        self.setup_data()
+        self.setup_gradient()
+
+    def setup_ui(self):
+        self.setObjectName("anim_viewer")
+        self.zoom_factor = 0.5
+        self.image_pos = QtCore.QPoint(0, 0)
+
+        self.setMouseTracking(True)
+
+    def setup_data(self):
+        self.sorted_parts = self.model.get_sorted_parts()
+        self.model.set_required()
+
+    def setup_gradient(self):
+        self.color_1 = QtGui.QColor(70, 140, 160)
+        self.color_2 = QtGui.QColor(85, 185, 205)
+
+        self.gradient = QtGui.QLinearGradient(0, 0, 0, self.height())
+        self.gradient.setColorAt(0, self.color_1)
+        self.gradient.setColorAt(0.5, self.color_2)
+        self.gradient.setColorAt(1, self.color_1)
+
+    def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
+        self.gradient.setFinalStop(0, self.height())
+        painter = QtGui.QPainter(self)
+        painter.fillRect(self.rect(), self.gradient)
+
+        # painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
+        painter.setRenderHint(QtGui.QPainter.RenderHint.SmoothPixmapTransform)
+
+        center = self.rect().center()
+        painter.translate(
+            self.image_pos.x() + center.x(),
+            self.image_pos.y() + center.y(),
+        )
+        zoom_factor = self.zoom_factor
+
+        # cProfile.runctx(
+        #     "self.draw_profiler(painter)", globals(), locals(), sort="cumtime"
+        # )
+        # raise Exception("stop")
+
+        self.draw_model_rect(painter)
+        self.draw_model(painter, zoom_factor * 16, zoom_factor * 16)
+
+    def draw_profiler(self, painter: QtGui.QPainter):
+        for _ in range(500):
+            self.draw_model(painter, 4, 4)
+
+    def draw_model_rect(self, painter: QtGui.QPainter):
+        p0_x = -400 * self.zoom_factor
+        p0_y = 0 * self.zoom_factor
+        p1_x = 800 * self.zoom_factor
+        p1_y = 200 * self.zoom_factor
+        p2_x = 0 * self.zoom_factor
+        p2_y = -500 * self.zoom_factor
+        painter.setPen(
+            QtGui.QPen(QtCore.Qt.GlobalColor.white, 1, QtCore.Qt.PenStyle.SolidLine)
+        )
+        painter.drawRect(QtCore.QRectF(p0_x, p0_y, p1_x, p1_y))
+        painter.setPen(
+            QtGui.QPen(QtCore.Qt.GlobalColor.red, 1, QtCore.Qt.PenStyle.SolidLine)
+        )
+        painter.drawLine(0, 0, int(p2_x), int(p2_y))
+
+    def draw_model(self, painter: QtGui.QPainter, base_x: float, base_y: float):
+        for part in self.sorted_parts:
+            if part.parent is None:
+                continue
+            part.draw_part(painter, base_x, base_y)
+
+    def save(self):
+        pass
+
+    def wheelEvent(self, a0: QtGui.QWheelEvent) -> None:
+        zoom_delta = a0.angleDelta().y() / 120
+        self.zoom_factor *= pow(1.1, zoom_delta)
+
+        self.zoom_pos = a0.pos()
+
+        self.update()
+
+    def mousePressEvent(self, a0: QtGui.QMouseEvent) -> None:
+        self.last_mouse_pos = a0.pos()
+
+    def mouseMoveEvent(self, a0: QtGui.QMouseEvent) -> None:
+        if a0.buttons() == QtCore.Qt.MouseButton.LeftButton:
+            delta: QtCore.QPoint = a0.pos() - self.last_mouse_pos
+            self.image_pos += delta
+            self.last_mouse_pos = a0.pos()
+
+            self.update()

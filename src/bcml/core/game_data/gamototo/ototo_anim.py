@@ -1,7 +1,7 @@
 from typing import Any
 import enum
-from bcml.core.game_data import bc_anim, pack
-from bcml.core import io
+from bcml.core.game_data import pack
+from bcml.core import io, anim
 
 
 class MainChara:
@@ -44,17 +44,17 @@ class MainChara:
                     all_maanims.append(member.value)
             return all_maanims
 
-    def __init__(self, anim: "bc_anim.Anim"):
-        self.anim = anim
+    def __init__(self, model: "anim.model.Model"):
+        self.model = model
 
     def serialize(self) -> dict[str, Any]:
         return {
-            "anim": self.anim.serialize(),
+            "model": self.model.serialize(),
         }
 
     @staticmethod
     def deserialize(data: dict[str, Any]) -> "MainChara":
-        return MainChara(bc_anim.Anim.deserialize(data["anim"]))
+        return MainChara(anim.model.Model.deserialize(data["model"]))
 
     def to_zip(self, zip: "io.zip.Zip"):
         path = MainChara.get_zip_path()
@@ -76,27 +76,21 @@ class MainChara:
 
     @staticmethod
     def from_game_data(game_data: "pack.GamePacks") -> "MainChara":
-        anim = bc_anim.Anim.from_paths(
-            game_data,
-            MainChara.FilePath.SPRITE.value,
-            MainChara.FilePath.IMGCUT.value,
+        an = anim.model.Model.load(
             MainChara.FilePath.MAMODEL.value,
+            MainChara.FilePath.IMGCUT.value,
+            MainChara.FilePath.SPRITE.value,
             MainChara.FilePath.get_all_maanims_names(),
+            game_data,
         )
-        return MainChara(anim)
+        return MainChara(an)
 
     def to_game_data(self, game_data: "pack.GamePacks"):
-        self.anim.to_game_data(
-            game_data,
-            MainChara.FilePath.SPRITE.value,
-            MainChara.FilePath.IMGCUT.value,
-            MainChara.FilePath.MAMODEL.value,
-            MainChara.FilePath.get_all_maanims_names(),
-        )
+        self.model.save(game_data)
 
     @staticmethod
     def create_empty() -> "MainChara":
-        return MainChara(bc_anim.Anim.create_empty())
+        return MainChara(anim.model.Model.create_empty())
 
     def import_main_chara(self, other: "MainChara", game_data: "pack.GamePacks"):
         """_summary_
@@ -107,4 +101,4 @@ class MainChara:
         """
         gd_chara = self.from_game_data(game_data)
         if gd_chara != other:
-            self.anim = other.anim
+            self.model = other.model

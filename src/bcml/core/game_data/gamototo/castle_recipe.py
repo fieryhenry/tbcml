@@ -1,7 +1,7 @@
 import enum
 from typing import Any, Optional
-from bcml.core.game_data import pack, bc_anim
-from bcml.core import io
+from bcml.core.game_data import pack
+from bcml.core import io, anim
 
 
 class CastleRecipeUnlock:
@@ -165,7 +165,7 @@ class CastleRecipe:
         unlock_set: CastleRecipeUnlockSet,
         name: str,
         description: list[str],
-        name_imgcut: "bc_anim.Imgcut",
+        name_texture: "anim.texture.Texture",
     ):
         self.recipe_id = recipe_id
         self.dev_level = dev_level
@@ -178,7 +178,7 @@ class CastleRecipe:
         self.unlock_set = unlock_set
         self.name = name
         self.description = description
-        self.name_imgcut = name_imgcut
+        self.name_texture = name_texture
 
     def serialize(self) -> dict[str, Any]:
         return {
@@ -195,7 +195,7 @@ class CastleRecipe:
             "unlock_set": self.unlock_set.serialize(),
             "name": self.name,
             "description": self.description,
-            "name_imgcut": self.name_imgcut.serialize(),
+            "name_texture": self.name_texture.serialize(),
         }
 
     @staticmethod
@@ -217,7 +217,7 @@ class CastleRecipe:
             CastleRecipeUnlockSet.deserialize(data["unlock_set"]),
             data["name"],
             data["description"],
-            data["name_imgcut"],
+            data["name_texture"],
         )
 
     @staticmethod
@@ -241,7 +241,7 @@ class CastleRecipe:
         unlock_set: CastleRecipeUnlockSet,
         name: str,
         description: list[str],
-        name_imgcut: "bc_anim.Imgcut",
+        name_texture: "anim.texture.Texture",
     ) -> "CastleRecipe":
         file_name = CastleRecipe.get_file_name_recipe(castle_type)
         file = game_data.find_file(file_name)
@@ -276,7 +276,7 @@ class CastleRecipe:
             unlock_set,
             name,
             description,
-            name_imgcut,
+            name_texture,
         )
 
     def to_game_data(
@@ -327,7 +327,7 @@ class CastleRecipe:
         game_data.set_file(file_name, csv.to_data())
 
         name_png_file_name = CastleRecipe.get_name_png_file_name(castle_type)
-        game_data.set_file(name_png_file_name, self.name_imgcut.image.to_data())
+        game_data.set_file(name_png_file_name, self.name_texture.image.to_data())
 
 
 class CastleRecipies:
@@ -374,14 +374,6 @@ class CastleRecipies:
 
     @staticmethod
     def from_game_data(game_data: "pack.GamePacks") -> "CastleRecipies":
-        name_imgcut_file = game_data.find_file(
-            CastleRecipies.get_name_imgcut_file_name()
-        )
-        if name_imgcut_file is None:
-            raise FileNotFoundError(
-                f"{CastleRecipies.get_name_imgcut_file_name()} not found"
-            )
-
         description_csv_file = game_data.find_file(
             CastleRecipies.get_description_file_name()
         )
@@ -450,15 +442,11 @@ class CastleRecipies:
             user_rank_unlocked = line[4].to_int()
             attack_level = line[5].to_int()
             charge_level = line[6].to_int()
-            name_png = game_data.find_file(
-                CastleRecipe.get_name_png_file_name(castle_type)
+            name_imgcut = anim.texture.Texture.load(
+                CastleRecipe.get_name_png_file_name(castle_type),
+                CastleRecipies.get_name_imgcut_file_name(),
+                game_data,
             )
-            if name_png is None:
-                raise FileNotFoundError(
-                    f"{CastleRecipe.get_name_png_file_name(castle_type)} not found"
-                )
-            name_png = io.bc_image.BCImage(name_png.dec_data)
-            name_imgcut = bc_anim.Imgcut.from_data(name_imgcut_file.dec_data, name_png)
             castle_recipies[castle_type] = CastleRecipe.from_game_data(
                 game_data,
                 castle_type,
@@ -613,8 +601,7 @@ class CastleRecipies:
 
         recipe = self.get_recipe()
         if recipe is not None:
-            imgcut = recipe.name_imgcut.to_data()
-            game_data.set_file("castleCustom_name_ALL.imgcut", imgcut[0])
+            recipe.name_texture.save(game_data)
 
     def get_castle_recipe(self, castle_type: int) -> Optional[CastleRecipe]:
         return self.recipies.get(castle_type, None)

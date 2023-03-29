@@ -1,8 +1,9 @@
 import enum
 from typing import Any, Optional, Union
-from bcml.core.game_data.cat_base import unit, enemies
-from bcml.core.game_data import pack, bc_anim
-from bcml.core import io
+
+from bcml.core import anim, io
+from bcml.core.game_data import pack
+from bcml.core.game_data.cat_base import enemies, unit
 
 
 class FormType(enum.Enum):
@@ -629,23 +630,23 @@ class Stats:
         self.target_aku = has_targeted_effect
 
 
-class Anim:
-    def __init__(self, cat_id: int, form: FormType, anim: "bc_anim.Anim"):
+class Model:
+    def __init__(self, cat_id: int, form: FormType, model: "anim.model.Model"):
         self.cat_id = cat_id
         self.form = form
-        self.anim = anim
+        self.model = model
 
     def serialize(self) -> dict[str, Any]:
         return {
-            "anim": self.anim.serialize(),
+            "model": self.model.serialize(),
         }
 
     @staticmethod
-    def deserialize(data: dict[str, Any], cat_id: int, form: FormType) -> "Anim":
-        return Anim(
+    def deserialize(data: dict[str, Any], cat_id: int, form: FormType) -> "Model":
+        return Model(
             cat_id,
             form,
-            bc_anim.Anim.deserialize(data["anim"]),
+            anim.model.Model.deserialize(data["model"]),
         )
 
     @staticmethod
@@ -654,32 +655,32 @@ class Anim:
 
     @staticmethod
     def get_img_path(cat_id: int, form: FormType) -> str:
-        cat_id_str = Anim.get_cat_id_str(cat_id)
+        cat_id_str = Model.get_cat_id_str(cat_id)
         return f"{cat_id_str}_{form.value}.png"
 
     @staticmethod
     def get_imgcut_path(cat_id: int, form: FormType) -> str:
-        return Anim.get_img_path(cat_id, form).replace(".png", ".imgcut")
+        return Model.get_img_path(cat_id, form).replace(".png", ".imgcut")
 
     @staticmethod
     def get_mamodel_path(cat_id: int, form: FormType) -> str:
-        return Anim.get_img_path(cat_id, form).replace(".png", ".mamodel")
+        return Model.get_img_path(cat_id, form).replace(".png", ".mamodel")
 
     @staticmethod
     def get_maanim_path(
-        cat_id: int, form: FormType, anim_type: "bc_anim.AnimType"
+        cat_id: int, form: FormType, anim_type: "anim.unit_animation.AnimType"
     ) -> str:
         anim_type_str = io.data.PaddedInt(anim_type.value, 2).to_str()
-        return Anim.get_img_path(cat_id, form).replace(
+        return Model.get_img_path(cat_id, form).replace(
             ".png", f"{anim_type_str}.maanim"
         )
 
     @staticmethod
     def get_maanim_paths(cat_id: int, form: FormType) -> list[str]:
         maanim_paths: list[str] = []
-        for anim_type in bc_anim.AnimType:
-            maanim_paths.append(Anim.get_maanim_path(cat_id, form, anim_type))
-        cat_id_str = Anim.get_cat_id_str(cat_id)
+        for anim_type in anim.unit_animation.AnimType:
+            maanim_paths.append(Model.get_maanim_path(cat_id, form, anim_type))
+        cat_id_str = Model.get_cat_id_str(cat_id)
         maanim_paths.append(f"{cat_id_str}_{form.value}_entry.maanim")
         maanim_paths.append(f"{cat_id_str}_{form.value}_soul.maanim")
         return maanim_paths
@@ -687,54 +688,40 @@ class Anim:
     @staticmethod
     def from_game_data(
         game_data: "pack.GamePacks", cat_id: int, form: FormType
-    ) -> Optional["Anim"]:
-        img_path = Anim.get_img_path(cat_id, form)
-        imgcut_path = Anim.get_imgcut_path(cat_id, form)
-        mamodel_path = Anim.get_mamodel_path(cat_id, form)
-        maanim_paths = Anim.get_maanim_paths(cat_id, form)
-        anim = bc_anim.Anim.from_paths(
-            game_data, img_path, imgcut_path, mamodel_path, maanim_paths
+    ) -> Optional["Model"]:
+        img_path = Model.get_img_path(cat_id, form)
+        imgcut_path = Model.get_imgcut_path(cat_id, form)
+        mamodel_path = Model.get_mamodel_path(cat_id, form)
+        maanim_paths = Model.get_maanim_paths(cat_id, form)
+        model = anim.model.Model.load(
+            mamodel_path, imgcut_path, img_path, maanim_paths, game_data
         )
-        return Anim(cat_id, form, anim)
+        return Model(cat_id, form, model)
 
     def to_game_data(self, game_data: "pack.GamePacks"):
-        img_path = Anim.get_img_path(self.cat_id, self.form)
-        imgcut_path = Anim.get_imgcut_path(self.cat_id, self.form)
-        mamodel_path = Anim.get_mamodel_path(self.cat_id, self.form)
-        maanim_paths = Anim.get_maanim_paths(self.cat_id, self.form)
-        self.anim.to_game_data(
-            game_data, img_path, imgcut_path, mamodel_path, maanim_paths
-        )
+        self.model.save(game_data)
 
     def set_cat_id(self, cat_id: int):
         self.cat_id = cat_id
-        self.anim.set_cat_id(cat_id, self.form.value)
+        self.model.set_unit_id(cat_id)
+        self.model.set_unit_form(self.form.value)
 
     def set_form(self, form: FormType):
         self.form = form
-        self.anim.set_cat_id(self.cat_id, form.value)
+        self.model.set_unit_id(self.cat_id)
+        self.model.set_unit_form(form.value)
 
-    def import_enemy_anim(self, enemy_anim: "enemies.Anim"):
-        self.anim.imgcut = enemy_anim.anim.imgcut.copy()
-        self.anim.mamodel = enemy_anim.anim.mamodel.copy()
-        self.anim.maanims = [maanim.copy() for maanim in enemy_anim.anim.maanims]
-        for maanim in self.anim.maanims:
-            maanim.name
-        self.anim.mamodel.fix_collision()
-        self.anim.flip_x()
-        self.anim.set_cat_id(self.cat_id, self.form.value)
-
-    def copy(self) -> "Anim":
-        return Anim(
+    def copy(self) -> "Model":
+        return Model(
             self.cat_id,
             self.form,
-            self.anim.copy(),
+            self.model.copy(),
         )
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Anim):
+        if not isinstance(other, Model):
             return False
-        return self.anim == other.anim
+        return self.model == other.model
 
     def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
@@ -748,7 +735,7 @@ class Form:
         stats: "Stats",
         name: str,
         description: list[str],
-        anim: "Anim",
+        anim: "Model",
         upgrade_icon: "io.bc_image.BCImage",
         deploy_icon: "io.bc_image.BCImage",
     ):
@@ -780,7 +767,7 @@ class Form:
 
     def format_upgrade_icon(self):
         if self.upgrade_icon.width == 85 and self.upgrade_icon.height == 32:
-            self.upgrade_icon.scale(3.5)
+            self.upgrade_icon.scale(3.5, 3.5)
 
         base_image = io.bc_image.BCImage.from_size(512, 128)
         base_image.paste(self.upgrade_icon, 13, 1)
@@ -815,7 +802,7 @@ class Form:
             Stats.deserialize(data["stats"], cat_id, form),
             data["name"],
             data["description"],
-            Anim.deserialize(data["anim"], cat_id, form),
+            Model.deserialize(data["anim"], cat_id, form),
             io.bc_image.BCImage.deserialize(data["upgrade_icon"]),
             io.bc_image.BCImage.deserialize(data["deploy_icon"]),
         )
@@ -859,7 +846,7 @@ class Form:
     def import_enemy(self, enemy: "enemies.Enemy"):
         self.name = enemy.name
         self.description = enemy.description[1:]
-        self.anim.import_enemy_anim(enemy.anim)
+        # self.anim.import_enemy_anim(enemy.anim)
         self.stats.import_enemy_stats(enemy.stats)
 
     def copy(self) -> "Form":
@@ -1633,7 +1620,7 @@ class Cat:
                 continue
             name = row[0].to_str()
             description = io.data.Data.data_list_string_list(row[1:])
-            anim = Anim.from_game_data(game_data, cat_id, form)
+            anim = Model.from_game_data(game_data, cat_id, form)
             if anim is None:
                 continue
             icons = Form.get_icons_game_data(game_data, cat_id, form)

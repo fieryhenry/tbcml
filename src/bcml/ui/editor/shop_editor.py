@@ -201,8 +201,7 @@ class ShopEditor(QtWidgets.QWidget):
                 price=0,
                 draw_item_value=True,
                 category_name="shop_category1",
-                imgcut_id=0,
-                cut=self.item_shop.items[0].cut,
+                rect_id=0,
             )
         )
         self._item_shop_table.clearContents()
@@ -243,7 +242,6 @@ class ShopEditor(QtWidgets.QWidget):
             return
         path = io.path.Path(file)
         img = io.bc_image.BCImage(path.read())
-        item.cut.image = img
         self.fill_table()
 
     def save(self):
@@ -265,6 +263,7 @@ class ShopEditor(QtWidgets.QWidget):
         self.item_shop.import_item_shop(self.mod.cat_base.item_shop, self.game_packs)
         self.gatya_items.import_items(self.mod.cat_base.gatya_items, self.game_packs)
         self.locals.import_localizable(self.mod.localizable, self.game_packs)
+        self.item_shop.tex.split_cuts()
 
     def fill_table(self):
         self._item_shop_table.clearContents()
@@ -285,7 +284,7 @@ class ShopEditor(QtWidgets.QWidget):
             image_o = QtWidgets.QTableWidgetItem()
             image_o.setFlags(image_o.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable)  # type: ignore
             img = QtGui.QImage()
-            image = shop_item.cut.image
+            image = self.item_shop.tex.get_image(shop_item.rect_id)
             if image is None:
                 continue
             img.loadFromData(image.to_data().to_bytes())

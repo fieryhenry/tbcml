@@ -81,7 +81,9 @@ class CSV:
     ) -> "CSV":
         return CSV(path.read(), delimeter)
 
-    def add_line(self, line: list[Any]):
+    def add_line(self, line: Union[list[Any], Any]):
+        if not isinstance(line, list):
+            line = [line]
         new_line: list["data.Data"] = []
         for item in line:
             new_line.append(data.Data(str(item)))

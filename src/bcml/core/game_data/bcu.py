@@ -1,8 +1,8 @@
 import enum
 import os
 from typing import Any, Optional
-from bcml.core.game_data import bc_anim, cat_base
-from bcml.core import io, country_code, crypto
+from bcml.core.game_data import cat_base
+from bcml.core import io, country_code, crypto, anim
 
 
 class BCUFileGroup:
@@ -89,7 +89,7 @@ class BCUForm:
             return None
         return cat_id, form_type
 
-    def load_anim(self) -> Optional["bc_anim.Anim"]:
+    def load_anim(self) -> Optional["anim.bc_anim.Model"]:
         sprite = self.anims.get_file_by_name("sprite.png")
         imgcut = self.anims.get_file_by_name("imgcut.txt")
         mamodel = self.anims.get_file_by_name("mamodel.txt")
@@ -97,12 +97,13 @@ class BCUForm:
         if sprite is None or imgcut is None or mamodel is None:
             return None
         image = io.bc_image.BCImage(sprite.data)
-        imgcut = bc_anim.Imgcut.from_data(imgcut.data, image)
-        mamodel = bc_anim.Mamodel.from_data(mamodel.data, imgcut.cuts)
+        imgcut = anim.bc_anim.Imgcut.from_data(imgcut.data, image)
+        mamodel = anim.bc_anim.Mamodel.from_data(mamodel.data, imgcut.cuts)
         maanims = [
-            bc_anim.Maanim.from_data(maanim.data, maanim.name) for maanim in maanims
+            anim.bc_anim.Maanim.from_data(maanim.data, maanim.name)
+            for maanim in maanims
         ]
-        return bc_anim.Anim(imgcut, mamodel, maanims)
+        return anim.bc_anim.Model(imgcut, mamodel, maanims)
 
     def load_display_icon(self) -> Optional["io.bc_image.BCImage"]:
         display_file = self.anims.get_file_by_name("icon_display.png")
@@ -110,7 +111,7 @@ class BCUForm:
             return None
 
         display_image = io.bc_image.BCImage(display_file.data)
-        display_image.scale(3.5)
+        display_image.scale(3.5, 3.5)
 
         base_image = io.bc_image.BCImage.from_size(512, 128)
         base_image.paste(display_image, 13, 1)
@@ -145,21 +146,21 @@ class BCUForm:
 
     def to_cat_form(self) -> "cat_base.cats.Form":
         for maanim in self.anim.maanims:
-            index = bc_anim.AnimType.from_bcu_str(maanim.name)
+            index = anim.bc_anim.AnimType.from_bcu_str(maanim.name)
             if index is None:
                 continue
             index_str = io.data.PaddedInt(index.value, 2).to_str()
             maanim.name = f"{self.get_cat_id_str()}_{self.form.value}{index_str}.maanim"
         if len(self.anim.mamodel.ints) == 1:
             self.anim.mamodel.ints.append(self.anim.mamodel.ints[0])
-        anim = cat_base.cats.Anim(self.cat_id, self.form, self.anim)
+        an = cat_base.cats.Model(self.cat_id, self.form, self.anim)
         return cat_base.cats.Form(
             self.cat_id,
             self.form,
             self.to_stats(),
             self.name,
             self.description,
-            anim,
+            an,
             self.upgrade_icon,
             self.deploy_icon,
         )
@@ -430,7 +431,7 @@ class BCUEnemy:
             enemy_id = -1
         self.enemy_id = enemy_id
 
-    def load_anim(self) -> Optional["bc_anim.Anim"]:
+    def load_anim(self) -> Optional["anim.bc_anim.Model"]:
         sprite = self.anims.get_file_by_name("sprite.png")
         imgcut = self.anims.get_file_by_name("imgcut.txt")
         mamodel = self.anims.get_file_by_name("mamodel.txt")
@@ -438,12 +439,13 @@ class BCUEnemy:
         if sprite is None or imgcut is None or mamodel is None:
             return None
         image = io.bc_image.BCImage(sprite.data)
-        imgcut = bc_anim.Imgcut.from_data(imgcut.data, image)
-        mamodel = bc_anim.Mamodel.from_data(mamodel.data, imgcut.cuts)
+        imgcut = anim.bc_anim.Imgcut.from_data(imgcut.data, image)
+        mamodel = anim.bc_anim.Mamodel.from_data(mamodel.data, imgcut.cuts)
         maanims = [
-            bc_anim.Maanim.from_data(maanim.data, maanim.name) for maanim in maanims
+            anim.bc_anim.Maanim.from_data(maanim.data, maanim.name)
+            for maanim in maanims
         ]
-        return bc_anim.Anim(imgcut, mamodel, maanims)
+        return anim.bc_anim.Model(imgcut, mamodel, maanims)
 
     def get_enemy_id(self) -> Optional[int]:
         img_name = self.anim.imgcut.image_name
@@ -458,20 +460,20 @@ class BCUEnemy:
 
     def to_enemy(self, enemy_id: int) -> "cat_base.enemies.Enemy":
         for maanim in self.anim.maanims:
-            index = bc_anim.AnimType.from_bcu_str(maanim.name)
+            index = anim.bc_anim.AnimType.from_bcu_str(maanim.name)
             if index is None:
                 continue
-            if index == bc_anim.AnimType.ATTACK:
+            if index == anim.bc_anim.AnimType.ATTACK:
                 maanim.remove_loop_minus_one()
             index_str = io.data.PaddedInt(index.value, 2).to_str()
             maanim.name = f"{self.get_enemy_id_str()}_e{index_str}.maanim"
-        anim = cat_base.enemies.Anim(self.enemy_id, self.anim)
+        an = cat_base.enemies.Model(self.enemy_id, self.anim)
         enemy = cat_base.enemies.Enemy(
             enemy_id,
             self.to_stats(),
             self.name,
             self.descritpion,
-            anim,
+            an,
             io.bc_image.BCImage.from_size(64, 64),
         )
         enemy.set_enemy_id(enemy_id)
