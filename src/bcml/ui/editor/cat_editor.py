@@ -1229,6 +1229,7 @@ class AnimViewer(QtWidgets.QWidget):
         self.setup_ui()
         self.setup_data()
         self.setup_gradient()
+        self.setup_clock()
 
     def setup_ui(self):
         self.setObjectName("anim_viewer")
@@ -1240,6 +1241,16 @@ class AnimViewer(QtWidgets.QWidget):
     def setup_data(self):
         self.sorted_parts = self.model.get_sorted_parts()
         self.model.set_required()
+        self.model.set_part_anims(2)
+        self.end_frame = self.model.get_end_frame()
+
+    def setup_clock(self):
+        self.frame = 0
+        fps = 30
+        self.clock = QtCore.QTimer(self)
+        self.clock.setInterval(1000 // fps)
+        self.clock.timeout.connect(self.update)
+        self.clock.start()
 
     def setup_gradient(self):
         self.color_1 = QtGui.QColor(70, 140, 160)
@@ -1294,10 +1305,14 @@ class AnimViewer(QtWidgets.QWidget):
         painter.drawLine(0, 0, int(p2_x), int(p2_y))
 
     def draw_model(self, painter: QtGui.QPainter, base_x: float, base_y: float):
+        self.model.set_action(self.frame % self.end_frame)
         for part in self.sorted_parts:
             if part.parent is None:
                 continue
+            if part.unit_id < 0:
+                continue
             part.draw_part(painter, base_x, base_y)
+        self.frame += 1
 
     def save(self):
         pass
@@ -1308,7 +1323,7 @@ class AnimViewer(QtWidgets.QWidget):
 
         self.zoom_pos = a0.pos()
 
-        self.update()
+        # self.update()
 
     def mousePressEvent(self, a0: QtGui.QMouseEvent) -> None:
         self.last_mouse_pos = a0.pos()
@@ -1319,4 +1334,4 @@ class AnimViewer(QtWidgets.QWidget):
             self.image_pos += delta
             self.last_mouse_pos = a0.pos()
 
-            self.update()
+            # self.update()

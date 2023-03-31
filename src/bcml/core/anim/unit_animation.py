@@ -34,7 +34,7 @@ class ModificationType(enum.Enum):
     POS_Y = 5
     PIVOT_X = 6
     PIVOT_Y = 7
-    SCALE = 8
+    SCALE_UNIT = 8
     SCALE_X = 9
     SCALE_Y = 10
     ANGLE = 11
@@ -52,7 +52,7 @@ class Move:
         ease_power: int,
     ):
         self.frame = frame
-        self.change_in_value = change_in_value
+        self.change = change_in_value
         self.ease_mode = ease_mode
         self.ease_power = ease_power
 
@@ -67,7 +67,7 @@ class Move:
     def serialize(self) -> dict[str, Any]:
         return {
             "frame": self.frame,
-            "change_in_value": self.change_in_value,
+            "change_in_value": self.change,
             "ease_mode": self.ease_mode,
             "ease_power": self.ease_power,
         }
@@ -82,12 +82,12 @@ class Move:
         )
 
     def copy(self):
-        return Move(self.frame, self.change_in_value, self.ease_mode, self.ease_power)
+        return Move(self.frame, self.change, self.ease_mode, self.ease_power)
 
     def to_data(self) -> list["io.data.Data"]:
         ls: list[int] = [
             self.frame,
-            self.change_in_value,
+            self.change,
             self.ease_mode,
             self.ease_power,
         ]
@@ -98,7 +98,7 @@ class Move:
             return False
         return (
             self.frame == other.frame
-            and self.change_in_value == other.change_in_value
+            and self.change == other.change
             and self.ease_mode == other.ease_mode
             and self.ease_power == other.ease_power
         )
@@ -108,7 +108,7 @@ class Move:
 
     def __str__(self) -> str:
         return (
-            f"Move(frame={self.frame}, change_in_value={self.change_in_value}, "
+            f"Move(frame={self.frame}, change_in_value={self.change}, "
             f"ease_mode={self.ease_mode}, ease_power={self.ease_power})"
         )
 
@@ -251,6 +251,12 @@ class PartAnim:
     @staticmethod
     def create_empty() -> "PartAnim":
         return PartAnim(0, ModificationType.PARENT, 0, 0, 0, "", [])
+
+    def get_end_frame(self) -> int:
+        if not self.moves:
+            return 0
+        loop = self.loop if self.loop > 0 else 1
+        return self.moves[-1].frame * loop
 
 
 class UnitAnimMetaData:
@@ -413,10 +419,8 @@ class UnitAnim:
     def __repr__(self) -> str:
         return self.__str__()
 
-    def get_part(self, part_id: int) -> PartAnim:
-        if part_id < 0 or part_id >= len(self.parts):
-            raise IndexError(f"Part id {part_id} is out of range")
-        return self.parts[part_id]
+    def get_parts(self, part_id: int) -> list[PartAnim]:
+        return [part for part in self.parts if part.part_id == part_id]
 
     def is_empty(self) -> bool:
         return len(self.parts) == 0

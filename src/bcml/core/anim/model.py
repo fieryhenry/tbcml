@@ -1,3 +1,4 @@
+import math
 from typing import Any, Optional, Union
 from bcml.core.anim import texture, rect, anim_transformer, unit_animation
 from bcml.core import io, game_data
@@ -39,8 +40,18 @@ class ModelPart:
         self.glow = glow
         self.name = name
 
+        self.pos_x_orig = x
+        self.pos_y_orig = y
+        self.pivot_x_orig = pivot_x
+        self.pivot_y_orig = pivot_y
+        self.scale_x_orig = scale_x
+        self.scale_y_orig = scale_y
+        self.rotation_orig = rotation
+        self.alpha_orig = alpha
+
         self.parent: Optional[ModelPart] = None
         self.children: list[ModelPart] = []
+        self.part_anims: list[unit_animation.PartAnim] = []
         self.model: Model
         self.scale_unit: int
         self.angle_unit: int
@@ -62,18 +73,212 @@ class ModelPart:
         else:
             self.image = img
 
+    def set_rect(self, rect_id: int):
+        self.rect_id = rect_id
+        self.load_texs()
+
+    def get_end_frame(self) -> int:
+        if len(self.part_anims) == 0:
+            return 0
+        return max([part_anim.get_end_frame() for part_anim in self.part_anims])
+
+    def set_action(self, frame_counter: int, part_anim: unit_animation.PartAnim):
+        local_frame = 0
+        change_in_value = 0
+
+        start_frame = part_anim.moves[0].frame
+        end_frame = part_anim.moves[-1].frame
+        if frame_counter >= start_frame:
+            if frame_counter < end_frame or start_frame == end_frame:
+                local_frame = frame_counter
+            elif part_anim.loop == -1:
+                local_frame = (
+                    (frame_counter - start_frame) % (end_frame - start_frame)
+                ) + start_frame
+            elif part_anim.loop >= 1:
+                condition = (frame_counter - start_frame) / (
+                    end_frame - start_frame
+                ) < part_anim.loop
+                if condition:
+                    local_frame = (
+                        (frame_counter - start_frame) % (end_frame - start_frame)
+                    ) + start_frame
+                else:
+                    local_frame = end_frame
+            else:
+                local_frame = end_frame
+            if start_frame == end_frame:
+                change_in_value = part_anim.moves[0].change
+            elif local_frame == end_frame:
+                change_in_value = part_anim.moves[-1].change
+            else:
+                for move_index in range(len(part_anim.moves) - 1):
+                    current_move = part_anim.moves[move_index]
+                    next_move = part_anim.moves[move_index + 1]
+                    current_move_start_frame = current_move.frame
+                    next_move_start_frame = next_move.frame
+                    ti = (local_frame - current_move_start_frame) / (
+                        next_move_start_frame - current_move_start_frame
+                    )
+                    if (
+                        local_frame < current_move_start_frame
+                        or local_frame >= next_move_start_frame
+                    ):
+                        continue
+                    elif current_move.ease_mode == 0:  # Linear
+                        change_in_value = (
+                            ti * (next_move.change - current_move.change)
+                        ) + current_move.change
+
+                    elif current_move.ease_mode == 1:  # Instant
+                        change_in_value = current_move.change
+                    elif current_move.ease_mode == 2:  # Exponential
+                        if current_move.ease_power >= 0:
+                            change_in_value = (
+                                (
+                                    1
+                                    - math.sqrt(
+                                        1
+                                        - math.pow(
+                                            (((local_frame - current_move_start_frame)))
+                                            / (
+                                                (
+                                                    next_move_start_frame
+                                                    - current_move_start_frame
+                                                )
+                                            ),
+                                            current_move.ease_power,
+                                        )
+                                    )
+                                )
+                                * (next_move.change - current_move.change)
+                            ) + current_move.change
+                        else:
+                            change_in_value = (
+                                math.sqrt(
+                                    1
+                                    - math.pow(
+                                        1
+                                        - (
+                                            (((local_frame - current_move_start_frame)))
+                                            / (
+                                                (
+                                                    next_move_start_frame
+                                                    - current_move_start_frame
+                                                )
+                                            )
+                                        ),
+                                        -current_move.ease_power,
+                                    )
+                                )
+                                * (next_move.change - current_move.change)
+                            ) + current_move.change
+                    elif current_move.ease_mode == 3:  # Polynomial
+                        high = move_index
+                        low = move_index
+                        for j in range(move_index - 1, -1, -1):
+                            if part_anim.moves[j].ease_mode == 3:
+                                low = j
+                            else:
+                                break
+                        for j in range(move_index + 1, len(part_anim.moves)):
+                            high = j
+                            if part_anim.moves[j].ease_mode != 3:
+                                break
+                        total = 0
+                        for j in range(low, high + 1):
+                            val = part_anim.moves[j].change * 4096
+                            for k in range(low, high + 1):
+                                if k != j:
+                                    val = (
+                                        val
+                                        * ((local_frame - part_anim.moves[k].frame))
+                                        / (
+                                            (
+                                                part_anim.moves[j].frame
+                                                - part_anim.moves[k].frame
+                                            )
+                                        )
+                                    )
+                            total += val
+                        change_in_value = total / 4096
+
+                    elif current_move.ease_mode == 4:  # Sine
+                        change_in_value = (
+                            (
+                                (next_move.change - current_move.change)
+                                * (1 - math.cos(ti * math.pi / 2))
+                            )
+                            / 2
+                        ) + current_move.change
+
+            change_in_value = int(change_in_value)
+
+            mod = part_anim.modification_type
+            if mod == unit_animation.ModificationType.PARENT:
+                self.parent_id = change_in_value
+                self.set_parent_by_id(self.parent_id)
+            elif mod == unit_animation.ModificationType.ID:
+                self.unit_id = change_in_value
+            elif mod == unit_animation.ModificationType.SPRITE:
+                self.rect_id = change_in_value
+                self.set_rect(self.rect_id)
+            elif mod == unit_animation.ModificationType.Z_ORDER:
+                self.z_depth = (
+                    change_in_value * len(self.model.mamodel.parts) + self.index
+                )
+            elif mod == unit_animation.ModificationType.POS_X:
+                self.x = change_in_value + self.pos_x_orig
+            elif mod == unit_animation.ModificationType.POS_Y:
+                self.y = change_in_value + self.pos_y_orig
+            elif mod == unit_animation.ModificationType.PIVOT_X:
+                self.pivot_x = change_in_value + self.pivot_x_orig
+            elif mod == unit_animation.ModificationType.PIVOT_Y:
+                self.pivot_y = change_in_value + self.pivot_y_orig
+            elif mod == unit_animation.ModificationType.SCALE_UNIT:
+                self.gsca = change_in_value
+                self.set_scale(self.scale_x, self.scale_y)
+            elif mod == unit_animation.ModificationType.SCALE_X:
+                self.scale_x = int(
+                    change_in_value * self.scale_x_orig / self.scale_unit
+                )
+                self.set_scale(self.scale_x, self.scale_y)
+            elif mod == unit_animation.ModificationType.SCALE_Y:
+                self.scale_y = int(
+                    change_in_value * self.scale_y_orig / self.scale_unit
+                )
+
+                self.set_scale(self.scale_x, self.scale_y)
+            elif mod == unit_animation.ModificationType.ANGLE:
+                self.rotation = change_in_value + self.rotation_orig
+                self.set_rotation(self.rotation)
+            elif mod == unit_animation.ModificationType.OPACITY:
+                self.alpha = int(change_in_value * self.alpha_orig / self.alpha_unit)
+                self.set_alpha(self.alpha)
+            elif mod == unit_animation.ModificationType.H_FLIP:
+                self.h_flip = change_in_value
+            elif mod == unit_animation.ModificationType.V_FLIP:
+                self.v_flip = change_in_value
+            if mod == unit_animation.ModificationType.OPACITY:
+                if part_anim.part_id == 33:
+                    pass
+
     def set_scale(self, scale_x: int, scale_y: int):
         self.scale_x = scale_x
         self.scale_y = scale_y
-        self.real_scale_x = scale_x / self.scale_unit
-        self.real_scale_y = scale_y / self.scale_unit
+        scl_x = scale_x / self.scale_unit
+        scl_y = scale_y / self.scale_unit
+        gcsa = self.gsca / self.scale_unit
+        self.real_scale_x = scl_x * gcsa
+        self.real_scale_y = scl_y * gcsa
         self.__recursive_scale = None
         for child in self.children:
             child.__recursive_scale = None
 
     def set_alpha(self, alpha: int):
         self.alpha = alpha
-        self.real_alpha = alpha / self.alpha_unit
+        alp = alpha / self.alpha_unit
+        self.real_alpha = alp
         self.__recursive_alpha = None
         for child in self.children:
             child.__recursive_alpha = None
@@ -383,6 +588,9 @@ class ModelPart:
     def set_parent(self, parent: "ModelPart"):
         self.parent = parent
 
+    def set_parent_by_id(self, parent_id: int):
+        self.parent = self.model.get_part(parent_id)
+
     def set_children(self, all_parts: list["ModelPart"]):
         for part in all_parts:
             if part.parent_id == self.index:
@@ -390,6 +598,7 @@ class ModelPart:
 
     def set_units(self, scale_unit: int, angle_unit: int, alpha_unit: int):
         self.scale_unit = scale_unit
+        self.gsca = scale_unit
         self.angle_unit = angle_unit
         self.alpha_unit = alpha_unit
 
@@ -397,6 +606,9 @@ class ModelPart:
         self.real_scale_y = self.scale_y / scale_unit
         self.real_rotation = self.rotation / angle_unit
         self.real_alpha = self.alpha / alpha_unit
+
+    def set_part_anims(self, part_anims: list["unit_animation.PartAnim"]):
+        self.part_anims = part_anims
 
     def set_ints(self, ints: list[list[int]]):
         self.ints = ints
@@ -687,6 +899,11 @@ class Model:
         for part in self.mamodel.parts:
             part.load_texs()
 
+    def set_part_anims(self, anim_index: int):
+        for part in self.mamodel.parts:
+            anim_parts = self.anims[anim_index].get_parts(part.index)
+            part.set_part_anims(anim_parts)
+
     def serialize(self) -> dict[str, Any]:
         return {
             "tex": self.tex.serialize(),
@@ -825,3 +1042,14 @@ class Model:
             Mamodel.create_empty(),
             "",
         )
+
+    def set_action(self, frame_counter: int):
+        for part in self.mamodel.parts:
+            for part_anim in part.part_anims:
+                part.set_action(frame_counter, part_anim)
+
+    def get_end_frame(self) -> int:
+        end_frame = 0
+        for part in self.mamodel.parts:
+            end_frame = max(end_frame, part.get_end_frame())
+        return end_frame
