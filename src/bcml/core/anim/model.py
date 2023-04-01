@@ -259,9 +259,16 @@ class ModelPart:
                 self.h_flip = change_in_value
             elif mod == unit_animation.ModificationType.V_FLIP:
                 self.v_flip = change_in_value
-            if mod == unit_animation.ModificationType.OPACITY:
-                if part_anim.part_id == 33:
-                    pass
+
+    def reset_scale(self):
+        self.__recursive_scale = None
+        for child in self.children:
+            child.reset_scale()
+
+    def reset_alpha(self):
+        self.__recursive_alpha = None
+        for child in self.children:
+            child.reset_alpha()
 
     def set_scale(self, scale_x: int, scale_y: int):
         self.scale_x = scale_x
@@ -271,17 +278,13 @@ class ModelPart:
         gcsa = self.gsca / self.scale_unit
         self.real_scale_x = scl_x * gcsa
         self.real_scale_y = scl_y * gcsa
-        self.__recursive_scale = None
-        for child in self.children:
-            child.__recursive_scale = None
+        self.reset_scale()
 
     def set_alpha(self, alpha: int):
         self.alpha = alpha
         alp = alpha / self.alpha_unit
         self.real_alpha = alp
-        self.__recursive_alpha = None
-        for child in self.children:
-            child.__recursive_alpha = None
+        self.reset_alpha()
 
     def set_rotation(self, rotation: int):
         self.rotation = rotation
