@@ -4,6 +4,7 @@ from bcml.ui.editor import (
     gatya_item,
     localizable,
     shop_editor,
+    anim_viewer,
 )
 
 __all__ = [
@@ -12,4 +13,5 @@ __all__ = [
     "localizable",
     "shop_editor",
     "cat_editor",
+    "anim_viewer",
 ]

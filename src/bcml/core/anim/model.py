@@ -48,6 +48,10 @@ class ModelPart:
         self.scale_y_orig = scale_y
         self.rotation_orig = rotation
         self.alpha_orig = alpha
+        self.parent_id_orig = parent_id
+        self.rect_id_orig = rect_id
+        self.unit_id_orig = unit_id
+        self.z_depth_orig = z_depth
 
         self.parent: Optional[ModelPart] = None
         self.children: list[ModelPart] = []
@@ -592,7 +596,10 @@ class ModelPart:
         self.parent = parent
 
     def set_parent_by_id(self, parent_id: int):
-        self.parent = self.model.get_part(parent_id)
+        if parent_id == -1:
+            self.parent = None
+        else:
+            self.parent = self.model.get_part(parent_id)
 
     def set_children(self, all_parts: list["ModelPart"]):
         for part in all_parts:
@@ -612,6 +619,7 @@ class ModelPart:
 
     def set_part_anims(self, part_anims: list["unit_animation.PartAnim"]):
         self.part_anims = part_anims
+        self.reset_anim()
 
     def set_ints(self, ints: list[list[int]]):
         self.ints = ints
@@ -622,6 +630,29 @@ class ModelPart:
     @staticmethod
     def create_empty(index: int) -> "ModelPart":
         return ModelPart(index, -1, -1, -1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, "")
+
+    def reset_anim(self):
+        self.x = self.pos_x_orig
+        self.y = self.pos_y_orig
+        self.pivot_x = self.pivot_x_orig
+        self.pivot_y = self.pivot_y_orig
+        self.alpha = self.alpha_orig
+        self.rotation = self.rotation_orig
+        self.scale_x = self.scale_x_orig
+        self.scale_y = self.scale_y_orig
+        self.parent_id = self.parent_id_orig
+        self.set_parent_by_id(self.parent_id)
+        self.z_depth = self.z_depth_orig
+        self.unit_id = self.unit_id_orig
+        self.rect_id = self.rect_id_orig
+        self.set_rect(self.rect_id)
+
+        self.real_alpha = self.alpha / self.alpha_unit
+        self.real_rotation = self.rotation / self.angle_unit
+        self.real_scale_x = self.scale_x / self.scale_unit
+        self.real_scale_y = self.scale_y / self.scale_unit
+        self.__recursive_alpha = None
+        self.__recursive_scale = None
 
 
 class ModelMetaData:
@@ -1052,7 +1083,7 @@ class Model:
                 part.set_action(frame_counter, part_anim)
 
     def get_end_frame(self) -> int:
-        end_frame = 0
+        end_frame = 1
         for part in self.mamodel.parts:
             end_frame = max(end_frame, part.get_end_frame())
         return end_frame
