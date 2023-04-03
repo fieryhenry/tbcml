@@ -544,6 +544,7 @@ class TimeLine(QtWidgets.QWidget):
         self.left_pannel_scroll_area.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
         self.left_pannel_scroll_area.setFrameShadow(QtWidgets.QFrame.Shadow.Plain)
         self.left_pannel_scroll_area.setLineWidth(0)
+        self.left_pannel_scroll_area.keyPressEvent = self.keyPressEvent
 
         self.left_pannel_group = QtWidgets.QGroupBox(self.left_pannel_scroll_area)
         self.left_pannel_group.setObjectName("left_pannel_group")
@@ -605,13 +606,23 @@ class TimeLine(QtWidgets.QWidget):
         self.highlight_parts(self.highlighted_parts)
         self.view_parts_out(self.highlighted_parts)
         self.view_moves(part_id)
+        self.scroll_to_part(part_id)
+
+    def scroll_to_part(self, part_id: int):
+        for i in range(self.left_pannel_group_layout.count()):
+            item = self.left_pannel_group_layout.itemAt(i)
+            if isinstance(item, QtWidgets.QWidgetItem):
+                widget = item.widget()
+                if isinstance(widget, PartLeftPannel):
+                    if widget.part_id == part_id:
+                        self.left_pannel_scroll_area.ensureWidgetVisible(widget)
 
     def view_moves(self, part_id: int):
         # delete items in time line
         main.clear_layout(self.time_line_group_layout)
 
         part = self.model.get_part(part_id)
-        width = self.time_line_group.width() - 20
+        width = self.time_line_group.width() - 40
 
         for part_anim in part.part_anims:
             part_anim_widget = PartAnimWidget(
@@ -631,7 +642,7 @@ class TimeLine(QtWidgets.QWidget):
             if isinstance(item, QtWidgets.QWidgetItem):
                 widget = item.widget()
                 if isinstance(widget, PartAnimWidget):
-                    widget.set_frame(frame)
+                    widget.set_frame(frame)  # type: ignore
 
     def highlight_parts(self, part_ids: list[int]):
         for i in range(self.left_pannel_group_layout.count()):
@@ -645,7 +656,7 @@ class TimeLine(QtWidgets.QWidget):
                         widget.unhighlight()  # type: ignore
 
     def keyPressEvent(self, a0: QtGui.QKeyEvent):
-        shift: bool = a0.modifiers() == QtCore.Qt.KeyboardModifier.ShiftModifier
+        shift: bool = a0.modifiers() & QtCore.Qt.KeyboardModifier.ShiftModifier
         if a0.key() == QtCore.Qt.Key.Key_Up:
             self.view_part(
                 self.get_top_highlighted_part() - 1, override_highlight=not shift
