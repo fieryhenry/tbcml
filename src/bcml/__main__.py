@@ -7,4 +7,7 @@ from bcml.ui import main
 
 app = QtWidgets.QApplication(sys.argv)
 window = main.MainWindow()
-window.run()
+try:
+    window.run()
+except KeyboardInterrupt:
+    pass

@@ -6,7 +6,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 from bcml.core import game_data, io, locale_handler, mods
 from bcml.ui.utils import ui_thread
-from bcml.ui.editor import anim_viewer
+from bcml.ui.editor import anim_viewer, anim_editor
 
 
 class SearchMode(enum.Enum):
@@ -1209,13 +1209,19 @@ class AnimsTab(QtWidgets.QWidget):
         self._layout = QtWidgets.QVBoxLayout(self)
 
         self.anim_viewer = anim_viewer.AnimViewer(self.form.anim.model, self)
+        self.anim_viewer.start_clock()
         self._layout.addWidget(self.anim_viewer)
 
         self.edit_button = QtWidgets.QPushButton(self)
         self.edit_button.setObjectName("edit_button")
         self.edit_button.setText(self.locale_manager.search_key("edit"))
-        self.edit_button.clicked.connect(self._on_edit_button_clicked)
+        self.edit_button.clicked.connect(self.on_edit_button_clicked)
         self._layout.addWidget(self.edit_button)
 
-    def _on_edit_button_clicked(self):
-        pass
+    def on_edit_button_clicked(self):
+        self.anim_editor = anim_editor.AnimEditor(
+            self.form.anim.model, self.anim_viewer.anim_dropdown.currentIndex()
+        )
+
+        self.anim_editor.show()
+        self.anim_viewer.clock.stop()

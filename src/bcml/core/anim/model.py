@@ -61,9 +61,6 @@ class ModelPart:
         self.angle_unit: int
         self.alpha_unit: int
 
-        self.__recursive_scale: Optional[tuple[float, float]] = None
-        self.__recursive_alpha: Optional[float] = None
-
     def load_texs(self):
         rct = self.model.tex.get_rect(self.rect_id)
         if rct is None:
@@ -121,100 +118,14 @@ class ModelPart:
                     next_move = part_anim.moves[move_index + 1]
                     current_move_start_frame = current_move.frame
                     next_move_start_frame = next_move.frame
-                    ti = (local_frame - current_move_start_frame) / (
-                        next_move_start_frame - current_move_start_frame
-                    )
                     if (
                         local_frame < current_move_start_frame
                         or local_frame >= next_move_start_frame
                     ):
                         continue
-                    elif current_move.ease_mode == 0:  # Linear
-                        change_in_value = (
-                            ti * (next_move.change - current_move.change)
-                        ) + current_move.change
-
-                    elif current_move.ease_mode == 1:  # Instant
-                        change_in_value = current_move.change
-                    elif current_move.ease_mode == 2:  # Exponential
-                        if current_move.ease_power >= 0:
-                            change_in_value = (
-                                (
-                                    1
-                                    - math.sqrt(
-                                        1
-                                        - math.pow(
-                                            (((local_frame - current_move_start_frame)))
-                                            / (
-                                                (
-                                                    next_move_start_frame
-                                                    - current_move_start_frame
-                                                )
-                                            ),
-                                            current_move.ease_power,
-                                        )
-                                    )
-                                )
-                                * (next_move.change - current_move.change)
-                            ) + current_move.change
-                        else:
-                            change_in_value = (
-                                math.sqrt(
-                                    1
-                                    - math.pow(
-                                        1
-                                        - (
-                                            (((local_frame - current_move_start_frame)))
-                                            / (
-                                                (
-                                                    next_move_start_frame
-                                                    - current_move_start_frame
-                                                )
-                                            )
-                                        ),
-                                        -current_move.ease_power,
-                                    )
-                                )
-                                * (next_move.change - current_move.change)
-                            ) + current_move.change
-                    elif current_move.ease_mode == 3:  # Polynomial
-                        high = move_index
-                        low = move_index
-                        for j in range(move_index - 1, -1, -1):
-                            if part_anim.moves[j].ease_mode == 3:
-                                low = j
-                            else:
-                                break
-                        for j in range(move_index + 1, len(part_anim.moves)):
-                            high = j
-                            if part_anim.moves[j].ease_mode != 3:
-                                break
-                        total = 0
-                        for j in range(low, high + 1):
-                            val = part_anim.moves[j].change * 4096
-                            for k in range(low, high + 1):
-                                if k != j:
-                                    val = (
-                                        val
-                                        * ((local_frame - part_anim.moves[k].frame))
-                                        / (
-                                            (
-                                                part_anim.moves[j].frame
-                                                - part_anim.moves[k].frame
-                                            )
-                                        )
-                                    )
-                            total += val
-                        change_in_value = total / 4096
-
-                    elif current_move.ease_mode == 4:  # Sine
-                        change_in_value = (
-                            (
-                                (next_move.change - current_move.change)
-                                * (1 - math.cos(ti * math.pi / 2))
-                            )
-                            / 2
-                        ) + current_move.change
+                    else:
+                        change_in_value = self.ease(move_index, part_anim, local_frame)
+                        break
 
             change_in_value = int(change_in_value)
 
@@ -264,15 +175,153 @@ class ModelPart:
             elif mod == unit_animation.ModificationType.V_FLIP:
                 self.v_flip = change_in_value
 
-    def reset_scale(self):
-        self.__recursive_scale = None
-        for child in self.children:
-            child.reset_scale()
+    def ease_linear(
+        self,
+        current_move: unit_animation.Move,
+        next_move: unit_animation.Move,
+        local_frame: float,
+        current_move_start_frame: int,
+        next_move_start_frame: int,
+    ):
+        ti = (local_frame - current_move_start_frame) / (
+            next_move_start_frame - current_move_start_frame
+        )
+        change_in_value = (
+            ti * (next_move.change - current_move.change)
+        ) + current_move.change
+        return change_in_value
 
-    def reset_alpha(self):
-        self.__recursive_alpha = None
-        for child in self.children:
-            child.reset_alpha()
+    def ease_instant(self, current_move: unit_animation.Move):
+        return current_move.change
+
+    def ease_exponential(
+        self,
+        current_move: unit_animation.Move,
+        next_move: unit_animation.Move,
+        local_frame: float,
+        current_move_start_frame: int,
+        next_move_start_frame: int,
+    ):
+        if current_move.ease_power >= 0:
+            change_in_value = (
+                (
+                    1
+                    - math.sqrt(
+                        1
+                        - math.pow(
+                            (((local_frame - current_move_start_frame)))
+                            / ((next_move_start_frame - current_move_start_frame)),
+                            current_move.ease_power,
+                        )
+                    )
+                )
+                * (next_move.change - current_move.change)
+            ) + current_move.change
+        else:
+            change_in_value = (
+                math.sqrt(
+                    1
+                    - math.pow(
+                        1
+                        - (
+                            (((local_frame - current_move_start_frame)))
+                            / ((next_move_start_frame - current_move_start_frame))
+                        ),
+                        -current_move.ease_power,
+                    )
+                )
+                * (next_move.change - current_move.change)
+            ) + current_move.change
+        return change_in_value
+
+    def ease_polynomial(
+        self,
+        move_index: int,
+        part_anim: unit_animation.PartAnim,
+        local_frame: float,
+    ):
+        high = move_index
+        low = move_index
+        for j in range(move_index - 1, -1, -1):
+            if part_anim.moves[j].ease_mode == 3:
+                low = j
+            else:
+                break
+        for j in range(move_index + 1, len(part_anim.moves)):
+            high = j
+            if part_anim.moves[j].ease_mode != 3:
+                break
+        total = 0
+        for j in range(low, high + 1):
+            val = part_anim.moves[j].change * 4096
+            for k in range(low, high + 1):
+                if k != j:
+                    val = (
+                        val
+                        * ((local_frame - part_anim.moves[k].frame))
+                        / ((part_anim.moves[j].frame - part_anim.moves[k].frame))
+                    )
+            total += val
+        change_in_value = total / 4096
+        return change_in_value
+
+    def ease_sine(
+        self,
+        current_move: unit_animation.Move,
+        next_move: unit_animation.Move,
+        local_frame: float,
+        current_move_start_frame: int,
+        next_move_start_frame: int,
+    ):
+        ti = (local_frame - current_move_start_frame) / (
+            next_move_start_frame - current_move_start_frame
+        )
+        change_in_value = (
+            (
+                (next_move.change - current_move.change)
+                * (1 - math.cos(ti * math.pi / 2))
+            )
+            / 2
+        ) + current_move.change
+        return change_in_value
+
+    def ease(
+        self, move_index: int, part_anim: unit_animation.PartAnim, local_frame: float
+    ):
+        current_move = part_anim.moves[move_index]
+        next_move = part_anim.moves[move_index + 1]
+        current_move_start_frame = current_move.frame
+        next_move_start_frame = next_move.frame
+        if current_move.ease_mode == 0:
+            return self.ease_linear(
+                current_move,
+                next_move,
+                local_frame,
+                current_move_start_frame,
+                next_move_start_frame,
+            )
+        elif current_move.ease_mode == 1:
+            return self.ease_instant(current_move)
+        elif current_move.ease_mode == 2:
+            return self.ease_exponential(
+                current_move,
+                next_move,
+                local_frame,
+                current_move_start_frame,
+                next_move_start_frame,
+            )
+        elif current_move.ease_mode == 3:
+            return self.ease_polynomial(move_index, part_anim, local_frame)
+        elif current_move.ease_mode == 4:
+            return self.ease_sine(
+                current_move,
+                next_move,
+                local_frame,
+                current_move_start_frame,
+                next_move_start_frame,
+            )
+        else:
+            raise Exception("Unknown ease mode")
 
     def set_scale(self, scale_x: int, scale_y: int):
         self.scale_x = scale_x
@@ -282,13 +331,11 @@ class ModelPart:
         gcsa = self.gsca / self.scale_unit
         self.real_scale_x = scl_x * gcsa
         self.real_scale_y = scl_y * gcsa
-        self.reset_scale()
 
     def set_alpha(self, alpha: int):
         self.alpha = alpha
         alp = alpha / self.alpha_unit
         self.real_alpha = alp
-        self.reset_alpha()
 
     def set_rotation(self, rotation: int):
         self.rotation = rotation
@@ -357,13 +404,17 @@ class ModelPart:
         painter: "QtGui.QPainter",
         base_x: float,
         base_y: float,
+        local: bool = False,
     ):
         img = self.image
         rct = self.rect
         current_transform = painter.transform()
         transformer = anim_transformer.AnimTransformer()
         scale_x, scale_y = self.get_recursive_scale()
-        self.transform(transformer, base_x, base_y)
+        if local:
+            self.local_transform(transformer, base_x, base_y)
+        else:
+            self.transform(transformer, base_x, base_y)
 
         flip_x, flip_y = self.get_flip(scale_x, scale_y)
         t_piv_x = self.pivot_x * scale_x * flip_x * base_x
@@ -423,6 +474,20 @@ class ModelPart:
             -1 if flip_x else 1,
             -1 if flip_y else 1,
         )
+
+    def local_transform(
+        self,
+        transformer: anim_transformer.AnimTransformer,
+        sizer_x: float,
+        sizer_y: float,
+    ):
+        scale_x, scale_y = self.get_recursive_scale()
+        siz_x = scale_x * sizer_x
+        siz_y = scale_y * sizer_y
+        t_pos_x = self.x * siz_x
+        t_pos_y = self.y * siz_y
+        transformer.translate(t_pos_x, t_pos_y)
+        transformer.rotate(fraction=self.real_rotation)
 
     def transform(
         self,
@@ -484,24 +549,18 @@ class ModelPart:
                     return size_x * signum_x, size_y * signum_y
 
     def get_recursive_scale(self) -> tuple[float, float]:
-        if self.__recursive_scale is not None:
-            return self.__recursive_scale
         current_scale_x = self.real_scale_x
         current_scale_y = self.real_scale_y
         if self.parent is not None:
             parent_scale_x, parent_scale_y = self.parent.get_recursive_scale()
             current_scale_x *= parent_scale_x
             current_scale_y *= parent_scale_y
-        self.__recursive_scale = (current_scale_x, current_scale_y)
         return current_scale_x, current_scale_y
 
     def get_recursive_alpha(self) -> float:
-        if self.__recursive_alpha is not None:
-            return self.__recursive_alpha
         current_alpha = self.real_alpha
         if self.parent is not None:
             current_alpha *= self.parent.get_recursive_alpha()
-        self.__recursive_alpha = current_alpha
         return current_alpha
 
     def serialize(self) -> dict[str, Any]:
@@ -651,8 +710,13 @@ class ModelPart:
         self.real_rotation = self.rotation / self.angle_unit
         self.real_scale_x = self.scale_x / self.scale_unit
         self.real_scale_y = self.scale_y / self.scale_unit
-        self.__recursive_alpha = None
-        self.__recursive_scale = None
+
+    def get_all_children(self) -> list["ModelPart"]:
+        children: list["ModelPart"] = []
+        for child in self.children:
+            children.append(child)
+            children.extend(child.get_all_children())
+        return children
 
 
 class ModelMetaData:
@@ -889,7 +953,7 @@ class Model:
 
     def get_part(self, index: int) -> ModelPart:
         if index < 0 or index >= len(self.mamodel.parts):
-            raise RuntimeError("Invalid model part index")
+            raise ValueError("Invalid model part index")
         return self.mamodel.parts[index]
 
     def get_sorted_parts(self) -> list[ModelPart]:

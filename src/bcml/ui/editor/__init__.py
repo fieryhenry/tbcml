@@ -5,6 +5,7 @@ from bcml.ui.editor import (
     localizable,
     shop_editor,
     anim_viewer,
+    anim_editor,
 )
 
 __all__ = [
@@ -14,4 +15,5 @@ __all__ = [
     "shop_editor",
     "cat_editor",
     "anim_viewer",
+    "anim_editor",
 ]

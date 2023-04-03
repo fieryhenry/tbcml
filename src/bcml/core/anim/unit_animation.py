@@ -254,9 +254,12 @@ class PartAnim:
 
     def get_end_frame(self) -> int:
         if not self.moves:
-            return 0
+            return 1
         loop = self.loop if self.loop > 0 else 1
-        return self.moves[-1].frame * loop
+        val = self.moves[-1].frame * loop
+        if val == 0:
+            return 1
+        return val
 
 
 class UnitAnimMetaData:
