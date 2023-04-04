@@ -4,6 +4,14 @@ from bcml.core.anim import (
     texture,
     model,
     unit_animation,
+    model_part,
 )
 
-__all__ = ["anim_transformer", "rect", "texture", "model", "unit_animation"]
+__all__ = [
+    "anim_transformer",
+    "rect",
+    "texture",
+    "model",
+    "unit_animation",
+    "model_part",
+]

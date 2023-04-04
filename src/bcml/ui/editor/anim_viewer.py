@@ -158,8 +158,8 @@ class AnimViewer(QtWidgets.QWidget):
 
     def mouseMoveEvent(self, a0: QtGui.QMouseEvent) -> None:
         if a0.buttons() == QtCore.Qt.MouseButton.LeftButton:
-            delta: QtCore.QPoint = a0.pos() - self.last_mouse_pos
-            self.image_pos += delta
+            delta: QtCore.QPoint = a0.pos() - self.last_mouse_pos  # type: ignore
+            self.image_pos += delta  # type: ignore
             self.last_mouse_pos = a0.pos()
 
             self.update()
@@ -270,8 +270,8 @@ class PartViewer(QtWidgets.QWidget):
         )
         painter.drawLine(0, 0, int(p2_x), int(p2_y))
 
-    def get_valid_parts(self) -> list[anim.model.ModelPart]:
-        valid_parts: list[anim.model.ModelPart] = []
+    def get_valid_parts(self) -> list[anim.model_part.ModelPart]:
+        valid_parts: list[anim.model_part.ModelPart] = []
         for part_id in self.part_ids:
             try:
                 part = self.model.get_part(part_id)
@@ -293,7 +293,7 @@ class PartViewer(QtWidgets.QWidget):
         else:
             frame = self.clock.get_frame()
 
-        self.valid_parts: list[anim.model.ModelPart] = []
+        self.valid_parts: list[anim.model_part.ModelPart] = []
         for part_id in self.part_ids:
             try:
                 part = self.model.get_part(part_id)
@@ -323,8 +323,8 @@ class PartViewer(QtWidgets.QWidget):
 
     def mouseMoveEvent(self, a0: QtGui.QMouseEvent) -> None:
         if a0.buttons() == QtCore.Qt.MouseButton.LeftButton:
-            delta: QtCore.QPoint = a0.pos() - self.last_mouse_pos
-            self.image_pos += delta
+            delta: QtCore.QPoint = a0.pos() - self.last_mouse_pos  # type: ignore
+            self.image_pos += delta  # type: ignore
             self.last_mouse_pos = a0.pos()
 
             self.update()

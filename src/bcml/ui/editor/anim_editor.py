@@ -138,7 +138,7 @@ class PartGraphDrawer(QtWidgets.QWidget):
         self,
         model: anim.model.Model,
         parent: QtWidgets.QWidget,
-        part: anim.model.ModelPart,
+        part: anim.model_part.ModelPart,
         part_anim: anim.unit_animation.PartAnim,
         clock: utils.clock.Clock,
         width: int = 500,
@@ -362,7 +362,7 @@ class PartAnimWidget(QtWidgets.QWidget):
         self,
         model: anim.model.Model,
         parent: QtWidgets.QWidget,
-        part: anim.model.ModelPart,
+        part: anim.model_part.ModelPart,
         part_anim: anim.unit_animation.PartAnim,
         clock: utils.clock.Clock,
         width: int,
@@ -613,7 +613,7 @@ class TimeLine(QtWidgets.QWidget):
             if isinstance(item, QtWidgets.QWidgetItem):
                 widget = item.widget()
                 if isinstance(widget, PartLeftPannel):
-                    if widget.part_id == part_id:
+                    if widget.part_id == part_id:  # type: ignore
                         self.left_pannel_scroll_area.ensureWidgetVisible(widget)
 
     def view_moves(self, part_id: int):
@@ -671,8 +671,8 @@ class TimeLine(QtWidgets.QWidget):
             if isinstance(item, QtWidgets.QWidgetItem):
                 widget = item.widget()
                 if isinstance(widget, PartLeftPannel):
-                    if widget.is_highlighted:
-                        return widget.part_id
+                    if widget.is_highlighted:  # type: ignore
+                        return widget.part_id  # type: ignore
         return 0
 
     def get_bottom_highlighted_part(self) -> int:
@@ -681,8 +681,8 @@ class TimeLine(QtWidgets.QWidget):
             if isinstance(item, QtWidgets.QWidgetItem):
                 widget = item.widget()
                 if isinstance(widget, PartLeftPannel):
-                    if widget.is_highlighted:
-                        return widget.part_id
+                    if widget.is_highlighted:  # type: ignore
+                        return widget.part_id  # type: ignore
         return 0
 
 
