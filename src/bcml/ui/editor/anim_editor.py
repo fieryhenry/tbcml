@@ -76,6 +76,7 @@ class PartViewerBox(QtWidgets.QGroupBox):
             self.clock,
             self,
             False if self.anim_id == 0 else True,
+            True,
         )
         self._layout.addWidget(self.part_viewer, 1, 0)
 
@@ -190,8 +191,6 @@ class PartGraphDrawer(QtWidgets.QWidget):
     def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
         super(PartGraphDrawer, self).paintEvent(a0)
         self.painter = QtGui.QPainter(self)
-        # self.painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
-        # self.painter.setRenderHint(QtGui.QPainter.RenderHint.HighQualityAntialiasing)
 
         self.pen = QtGui.QPen()
         self.pen.setWidth(2)

@@ -95,7 +95,6 @@ class AnimViewer(QtWidgets.QWidget):
         painter = QtGui.QPainter(self)
         painter.fillRect(self.rect(), self.gradient)
 
-        # painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
         painter.setRenderHint(QtGui.QPainter.RenderHint.SmoothPixmapTransform)
 
         center = self.rect().center()
@@ -140,10 +139,6 @@ class AnimViewer(QtWidgets.QWidget):
 
         self.model.set_action(frame)
         for part in self.sorted_parts:
-            if part.parent is None:
-                continue
-            if part.unit_id < 0:
-                continue
             part.draw_part(painter, base_x, base_y)
 
     def update_frame(self):
@@ -179,6 +174,7 @@ class PartViewer(QtWidgets.QWidget):
         clock: utils.clock.Clock,
         parent: Optional[QtWidgets.QWidget] = None,
         force_repeat: bool = False,
+        draw_overlay: bool = False,
     ):
         super().__init__(parent)
         self.model = model
@@ -186,6 +182,7 @@ class PartViewer(QtWidgets.QWidget):
         self.anim_id = anim_id
         self.clock = clock
         self.force_repeat = force_repeat
+        self.draw_overlay = draw_overlay
 
         self.locale_manager = locale_handler.LocalManager.from_config()
         self.setup_data()
@@ -241,7 +238,6 @@ class PartViewer(QtWidgets.QWidget):
         painter = QtGui.QPainter(self)
         painter.fillRect(self.rect(), self.gradient)
 
-        # painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
         painter.setRenderHint(QtGui.QPainter.RenderHint.SmoothPixmapTransform)
 
         center = self.rect().center()
@@ -274,6 +270,18 @@ class PartViewer(QtWidgets.QWidget):
         )
         painter.drawLine(0, 0, int(p2_x), int(p2_y))
 
+    def get_valid_parts(self) -> list[anim.model.ModelPart]:
+        valid_parts: list[anim.model.ModelPart] = []
+        for part_id in self.part_ids:
+            try:
+                part = self.model.get_part(part_id)
+            except ValueError:
+                continue
+            for part_anim in part.part_anims:
+                part.set_action(self.frame, part_anim)
+            valid_parts.append(part)
+        return valid_parts
+
     def draw_part(
         self,
         painter: QtGui.QPainter,
@@ -291,10 +299,6 @@ class PartViewer(QtWidgets.QWidget):
                 part = self.model.get_part(part_id)
             except ValueError:
                 continue
-            if part.parent_id < 0:
-                continue
-            if part.unit_id < 0:
-                continue
             for part_anim in part.part_anims:
                 part.set_action(frame, part_anim)
             self.valid_parts.append(part)
@@ -304,7 +308,7 @@ class PartViewer(QtWidgets.QWidget):
             key=lambda part: part.z_depth,
         )
         for part in parts_sorted:
-            part.draw_part(painter, base_x, base_y)
+            part.draw_part(painter, base_x, base_y, draw_overlay=self.draw_overlay)
 
     def wheelEvent(self, a0: QtGui.QWheelEvent) -> None:
         zoom_delta = a0.angleDelta().y() / 120

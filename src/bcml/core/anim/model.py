@@ -405,6 +405,7 @@ class ModelPart:
         base_x: float,
         base_y: float,
         local: bool = False,
+        draw_overlay: bool = False,
     ):
         img = self.image
         rct = self.rect
@@ -422,24 +423,57 @@ class ModelPart:
         transformer.scale(flip_x, flip_y)
         sc_w = rct.width * scale_x * base_x
         sc_h = rct.height * scale_y * base_y
-        self.draw_img(
-            transformer,
-            img,
-            (t_piv_x, t_piv_y),
-            (sc_w, sc_h),
-            self.get_recursive_alpha(),
-            self.glow,
-            painter,
-        )
-        painter.setTransform(current_transform)
-        painter.setOpacity(1)
+        painter.setTransform(transformer.to_q_transform(), True)
+        if self.parent_id >= 0 and self.unit_id >= 0:
+            self.draw_img(
+                img,
+                (t_piv_x, t_piv_y),
+                (sc_w, sc_h),
+                self.get_recursive_alpha(),
+                self.glow,
+                painter,
+            )
+        painter.setOpacity(1.0)
         painter.setCompositionMode(
             QtGui.QPainter.CompositionMode.CompositionMode_SourceOver
         )
+        if draw_overlay:
+            self.draw_part_overlay(painter, t_piv_x, t_piv_y, sc_w, sc_h)
+        painter.setTransform(current_transform)
+
+    def draw_part_overlay(
+        self,
+        painter: "QtGui.QPainter",
+        t_piv_x: float,
+        t_piv_y: float,
+        sc_w: float,
+        sc_h: float,
+    ):
+        radius = 50
+
+        x_pos1 = -t_piv_x
+        y_pos1 = -t_piv_y
+        current_pen = painter.pen()
+        painter.setPen(QtGui.QPen(QtGui.QColor(255, 0, 0), 10))
+        painter.drawRect(
+            QtCore.QRectF(
+                x_pos1,
+                y_pos1,
+                abs(sc_w),
+                abs(sc_h),
+            )
+        )
+        painter.setBrush(QtGui.QBrush(QtGui.QColor(255, 0, 0, 255)))
+        painter.drawEllipse(
+            QtCore.QPointF(0, 0),
+            radius,
+            radius,
+        )
+
+        painter.setPen(current_pen)
 
     def draw_img(
         self,
-        transformer: anim_transformer.AnimTransformer,
         img: "io.bc_image.BCImage",
         pivot: tuple[float, float],
         size: tuple[float, float],
@@ -447,7 +481,6 @@ class ModelPart:
         glow: int,
         painter: "QtGui.QPainter",
     ):
-        painter.setTransform(transformer.to_q_transform(), True)
         painter.setOpacity(alpha)
 
         glow_support = (glow >= 1 and glow <= 3) or glow == -1
