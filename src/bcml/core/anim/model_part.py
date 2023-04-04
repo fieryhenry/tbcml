@@ -216,6 +216,7 @@ class ModelPart:
         base_y: float,
         local: bool = False,
         draw_overlay: bool = False,
+        just_overlay: bool = False,
     ):
         img = self.image
         rct = self.rect
@@ -234,7 +235,7 @@ class ModelPart:
         sc_w = rct.width * scale_x * base_x
         sc_h = rct.height * scale_y * base_y
         painter.setTransform(transformer.to_q_transform(), True)
-        if self.parent_id >= 0 and self.unit_id >= 0:
+        if self.parent_id >= 0 and self.unit_id >= 0 and not just_overlay:
             self.draw_img(
                 img,
                 (t_piv_x, t_piv_y),

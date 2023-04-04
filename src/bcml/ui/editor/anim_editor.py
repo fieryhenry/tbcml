@@ -43,6 +43,10 @@ class AnimViewerBox(QtWidgets.QGroupBox):
 
         self.anim_viewer.clock.connect(self.frame_tick)
 
+    def set_overlay_part(self, part_id: int):
+        self.anim_viewer.set_overlay_id(part_id)
+        self.anim_viewer.update()
+
 
 class PartViewerBox(QtWidgets.QGroupBox):
     def __init__(
@@ -131,6 +135,7 @@ class AnimViewerPage(QtWidgets.QWidget):
     def view_parts(self, part_ids: list[int]):
         self.part_viewer_box.part_viewer.part_ids = part_ids
         self.part_viewer_box.part_viewer.update()
+        self.anim_viewer_box.set_overlay_part(part_ids[0])
 
 
 class PartGraphDrawer(QtWidgets.QWidget):

@@ -17,6 +17,7 @@ class AnimViewer(QtWidgets.QWidget):
         self.anim_id = anim_id
         self.index = 0
         self.force_repeat = force_repeat
+        self.overlay_part_id = None
 
         self.locale_manager = locale_handler.LocalManager.from_config()
         self.setup_data()
@@ -78,6 +79,9 @@ class AnimViewer(QtWidgets.QWidget):
     def stop_clock(self):
         self.clock.stop()
 
+    def set_overlay_id(self, part_id: int):
+        self.overlay_part_id = part_id
+
     def setup_gradient(self):
         self.color_1 = QtGui.QColor(70, 140, 160)
         self.color_2 = QtGui.QColor(85, 185, 205)
@@ -105,7 +109,9 @@ class AnimViewer(QtWidgets.QWidget):
         zoom_factor = self.zoom_factor
 
         self.draw_model_rect(painter)
-        self.draw_model(painter, zoom_factor * 16, zoom_factor * 16)
+        self.draw_model(
+            painter, zoom_factor * 16, zoom_factor * 16, self.overlay_part_id
+        )
 
     def draw_model_rect(self, painter: QtGui.QPainter):
         p0_x = -400 * self.zoom_factor
@@ -131,6 +137,7 @@ class AnimViewer(QtWidgets.QWidget):
         painter: QtGui.QPainter,
         base_x: float,
         base_y: float,
+        overlay_part_id: Optional[int] = None,
     ):
         if self.force_repeat:
             frame = self.get_frame() % self.end_frame
@@ -140,6 +147,11 @@ class AnimViewer(QtWidgets.QWidget):
         self.model.set_action(frame)
         for part in self.sorted_parts:
             part.draw_part(painter, base_x, base_y)
+        if overlay_part_id is not None:
+            overlay_part = self.model.get_part(overlay_part_id)
+            overlay_part.draw_part(
+                painter, base_x, base_y, draw_overlay=True, just_overlay=True
+            )
 
     def update_frame(self):
         self.frame += 1
