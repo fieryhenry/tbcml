@@ -216,9 +216,7 @@ class PartGraphDrawer(QtWidgets.QWidget):
                 if frame < current_move_start_frame or frame >= next_move_start_frame:
                     continue
                 else:
-                    change_in_value = int(
-                        self.part.ease(move_index, self.part_anim, frame)
-                    )
+                    change_in_value = int(self.part_anim.ease(move_index, frame))
                     break
             self.max_change_in_value = max(self.max_change_in_value, change_in_value)
             self.min_change_in_value = min(self.min_change_in_value, change_in_value)
@@ -246,9 +244,7 @@ class PartGraphDrawer(QtWidgets.QWidget):
                 if frame < current_move_start_frame or frame >= next_move_start_frame:
                     continue
                 else:
-                    change_in_value = int(
-                        self.part.ease(move_index, self.part_anim, frame)
-                    )
+                    change_in_value = int(self.part_anim.ease(move_index, frame))
                     break
 
             if previous_value is None:

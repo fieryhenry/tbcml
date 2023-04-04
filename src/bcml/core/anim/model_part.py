@@ -1,4 +1,3 @@
-import math
 from typing import Any, Optional
 from bcml.core.anim import rect, anim_transformer, unit_animation, model
 from bcml.core import io
@@ -84,51 +83,10 @@ class ModelPart:
         return max([part_anim.get_end_frame() for part_anim in self.part_anims])
 
     def set_action(self, frame_counter: int, part_anim: unit_animation.PartAnim):
-        local_frame = 0
-        change_in_value = 0
+        change_in_value = part_anim.set_action(frame_counter)
 
         start_frame = part_anim.moves[0].frame
-        end_frame = part_anim.moves[-1].frame
         if frame_counter >= start_frame:
-            if frame_counter < end_frame or start_frame == end_frame:
-                local_frame = frame_counter
-            elif part_anim.loop == -1:
-                local_frame = (
-                    (frame_counter - start_frame) % (end_frame - start_frame)
-                ) + start_frame
-            elif part_anim.loop >= 1:
-                condition = (frame_counter - start_frame) / (
-                    end_frame - start_frame
-                ) < part_anim.loop
-                if condition:
-                    local_frame = (
-                        (frame_counter - start_frame) % (end_frame - start_frame)
-                    ) + start_frame
-                else:
-                    local_frame = end_frame
-            else:
-                local_frame = end_frame
-            if start_frame == end_frame:
-                change_in_value = part_anim.moves[0].change
-            elif local_frame == end_frame:
-                change_in_value = part_anim.moves[-1].change
-            else:
-                for move_index in range(len(part_anim.moves) - 1):
-                    current_move = part_anim.moves[move_index]
-                    next_move = part_anim.moves[move_index + 1]
-                    current_move_start_frame = current_move.frame
-                    next_move_start_frame = next_move.frame
-                    if (
-                        local_frame < current_move_start_frame
-                        or local_frame >= next_move_start_frame
-                    ):
-                        continue
-                    else:
-                        change_in_value = self.ease(move_index, part_anim, local_frame)
-                        break
-
-            change_in_value = int(change_in_value)
-
             mod = part_anim.modification_type
             if mod == unit_animation.ModificationType.PARENT:
                 self.parent_id = change_in_value
@@ -174,154 +132,6 @@ class ModelPart:
                 self.h_flip = change_in_value
             elif mod == unit_animation.ModificationType.V_FLIP:
                 self.v_flip = change_in_value
-
-    def ease_linear(
-        self,
-        current_move: unit_animation.Move,
-        next_move: unit_animation.Move,
-        local_frame: float,
-        current_move_start_frame: int,
-        next_move_start_frame: int,
-    ):
-        ti = (local_frame - current_move_start_frame) / (
-            next_move_start_frame - current_move_start_frame
-        )
-        change_in_value = (
-            ti * (next_move.change - current_move.change)
-        ) + current_move.change
-        return change_in_value
-
-    def ease_instant(self, current_move: unit_animation.Move):
-        return current_move.change
-
-    def ease_exponential(
-        self,
-        current_move: unit_animation.Move,
-        next_move: unit_animation.Move,
-        local_frame: float,
-        current_move_start_frame: int,
-        next_move_start_frame: int,
-    ):
-        if current_move.ease_power >= 0:
-            change_in_value = (
-                (
-                    1
-                    - math.sqrt(
-                        1
-                        - math.pow(
-                            (((local_frame - current_move_start_frame)))
-                            / ((next_move_start_frame - current_move_start_frame)),
-                            current_move.ease_power,
-                        )
-                    )
-                )
-                * (next_move.change - current_move.change)
-            ) + current_move.change
-        else:
-            change_in_value = (
-                math.sqrt(
-                    1
-                    - math.pow(
-                        1
-                        - (
-                            (((local_frame - current_move_start_frame)))
-                            / ((next_move_start_frame - current_move_start_frame))
-                        ),
-                        -current_move.ease_power,
-                    )
-                )
-                * (next_move.change - current_move.change)
-            ) + current_move.change
-        return change_in_value
-
-    def ease_polynomial(
-        self,
-        move_index: int,
-        part_anim: unit_animation.PartAnim,
-        local_frame: float,
-    ):
-        high = move_index
-        low = move_index
-        for j in range(move_index - 1, -1, -1):
-            if part_anim.moves[j].ease_mode == 3:
-                low = j
-            else:
-                break
-        for j in range(move_index + 1, len(part_anim.moves)):
-            high = j
-            if part_anim.moves[j].ease_mode != 3:
-                break
-        total = 0
-        for j in range(low, high + 1):
-            val = part_anim.moves[j].change * 4096
-            for k in range(low, high + 1):
-                if k != j:
-                    val = (
-                        val
-                        * ((local_frame - part_anim.moves[k].frame))
-                        / ((part_anim.moves[j].frame - part_anim.moves[k].frame))
-                    )
-            total += val
-        change_in_value = total / 4096
-        return change_in_value
-
-    def ease_sine(
-        self,
-        current_move: unit_animation.Move,
-        next_move: unit_animation.Move,
-        local_frame: float,
-        current_move_start_frame: int,
-        next_move_start_frame: int,
-    ):
-        ti = (local_frame - current_move_start_frame) / (
-            next_move_start_frame - current_move_start_frame
-        )
-        change_in_value = (
-            (
-                (next_move.change - current_move.change)
-                * (1 - math.cos(ti * math.pi / 2))
-            )
-            / 2
-        ) + current_move.change
-        return change_in_value
-
-    def ease(
-        self, move_index: int, part_anim: unit_animation.PartAnim, local_frame: float
-    ):
-        current_move = part_anim.moves[move_index]
-        next_move = part_anim.moves[move_index + 1]
-        current_move_start_frame = current_move.frame
-        next_move_start_frame = next_move.frame
-        if current_move.ease_mode == 0:
-            return self.ease_linear(
-                current_move,
-                next_move,
-                local_frame,
-                current_move_start_frame,
-                next_move_start_frame,
-            )
-        elif current_move.ease_mode == 1:
-            return self.ease_instant(current_move)
-        elif current_move.ease_mode == 2:
-            return self.ease_exponential(
-                current_move,
-                next_move,
-                local_frame,
-                current_move_start_frame,
-                next_move_start_frame,
-            )
-        elif current_move.ease_mode == 3:
-            return self.ease_polynomial(move_index, part_anim, local_frame)
-        elif current_move.ease_mode == 4:
-            return self.ease_sine(
-                current_move,
-                next_move,
-                local_frame,
-                current_move_start_frame,
-                next_move_start_frame,
-            )
-        else:
-            raise Exception("Unknown ease mode")
 
     def set_scale(self, scale_x: int, scale_y: int):
         self.scale_x = scale_x
