@@ -27,7 +27,7 @@ class LabeledSlider(QWidget):
         super(LabeledSlider, self).__init__(parent=parent)
         self.value_changed_callback = value_changed_callback
 
-        levels = range(minimum, maximum + interval, interval)
+        levels = range(minimum, maximum, interval)
 
         if labels is not None:
             if len(labels) != len(levels):
@@ -153,4 +153,7 @@ class LabeledSlider(QWidget):
         return
 
     def set_value(self, value: int):
-        self.sl.setValue(value)
+        try:
+            self.sl.setValue(value)
+        except OverflowError:
+            pass

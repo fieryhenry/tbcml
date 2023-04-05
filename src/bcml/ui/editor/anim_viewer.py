@@ -52,7 +52,6 @@ class AnimViewer(QtWidgets.QWidget):
 
     def change_anim(self, index: int):
         self.model.set_part_anims(index)
-        self.frame = 0
         self.end_frame = self.model.get_end_frame()
         self.index = index
 
@@ -154,7 +153,6 @@ class AnimViewer(QtWidgets.QWidget):
             )
 
     def update_frame(self):
-        self.frame += 1
         self.update()
 
     def wheelEvent(self, a0: QtGui.QWheelEvent) -> None:
@@ -215,7 +213,6 @@ class PartViewer(QtWidgets.QWidget):
 
     def change_anim(self, index: int):
         self.model.set_part_anims(index)
-        self.frame = 0
         self.end_frame = self.model.get_end_frame()
 
     def setup_data(self):
@@ -228,10 +225,6 @@ class PartViewer(QtWidgets.QWidget):
 
     def disconnect_clock(self):
         self.clock.disconnect(self.update_frame)
-
-    def set_frame(self, frame: int):
-        frame = frame * self.clock.boost
-        self.frame = frame
 
     def setup_gradient(self):
         self.color_1 = QtGui.QColor(70, 140, 160)
@@ -263,7 +256,6 @@ class PartViewer(QtWidgets.QWidget):
         self.draw_part(painter, zoom_factor * 16, zoom_factor * 16)
 
     def update_frame(self):
-        self.frame += 1
         self.update()
 
     def draw_part_rect(self, painter: QtGui.QPainter):
@@ -290,7 +282,7 @@ class PartViewer(QtWidgets.QWidget):
             except ValueError:
                 continue
             for part_anim in part.part_anims:
-                part.set_action(self.frame, part_anim)
+                part.set_action(self.clock.get_frame(), part_anim)
             valid_parts.append(part)
         return valid_parts
 

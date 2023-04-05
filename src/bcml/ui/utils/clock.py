@@ -21,7 +21,12 @@ class Clock:
         self.time += 1
 
     def get_frame(self):
-        return self.time // self.boost
+        frame = self.time // self.boost
+        if frame < 0:
+            return 0
+        if frame > 2**31 - 1:
+            return 0
+        return frame
 
     def set_frame(self, frame: int):
         self.time = frame * self.boost
@@ -33,3 +38,17 @@ class Clock:
     def disconnect(self, func: Any):
         self._timer.timeout.disconnect(func)
         self.total_funcs -= 1
+
+    def is_stopped(self):
+        return not self._timer.isActive()
+
+    def is_playing(self):
+        return self._timer.isActive()
+
+    def increment(self):
+        self.time += self.boost
+
+    def decrement(self):
+        self.time -= self.boost
+        if self.time < 0:
+            self.time = 0
