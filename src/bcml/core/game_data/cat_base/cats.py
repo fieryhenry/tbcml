@@ -577,7 +577,7 @@ class Stats:
         return not self.__eq__(other)
 
     def import_enemy_stats(self, enemy_stats: "enemies.Stats"):
-        has_targeted_effect = self.has_targeted_effect()
+        has_targeted_effect = enemy_stats.has_targeted_effect()
         self.wipe()
         self.hp = enemy_stats.hp
         self.kbs = enemy_stats.kbs

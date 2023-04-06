@@ -20,6 +20,18 @@ class Stats:
         raw_data = raw_data + [0] * (length - len(raw_data))
         return raw_data
 
+    def has_targeted_effect(self) -> bool:
+        to_check = [
+            self.knockback.prob.percent,
+            self.freeze.prob.percent,
+            self.slow.prob.percent,
+            self.weaken.prob.percent,
+            self.warp.prob.percent,
+            self.curse.prob.percent,
+            self.dodge.prob.percent,
+        ]
+        return any(to_check)
+
     @staticmethod
     def deserialize(data: dict[str, Any], enemy_id: int) -> "Stats":
         return Stats(
