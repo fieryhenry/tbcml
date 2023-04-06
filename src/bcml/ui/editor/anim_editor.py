@@ -197,7 +197,7 @@ class AnimViewerPage(QtWidgets.QWidget):
         self.frame_slider_layout.addLayout(self.button_layout)
         self.frame_slider_layout.addStretch(1)
 
-        self.model.set_part_anims(self.anim_id)
+        self.model.set_keyframes_sets(self.anim_id)
 
         self.anim_part_splitter = QtWidgets.QSplitter(QtCore.Qt.Orientation.Horizontal)
         self.anim_part_splitter.addWidget(self.anim_viewer_box)
@@ -250,14 +250,14 @@ class PartGraphDrawer(QtWidgets.QWidget):
         model: anim.model.Model,
         parent: QtWidgets.QWidget,
         part: anim.model_part.ModelPart,
-        part_anim: anim.unit_animation.KeyFrames,
+        keyframes: anim.unit_animation.KeyFrames,
         clock: utils.clock.Clock,
         width: int = 500,
     ):
         super(PartGraphDrawer, self).__init__(parent)
         self.model = model
         self.part = part
-        self.part_anim = part_anim
+        self.keyframes = keyframes
         self.current_frame = clock.get_frame()
         self.clock = clock
         self.width_ = width
@@ -320,9 +320,9 @@ class PartGraphDrawer(QtWidgets.QWidget):
         self.min_change_in_value = 0
         self.original_change: list[int] = []
         for frame in range(self.end_frame):
-            for keyframe_index in range(len(self.part_anim.keyframes) - 1):
-                current_keyframe = self.part_anim.keyframes[keyframe_index]
-                next_keyframe = self.part_anim.keyframes[keyframe_index + 1]
+            for keyframe_index in range(len(self.keyframes.keyframes) - 1):
+                current_keyframe = self.keyframes.keyframes[keyframe_index]
+                next_keyframe = self.keyframes.keyframes[keyframe_index + 1]
                 current_keyframe_start_frame = current_keyframe.frame
                 next_keyframe_start_frame = next_keyframe.frame
                 if (
@@ -331,7 +331,7 @@ class PartGraphDrawer(QtWidgets.QWidget):
                 ):
                     continue
                 else:
-                    change_in_value = int(self.part_anim.ease(keyframe_index, frame))
+                    change_in_value = int(self.keyframes.ease(keyframe_index, frame))
                     break
             self.max_change_in_value = max(self.max_change_in_value, change_in_value)
             self.min_change_in_value = min(self.min_change_in_value, change_in_value)
@@ -351,9 +351,9 @@ class PartGraphDrawer(QtWidgets.QWidget):
         end_frame = self.end_frame
 
         for frame in range(end_frame):
-            for keyframe_index in range(len(self.part_anim.keyframes) - 1):
-                current_keyframe = self.part_anim.keyframes[keyframe_index]
-                next_keyframe = self.part_anim.keyframes[keyframe_index + 1]
+            for keyframe_index in range(len(self.keyframes.keyframes) - 1):
+                current_keyframe = self.keyframes.keyframes[keyframe_index]
+                next_keyframe = self.keyframes.keyframes[keyframe_index + 1]
                 current_keyframe_start_frame = current_keyframe.frame
                 next_keyframe_start_frame = next_keyframe.frame
                 if (
@@ -362,7 +362,7 @@ class PartGraphDrawer(QtWidgets.QWidget):
                 ):
                     continue
                 else:
-                    change_in_value = int(self.part_anim.ease(keyframe_index, frame))
+                    change_in_value = int(self.keyframes.ease(keyframe_index, frame))
                     break
 
             if previous_value is None:
@@ -477,14 +477,14 @@ class PartAnimWidget(QtWidgets.QWidget):
         model: anim.model.Model,
         parent: QtWidgets.QWidget,
         part: anim.model_part.ModelPart,
-        part_anim: anim.unit_animation.KeyFrames,
+        keyframes: anim.unit_animation.KeyFrames,
         clock: utils.clock.Clock,
         width: int,
     ):
         super(PartAnimWidget, self).__init__(parent)
         self.model = model
         self.part = part
-        self.part_anim = part_anim
+        self.keyframes = keyframes
         self.clock = clock
         self.width_ = width
 
@@ -492,26 +492,26 @@ class PartAnimWidget(QtWidgets.QWidget):
         self.setup_ui()
 
     def setup_ui(self):
-        self.setObjectName("part_anim_widget")
+        self.setObjectName("keyframes_widget")
         self._layout = QtWidgets.QVBoxLayout(self)
 
         self.modification_label = QtWidgets.QLabel(self)
         self.modification_label.setText(
             self.locale_manager.search_key(
-                f"modification_{self.part_anim.modification_type.value}"
+                f"modification_{self.keyframes.modification_type.value}"
             )
         )
         self._layout.addWidget(self.modification_label)
 
-        self.part_anim_graph = PartGraphDrawer(
+        self.keyframes_graph = PartGraphDrawer(
             self.model,
             self,
             self.part,
-            self.part_anim,
+            self.keyframes,
             self.clock,
             self.width_,
         )
-        self._layout.addWidget(self.part_anim_graph)
+        self._layout.addWidget(self.keyframes_graph)
 
         self.change_in_value_label = QtWidgets.QLabel(self)
         self.change_in_value_label.setText(self.locale_manager.search_key("value"))
@@ -520,7 +520,7 @@ class PartAnimWidget(QtWidgets.QWidget):
         self.change_in_value_spinbox = QtWidgets.QSpinBox(self)
         self.change_in_value_spinbox.setRange(-(2**31), 2**31 - 1)
         self.change_in_value_spinbox.setValue(
-            self.part_anim_graph.get_change_in_value()
+            self.keyframes_graph.get_change_in_value()
         )
         self.change_in_value_spinbox.setReadOnly(True)
         self._layout.addWidget(self.change_in_value_spinbox)
@@ -529,16 +529,16 @@ class PartAnimWidget(QtWidgets.QWidget):
         self._layout.addStretch(1)
 
     def set_frame(self, frame: int):
-        self.part_anim_graph.set_frame(frame)
+        self.keyframes_graph.set_frame(frame)
         self.change_spin_box()
 
     def disconnect_clock(self):
         self.clock.disconnect(self.change_spin_box)
-        self.part_anim_graph.disconnect_clock()
+        self.keyframes_graph.disconnect_clock()
 
     def change_spin_box(self):
         self.change_in_value_spinbox.setValue(
-            self.part_anim_graph.get_change_in_value()
+            self.keyframes_graph.get_change_in_value()
         )
 
 
@@ -738,12 +738,12 @@ class TimeLine(QtWidgets.QWidget):
         part = self.model.get_part(part_id)
         width = self.time_line_group.width() - 40
 
-        for i, part_anim in enumerate(part.part_anims):
-            part_anim_widget = PartAnimWidget(
-                self.model, self, part, part_anim, self.clock, width
+        for i, keyframes in enumerate(part.keyframes_sets):
+            keyframes_widget = PartAnimWidget(
+                self.model, self, part, keyframes, self.clock, width
             )
-            self.time_line_group_layout.addWidget(part_anim_widget)
-            if i != len(part.part_anims) - 1:
+            self.time_line_group_layout.addWidget(keyframes_widget)
+            if i != len(part.keyframes_sets) - 1:
                 separator = QtWidgets.QFrame(self.time_line_group)
                 separator.setFrameShape(QtWidgets.QFrame.Shape.HLine)
                 separator.setFrameShadow(QtWidgets.QFrame.Shadow.Sunken)

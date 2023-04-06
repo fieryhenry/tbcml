@@ -73,7 +73,7 @@ class ModelPart:
 
         self.parent: Optional[ModelPart] = None
         self.children: list[ModelPart] = []
-        self.part_anims: list[unit_animation.KeyFrames] = []
+        self.keyframes_sets: list[unit_animation.KeyFrames] = []
         self.model: model.Model
         self.scale_unit: int
         self.angle_unit: int
@@ -108,22 +108,22 @@ class ModelPart:
         Returns:
             int: The end frame of the part.
         """
-        if len(self.part_anims) == 0:
+        if len(self.keyframes_sets) == 0:
             return 0
-        return max([part_anim.get_end_frame() for part_anim in self.part_anims])
+        return max([keyframes.get_end_frame() for keyframes in self.keyframes_sets])
 
-    def set_action(self, frame_counter: int, part_anim: unit_animation.KeyFrames):
+    def set_action(self, frame_counter: int, keyframes: unit_animation.KeyFrames):
         """Sets the action of the part. This is used for animations.
 
         Args:
             frame_counter (int): The current frame of the animation.
-            part_anim (unit_animation.PartAnim): The collection of keyframes to use for the animation.
+            keyframes (unit_animation.PartAnim): The collection of keyframes to use for the animation.
         """
-        change_in_value = part_anim.set_action(frame_counter)
+        change_in_value = keyframes.set_action(frame_counter)
 
-        start_frame = part_anim.keyframes[0].frame
+        start_frame = keyframes.keyframes[0].frame
         if frame_counter >= start_frame:
-            mod = part_anim.modification_type
+            mod = keyframes.modification_type
             if mod == unit_animation.ModificationType.PARENT:
                 self.parent_id = change_in_value
                 self.set_parent_by_id(self.parent_id)
@@ -721,13 +721,13 @@ class ModelPart:
         self.real_rotation = self.rotation / angle_unit
         self.real_alpha = self.alpha / alpha_unit
 
-    def set_part_anims(self, part_anims: list["unit_animation.KeyFrames"]):
+    def set_keyframes_sets(self, keyframes_sets: list["unit_animation.KeyFrames"]):
         """Sets the part animations of the part. The
 
         Args:
-            part_anims (list[unit_animation.PartAnim]): The part animations of the part.
+            keyframes_sets (list[unit_animation.PartAnim]): The part animations of the part.
         """
-        self.part_anims = part_anims
+        self.keyframes_sets = keyframes_sets
         self.reset_anim()
 
     def set_ints(self, ints: list[list[int]]):

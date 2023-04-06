@@ -281,10 +281,10 @@ class Model:
         for part in self.mamodel.parts:
             part.load_texs()
 
-    def set_part_anims(self, anim_index: int):
+    def set_keyframes_sets(self, anim_index: int):
         for part in self.mamodel.parts:
             anim_parts = self.anims[anim_index].get_parts(part.index)
-            part.set_part_anims(anim_parts)
+            part.set_keyframes_sets(anim_parts)
 
     def serialize(self) -> dict[str, Any]:
         return {
@@ -427,8 +427,8 @@ class Model:
 
     def set_action(self, frame_counter: int):
         for part in self.mamodel.parts:
-            for part_anim in part.part_anims:
-                part.set_action(frame_counter, part_anim)
+            for keyframes in part.keyframes_sets:
+                part.set_action(frame_counter, keyframes)
 
     def get_end_frame(self) -> int:
         end_frame = 1

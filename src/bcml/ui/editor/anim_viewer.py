@@ -51,14 +51,14 @@ class AnimViewer(QtWidgets.QWidget):
             self.change_anim(self.anim_id)
 
     def change_anim(self, index: int):
-        self.model.set_part_anims(index)
+        self.model.set_keyframes_sets(index)
         self.end_frame = self.model.get_end_frame()
         self.index = index
 
     def setup_data(self):
         self.sorted_parts = self.model.get_sorted_parts()
         self.model.set_required()
-        self.model.set_part_anims(self.index)
+        self.model.set_keyframes_sets(self.index)
         self.end_frame = self.model.get_end_frame()
 
     def setup_clock(self):
@@ -212,12 +212,12 @@ class PartViewer(QtWidgets.QWidget):
         self.change_anim(self.anim_id)
 
     def change_anim(self, index: int):
-        self.model.set_part_anims(index)
+        self.model.set_keyframes_sets(index)
         self.end_frame = self.model.get_end_frame()
 
     def setup_data(self):
         self.model.set_required()
-        self.model.set_part_anims(self.anim_id)
+        self.model.set_keyframes_sets(self.anim_id)
         self.end_frame = self.model.get_end_frame()
 
     def setup_clock(self):
@@ -281,8 +281,8 @@ class PartViewer(QtWidgets.QWidget):
                 part = self.model.get_part(part_id)
             except ValueError:
                 continue
-            for part_anim in part.part_anims:
-                part.set_action(self.clock.get_frame(), part_anim)
+            for keyframes in part.keyframes_sets:
+                part.set_action(self.clock.get_frame(), keyframes)
             valid_parts.append(part)
         return valid_parts
 
@@ -303,8 +303,8 @@ class PartViewer(QtWidgets.QWidget):
                 part = self.model.get_part(part_id)
             except ValueError:
                 continue
-            for part_anim in part.part_anims:
-                part.set_action(frame, part_anim)
+            for keyframes in part.keyframes_sets:
+                part.set_action(frame, keyframes)
             self.valid_parts.append(part)
 
         parts_sorted = sorted(
