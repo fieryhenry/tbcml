@@ -44,7 +44,7 @@ class ModificationType(enum.Enum):
     V_FLIP = 14
 
 
-class Move:
+class KeyFrame:
     def __init__(
         self,
         frame: int,
@@ -63,7 +63,7 @@ class Move:
         change_in_value = data[1].to_int()
         ease = data[2].to_int()
         ease_power = data[3].to_int()
-        return Move(frame, change_in_value, ease, ease_power)
+        return KeyFrame(frame, change_in_value, ease, ease_power)
 
     def serialize(self) -> dict[str, Any]:
         return {
@@ -75,7 +75,7 @@ class Move:
 
     @staticmethod
     def deserialize(data: dict[str, Any]):
-        return Move(
+        return KeyFrame(
             data["frame"],
             data["change_in_value"],
             data["ease_mode"],
@@ -83,7 +83,7 @@ class Move:
         )
 
     def copy(self):
-        return Move(self.frame, self.change, self.ease_mode, self.ease_power)
+        return KeyFrame(self.frame, self.change, self.ease_mode, self.ease_power)
 
     def to_data(self) -> list["io.data.Data"]:
         ls: list[int] = [
@@ -95,7 +95,7 @@ class Move:
         return io.data.Data.int_list_data_list(ls)
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Move):
+        if not isinstance(other, KeyFrame):
             return False
         return (
             self.frame == other.frame
@@ -109,7 +109,7 @@ class Move:
 
     def __str__(self) -> str:
         return (
-            f"Move(frame={self.frame}, change_in_value={self.change}, "
+            f"KeyFrame(frame={self.frame}, change_in_value={self.change}, "
             f"ease_mode={self.ease_mode}, ease_power={self.ease_power})"
         )
 
@@ -117,20 +117,20 @@ class Move:
         return self.__str__()
 
     @staticmethod
-    def create_empty() -> "Move":
-        return Move(0, 0, 0, 0)
+    def create_empty() -> "KeyFrame":
+        return KeyFrame(0, 0, 0, 0)
 
     def ease_linear(
         self,
-        next_move: "Move",
+        next_keyframe: "KeyFrame",
         local_frame: float,
-        current_move_start_frame: int,
-        next_move_start_frame: int,
+        current_keyframe_start_frame: int,
+        next_keyframe_start_frame: int,
     ) -> float:
-        ti = (local_frame - current_move_start_frame) / (
-            next_move_start_frame - current_move_start_frame
+        ti = (local_frame - current_keyframe_start_frame) / (
+            next_keyframe_start_frame - current_keyframe_start_frame
         )
-        change_in_value = (ti * (next_move.change - self.change)) + self.change
+        change_in_value = (ti * (next_keyframe.change - self.change)) + self.change
         return change_in_value
 
     def ease_instant(self) -> float:
@@ -138,10 +138,10 @@ class Move:
 
     def ease_exponential(
         self,
-        next_move: "Move",
+        next_keyframe: "KeyFrame",
         local_frame: float,
-        current_move_start_frame: int,
-        next_move_start_frame: int,
+        current_keyframe_start_frame: int,
+        next_keyframe_start_frame: int,
     ) -> float:
         if self.ease_power >= 0:
             change_in_value = (
@@ -150,13 +150,18 @@ class Move:
                     - math.sqrt(
                         1
                         - math.pow(
-                            (((local_frame - current_move_start_frame)))
-                            / ((next_move_start_frame - current_move_start_frame)),
+                            (((local_frame - current_keyframe_start_frame)))
+                            / (
+                                (
+                                    next_keyframe_start_frame
+                                    - current_keyframe_start_frame
+                                )
+                            ),
                             self.ease_power,
                         )
                     )
                 )
-                * (next_move.change - self.change)
+                * (next_keyframe.change - self.change)
             ) + self.change
         else:
             change_in_value = (
@@ -165,33 +170,39 @@ class Move:
                     - math.pow(
                         1
                         - (
-                            (((local_frame - current_move_start_frame)))
-                            / ((next_move_start_frame - current_move_start_frame))
+                            (((local_frame - current_keyframe_start_frame)))
+                            / (
+                                (
+                                    next_keyframe_start_frame
+                                    - current_keyframe_start_frame
+                                )
+                            )
                         ),
                         -self.ease_power,
                     )
                 )
-                * (next_move.change - self.change)
+                * (next_keyframe.change - self.change)
             ) + self.change
         return change_in_value
 
     def ease_sine(
         self,
-        next_move: "Move",
+        next_keyframe: "KeyFrame",
         local_frame: float,
-        current_move_start_frame: int,
-        next_move_start_frame: int,
+        current_keyframe_start_frame: int,
+        next_keyframe_start_frame: int,
     ) -> float:
-        ti = (local_frame - current_move_start_frame) / (
-            next_move_start_frame - current_move_start_frame
+        ti = (local_frame - current_keyframe_start_frame) / (
+            next_keyframe_start_frame - current_keyframe_start_frame
         )
         change_in_value = (
-            ((next_move.change - self.change) * (1 - math.cos(ti * math.pi / 2))) / 2
+            ((next_keyframe.change - self.change) * (1 - math.cos(ti * math.pi / 2)))
+            / 2
         ) + self.change
         return change_in_value
 
 
-class PartAnim:
+class KeyFrames:
     def __init__(
         self,
         part_id: int,
@@ -200,7 +211,7 @@ class PartAnim:
         min_value: int,
         max_value: int,
         name: str,
-        moves: list[Move],
+        keyframes: list[KeyFrame],
     ):
         self.part_id = part_id
         self.modification_type = modification_type
@@ -208,10 +219,10 @@ class PartAnim:
         self.min_value = min_value
         self.max_value = max_value
         self.name = name
-        self.moves = moves
+        self.keyframes = keyframes
 
     @staticmethod
-    def from_data(data: list[list["io.data.Data"]]) -> tuple[int, "PartAnim"]:
+    def from_data(data: list[list["io.data.Data"]]) -> tuple[int, "KeyFrames"]:
         model_id = data[0][0].to_int()
         modification_type = ModificationType(data[0][1].to_int())
         loop = data[0][2].to_int()
@@ -222,23 +233,23 @@ class PartAnim:
         except IndexError:
             name = ""
 
-        total_moves = data[1][0].to_int()
+        total_keyframes = data[1][0].to_int()
         end_index = 2
-        moves: list[Move] = []
-        for _ in range(total_moves):
-            moves.append(Move.from_data(data[end_index]))
+        keyframes: list[KeyFrame] = []
+        for _ in range(total_keyframes):
+            keyframes.append(KeyFrame.from_data(data[end_index]))
             end_index += 1
 
         return (
             end_index,
-            PartAnim(
+            KeyFrames(
                 model_id,
                 modification_type,
                 loop,
                 min_value,
                 max_value,
                 name,
-                moves,
+                keyframes,
             ),
         )
 
@@ -250,30 +261,30 @@ class PartAnim:
             "min_value": self.min_value,
             "max_value": self.max_value,
             "name": self.name,
-            "moves": [move.serialize() for move in self.moves],
+            "keyframes": [keyframe.serialize() for keyframe in self.keyframes],
         }
 
     @staticmethod
     def deserialize(data: dict[str, Any]):
-        return PartAnim(
+        return KeyFrames(
             data["part_id"],
             data["modification_type"],
             data["loop"],
             data["min_value"],
             data["max_value"],
             data["name"],
-            [Move.deserialize(move) for move in data["moves"]],
+            [KeyFrame.deserialize(keyframe) for keyframe in data["keyframes"]],
         )
 
     def copy(self):
-        return PartAnim(
+        return KeyFrames(
             self.part_id,
             self.modification_type,
             self.loop,
             self.min_value,
             self.max_value,
             self.name,
-            [move.copy() for move in self.moves],
+            [keyframe.copy() for keyframe in self.keyframes],
         )
 
     def to_data(self) -> list[list["io.data.Data"]]:
@@ -285,19 +296,19 @@ class PartAnim:
                 self.min_value,
                 self.max_value,
             ],
-            [len(self.moves)],
+            [len(self.keyframes)],
         ]
         if self.name:
             ls[0].append(self.name)
         new_ls: list[list["io.data.Data"]] = []
         for item in ls:
             new_ls.append(io.data.Data.string_list_data_list(item))
-        for move in self.moves:
-            new_ls.append(move.to_data())
+        for keyframe in self.keyframes:
+            new_ls.append(keyframe.to_data())
         return new_ls
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, PartAnim):
+        if not isinstance(other, KeyFrames):
             return False
         return (
             self.part_id == other.part_id
@@ -306,57 +317,57 @@ class PartAnim:
             and self.min_value == other.min_value
             and self.max_value == other.max_value
             and self.name == other.name
-            and self.moves == other.moves
+            and self.keyframes == other.keyframes
         )
 
     def __str__(self) -> str:
         return (
             f"PartAnim(part_id={self.part_id}, modification_type={self.modification_type}, "
             f"loop={self.loop}, min_value={self.min_value}, max_value={self.max_value}, "
-            f"name={self.name}, moves={self.moves})"
+            f"name={self.name}, keyframes={self.keyframes})"
         )
 
     def __repr__(self) -> str:
         return self.__str__()
 
     @staticmethod
-    def create_empty() -> "PartAnim":
-        return PartAnim(0, ModificationType.PARENT, 0, 0, 0, "", [])
+    def create_empty() -> "KeyFrames":
+        return KeyFrames(0, ModificationType.PARENT, 0, 0, 0, "", [])
 
     def get_end_frame(self) -> int:
-        if not self.moves:
+        if not self.keyframes:
             return 1
         loop = self.loop if self.loop > 0 else 1
-        val = self.moves[-1].frame * loop
+        val = self.keyframes[-1].frame * loop
         if val == 0:
             return 1
         return val
 
     def ease_polynomial(
         self,
-        move_index: int,
+        keyframe_index: int,
         local_frame: float,
     ) -> float:
-        high = move_index
-        low = move_index
-        for j in range(move_index - 1, -1, -1):
-            if self.moves[j].ease_mode == 3:
+        high = keyframe_index
+        low = keyframe_index
+        for j in range(keyframe_index - 1, -1, -1):
+            if self.keyframes[j].ease_mode == 3:
                 low = j
             else:
                 break
-        for j in range(move_index + 1, len(self.moves)):
+        for j in range(keyframe_index + 1, len(self.keyframes)):
             high = j
-            if self.moves[j].ease_mode != 3:
+            if self.keyframes[j].ease_mode != 3:
                 break
         total = 0
         for j in range(low, high + 1):
-            val = self.moves[j].change * 4096
+            val = self.keyframes[j].change * 4096
             for k in range(low, high + 1):
                 if k != j:
                     val = (
                         val
-                        * ((local_frame - self.moves[k].frame))
-                        / ((self.moves[j].frame - self.moves[k].frame))
+                        * ((local_frame - self.keyframes[k].frame))
+                        / ((self.keyframes[j].frame - self.keyframes[k].frame))
                     )
             total += val
         change_in_value = total / 4096
@@ -366,8 +377,8 @@ class PartAnim:
         local_frame = 0
         change_in_value = 0
 
-        start_frame = self.moves[0].frame
-        end_frame = self.moves[-1].frame
+        start_frame = self.keyframes[0].frame
+        end_frame = self.keyframes[-1].frame
         if frame_counter >= start_frame:
             if frame_counter < end_frame or start_frame == end_frame:
                 local_frame = frame_counter
@@ -388,56 +399,56 @@ class PartAnim:
             else:
                 local_frame = end_frame
             if start_frame == end_frame:
-                change_in_value = self.moves[0].change
+                change_in_value = self.keyframes[0].change
             elif local_frame == end_frame:
-                change_in_value = self.moves[-1].change
+                change_in_value = self.keyframes[-1].change
             else:
-                for move_index in range(len(self.moves) - 1):
-                    current_move = self.moves[move_index]
-                    next_move = self.moves[move_index + 1]
-                    current_move_start_frame = current_move.frame
-                    next_move_start_frame = next_move.frame
+                for keyframe_index in range(len(self.keyframes) - 1):
+                    current_keyframe = self.keyframes[keyframe_index]
+                    next_keyframe = self.keyframes[keyframe_index + 1]
+                    current_keyframe_start_frame = current_keyframe.frame
+                    next_keyframe_start_frame = next_keyframe.frame
                     if (
-                        local_frame < current_move_start_frame
-                        or local_frame >= next_move_start_frame
+                        local_frame < current_keyframe_start_frame
+                        or local_frame >= next_keyframe_start_frame
                     ):
                         continue
                     else:
-                        change_in_value = self.ease(move_index, local_frame)
+                        change_in_value = self.ease(keyframe_index, local_frame)
                         break
 
             change_in_value = int(change_in_value)
         return change_in_value
 
-    def ease(self, move_index: int, local_frame: float) -> float:
-        current_move = self.moves[move_index]
-        next_move = self.moves[move_index + 1]
-        current_move_start_frame = current_move.frame
-        next_move_start_frame = next_move.frame
-        if current_move.ease_mode == 0:
-            return current_move.ease_linear(
-                next_move,
+    def ease(self, keyframe_index: int, local_frame: float) -> float:
+        current_keyframe = self.keyframes[keyframe_index]
+        next_keyframe = self.keyframes[keyframe_index + 1]
+        current_keyframe_start_frame = current_keyframe.frame
+        next_keyframe_start_frame = next_keyframe.frame
+        if current_keyframe.ease_mode == 0:
+            return current_keyframe.ease_linear(
+                next_keyframe,
                 local_frame,
-                current_move_start_frame,
-                next_move_start_frame,
+                current_keyframe_start_frame,
+                next_keyframe_start_frame,
             )
-        elif current_move.ease_mode == 1:
-            return current_move.ease_instant()
-        elif current_move.ease_mode == 2:
-            return current_move.ease_exponential(
-                next_move,
+        elif current_keyframe.ease_mode == 1:
+            return current_keyframe.ease_instant()
+        elif current_keyframe.ease_mode == 2:
+            return current_keyframe.ease_exponential(
+                next_keyframe,
                 local_frame,
-                current_move_start_frame,
-                next_move_start_frame,
+                current_keyframe_start_frame,
+                next_keyframe_start_frame,
             )
-        elif current_move.ease_mode == 3:
-            return self.ease_polynomial(move_index, local_frame)
-        elif current_move.ease_mode == 4:
-            return current_move.ease_sine(
-                next_move,
+        elif current_keyframe.ease_mode == 3:
+            return self.ease_polynomial(keyframe_index, local_frame)
+        elif current_keyframe.ease_mode == 4:
+            return current_keyframe.ease_sine(
+                next_keyframe,
                 local_frame,
-                current_move_start_frame,
-                next_move_start_frame,
+                current_keyframe_start_frame,
+                next_keyframe_start_frame,
             )
         else:
             raise Exception("Unknown ease mode")
@@ -528,7 +539,7 @@ class UnitAnimLoaderInfo:
 
 
 class UnitAnim:
-    def __init__(self, parts: list[PartAnim], meta_data: UnitAnimMetaData, name: str):
+    def __init__(self, parts: list[KeyFrames], meta_data: UnitAnimMetaData, name: str):
         self.parts = parts
         self.meta_data = meta_data
         self.name = name
@@ -542,12 +553,12 @@ class UnitAnim:
         csv = io.bc_csv.CSV(file.dec_data)
         meta_data = UnitAnimMetaData.from_csv(csv)
 
-        parts: list[PartAnim] = []
+        parts: list[KeyFrames] = []
         total_parts = meta_data.total_parts
         start_index = 3
         for _ in range(total_parts):
             lines = csv.lines[start_index:]
-            end_index, part = PartAnim.from_data(lines)
+            end_index, part = KeyFrames.from_data(lines)
             parts.append(part)
             start_index += end_index
 
@@ -583,7 +594,7 @@ class UnitAnim:
     @staticmethod
     def deserialize(data: dict[str, Any]):
         return UnitAnim(
-            [PartAnim.deserialize(part) for part in data["parts"]],
+            [KeyFrames.deserialize(part) for part in data["parts"]],
             UnitAnimMetaData.deserialize(data["meta_data"]),
             data["name"],
         )
@@ -603,7 +614,7 @@ class UnitAnim:
     def __repr__(self) -> str:
         return self.__str__()
 
-    def get_parts(self, part_id: int) -> list[PartAnim]:
+    def get_parts(self, part_id: int) -> list[KeyFrames]:
         return [part for part in self.parts if part.part_id == part_id]
 
     def is_empty(self) -> bool:

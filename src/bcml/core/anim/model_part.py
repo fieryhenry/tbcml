@@ -23,6 +23,25 @@ class ModelPart:
         glow: int,
         name: str,
     ):
+        """Initializes a ModelPart object
+
+        Args:
+            index (int): Part index of the model
+            parent_id (int): Parent part index of the model
+            unit_id (int): Unit ID that the model is attached to (doesn't really do anything)
+            rect_id (int): What cutout of the texture to use
+            z_depth (int): Z depth of the part
+            x (int): X position of the part
+            y (int): Y position of the part
+            pivot_x (int): X pivot of the part. This is the point that the part rotates and scales around.
+            pivot_y (int): Y pivot of the part. This is the point that the part rotates and scales around.
+            scale_x (int): X scale of the part
+            scale_y (int): Y scale of the part
+            rotation (int): Rotation of the part
+            alpha (int): Alpha of the part
+            glow (int): Glow of the part. When drawing the part, if the value is between 1 and 3 or -1, the part will be draw additively.
+            name (str): Name of the part
+        """
         self.index = index
         self.parent_id = parent_id
         self.unit_id = unit_id
@@ -54,13 +73,14 @@ class ModelPart:
 
         self.parent: Optional[ModelPart] = None
         self.children: list[ModelPart] = []
-        self.part_anims: list[unit_animation.PartAnim] = []
+        self.part_anims: list[unit_animation.KeyFrames] = []
         self.model: model.Model
         self.scale_unit: int
         self.angle_unit: int
         self.alpha_unit: int
 
     def load_texs(self):
+        """Loads the texture and rect for the part."""
         rct = self.model.tex.get_rect(self.rect_id)
         if rct is None:
             self.rect = rect.Rect.create_empty()
@@ -74,18 +94,34 @@ class ModelPart:
             self.image = img
 
     def set_rect(self, rect_id: int):
+        """Sets the rect ID of the part and loads the rect and texture.
+
+        Args:
+            rect_id (int): The rect ID to set the part to.
+        """
         self.rect_id = rect_id
         self.load_texs()
 
     def get_end_frame(self) -> int:
+        """Gets the end frame of the part. Note that this doesn't really work for infinite looping animations.
+
+        Returns:
+            int: The end frame of the part.
+        """
         if len(self.part_anims) == 0:
             return 0
         return max([part_anim.get_end_frame() for part_anim in self.part_anims])
 
-    def set_action(self, frame_counter: int, part_anim: unit_animation.PartAnim):
+    def set_action(self, frame_counter: int, part_anim: unit_animation.KeyFrames):
+        """Sets the action of the part. This is used for animations.
+
+        Args:
+            frame_counter (int): The current frame of the animation.
+            part_anim (unit_animation.PartAnim): The collection of keyframes to use for the animation.
+        """
         change_in_value = part_anim.set_action(frame_counter)
 
-        start_frame = part_anim.moves[0].frame
+        start_frame = part_anim.keyframes[0].frame
         if frame_counter >= start_frame:
             mod = part_anim.modification_type
             if mod == unit_animation.ModificationType.PARENT:
@@ -134,6 +170,12 @@ class ModelPart:
                 self.v_flip = change_in_value
 
     def set_scale(self, scale_x: int, scale_y: int):
+        """Sets the scale of the part.
+
+        Args:
+            scale_x (int): Scale on the x axis. Should not have been divided by the scale unit.
+            scale_y (int): Scale on the y axis. Should not have been divided by the scale unit.
+        """
         self.scale_x = scale_x
         self.scale_y = scale_y
         scl_x = scale_x / self.scale_unit
@@ -143,16 +185,35 @@ class ModelPart:
         self.real_scale_y = scl_y * gcsa
 
     def set_alpha(self, alpha: int):
+        """Sets the alpha of the part.
+
+        Args:
+            alpha (int): The alpha to set the part to. Should not have been divided by the alpha unit.
+        """
         self.alpha = alpha
         alp = alpha / self.alpha_unit
         self.real_alpha = alp
 
     def set_rotation(self, rotation: int):
+        """Sets the rotation of the part.
+
+        Args:
+            rotation (int): The rotation to set the part to. Should be in degrees without dividing by the angle unit.
+        """
         self.rotation = rotation
         self.real_rotation = rotation / self.angle_unit
 
     @staticmethod
-    def from_data(data: list["io.data.Data"], index: int):
+    def from_data(data: list["io.data.Data"], index: int) -> "ModelPart":
+        """Creates a ModelPart from a list of data.
+
+        Args:
+            data (list[io.data.Data]): The data to use to create the ModelPart.
+            index (int): The index of the part.
+
+        Returns:
+            ModelPart: The created ModelPart.
+        """
         parent_id = data[0].to_int()
         unit_id = data[1].to_int()
         cut_id = data[2].to_int()
@@ -190,6 +251,11 @@ class ModelPart:
         )
 
     def to_data(self) -> list[Any]:
+        """Converts the ModelPart to a list of data.
+
+        Returns:
+            list[Any]: The list of data.
+        """
         data: list[Any] = [
             self.parent_id,
             self.unit_id,
@@ -218,6 +284,16 @@ class ModelPart:
         draw_overlay: bool = False,
         just_overlay: bool = False,
     ):
+        """Draws the part.
+
+        Args:
+            painter (QtGui.QPainter): The painter to use to draw the part on.
+            base_x (float): A base scale on the x axis. Used for zooming.
+            base_y (float): A base scale on the y axis. Used for zooming.
+            local (bool, optional): Whether to not draw it in relation to the parent. Defaults to False.
+            draw_overlay (bool, optional): Whether to draw the overlay. Defaults to False.
+            just_overlay (bool, optional): Whether to only draw the overlay. Defaults to False.
+        """
         img = self.image
         rct = self.rect
         current_transform = painter.transform()
@@ -260,6 +336,15 @@ class ModelPart:
         sc_w: float,
         sc_h: float,
     ):
+        """Draws the overlay for the part.
+
+        Args:
+            painter (QtGui.QPainter): The painter to use to draw the overlay on.
+            t_piv_x (float): The x position of the pivot.
+            t_piv_y (float): The y position of the pivot.
+            sc_w (float): The width of the part.
+            sc_h (float): The height of the part.
+        """
         radius = 50
 
         x_pos1 = -t_piv_x
@@ -292,6 +377,16 @@ class ModelPart:
         glow: int,
         painter: "QtGui.QPainter",
     ):
+        """Draws the part's image.
+
+        Args:
+            img (io.bc_image.BCImage): The image to draw.
+            pivot (tuple[float, float]): The pivot of the image.
+            size (tuple[float, float]): The size of the image.
+            alpha (float): The alpha of the image.
+            glow (int): The composition mode of the image. -1, 1, 2, or 3 is plus
+            painter (QtGui.QPainter): The painter to use to draw the image on.
+        """
         painter.setOpacity(alpha)
 
         glow_support = (glow >= 1 and glow <= 3) or glow == -1
@@ -312,6 +407,15 @@ class ModelPart:
         )
 
     def get_flip(self, scale_x: float, scale_y: float) -> tuple[int, int]:
+        """Gets the flip values for the part.
+
+        Args:
+            scale_x (float): The scale on the x axis.
+            scale_y (float): The scale on the y axis.
+
+        Returns:
+            tuple[int, int]: The flip values for the part. 1 is no flip, -1 is flip.
+        """
         flip_x = scale_x < 0
         flip_y = scale_y < 0
         return (
@@ -325,6 +429,13 @@ class ModelPart:
         sizer_x: float,
         sizer_y: float,
     ):
+        """Transforms the part without regard to the parent.
+
+        Args:
+            transformer (anim_transformer.AnimTransformer): The transformer to use to
+            sizer_x (float): The multiplier for the x axis.
+            sizer_y (float): The multiplier for the y axis.
+        """
         scale_x, scale_y = self.get_recursive_scale()
         siz_x = scale_x * sizer_x
         siz_y = scale_y * sizer_y
@@ -339,6 +450,13 @@ class ModelPart:
         sizer_x: float,
         sizer_y: float,
     ):
+        """Transforms the part. Recursively calls the parent's transform method.
+
+        Args:
+            transformer (anim_transformer.AnimTransformer): The transformer to use to
+            sizer_x (float): The multiplier for the x axis.
+            sizer_y (float): The multiplier for the y axis.
+        """
         siz_x, siz_y = sizer_x, sizer_y
         if self.parent is not None:
             self.parent.transform(transformer, sizer_x, sizer_y)
@@ -370,6 +488,14 @@ class ModelPart:
             transformer.rotate(fraction=self.real_rotation)
 
     def get_base_size(self, parent: bool) -> tuple[float, float]:
+        """Gets the base size of the part.
+
+        Args:
+            parent (bool): If the call is made from the parent.
+
+        Returns:
+            tuple[float, float]: The base size of the part.
+        """
         signum_x = 1 if self.scale_x >= 0 else -1
         signum_y = 1 if self.scale_y >= 0 else -1
         if parent:
@@ -393,6 +519,12 @@ class ModelPart:
                     return size_x * signum_x, size_y * signum_y
 
     def get_recursive_scale(self) -> tuple[float, float]:
+        """Gets the recursive scale of the part. Recursively calls the parent's
+        get_recursive_scale method.
+
+        Returns:
+            tuple[float, float]: The recursive scale of the part.
+        """
         current_scale_x = self.real_scale_x
         current_scale_y = self.real_scale_y
         if self.parent is not None:
@@ -402,12 +534,23 @@ class ModelPart:
         return current_scale_x, current_scale_y
 
     def get_recursive_alpha(self) -> float:
+        """Gets the recursive alpha of the part. Recursively calls the parent's
+        get_recursive_alpha method.
+
+        Returns:
+            float: The recursive alpha of the part.
+        """
         current_alpha = self.real_alpha
         if self.parent is not None:
             current_alpha *= self.parent.get_recursive_alpha()
         return current_alpha
 
     def serialize(self) -> dict[str, Any]:
+        """Serializes the part to a dictionary.
+
+        Returns:
+            dict[str, Any]: The serialized part.
+        """
         return {
             "index": self.index,
             "parent_id": self.parent_id,
@@ -428,6 +571,14 @@ class ModelPart:
 
     @staticmethod
     def deserialize(data: dict[str, Any]) -> "ModelPart":
+        """Deserializes the part to a ModelPart object.
+
+        Args:
+            data (dict[str, Any]): The serialized part.
+
+        Returns:
+            ModelPart: The deserialized part.
+        """
         return ModelPart(
             data["index"],
             data["parent_id"],
@@ -447,6 +598,11 @@ class ModelPart:
         )
 
     def copy(self) -> "ModelPart":
+        """Copies the part.
+
+        Returns:
+            ModelPart: The copied part.
+        """
         return ModelPart(
             self.index,
             self.parent_id,
@@ -466,12 +622,30 @@ class ModelPart:
         )
 
     def __repr__(self) -> str:
+        """Gets the string representation of the part.
+
+        Returns:
+            str: The string representation of the part.
+        """
         return f"ModelPart({self.index}, {self.parent_id}, {self.unit_id}, {self.rect_id}, {self.z_depth}, {self.x}, {self.y}, {self.pivot_x}, {self.pivot_y}, {self.scale_x}, {self.scale_y}, {self.rotation}, {self.alpha}, {self.glow}, {self.name})"
 
     def __str__(self) -> str:
+        """Gets the string representation of the part.
+
+        Returns:
+            str: The string representation of the part.
+        """
         return repr(self)
 
     def __eq__(self, other: Any) -> bool:
+        """Checks if the part is equal to another object.
+
+        Args:
+            other (Any): The other object.
+
+        Returns:
+            bool: True if the part is equal to the other object, False otherwise.
+        """
         if not isinstance(other, ModelPart):
             return False
         return (
@@ -493,23 +667,50 @@ class ModelPart:
         )
 
     def set_model(self, model: "model.Model"):
+        """Sets the model of the part.
+
+        Args:
+            model (model.Model): The model of the part.
+        """
         self.model = model
 
     def set_parent(self, parent: "ModelPart"):
+        """Sets the parent of the part.
+
+        Args:
+            parent (ModelPart): The parent of the part.
+        """
         self.parent = parent
 
     def set_parent_by_id(self, parent_id: int):
+        """Sets the parent of the part by id.
+
+        Args:
+            parent_id (int): The id of the parent of the part.
+        """
         if parent_id == -1:
             self.parent = None
         else:
             self.parent = self.model.get_part(parent_id)
 
     def set_children(self, all_parts: list["ModelPart"]):
+        """Sets the children of the part.
+
+        Args:
+            all_parts (list[ModelPart]): The list of all parts.
+        """
         for part in all_parts:
             if part.parent_id == self.index:
                 self.children.append(part)
 
     def set_units(self, scale_unit: int, angle_unit: int, alpha_unit: int):
+        """Sets the units of the part.
+
+        Args:
+            scale_unit (int): The number to divide the scale by to give a value between 0 and 1.
+            angle_unit (int): The number to divide the angle by to give a value between 0 and 1.
+            alpha_unit (int): The number to divide the alpha by to give a value between 0 and 1.
+        """
         self.scale_unit = scale_unit
         self.gsca = scale_unit
         self.angle_unit = angle_unit
@@ -520,7 +721,12 @@ class ModelPart:
         self.real_rotation = self.rotation / angle_unit
         self.real_alpha = self.alpha / alpha_unit
 
-    def set_part_anims(self, part_anims: list["unit_animation.PartAnim"]):
+    def set_part_anims(self, part_anims: list["unit_animation.KeyFrames"]):
+        """Sets the part animations of the part. The
+
+        Args:
+            part_anims (list[unit_animation.PartAnim]): The part animations of the part.
+        """
         self.part_anims = part_anims
         self.reset_anim()
 

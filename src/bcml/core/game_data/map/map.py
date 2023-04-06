@@ -1157,7 +1157,7 @@ class StageNameSet:
         self.map_index_type = map_index_type
         name_str = self.map_index_type.get_stage_name_name_type()
         if name_str is None:
-            raise ValueError(f"Invalid base stage id {base_stage_id}")
+            name_str = ""
         self.name_str = name_str
         self.names = names
 
@@ -1598,7 +1598,7 @@ class MapStageData:
             return None
         map_pattern = line_2[0].to_int()
 
-        for i, line in enumerate(csv.lines[2:]):
+        for stage_index, line in enumerate(csv.lines[2:]):
             energy = line[0].to_int()
             xp = line[1].to_int()
             mus_id0 = line[2].to_int()
@@ -1626,10 +1626,10 @@ class MapStageData:
                         )
                     )
             is_multi = (not is_time) and len(line) > 9
-            if (len(line) != 6) and is_multi:
+            if is_multi:
                 rand = line[8].to_int()
                 drop_length = (len(line) - 7) // 3
-                for i in range(1, drop_length):
+                for i in range(0, drop_length):
                     item_drops.append(
                         ItemDrop(
                             line[6 + i * 3].to_int(),
@@ -1646,9 +1646,9 @@ class MapStageData:
                     item_drops[0] = ItemDrop(
                         line[5].to_int(), line[6].to_int(), line[7].to_int()
                     )
-            data[i] = MapStageDataStage(
+            data[stage_index] = MapStageDataStage(
                 stage_id,
-                i,
+                stage_index,
                 energy,
                 xp,
                 mus_id0,
@@ -1861,15 +1861,17 @@ class Maps:
         stage_options = StageOption.from_game_data(game_data)
         maps: dict[int, Map] = {}
         stage_id = 0
-        while True:
+        while stage_id < 100000:
             stage_names = stage_name_sets.get(stage_id)
             if stage_names is None:
-                break
+                stage_id += 1
+                continue
             map = Map.from_game_data(
                 game_data, stage_id, map_options, stage_names, stage_options
             )
             if map is None:
-                break
+                stage_id += 1
+                continue
             maps[stage_id] = map
             stage_id += 1
         return Maps(maps)

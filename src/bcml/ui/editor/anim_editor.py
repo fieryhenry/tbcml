@@ -250,7 +250,7 @@ class PartGraphDrawer(QtWidgets.QWidget):
         model: anim.model.Model,
         parent: QtWidgets.QWidget,
         part: anim.model_part.ModelPart,
-        part_anim: anim.unit_animation.PartAnim,
+        part_anim: anim.unit_animation.KeyFrames,
         clock: utils.clock.Clock,
         width: int = 500,
     ):
@@ -320,15 +320,18 @@ class PartGraphDrawer(QtWidgets.QWidget):
         self.min_change_in_value = 0
         self.original_change: list[int] = []
         for frame in range(self.end_frame):
-            for move_index in range(len(self.part_anim.moves) - 1):
-                current_move = self.part_anim.moves[move_index]
-                next_move = self.part_anim.moves[move_index + 1]
-                current_move_start_frame = current_move.frame
-                next_move_start_frame = next_move.frame
-                if frame < current_move_start_frame or frame >= next_move_start_frame:
+            for keyframe_index in range(len(self.part_anim.keyframes) - 1):
+                current_keyframe = self.part_anim.keyframes[keyframe_index]
+                next_keyframe = self.part_anim.keyframes[keyframe_index + 1]
+                current_keyframe_start_frame = current_keyframe.frame
+                next_keyframe_start_frame = next_keyframe.frame
+                if (
+                    frame < current_keyframe_start_frame
+                    or frame >= next_keyframe_start_frame
+                ):
                     continue
                 else:
-                    change_in_value = int(self.part_anim.ease(move_index, frame))
+                    change_in_value = int(self.part_anim.ease(keyframe_index, frame))
                     break
             self.max_change_in_value = max(self.max_change_in_value, change_in_value)
             self.min_change_in_value = min(self.min_change_in_value, change_in_value)
@@ -348,15 +351,18 @@ class PartGraphDrawer(QtWidgets.QWidget):
         end_frame = self.end_frame
 
         for frame in range(end_frame):
-            for move_index in range(len(self.part_anim.moves) - 1):
-                current_move = self.part_anim.moves[move_index]
-                next_move = self.part_anim.moves[move_index + 1]
-                current_move_start_frame = current_move.frame
-                next_move_start_frame = next_move.frame
-                if frame < current_move_start_frame or frame >= next_move_start_frame:
+            for keyframe_index in range(len(self.part_anim.keyframes) - 1):
+                current_keyframe = self.part_anim.keyframes[keyframe_index]
+                next_keyframe = self.part_anim.keyframes[keyframe_index + 1]
+                current_keyframe_start_frame = current_keyframe.frame
+                next_keyframe_start_frame = next_keyframe.frame
+                if (
+                    frame < current_keyframe_start_frame
+                    or frame >= next_keyframe_start_frame
+                ):
                     continue
                 else:
-                    change_in_value = int(self.part_anim.ease(move_index, frame))
+                    change_in_value = int(self.part_anim.ease(keyframe_index, frame))
                     break
 
             if previous_value is None:
@@ -471,7 +477,7 @@ class PartAnimWidget(QtWidgets.QWidget):
         model: anim.model.Model,
         parent: QtWidgets.QWidget,
         part: anim.model_part.ModelPart,
-        part_anim: anim.unit_animation.PartAnim,
+        part_anim: anim.unit_animation.KeyFrames,
         clock: utils.clock.Clock,
         width: int,
     ):
@@ -713,7 +719,7 @@ class TimeLine(QtWidgets.QWidget):
 
         self.highlight_parts(self.highlighted_parts)
         self.view_parts_out([part_id])
-        self.view_moves(part_id)
+        self.view_keyframes(part_id)
         self.scroll_to_part(part_id)
 
     def scroll_to_part(self, part_id: int):
@@ -725,7 +731,7 @@ class TimeLine(QtWidgets.QWidget):
                     if widget.part_id == part_id:  # type: ignore
                         self.left_pannel_scroll_area.ensureWidgetVisible(widget)
 
-    def view_moves(self, part_id: int):
+    def view_keyframes(self, part_id: int):
         # delete items in time line
         main.clear_layout(self.time_line_group_layout)
 
