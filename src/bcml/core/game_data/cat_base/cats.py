@@ -295,7 +295,7 @@ class Stats:
         Returns:
             list[int]: The extended raw stats data.
         """
-        length = 108
+        length = 109
         amount = length - len(raw_data)
         required = (
             [55, -1],
@@ -416,6 +416,7 @@ class Stats:
         self.behemoth_dodge = unit.BehemothDodge.from_values(
             raw_data[106], raw_data[107]
         )
+        self.unknown_108 = raw_data[108]
 
     def to_raw_data(self) -> list[int]:
         return [
@@ -527,6 +528,7 @@ class Stats:
             int(self.behemoth_slayer),  # 105
             self.behemoth_dodge.prob.percent,  # 106
             self.behemoth_dodge.time.frames,  # 107
+            self.unknown_108,  # 108
         ]
 
     def serialize(self) -> dict[str, Any]:
