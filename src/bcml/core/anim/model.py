@@ -13,17 +13,17 @@ class ModelMetaData:
     def from_csv(csv: "io.bc_csv.CSV") -> "ModelMetaData":
         head_line = csv.read_line()
         if head_line is None:
-            raise RuntimeError("Invalid model file")
+            raise ValueError("Invalid model file")
         head_name = head_line[0].to_str()
 
         version_line = csv.read_line()
         if version_line is None:
-            raise RuntimeError("Invalid model file")
+            raise ValueError("Invalid model file")
         version_code = version_line[0].to_int()
 
         total_parts_line = csv.read_line()
         if total_parts_line is None:
-            raise RuntimeError("Invalid model file")
+            raise ValueError("Invalid model file")
         total_parts = total_parts_line[0].to_int()
 
         return ModelMetaData(head_name, version_code, total_parts)
