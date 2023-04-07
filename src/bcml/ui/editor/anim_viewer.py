@@ -52,14 +52,14 @@ class AnimViewer(QtWidgets.QWidget):
 
     def change_anim(self, index: int):
         self.model.set_keyframes_sets(index)
-        self.end_frame = self.model.get_end_frame()
+        self.total_frames = self.model.get_total_frames()
         self.index = index
 
     def setup_data(self):
         self.sorted_parts = self.model.get_sorted_parts()
         self.model.set_required()
         self.model.set_keyframes_sets(self.index)
-        self.end_frame = self.model.get_end_frame()
+        self.total_frames = self.model.get_total_frames()
 
     def setup_clock(self):
         fps = 30
@@ -139,7 +139,7 @@ class AnimViewer(QtWidgets.QWidget):
         overlay_part_id: Optional[int] = None,
     ):
         if self.force_repeat:
-            frame = self.get_frame() % self.end_frame
+            frame = self.get_frame() % self.total_frames
         else:
             frame = self.get_frame()
 
@@ -213,12 +213,12 @@ class PartViewer(QtWidgets.QWidget):
 
     def change_anim(self, index: int):
         self.model.set_keyframes_sets(index)
-        self.end_frame = self.model.get_end_frame()
+        self.total_frames = self.model.get_total_frames()
 
     def setup_data(self):
         self.model.set_required()
         self.model.set_keyframes_sets(self.anim_id)
-        self.end_frame = self.model.get_end_frame()
+        self.total_frames = self.model.get_total_frames()
 
     def setup_clock(self):
         self.clock.connect(self.update_frame)
@@ -293,7 +293,7 @@ class PartViewer(QtWidgets.QWidget):
         base_y: float,
     ):
         if self.force_repeat:
-            frame = self.clock.get_frame() % self.end_frame
+            frame = self.clock.get_frame() % self.total_frames
         else:
             frame = self.clock.get_frame()
 

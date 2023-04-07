@@ -125,9 +125,9 @@ class AnimViewerPage(QtWidgets.QWidget):
             self.anim_viewer_box.anim_viewer.clock,
         )
         self._layout.addWidget(self.part_viewer_box, 0, 1)
-        end_frame = self.model.get_end_frame()
+        total_frames = self.model.get_total_frames()
 
-        interval = end_frame // 30
+        interval = total_frames // 30
         if interval == 0:
             interval = 1
 
@@ -136,7 +136,7 @@ class AnimViewerPage(QtWidgets.QWidget):
         self.frame_slider_layout = QtWidgets.QVBoxLayout(self.frame_slider_group)
         self.frame_slider = utils.label_slider.LabeledSlider(
             0,
-            end_frame,
+            total_frames,
             interval,
             parent=self,
             value_changed_callback=self.update_frame,
@@ -252,6 +252,7 @@ class PartGraphDrawer(QtWidgets.QWidget):
         part: anim.model_part.ModelPart,
         keyframes: anim.unit_animation.KeyFrames,
         clock: utils.clock.Clock,
+        change_spin_box_value: Callable[[], None],
         width: int = 500,
     ):
         super(PartGraphDrawer, self).__init__(parent)
@@ -261,6 +262,8 @@ class PartGraphDrawer(QtWidgets.QWidget):
         self.current_frame = clock.get_frame()
         self.clock = clock
         self.width_ = width
+        self.change_spin_box_value = change_spin_box_value
+        self.selected_keyframe = None
         self.clock.connect(self.update_frame)
 
         self.locale_manager = locale_handler.LocalManager.from_config()
@@ -281,19 +284,22 @@ class PartGraphDrawer(QtWidgets.QWidget):
 
         self.setMinimumSize(self.width_, 100)
 
-        self.selection_box = QtCore.QRect(0, 0, 0, 0)
-        self.is_selecting = False
+        self.setMouseTracking(True)
 
     def setup_data(self):
-        self.end_frame = self.model.get_end_frame()
         self.total_width = self.width()
-        self.frame_width = self.total_width // self.end_frame
         self.fixed_height = 60
         self.y_offset = 20
         self.x_offset = 20
 
+        self.calc()
+
+    def calc(self):
+        self.total_frames = self.model.get_total_frames()
+        self.frame_width = self.total_width // self.total_frames
         self.calc_maxes()
         self.calc_true()
+        self.update()
 
     def set_frame(self, frame: int):
         self.current_frame = frame
@@ -305,6 +311,7 @@ class PartGraphDrawer(QtWidgets.QWidget):
 
     def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
         super(PartGraphDrawer, self).paintEvent(a0)
+        self.change_spin_box_value()
         self.painter = QtGui.QPainter(self)
 
         self.pen = QtGui.QPen()
@@ -312,9 +319,12 @@ class PartGraphDrawer(QtWidgets.QWidget):
         self.pen.setColor(QtGui.QColor(0, 0, 0))
         self.painter.setPen(self.pen)
 
+        self.draw_0_line()
+        self.draw_max_min_lines()
+
         self.draw_graph_true()
-        self.draw_overlay()
-        self.draw_selection_box()
+
+        self.draw_current_frame_line()
 
         self.painter.end()
 
@@ -323,7 +333,7 @@ class PartGraphDrawer(QtWidgets.QWidget):
         self.max_change_in_value = 0
         self.min_change_in_value = 0
         self.original_change: list[int] = []
-        for frame in range(self.end_frame):
+        for frame in range(self.total_frames):
             for keyframe_index in range(len(self.keyframes.keyframes) - 1):
                 current_keyframe = self.keyframes.keyframes[keyframe_index]
                 next_keyframe = self.keyframes.keyframes[keyframe_index + 1]
@@ -349,15 +359,16 @@ class PartGraphDrawer(QtWidgets.QWidget):
 
     def calc_true(self):
         change_in_value = 0
-        previous_value = None
-        self.changed: list[tuple[int, int]] = []
+        self.changed: list[int] = []
 
-        end_frame = self.end_frame
-
-        for frame in range(-1, end_frame):
+        for frame in range(self.total_frames):
             for keyframe_index in range(len(self.keyframes.keyframes) - 1):
                 current_keyframe = self.keyframes.keyframes[keyframe_index]
                 next_keyframe = self.keyframes.keyframes[keyframe_index + 1]
+                if frame == next_keyframe.frame:
+                    change_in_value = int(next_keyframe.change)
+                    break
+
                 current_keyframe_start_frame = current_keyframe.frame
                 next_keyframe_start_frame = next_keyframe.frame
                 if (
@@ -369,13 +380,8 @@ class PartGraphDrawer(QtWidgets.QWidget):
                     change_in_value = int(self.keyframes.ease(keyframe_index, frame))
                     break
 
-            if previous_value is None:
-                previous_value = change_in_value
-
             chng = int((self.max_change_in_value - change_in_value) * self.scale_factor)
-            png = int((self.max_change_in_value - previous_value) * self.scale_factor)
-            self.changed.append((chng, png))
-            previous_value = change_in_value
+            self.changed.append(chng)
 
     def get_keyframe(self, frame: int) -> Optional["anim.unit_animation.KeyFrame"]:
         for keyframe in self.keyframes.keyframes:
@@ -384,27 +390,29 @@ class PartGraphDrawer(QtWidgets.QWidget):
         return None
 
     def draw_graph_true(self):
-        end_frame = self.end_frame
         frame_width = self.frame_width
         if frame_width == 0:
             frame_width = 1
-        for frame in range(end_frame - 1):
+        for frame in range(self.total_frames - 1):
             # draw line from current frame to next frame using only horizontal and vertical lines
             # draw a horizontal line if the current frame and next frame have the same y value
             # draw a vertical line and then a horizontal line if the current frame and next frame have different y values
             # draw a vertical line if the current frame and next frame have the same x value
             # draw a horizontal line and then a vertical line if the current frame and next frame have different x values
-            x_pos = (frame * frame_width) + self.x_offset
-            y_pos = self.changed[frame][0] + self.y_offset
+            x_pos = ((frame) * frame_width) + self.x_offset
+            y_pos = self.changed[frame] + self.y_offset
             next_x_pos = ((frame + 1) * frame_width) + self.x_offset
-            next_y_pos = self.changed[frame + 1][0] + self.y_offset
+            next_y_pos = self.changed[frame + 1] + self.y_offset
 
-            if y_pos == next_y_pos:
+            if y_pos == next_y_pos:  # horizontal line
                 self.painter.drawLine(x_pos, y_pos, next_x_pos, next_y_pos)
-            else:
+            elif x_pos == next_x_pos:  # vertical line
+                self.painter.drawLine(x_pos, y_pos, x_pos, next_y_pos)
+            else:  # horizontal and vertical lines
                 self.painter.drawLine(x_pos, y_pos, x_pos, next_y_pos)
                 self.painter.drawLine(x_pos, next_y_pos, next_x_pos, next_y_pos)
 
+        for frame in range(self.total_frames):
             keyframe = self.get_keyframe(frame)
             if keyframe is not None:
                 self.draw_keyframe(keyframe)
@@ -412,13 +420,19 @@ class PartGraphDrawer(QtWidgets.QWidget):
     def draw_keyframe(self, keyframe: "anim.unit_animation.KeyFrame"):
         frame = keyframe.frame
         x_pos = (frame * self.frame_width) + self.x_offset
-        y_pos = self.changed[frame + 1][0] + self.y_offset
+        y_pos = self.changed[frame] + self.y_offset
         current_pen = self.painter.pen()
         pen = QtGui.QPen()
         pen.setWidth(1)
-        pen.setColor(QtGui.QColor(0, 255, 255))
+        pen_color = QtGui.QColor(0, 255, 255)
+        brush_color = QtGui.QColor(0, 255, 255, 100)
+        if self.selected_keyframe is not None and keyframe == self.selected_keyframe:
+            pen_color = QtGui.QColor(255, 255, 0)
+            brush_color = QtGui.QColor(255, 255, 0, 100)
+
+        pen.setColor(pen_color)
         self.painter.setPen(pen)
-        self.painter.setBrush(QtGui.QColor(0, 255, 255, 100))
+        self.painter.setBrush(brush_color)
         self.painter.drawEllipse(x_pos - 4, y_pos - 4, 8, 8)
         self.painter.setPen(current_pen)
 
@@ -428,7 +442,7 @@ class PartGraphDrawer(QtWidgets.QWidget):
         pen.setColor(QtGui.QColor(255, 0, 0))
         self.painter.setPen(pen)
 
-        current_frame = self.clock.get_frame() % self.end_frame
+        current_frame = self.clock.get_frame() % self.total_frames
         x_pos = (current_frame * self.frame_width) + self.x_offset
         y_pos1 = self.y_offset
         y_pos2 = self.fixed_height + self.y_offset
@@ -442,13 +456,14 @@ class PartGraphDrawer(QtWidgets.QWidget):
         self.pen.setColor(QtGui.QColor(0, 0, 0))
 
     def draw_0_line(self):
+        current_pen = self.painter.pen()
         grey = QtGui.QColor(200, 200, 200)
         pen = QtGui.QPen()
         pen.setWidth(1)
         pen.setColor(grey)
         self.painter.setPen(pen)
         x_pos1 = self.x_offset
-        x_pos2 = ((self.end_frame - 1) * self.frame_width) + self.x_offset
+        x_pos2 = ((self.total_frames) * self.frame_width) + self.x_offset
         y_pos = int((self.max_change_in_value) * self.scale_factor) + self.y_offset
         self.painter.drawLine(
             x_pos1,
@@ -464,42 +479,130 @@ class PartGraphDrawer(QtWidgets.QWidget):
             y_pos + 5,
             "0",
         )
+        self.painter.setPen(current_pen)
 
-    def draw_overlay(self):
-        self.draw_0_line()
-        self.draw_current_frame_line()
+    def draw_max_min_lines(self):
+        self.draw_max_line()
+        self.draw_min_line()
+
+    def draw_max_line(self):
+        if self.max_change_in_value == 0:
+            return
+        current_pen = self.painter.pen()
+        grey = QtGui.QColor(200, 200, 200)
+        pen = QtGui.QPen()
+        pen.setWidth(1)
+        pen.setColor(grey)
+        self.painter.setPen(pen)
+        x_pos1 = self.x_offset
+        x_pos2 = ((self.total_frames) * self.frame_width) + self.x_offset
+        y_pos = (
+            int(
+                (self.max_change_in_value - self.max_change_in_value)
+                * self.scale_factor
+            )
+            + self.y_offset
+        )
+        self.painter.drawLine(
+            x_pos1,
+            y_pos,
+            x_pos2,
+            y_pos,
+        )
+        self.pen.setColor(QtGui.QColor(0, 0, 0))
+
+        # draw the text 0
+        self.painter.drawText(
+            self.x_offset - 10,
+            y_pos + 5,
+            str(self.max_change_in_value),
+        )
+        self.painter.setPen(current_pen)
+
+    def draw_min_line(self):
+        if self.min_change_in_value == 0:
+            return
+        current_pen = self.painter.pen()
+        grey = QtGui.QColor(200, 200, 200)
+        pen = QtGui.QPen()
+        pen.setWidth(1)
+        pen.setColor(grey)
+        self.painter.setPen(pen)
+        x_pos1 = self.x_offset
+        x_pos2 = ((self.total_frames) * self.frame_width) + self.x_offset
+        y_pos = (
+            int(
+                (self.max_change_in_value - self.min_change_in_value)
+                * self.scale_factor
+            )
+            + self.y_offset
+        )
+        self.painter.drawLine(
+            x_pos1,
+            y_pos,
+            x_pos2,
+            y_pos,
+        )
+        self.pen.setColor(QtGui.QColor(0, 0, 0))
+
+        # draw the text 0
+        self.painter.drawText(
+            self.x_offset - 10,
+            y_pos + 5,
+            str(self.min_change_in_value),
+        )
+        self.painter.setPen(current_pen)
 
     def get_change_in_value(self) -> int:
-        frame = self.clock.get_frame() % self.end_frame
+        frame = self.clock.get_frame() % self.total_frames
         val = self.original_change[frame]
         return val
 
-    # draw selection box
-    def draw_selection_box(self):
-        pen = QtGui.QPen()
-        pen.setWidth(1)
-        pen.setColor(QtGui.QColor(0, 255, 255))
+    def set_keyframe(self, original_frame: int, new_frame: int, change: float):
+        keyframe = self.get_keyframe(original_frame)
+        if keyframe is not None:
+            keyframe.change = int(change)
+            keyframe.frame = new_frame
+            self.calc()
 
-        self.painter.setPen(pen)
-        self.painter.fillRect(self.selection_box, QtGui.QColor(0, 255, 255, 50))
+    def get_frame_from_pos(self, x_pos: int) -> int:
+        frame = int((x_pos - self.x_offset) / self.frame_width)
+        return frame
 
-    def mouseMoveEvent(self, a0: QtGui.QMouseEvent) -> None:
-        if self.is_selecting:
-            self.selection_box.setBottomRight(a0.pos())
+    # select a keyframe if the mouse is clicked over it
+    def mousePressEvent(self, a0: QtGui.QMouseEvent):
+        x_pos = a0.pos().x()
+        y_pos = a0.pos().y()
+        frame = self.get_frame_from_pos(x_pos)
+        keyframe = self.get_keyframe(frame)
+        if keyframe is not None:
+            self.selected_keyframe = keyframe
+            self.selected_keyframe_original_frame = keyframe.frame
+            self.selected_keyframe_original_change = keyframe.change
+            self.selected_keyframe_original_x_pos = x_pos
+            self.selected_keyframe_original_y_pos = y_pos
+            self.selected_keyframe_original_value = self.get_change_in_value()
             self.update()
+        else:
+            self.selected_keyframe = None
 
-    def mousePressEvent(self, a0: QtGui.QMouseEvent) -> None:
-        self.is_selecting = True
-        self.selection_box.setTopLeft(a0.pos())
-        self.selection_box.setBottomRight(a0.pos())
-        self.update()
-
-    def mouseReleaseEvent(self, a0: QtGui.QMouseEvent) -> None:
-        self.is_selecting = False
-        self.update()
-
-    def is_in_selection_box(self, x: int, y: int) -> bool:
-        return self.selection_box.contains(x, y)
+    # move the keyframe with arrow keys
+    def move_keyframe(self, a0: QtGui.QKeyEvent):
+        if self.selected_keyframe is not None:
+            if a0.key() == QtCore.Qt.Key.Key_Left:
+                self.selected_keyframe.frame -= 1
+                self.calc()
+            elif a0.key() == QtCore.Qt.Key.Key_Right:
+                self.selected_keyframe.frame += 1
+                self.calc()
+            elif a0.key() == QtCore.Qt.Key.Key_Up:
+                self.selected_keyframe.change += 1
+                print(self.selected_keyframe.change)
+                self.calc()
+            elif a0.key() == QtCore.Qt.Key.Key_Down:
+                self.selected_keyframe.change -= 1
+                print(self.selected_keyframe.change)
+                self.calc()
 
 
 class PartAnimWidget(QtWidgets.QWidget):
@@ -511,6 +614,7 @@ class PartAnimWidget(QtWidgets.QWidget):
         keyframes: anim.unit_animation.KeyFrames,
         clock: utils.clock.Clock,
         width: int,
+        update_callback: Callable[[], None],
     ):
         super(PartAnimWidget, self).__init__(parent)
         self.model = model
@@ -518,6 +622,7 @@ class PartAnimWidget(QtWidgets.QWidget):
         self.keyframes = keyframes
         self.clock = clock
         self.width_ = width
+        self.update_callback = update_callback
 
         self.locale_manager = locale_handler.LocalManager.from_config()
         self.setup_ui()
@@ -540,6 +645,7 @@ class PartAnimWidget(QtWidgets.QWidget):
             self.part,
             self.keyframes,
             self.clock,
+            self.update_spin_box,
             self.width_,
         )
         self._layout.addWidget(self.keyframes_graph)
@@ -555,22 +661,26 @@ class PartAnimWidget(QtWidgets.QWidget):
         )
         self.change_in_value_spinbox.setReadOnly(True)
         self._layout.addWidget(self.change_in_value_spinbox)
-        self.clock.connect(self.change_spin_box)
+        self.clock.connect(self.update_spin_box)
 
         self._layout.addStretch(1)
 
     def set_frame(self, frame: int):
         self.keyframes_graph.set_frame(frame)
-        self.change_spin_box()
+        self.update_spin_box()
 
     def disconnect_clock(self):
-        self.clock.disconnect(self.change_spin_box)
+        self.clock.disconnect(self.update_spin_box)
         self.keyframes_graph.disconnect_clock()
 
-    def change_spin_box(self):
+    def update_spin_box(self):
         self.change_in_value_spinbox.setValue(
             self.keyframes_graph.get_change_in_value()
         )
+        self.update_callback()
+
+    def move_keyframe(self, a0: QtGui.QKeyEvent) -> None:
+        self.keyframes_graph.move_keyframe(a0)
 
 
 class PartLeftPannel(QtWidgets.QWidget):
@@ -665,6 +775,7 @@ class TimeLine(QtWidgets.QWidget):
         view_parts: Callable[..., None],
         anim_id: int,
         clock: utils.clock.Clock,
+        update_callback: Callable[..., None],
     ):
         super(TimeLine, self).__init__(parent)
         self.model = model
@@ -672,6 +783,7 @@ class TimeLine(QtWidgets.QWidget):
         self.highlighted_parts: list[int] = []
         self.anim_id = anim_id
         self.clock = clock
+        self.update_callback = update_callback
 
         self.locale_manager = locale_handler.LocalManager.from_config()
         self.setup_ui()
@@ -715,6 +827,7 @@ class TimeLine(QtWidgets.QWidget):
         self.time_line_scroll_area.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
         self.time_line_scroll_area.setFrameShadow(QtWidgets.QFrame.Shadow.Plain)
         self.time_line_scroll_area.setLineWidth(0)
+        self.time_line_scroll_area.keyPressEvent = self.keyPressEvent
 
         self.time_line_group = QtWidgets.QGroupBox(self.time_line_scroll_area)
         self.time_line_group.setObjectName("time_line_group")
@@ -771,7 +884,13 @@ class TimeLine(QtWidgets.QWidget):
 
         for i, keyframes in enumerate(part.keyframes_sets):
             keyframes_widget = PartAnimWidget(
-                self.model, self, part, keyframes, self.clock, width
+                self.model,
+                self,
+                part,
+                keyframes,
+                self.clock,
+                width,
+                self.update_callback,
             )
             self.time_line_group_layout.addWidget(keyframes_widget)
             if i != len(part.keyframes_sets) - 1:
@@ -802,15 +921,24 @@ class TimeLine(QtWidgets.QWidget):
                         widget.unhighlight()  # type: ignore
 
     def keyPressEvent(self, a0: QtGui.QKeyEvent):
-        shift: bool = a0.modifiers() & QtCore.Qt.KeyboardModifier.ShiftModifier
-        if a0.key() == QtCore.Qt.Key.Key_Up:
-            self.view_part(
-                self.get_top_highlighted_part() - 1, override_highlight=not shift
-            )
-        elif a0.key() == QtCore.Qt.Key.Key_Down:
-            self.view_part(
-                self.get_bottom_highlighted_part() + 1, override_highlight=not shift
-            )
+        # if focus is on left pannel, scroll to part
+        if self.left_pannel_scroll_area.hasFocus():
+            shift: bool = a0.modifiers() & QtCore.Qt.KeyboardModifier.ShiftModifier
+            if a0.key() == QtCore.Qt.Key.Key_Up:
+                self.view_part(
+                    self.get_top_highlighted_part() - 1, override_highlight=not shift
+                )
+            elif a0.key() == QtCore.Qt.Key.Key_Down:
+                self.view_part(
+                    self.get_bottom_highlighted_part() + 1, override_highlight=not shift
+                )
+        elif self.time_line_scroll_area.hasFocus():
+            for i in range(self.time_line_group_layout.count()):
+                item = self.time_line_group_layout.itemAt(i)
+                if isinstance(item, QtWidgets.QWidgetItem):
+                    widget = item.widget()
+                    if isinstance(widget, PartAnimWidget):
+                        widget.move_keyframe(a0)
 
     def get_top_highlighted_part(self) -> int:
         for i in range(self.left_pannel_group_layout.count()):
@@ -885,6 +1013,7 @@ class AnimEditor(QtWidgets.QWidget):
             self.view_parts,
             self.anim_id,
             self.anim_viewer_page.anim_viewer_box.anim_viewer.clock,
+            self.update_anim,
         )
         self._layout.addWidget(self.part_timeline, 1, 0)
 
@@ -894,6 +1023,10 @@ class AnimEditor(QtWidgets.QWidget):
         self.anim_viewer_page.part_viewer_box.update()
 
         self.part_timeline.set_frame(frame)
+
+    def update_anim(self):
+        self.anim_viewer_page.anim_viewer_box.update()
+        self.anim_viewer_page.part_viewer_box.update()
 
     def frame_tick(self):
         pass

@@ -435,3 +435,6 @@ class Model:
         for part in self.mamodel.parts:
             end_frame = max(end_frame, part.get_end_frame())
         return end_frame
+
+    def get_total_frames(self) -> int:
+        return self.get_end_frame() + 1

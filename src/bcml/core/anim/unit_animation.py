@@ -453,6 +453,9 @@ class KeyFrames:
         else:
             raise Exception("Unknown ease mode")
 
+    def add_keyframe(self, keyframe: "KeyFrame"):
+        self.keyframes.append(keyframe)
+
 
 class UnitAnimMetaData:
     def __init__(self, head_name: str, version_code: int, total_parts: int):
