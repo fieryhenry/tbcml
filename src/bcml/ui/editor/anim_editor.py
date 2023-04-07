@@ -938,7 +938,7 @@ class TimeLine(QtWidgets.QWidget):
                 if isinstance(item, QtWidgets.QWidgetItem):
                     widget = item.widget()
                     if isinstance(widget, PartAnimWidget):
-                        widget.move_keyframe(a0)
+                        widget.move_keyframe(a0)  # type: ignore
 
     def get_top_highlighted_part(self) -> int:
         for i in range(self.left_pannel_group_layout.count()):
