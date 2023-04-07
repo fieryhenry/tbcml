@@ -2,7 +2,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from bcml.core import locale_handler, anim
 from bcml.ui.editor import anim_viewer
 from bcml.ui import utils, main
-from typing import Callable
+from typing import Callable, Optional
 
 
 class AnimViewerBox(QtWidgets.QGroupBox):
@@ -281,6 +281,9 @@ class PartGraphDrawer(QtWidgets.QWidget):
 
         self.setMinimumSize(self.width_, 100)
 
+        self.selection_box = QtCore.QRect(0, 0, 0, 0)
+        self.is_selecting = False
+
     def setup_data(self):
         self.end_frame = self.model.get_end_frame()
         self.total_width = self.width()
@@ -311,6 +314,7 @@ class PartGraphDrawer(QtWidgets.QWidget):
 
         self.draw_graph_true()
         self.draw_overlay()
+        self.draw_selection_box()
 
         self.painter.end()
 
@@ -350,7 +354,7 @@ class PartGraphDrawer(QtWidgets.QWidget):
 
         end_frame = self.end_frame
 
-        for frame in range(end_frame):
+        for frame in range(-1, end_frame):
             for keyframe_index in range(len(self.keyframes.keyframes) - 1):
                 current_keyframe = self.keyframes.keyframes[keyframe_index]
                 next_keyframe = self.keyframes.keyframes[keyframe_index + 1]
@@ -373,50 +377,50 @@ class PartGraphDrawer(QtWidgets.QWidget):
             self.changed.append((chng, png))
             previous_value = change_in_value
 
+    def get_keyframe(self, frame: int) -> Optional["anim.unit_animation.KeyFrame"]:
+        for keyframe in self.keyframes.keyframes:
+            if keyframe.frame == frame:
+                return keyframe
+        return None
+
     def draw_graph_true(self):
         end_frame = self.end_frame
         frame_width = self.frame_width
         if frame_width == 0:
             frame_width = 1
-        for frame in range(1, end_frame):
-            # draw line from previous frame to current fram using only horizontal and vertical lines
-            # draw a horizontal line if the previous frame and current frame have the same y value
-            # draw a vertical line and then a horizontal line if the previous frame and current frame have different y values
-            # draw a vertical line if the previous frame and current frame have the same x value
-            # draw a horizontal line and then a vertical line if the previous frame and current frame have different x values
-            previous_frame = frame - 1
-            previous_frame_x = (previous_frame * frame_width) + self.x_offset
-            previous_frame_y = self.changed[previous_frame][0] + self.y_offset
-            current_frame_x = (frame * frame_width) + self.x_offset
-            current_frame_y = self.changed[frame][0] + self.y_offset
+        for frame in range(end_frame - 1):
+            # draw line from current frame to next frame using only horizontal and vertical lines
+            # draw a horizontal line if the current frame and next frame have the same y value
+            # draw a vertical line and then a horizontal line if the current frame and next frame have different y values
+            # draw a vertical line if the current frame and next frame have the same x value
+            # draw a horizontal line and then a vertical line if the current frame and next frame have different x values
+            x_pos = (frame * frame_width) + self.x_offset
+            y_pos = self.changed[frame][0] + self.y_offset
+            next_x_pos = ((frame + 1) * frame_width) + self.x_offset
+            next_y_pos = self.changed[frame + 1][0] + self.y_offset
 
-            if previous_frame_x == current_frame_x:
-                self.painter.drawLine(
-                    previous_frame_x,
-                    previous_frame_y,
-                    current_frame_x,
-                    current_frame_y,
-                )
-            elif previous_frame_y == current_frame_y:
-                self.painter.drawLine(
-                    previous_frame_x,
-                    previous_frame_y,
-                    current_frame_x,
-                    current_frame_y,
-                )
+            if y_pos == next_y_pos:
+                self.painter.drawLine(x_pos, y_pos, next_x_pos, next_y_pos)
             else:
-                self.painter.drawLine(
-                    previous_frame_x,
-                    previous_frame_y,
-                    previous_frame_x,
-                    current_frame_y,
-                )
-                self.painter.drawLine(
-                    previous_frame_x,
-                    current_frame_y,
-                    current_frame_x,
-                    current_frame_y,
-                )
+                self.painter.drawLine(x_pos, y_pos, x_pos, next_y_pos)
+                self.painter.drawLine(x_pos, next_y_pos, next_x_pos, next_y_pos)
+
+            keyframe = self.get_keyframe(frame)
+            if keyframe is not None:
+                self.draw_keyframe(keyframe)
+
+    def draw_keyframe(self, keyframe: "anim.unit_animation.KeyFrame"):
+        frame = keyframe.frame
+        x_pos = (frame * self.frame_width) + self.x_offset
+        y_pos = self.changed[frame + 1][0] + self.y_offset
+        current_pen = self.painter.pen()
+        pen = QtGui.QPen()
+        pen.setWidth(1)
+        pen.setColor(QtGui.QColor(0, 255, 255))
+        self.painter.setPen(pen)
+        self.painter.setBrush(QtGui.QColor(0, 255, 255, 100))
+        self.painter.drawEllipse(x_pos - 4, y_pos - 4, 8, 8)
+        self.painter.setPen(current_pen)
 
     def draw_current_frame_line(self):
         pen = QtGui.QPen()
@@ -469,6 +473,33 @@ class PartGraphDrawer(QtWidgets.QWidget):
         frame = self.clock.get_frame() % self.end_frame
         val = self.original_change[frame]
         return val
+
+    # draw selection box
+    def draw_selection_box(self):
+        pen = QtGui.QPen()
+        pen.setWidth(1)
+        pen.setColor(QtGui.QColor(0, 255, 255))
+
+        self.painter.setPen(pen)
+        self.painter.fillRect(self.selection_box, QtGui.QColor(0, 255, 255, 50))
+
+    def mouseMoveEvent(self, a0: QtGui.QMouseEvent) -> None:
+        if self.is_selecting:
+            self.selection_box.setBottomRight(a0.pos())
+            self.update()
+
+    def mousePressEvent(self, a0: QtGui.QMouseEvent) -> None:
+        self.is_selecting = True
+        self.selection_box.setTopLeft(a0.pos())
+        self.selection_box.setBottomRight(a0.pos())
+        self.update()
+
+    def mouseReleaseEvent(self, a0: QtGui.QMouseEvent) -> None:
+        self.is_selecting = False
+        self.update()
+
+    def is_in_selection_box(self, x: int, y: int) -> bool:
+        return self.selection_box.contains(x, y)
 
 
 class PartAnimWidget(QtWidgets.QWidget):
