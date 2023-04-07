@@ -414,7 +414,7 @@ class CatEditor(QtWidgets.QWidget):
             return
         cat: "game_data.cat_base.cats.Cat" = cat_widget.cat  # type: ignore
 
-        self.cat_editor = CatEditScreen(cat, self.on_save, self)
+        self.cat_editor = CatEditScreen(cat, self.on_save, self) # type: ignore
         self.cat_editor.show()
 
     def save(self):
