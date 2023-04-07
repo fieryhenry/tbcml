@@ -351,7 +351,7 @@ class ApkDownloader(QtWidgets.QWidget):
             self.add_call(apk)
 
     def download_thread(self, apk: io.apk.Apk):
-        apk.download_apk()  # self.progress_bar.set_progress_full)
+        apk.download_apk(self.progress_bar.set_progress_full)
 
     def select_element(self, apk: io.apk.Apk):
         for i in range(self.downloadable_apks_layout.count()):
