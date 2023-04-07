@@ -722,25 +722,45 @@ class ModelPart:
         self.real_alpha = self.alpha / alpha_unit
 
     def set_keyframes_sets(self, keyframes_sets: list["unit_animation.KeyFrames"]):
-        """Sets the part animations of the part. The
+        """Sets the keyframes sets of the part. Also resets the animation.
 
         Args:
-            keyframes_sets (list[unit_animation.PartAnim]): The part animations of the part.
+            keyframes_sets (list[unit_animation.KeyFrames]): The keyframes sets of the part.
         """
         self.keyframes_sets = keyframes_sets
         self.reset_anim()
 
     def set_ints(self, ints: list[list[int]]):
+        """Sets the ints of the part. This has something to do with scaling and hitboxes but i haven't really looked into it.
+
+        Args:
+            ints (list[list[int]]): The ints of the part.
+        """
         self.ints = ints
 
     def set_unit_id(self, unit_id: int):
+        """Sets the unit id of the part. This is the id of the unit that the part belongs to.
+
+        Args:
+            unit_id (int): The unit id of the part.
+        """
         self.unit_id = unit_id
 
     @staticmethod
     def create_empty(index: int) -> "ModelPart":
+        """Creates an empty part.
+
+        Args:
+            index (int): The index of the part in the model.
+
+        Returns:
+            ModelPart: The empty part.
+        """
         return ModelPart(index, -1, -1, -1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, "")
 
     def reset_anim(self):
+        """Resets the animation of the part to the original values."""
+
         self.x = self.pos_x_orig
         self.y = self.pos_y_orig
         self.pivot_x = self.pivot_x_orig
@@ -762,6 +782,11 @@ class ModelPart:
         self.real_scale_y = self.scale_y / self.scale_unit
 
     def get_all_children(self) -> list["ModelPart"]:
+        """Gets all the children of the part.
+
+        Returns:
+            list[ModelPart]: The list of all the children of the part.
+        """        
         children: list["ModelPart"] = []
         for child in self.children:
             children.append(child)
