@@ -121,7 +121,7 @@ class Mod:
         mod.localizable = game_data.pack.Localizable.from_zip(zip_file)
 
         mod.scripts = mods.frida_script.Scripts.from_zip(
-            zip_file, mod.country_code, mod.game_version
+            zip_file, mod.country_code, mod.game_version, mod
         )
 
         return mod
