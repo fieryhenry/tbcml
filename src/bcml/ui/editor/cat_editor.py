@@ -6,7 +6,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 from bcml.core import game_data, io, locale_handler, mods
 from bcml.ui.utils import ui_thread
-from bcml.ui.editor import anim_viewer, anim_editor
+from bcml.ui.ui_anim import anim_editor, anim_viewer
 
 
 class SearchMode(enum.Enum):
@@ -414,7 +414,7 @@ class CatEditor(QtWidgets.QWidget):
             return
         cat: "game_data.cat_base.cats.Cat" = cat_widget.cat  # type: ignore
 
-        self.cat_editor = CatEditScreen(cat, self.on_save, self) # type: ignore
+        self.cat_editor = CatEditScreen(cat, self.on_save, self)  # type: ignore
         self.cat_editor.show()
 
     def save(self):

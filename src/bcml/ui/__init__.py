@@ -5,6 +5,7 @@ from bcml.ui import (
     mods,
     server_files_manager,
     utils,
+    ui_anim,
 )
 
 __all__ = [
@@ -14,4 +15,5 @@ __all__ = [
     "editor",
     "mods",
     "utils",
+    "ui_anim",
 ]

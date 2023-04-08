@@ -26,19 +26,29 @@ class LabeledSlider(QWidget):
     ):
         super(LabeledSlider, self).__init__(parent=parent)
         self.value_changed_callback = value_changed_callback
+        self.maximum = maximum
+        self.minimum = minimum
+        self.interval = interval
+        self.orientation = orientation
+        self.labels = labels
+        self.p0 = p0
+        self.setup_ui()
 
-        levels = range(minimum, maximum, interval)
+    def generate_labels(self):
+        levels = range(self.minimum, self.maximum, self.interval)
 
-        if labels is not None:
-            if len(labels) != len(levels):
+        if self.labels is not None:
+            if len(self.labels) != len(levels):
                 raise Exception("Size of <labels> doesn't match levels.")
-            self.levels = list(zip(levels, labels))
+            self.levels = list(zip(levels, self.labels))
         else:
             self.levels = list(zip(levels, map(str, levels)))
 
-        if orientation == Qt.Orientation.Horizontal:
+    def setup_ui(self):
+        self.generate_labels()
+        if self.orientation == Qt.Orientation.Horizontal:
             self._layout = QVBoxLayout(self)
-        elif orientation == Qt.Orientation.Vertical:
+        elif self.orientation == Qt.Orientation.Vertical:
             self._layout = QHBoxLayout(self)
         else:
             raise Exception("<orientation> wrong.")
@@ -53,26 +63,25 @@ class LabeledSlider(QWidget):
             self.left_margin, self.top_margin, self.right_margin, self.bottom_margin
         )
 
-        self.sl = QSlider(orientation, self)
-        self.sl.setMinimum(minimum)
-        self.sl.setMaximum(maximum)
-        self.sl.setValue(minimum)
-        self.sl.setSliderPosition(p0)
+        self.sl = QSlider(self.orientation, self)
+        self.sl.setMinimum(self.minimum)
+        self.sl.setMaximum(self.maximum)
+        self.sl.setValue(self.minimum)
+        self.sl.setSliderPosition(self.p0)
         if self.value_changed_callback is not None:
             self.sl.valueChanged.connect(self.value_changed_callback)
-        if orientation == Qt.Orientation.Horizontal:
+        if self.orientation == Qt.Orientation.Horizontal:
             self.sl.setTickPosition(QSlider.TickPosition.TicksBelow)
             self.sl.setMinimumWidth(300)  # just to make it easier to read
         else:
             self.sl.setTickPosition(QSlider.TickPosition.TicksLeft)
             self.sl.setMinimumHeight(300)  # just to make it easier to read
-        self.sl.setTickInterval(interval)
+        self.sl.setTickInterval(self.interval)
         self.sl.setSingleStep(1)
 
         self._layout.addWidget(self.sl)
 
     def paintEvent(self, a0: QPaintEvent):
-
         super(LabeledSlider, self).paintEvent(a0)
         style = self.sl.style()
         painter = QPainter(self)
@@ -88,7 +97,6 @@ class LabeledSlider(QWidget):
         )
 
         for v, v_str in self.levels:
-
             # get the size of the label
             rect = painter.drawText(QRect(), Qt.TextFlag.TextDontPrint, v_str)
 
@@ -157,3 +165,16 @@ class LabeledSlider(QWidget):
             self.sl.setValue(value)
         except OverflowError:
             pass
+        self.update()
+
+    def set_maximum(self, value: int):
+        self.maximum = value
+        self.sl.setMaximum(value)
+        self.generate_labels()
+        self.update()
+
+    def set_interval(self, value: int):
+        self.interval = value
+        self.sl.setTickInterval(value)
+        self.generate_labels()
+        self.update()
