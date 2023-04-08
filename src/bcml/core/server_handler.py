@@ -1,4 +1,7 @@
 import base64
+import datetime
+import hashlib
+import hmac
 import json
 import time
 from typing import Optional, Callable
@@ -237,3 +240,91 @@ oPSxLzYw2sBjmwVooXMVr6GxEw==
         policy = self.make_policy(url)
         signature = self.generate_signature(policy)
         return f"CloudFront-Key-Pair-Id={self.cf_key_pair_id}; CloudFront-Policy={self.aws_base64_encode(policy.encode()).decode()}; CloudFront-Signature={signature}"
+
+
+class EventData:
+    def __init__(self, file_name: str):
+        self.aws_access_key_id = "AKIAJCUP3WWCHRJDTPPQ"
+        self.aws_secret_access_key = "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"
+        self.region = "ap-northeast-1"
+        self.service = "s3"
+        self.request = "aws4_request"
+        self.algorithm = "AWS4-HMAC-SHA256"
+        self.domain = "nyanko-events-prd.s3.ap-northeast-1.amazonaws.com"
+
+        self.url = f"https://{self.domain}/battlecatsen_production/{file_name}"
+
+    def get_auth_header(self):
+        output = self.algorithm + " "
+        output += f"Credential={self.aws_access_key_id}/{self.get_date()}/{self.region}/{self.service}/{self.request}, "
+        output += f"SignedHeaders=host;x-amz-content-sha256;x-amz-date, "
+        signature = self.get_signing_key(self.get_amz_date())
+        output += f"Signature={signature.hex()}"
+
+        return output
+
+    def get_date(self):
+        return datetime.datetime.utcnow().strftime("%Y%m%d")
+
+    def get_amz_date(self):
+        return datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+
+    def get_signing_key(self, amz: str):
+        k = ("AWS4" + self.aws_secret_access_key).encode()
+        k_date = self.hmacsha256(k, self.get_date())
+        date_region_key = self.hmacsha256(k_date, self.region)
+        date_region_service_key = self.hmacsha256(date_region_key, self.service)
+        signing_key = self.hmacsha256(date_region_service_key, self.request)
+
+        string_to_sign = self.get_string_to_sign(amz)
+
+        final = self.hmacsha256(signing_key, string_to_sign)
+        return final
+
+    def hmacsha256(self, key: bytes, message: str) -> bytes:
+        return hmac.new(key, message.encode(), hashlib.sha256).digest()
+
+    def get_string_to_sign(self, amz: str):
+        output = self.algorithm + "\n"
+        output += amz + "\n"
+        output += (
+            self.get_date()
+            + "/"
+            + self.region
+            + "/"
+            + self.service
+            + "/"
+            + self.request
+            + "\n"
+        )
+        request = self.get_canonical_request(amz)
+        output += hashlib.sha256(request.encode()).hexdigest()
+        return output
+
+    def get_canonical_request(self, amz: str):
+        output = "GET\n"
+        output += self.get_canonical_uri() + "\n" + "\n"
+        output += "host:" + self.domain + "\n"
+        output += "x-amz-content-sha256:UNSIGNED-PAYLOAD\n"
+        output += "x-amz-date:" + amz + "\n"
+        output += "\n"
+        output += "host;x-amz-content-sha256;x-amz-date\n"
+        output += "UNSIGNED-PAYLOAD"
+        return output
+
+    def get_canonical_uri(self):
+        return self.url.split(self.domain)[1]
+
+    def make_request(self):
+        url = self.url
+        headers = {
+            "accept-encoding": "gzip",
+            "authorization": self.get_auth_header(),
+            "connection": "keep-alive",
+            "host": self.domain,
+            "user-agent": "Dalvik/2.1.0 (Linux; U; Android 9; Pixel 2 Build/PQ3A.190801.002)",
+            "x-amz-content-sha256": "UNSIGNED-PAYLOAD",
+            "x-amz-date": self.get_amz_date(),
+        }
+
+        return request.RequestHandler(url, headers=headers).get()
