@@ -1,5 +1,6 @@
 import enum
 import hashlib
+import hmac
 import random
 from typing import Optional
 from Cryptodome.Cipher import AES
@@ -13,11 +14,14 @@ class HashAlgorithm(enum.Enum):
 
 
 class Hash:
-    def __init__(self, algorithm: HashAlgorithm, data: "io.data.Data"):
+    def __init__(self, algorithm: HashAlgorithm):
         self.algorithm = algorithm
-        self.data = data
 
-    def get_hash(self, length: Optional[int] = None) -> "io.data.Data":
+    def get_hash(
+        self,
+        data: "io.data.Data",
+        length: Optional[int] = None,
+    ) -> "io.data.Data":
         if self.algorithm == HashAlgorithm.MD5:
             hash = hashlib.md5()
         elif self.algorithm == HashAlgorithm.SHA1:
@@ -26,7 +30,7 @@ class Hash:
             hash = hashlib.sha256()
         else:
             raise ValueError("Invalid hash algorithm")
-        hash.update(self.data.get_bytes())
+        hash.update(data.get_bytes())
         if length is None:
             return io.data.Data(hash.digest())
         return io.data.Data(hash.digest()[:length])
@@ -89,11 +93,30 @@ class AesCipher:
         if game_data.pack.PackFile.is_server_pack(pack_name):
             aes_mode = AES.MODE_ECB
             key = (
-                Hash(HashAlgorithm.MD5, io.data.Data("battlecats")).get_hash(8).to_hex()
+                Hash(HashAlgorithm.MD5).get_hash(io.data.Data("battlecats"), 8).to_hex()
             )
             return AesCipher(key.encode("utf-8"), None, aes_mode, enable)
         else:
             return AesCipher(bytes.fromhex(key), bytes.fromhex(iv), aes_mode, enable)
+
+
+class Hmac:
+    def __init__(self, key: "io.data.Data", algorithm: HashAlgorithm):
+        self.key = key
+        self.algorithm = algorithm
+
+    def get_hmac(self, data: "io.data.Data") -> "io.data.Data":
+        if self.algorithm == HashAlgorithm.MD5:
+            hash = hashlib.md5
+        elif self.algorithm == HashAlgorithm.SHA1:
+            hash = hashlib.sha1
+        elif self.algorithm == HashAlgorithm.SHA256:
+            hash = hashlib.sha256
+        else:
+            raise ValueError("Invalid hash algorithm")
+        return io.data.Data(
+            hmac.new(self.key.to_bytes(), data.get_bytes(), hash).digest()
+        )
 
 
 class Random:

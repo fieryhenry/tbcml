@@ -1,7 +1,5 @@
 import base64
 import datetime
-import hashlib
-import hmac
 import json
 import time
 from typing import Optional, Callable
@@ -100,9 +98,7 @@ class ServerFileHandler:
                     break
                 md5_hash = row[2].to_str().strip()
                 file_hash = (
-                    crypto.Hash(crypto.HashAlgorithm.MD5, path.read())
-                    .get_hash()
-                    .to_hex()
+                    crypto.Hash(crypto.HashAlgorithm.MD5).get_hash(path.read()).to_hex()
                 )
                 if md5_hash != file_hash:
                     found = False
@@ -259,7 +255,7 @@ class EventData:
         output += f"Credential={self.aws_access_key_id}/{self.get_date()}/{self.region}/{self.service}/{self.request}, "
         output += f"SignedHeaders=host;x-amz-content-sha256;x-amz-date, "
         signature = self.get_signing_key(self.get_amz_date())
-        output += f"Signature={signature.hex()}"
+        output += f"Signature={signature.to_hex()}"
 
         return output
 
@@ -270,7 +266,7 @@ class EventData:
         return datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
 
     def get_signing_key(self, amz: str):
-        k = ("AWS4" + self.aws_secret_access_key).encode()
+        k = io.data.Data("AWS4" + self.aws_secret_access_key)
         k_date = self.hmacsha256(k, self.get_date())
         date_region_key = self.hmacsha256(k_date, self.region)
         date_region_service_key = self.hmacsha256(date_region_key, self.service)
@@ -281,8 +277,10 @@ class EventData:
         final = self.hmacsha256(signing_key, string_to_sign)
         return final
 
-    def hmacsha256(self, key: bytes, message: str) -> bytes:
-        return hmac.new(key, message.encode(), hashlib.sha256).digest()
+    def hmacsha256(self, key: "io.data.Data", message: str) -> "io.data.Data":
+        return crypto.Hmac(key, crypto.HashAlgorithm.SHA256).get_hmac(
+            io.data.Data(message)
+        )
 
     def get_string_to_sign(self, amz: str):
         output = self.algorithm + "\n"
@@ -298,7 +296,11 @@ class EventData:
             + "\n"
         )
         request = self.get_canonical_request(amz)
-        output += hashlib.sha256(request.encode()).hexdigest()
+        output += (
+            crypto.Hash(crypto.HashAlgorithm.SHA256)
+            .get_hash(io.data.Data(request))
+            .to_hex()
+        )
         return output
 
     def get_canonical_request(self, amz: str):

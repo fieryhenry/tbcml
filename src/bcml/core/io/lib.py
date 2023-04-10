@@ -50,7 +50,7 @@ class LibFiles:
         hashes: dict[str, data.Data] = {}
         for pack in self.modified_packs:
             hashes[pack.basename()] = data.Data(
-                crypto.Hash(crypto.HashAlgorithm.MD5, pack.read()).get_hash().to_hex()
+                crypto.Hash(crypto.HashAlgorithm.MD5).get_hash(pack.read()).to_hex()
             )
 
         return hashes
@@ -67,8 +67,8 @@ class LibFiles:
                 if original_Pack is None:
                     continue
                 original_hash = data.Data(
-                    crypto.Hash(crypto.HashAlgorithm.MD5, original_Pack.read())
-                    .get_hash()
+                    crypto.Hash(crypto.HashAlgorithm.MD5)
+                    .get_hash(original_Pack.read())
                     .to_hex()
                 )
                 so = so.replace(original_hash, modified_hash)

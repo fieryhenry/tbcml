@@ -283,8 +283,8 @@ class PackFile:
             Optional[PackFile]: The PackFile if it was created successfully, None otherwise.
         """
         key = (
-            crypto.Hash(crypto.HashAlgorithm.MD5, io.data.Data("pack"))
-            .get_hash(8)
+            crypto.Hash(crypto.HashAlgorithm.MD5)
+            .get_hash(io.data.Data("pack"), 8)
             .to_hex()
         )
         ls_dec_data = crypto.AesCipher(key.encode("utf-8")).decrypt(enc_list_data)
@@ -333,8 +333,8 @@ class PackFile:
         ls_data = ls_data.to_data().pad_pkcs7()
         ls_data = crypto.AesCipher(
             key=(
-                crypto.Hash(crypto.HashAlgorithm.MD5, io.data.Data("pack"))
-                .get_hash(8)
+                crypto.Hash(crypto.HashAlgorithm.MD5)
+                .get_hash(io.data.Data("pack"), 8)
                 .to_hex()
             ).encode("utf-8")
         ).encrypt(ls_data)

@@ -158,7 +158,7 @@ class Mod:
 
     def get_hash(self) -> str:
         return (
-            crypto.Hash(crypto.HashAlgorithm.SHA256, self.to_data()).get_hash().to_hex()
+            crypto.Hash(crypto.HashAlgorithm.SHA256).get_hash(self.to_data()).to_hex()
         )
 
     def add_error(self, error: "ModError"):

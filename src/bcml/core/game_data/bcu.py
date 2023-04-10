@@ -686,7 +686,7 @@ class BCUZip:
 
     def get_iv_key(self) -> tuple["io.data.Data", "io.data.Data"]:
         iv_str = "battlecatsultimate"
-        iv = crypto.Hash(crypto.HashAlgorithm.MD5, io.data.Data(iv_str)).get_hash()
+        iv = crypto.Hash(crypto.HashAlgorithm.MD5).get_hash(io.data.Data(iv_str))
         key = self.enc_data[0x10:0x20]
         return iv, key
 
