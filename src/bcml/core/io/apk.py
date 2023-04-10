@@ -277,15 +277,21 @@ class Apk:
         self.copy_final_apk()
 
     def copy_final_apk(self):
+        final_path = self.get_final_apk_path()
+        if final_path == self.final_apk_path:
+            return
+        self.final_apk_path.copy(final_path)
+
+    def get_final_apk_path(self) -> path.Path:
         final_path = config.Config().get(config.Key.APK_COPY_PATH)
         if not final_path:
-            return
+            return self.final_apk_path
         final_path = path.Path(final_path)
         if final_path.get_extension() == "apk":
             final_path.parent().generate_dirs()
         else:
             final_path.add(self.final_apk_path.basename())
-        self.final_apk_path.copy(final_path)
+        return final_path
 
     @staticmethod
     def get_default_apk_folder() -> path.Path:
@@ -755,6 +761,18 @@ class Apk:
         self.add_libgadget_config(used_arcs)
         self.add_libgadget_scripts(scripts)
         self.add_libgadget_sos(used_arcs)
+
+    def add_script_mods(self, bc_mods: list["mods.bc_mod.Mod"]):
+        if not bc_mods:
+            return
+        first_mod = bc_mods[0]
+        cc = first_mod.country_code
+        gv = first_mod.game_version
+
+        scripts = mods.frida_script.Scripts([], cc, gv)
+        for mod in bc_mods:
+            scripts.add_scripts(mod.scripts)
+        self.add_frida_scripts(scripts)
 
     def get_libs(self) -> dict[str, "lib.Lib"]:
         libs: dict[str, "lib.Lib"] = {}

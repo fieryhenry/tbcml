@@ -86,6 +86,12 @@ class ModLoader(QtWidgets.QDialog):
         self.refresh_button.clicked.connect(self.refresh_mods)  # type: ignore
         self._layout.addWidget(self.refresh_button)
 
+        self.open_folder_button = QtWidgets.QPushButton(
+            self.locale_manager.search_key("reveal_final_apk_folder")
+        )
+        self.open_folder_button.clicked.connect(self.open_final_apk_folder)
+        self._layout.addWidget(self.open_folder_button)
+
         self.refresh_mods()
 
     def refresh_mods(self):
@@ -124,15 +130,30 @@ class ModLoader(QtWidgets.QDialog):
             if md is not None:
                 mds.append(md)
         game_packs.apply_mods(mds)
-        self.progress_bar.set_progress(15, total_progress)
-        self.apk.load_packs_into_game(
-            game_packs, self.progress_bar.set_progress_str, 15, 100
-        )
         self.progress_bar.set_progress_str(
-            self.locale_manager.search_key("finished"), 100, total_progress
+            self.locale_manager.search_key("adding_script_mods_progress"),
+            15,
+            total_progress,
+        )
+        self.apk.add_script_mods(mds)
+        self.apk.load_packs_into_game(
+            game_packs, self.progress_bar.set_progress_str, 25, 100
+        )
+
+        self.progress_bar.set_progress_str(
+            self.locale_manager.search_key("finished_progress"),
+            100,
+            total_progress,
         )
 
         self.loading_mods = False
+
+    def open_final_apk_folder(self):
+        path = self.apk.get_final_apk_path()
+        if path.exists():
+            path.open()
+        else:
+            path.parent().open()
 
     def load_mods(self):
         indexes = self.mod_list.selectedIndexes()

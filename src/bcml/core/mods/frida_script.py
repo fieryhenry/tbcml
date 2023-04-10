@@ -71,31 +71,29 @@ class Scripts:
         return script.cc == self.cc and script.gv == self.gv
 
     def validate_scripts(self):
+        new_scripts: list["FridaScript"] = []
         for script in self.scripts:
-            if not self.is_valid_script(script):
-                raise ValueError(
-                    "Script is not valid for this game version and country code."
-                )
+            if self.is_valid_script(script):
+                new_scripts.append(script)
+        self.scripts = new_scripts
 
     def add_script(self, script: "FridaScript"):
         if self.is_valid_script(script):
             self.scripts.append(script)
-        else:
-            raise ValueError(
-                "Script is not valid for this game version and country code."
-            )
 
     def remove_script(self, script: "FridaScript"):
         if script in self.scripts:
             self.scripts.remove(script)
-        else:
-            raise ValueError("Script is not in this Scripts object.")
 
     def get_script(self, arc: str) -> Optional["FridaScript"]:
         for script in self.scripts:
             if script.arc == arc:
                 return script
         return None
+
+    def add_scripts(self, scripts: "Scripts"):
+        for script in scripts.scripts:
+            self.add_script(script)
 
     def get_base_script(self):
         return """'use strict';
