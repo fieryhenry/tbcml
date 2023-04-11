@@ -1,5 +1,5 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
-from bcml.core import locale_handler, anim
+from bcml.core import locale_handler, anim, io
 from typing import Optional
 from bcml.ui import utils
 
@@ -18,6 +18,8 @@ class AnimViewer(QtWidgets.QWidget):
         self.index = 0
         self.force_repeat = force_repeat
         self.overlay_part_id = None
+        self.raw = False
+        self.path = None
 
         self.locale_manager = locale_handler.LocalManager.from_config()
         self.setup_data()
@@ -96,7 +98,13 @@ class AnimViewer(QtWidgets.QWidget):
     def paint(self):
         self.gradient.setFinalStop(0, self.height())
         painter = QtGui.QPainter(self)
-        painter.fillRect(self.rect(), self.gradient)
+        if not self.raw:
+            painter.fillRect(self.rect(), self.gradient)
+        else:
+            self.img = QtGui.QImage(self.size(), QtGui.QImage.Format.Format_ARGB32)
+            self.img.fill(QtCore.Qt.GlobalColor.transparent)
+            painter = QtGui.QPainter(self.img)
+            painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
 
         painter.setRenderHint(QtGui.QPainter.RenderHint.SmoothPixmapTransform)
 
@@ -107,10 +115,17 @@ class AnimViewer(QtWidgets.QWidget):
         )
         zoom_factor = self.zoom_factor
 
-        self.draw_model_rect(painter)
+        if not self.raw:
+            self.draw_model_rect(painter)
+        mult = 16 * zoom_factor
         self.draw_model(
-            painter, zoom_factor * 16, zoom_factor * 16, self.overlay_part_id
+            painter, mult, mult, self.overlay_part_id if not self.raw else None
         )
+
+        self.raw = False
+        if self.path is not None:
+            self.img.save(self.path.to_str())
+            self.path = None
 
     def draw_model_rect(self, painter: QtGui.QPainter):
         p0_x = -400 * self.zoom_factor
@@ -137,11 +152,13 @@ class AnimViewer(QtWidgets.QWidget):
         base_x: float,
         base_y: float,
         overlay_part_id: Optional[int] = None,
+        frame: Optional[int] = None,
     ):
-        if self.force_repeat:
-            frame = self.get_frame() % self.total_frames
-        else:
-            frame = self.get_frame()
+        if frame is None:
+            if self.force_repeat:
+                frame = self.get_frame() % self.total_frames
+            else:
+                frame = self.get_frame()
 
         self.model.set_action(frame)
         for part in self.sorted_parts:
@@ -151,6 +168,11 @@ class AnimViewer(QtWidgets.QWidget):
             overlay_part.draw_part(
                 painter, base_x, base_y, draw_overlay=True, just_overlay=True
             )
+
+    def save_frame_to_png(self, path: "io.path.Path"):
+        self.raw = True
+        self.path = path
+        self.update()
 
     def update_frame(self):
         self.update()

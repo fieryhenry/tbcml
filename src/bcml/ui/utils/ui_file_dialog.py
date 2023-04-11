@@ -46,8 +46,10 @@ class FileDialog(QtWidgets.QWidget):
         title: str,
         directory: str,
         filter: str,
-        options: QtWidgets.QFileDialog.Options,
+        options: Optional[QtWidgets.QFileDialog.Options],
     ) -> str:
+        if options is None:
+            options = QtWidgets.QFileDialog.Options()
         return QtWidgets.QFileDialog.getSaveFileName(
             self, title, directory, filter, options=options
         )[0]

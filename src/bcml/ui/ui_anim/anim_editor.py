@@ -1,5 +1,5 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
-from bcml.core import locale_handler, anim
+from bcml.core import locale_handler, anim, io
 from bcml.ui.ui_anim import anim_viewer, keyframe_viewer
 from bcml.ui import utils, main
 from typing import Any, Callable, Optional
@@ -194,6 +194,15 @@ class AnimViewerPage(QtWidgets.QWidget):
         self.button_layout.addWidget(self.current_frame_spinbox)
         self.button_layout.addStretch(1)
 
+        self.save_frame_button = QtWidgets.QPushButton(self)
+        self.save_frame_button.setObjectName("save_frame_button")
+        self.save_frame_svg = utils.asset_loader.AssetLoader.from_config().load_svg(
+            "dialog_save.svg"
+        )
+        self.save_frame_button.setIcon(self.save_frame_svg)
+        self.save_frame_button.clicked.connect(self.save_frame)
+        self.button_layout.addWidget(self.save_frame_button)
+
         self.frame_slider_layout.addLayout(self.button_layout)
         self.frame_slider_layout.addStretch(1)
 
@@ -206,6 +215,16 @@ class AnimViewerPage(QtWidgets.QWidget):
 
         self._layout.setColumnStretch(0, 1)
         self._layout.setRowStretch(0, 1)
+
+    def save_frame(self):
+        path = utils.ui_file_dialog.FileDialog(self).select_save_file(
+            self.locale_manager.search_key("save_frame"),
+            ".",
+            filter="PNG (*.png)",
+            options=None,
+        )
+        if path:
+            self.anim_viewer_box.anim_viewer.save_frame_to_png(io.path.Path(path))
 
     def toggle_play(self):
         if self.anim_viewer_box.anim_viewer.clock.is_playing():
