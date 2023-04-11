@@ -786,7 +786,7 @@ class ModelPart:
 
         Returns:
             list[ModelPart]: The list of all the children of the part.
-        """        
+        """
         children: list["ModelPart"] = []
         for child in self.children:
             children.append(child)
