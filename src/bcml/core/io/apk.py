@@ -807,7 +807,7 @@ class Apk:
         asset_path.copy(self.extracted_path.add("assets"))
 
     def add_audio(self, audio: "audio.AudioFile"):
-        audio.to_little_endian().data.to_file(
+        audio.caf_to_little_endian().data.to_file(
             self.extracted_path.add("assets").add(audio.get_apk_name())
         )
 
