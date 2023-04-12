@@ -4,12 +4,21 @@ from bcml.core import io
 
 
 class RequestHandler:
+    """Handles HTTP requests."""
+
     def __init__(
         self,
         url: str,
         headers: Optional[dict[str, str]] = None,
         data: Optional["io.data.Data"] = None,
     ):
+        """Initializes a new instance of the RequestHandler class.
+
+        Args:
+            url (str): URL to request.
+            headers (Optional[dict[str, str]], optional): Headers to send with the request. Defaults to None.
+            data (Optional[io.data.Data], optional): Data to send with the request. Defaults to None.
+        """
         if data is None:
             data = io.data.Data()
         self.url = url
@@ -17,9 +26,24 @@ class RequestHandler:
         self.data = data
 
     def get(self) -> requests.Response:
+        """Sends a GET request.
+
+        Returns:
+            requests.Response: Response from the server.
+        """
         return requests.get(self.url, headers=self.headers)
 
-    def get_stream(self, progress_callback: Callable[[float, int, int, bool], None]):
+    def get_stream(
+        self, progress_callback: Callable[[float, int, int, bool], None]
+    ) -> requests.Response:
+        """Sends a GET request and streams the response.
+
+        Args:
+            progress_callback (Callable[[float, int, int, bool], None]): Callback to call with progress information. Progress between 0 and 1, downloaded bytes, total bytes, and whether it is a filesize
+
+        Returns:
+            requests.Response: Response from the server.
+        """
         return requests.get(
             self.url,
             headers=self.headers,
@@ -28,8 +52,17 @@ class RequestHandler:
         )
 
     def get_stream_no_file_size(
-        self, progress_callback: Callable[[float, int, int], None]
-    ):
+        self,
+        progress_callback: Callable[[float, int, int], None],
+    ) -> requests.Response:
+        """Sends a GET request and streams the response.
+
+        Args:
+            progress_callback (Callable[[float, int, int], None]): Callback to call with progress information. Progress between 0 and 1, downloaded bytes, and total bytes
+
+        Returns:
+            requests.Response: Response from the server.
+        """
         return requests.get(
             self.url,
             headers=self.headers,
@@ -38,9 +71,24 @@ class RequestHandler:
         )
 
     def __progress_hook(
-        self, progress_callback: Callable[[float, int, int, bool], None]
+        self,
+        progress_callback: Callable[[float, int, int, bool], None],
     ) -> Callable[[requests.Response], None]:
+        """Creates a progress hook for a GET request.
+
+        Args:
+            progress_callback (Callable[[float, int, int, bool], None]): Callback to call with progress information. Progress between 0 and 1, downloaded bytes, total bytes, and whether it is a filesize
+
+        Returns:
+            Callable[[requests.Response], None]: Hook to pass to requests.
+        """
+
         def hook(response: requests.Response, *args: Any, **kwargs: Any) -> None:
+            """Hook to pass to requests.
+
+            Args:
+                response (requests.Response): Response from the server.
+            """
             total_length = response.headers.get("content-length")
             if total_length is None:
                 return
@@ -57,9 +105,24 @@ class RequestHandler:
         return hook
 
     def __progress_hook_no_file_size(
-        self, progress_callback: Callable[[float, int, int], None]
+        self,
+        progress_callback: Callable[[float, int, int], None],
     ) -> Callable[[requests.Response], None]:
+        """Creates a progress hook for a GET request.
+
+        Args:
+            progress_callback (Callable[[float, int, int], None]): Callback to call with progress information. Progress between 0 and 1, downloaded bytes, and total bytes
+
+        Returns:
+            Callable[[requests.Response], None]: Hook to pass to requests.
+        """
+
         def hook(response: requests.Response, *args: Any, **kwargs: Any) -> None:
+            """Hook to pass to requests.
+
+            Args:
+                response (requests.Response): Response from the server.
+            """
             total_length = response.headers.get("content-length")
             if total_length is None:
                 return
@@ -76,4 +139,9 @@ class RequestHandler:
         return hook
 
     def post(self) -> requests.Response:
+        """Sends a POST request.
+
+        Returns:
+            requests.Response: Response from the server.
+        """
         return requests.post(self.url, headers=self.headers, data=self.data.data)

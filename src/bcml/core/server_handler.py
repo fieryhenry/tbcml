@@ -59,7 +59,7 @@ class ServerFileHandler:
         return self.game_versions[index]
 
     def get_url(self, index: int) -> str:
-        """Gets the download URL for a game version
+        """Gets the download URL for a game version, code taken from the game but some stuff that is seamingly unused has been removed
 
         Args:
             index (int): The index of the game version to get
