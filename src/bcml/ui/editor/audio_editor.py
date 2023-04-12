@@ -87,6 +87,10 @@ class AudioFilesList(QtWidgets.QWidget):
                 self.locale_manager.search_key("reveal_in_explorer"),
                 self.reveal_in_explorer,
             )
+            menu.addAction(
+                self.locale_manager.search_key("play_audio_file"),
+                self.get_selected_audio_file().play,
+            )
         menu.exec_(self.audio_files_list.mapToGlobal(pos))
 
     def add_audio_file(self):

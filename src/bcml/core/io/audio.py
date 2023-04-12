@@ -100,7 +100,7 @@ class AudioFile:
         Returns:
             AudioFile: The audio file.
         """
-        extension = self.file_name.split(".")[-1]
+        extension = self.get_extension()
         if extension != "caf":
             return self
         with io.temp_file.TempFile(extension=extension) as input_temp:
@@ -116,6 +116,21 @@ class AudioFile:
                 self.data = output_temp.read()
 
         return self
+
+    def get_extension(self) -> str:
+        """Gets the extension of the audio file.
+
+        Returns:
+            str: The extension of the audio file.
+        """
+        return self.file_name.split(".")[-1]
+
+    def play(self):
+        """Plays the audio file by writing it to a temporary file and opening it."""
+
+        with io.temp_file.TempFile(extension=self.get_extension()) as temp_file:
+            temp_file.write(self.data)
+            temp_file.open_file()
 
 
 class Audio:

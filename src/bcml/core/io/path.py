@@ -40,6 +40,17 @@ class Path:
         else:
             raise OSError("Unknown OS")
 
+    def open_file(self):
+        if os.name == "nt":
+            os.startfile(self.path)
+        elif os.name == "posix":
+            cmd = f"xdg-open {self.path}"
+            command.Command(cmd, display_output=False).run_in_thread()
+        elif os.name == "mac":
+            command.Command(f"open {self.path}", display_output=False).run()
+        else:
+            raise OSError("Unknown OS")
+
     def to_str(self) -> str:
         return self.path
 
