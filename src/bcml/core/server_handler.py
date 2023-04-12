@@ -84,6 +84,7 @@ class ServerFileHandler:
         tsv = self.parse_tsv(index)
         if not force:
             found = True
+            hashes_equal = False
             for row in tsv:
                 name = row[0].to_str().strip()
                 if not name or ord(name[0]) == 65279 or name.isdigit():
@@ -92,19 +93,15 @@ class ServerFileHandler:
                 if not path.exists():
                     found = False
                     break
-                file_size = row[1].to_str().strip()
-                if file_size != str(path.get_file_size()):
-                    found = False
-                    break
                 md5_hash = row[2].to_str().strip()
                 file_hash = (
                     crypto.Hash(crypto.HashAlgorithm.MD5).get_hash(path.read()).to_hex()
                 )
-                if md5_hash != file_hash:
-                    found = False
+                if md5_hash == file_hash:
+                    hashes_equal = True
                     break
 
-            if found:
+            if found and hashes_equal:
                 return False
         zipf = self.download(index, progress_callback)
         path = io.apk.Apk.get_server_path(self.apk.country_code)
