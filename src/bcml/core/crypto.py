@@ -8,13 +8,22 @@ from bcml.core import country_code, io, game_data
 
 
 class HashAlgorithm(enum.Enum):
+    """An enum representing a hash algorithm."""
+
     MD5 = enum.auto()
     SHA1 = enum.auto()
     SHA256 = enum.auto()
 
 
 class Hash:
+    """A class to hash data."""
+
     def __init__(self, algorithm: HashAlgorithm):
+        """Initializes a new instance of the Hash class.
+
+        Args:
+            algorithm (HashAlgorithm): The hash algorithm to use.
+        """
         self.algorithm = algorithm
 
     def get_hash(
@@ -22,6 +31,18 @@ class Hash:
         data: "io.data.Data",
         length: Optional[int] = None,
     ) -> "io.data.Data":
+        """Gets the hash of the given data.
+
+        Args:
+            data (io.data.Data): The data to hash.
+            length (Optional[int], optional): The length of the hash. Defaults to None.
+
+        Raises:
+            ValueError: Invalid hash algorithm.
+
+        Returns:
+            io.data.Data: The hash of the data.
+        """
         if self.algorithm == HashAlgorithm.MD5:
             hash = hashlib.md5()
         elif self.algorithm == HashAlgorithm.SHA1:
@@ -37,6 +58,8 @@ class Hash:
 
 
 class AesCipher:
+    """A class to represent an AES cipher."""
+
     def __init__(
         self,
         key: bytes,
@@ -44,6 +67,14 @@ class AesCipher:
         mode: Optional[int] = None,
         enable: bool = True,
     ):
+        """Initializes a new instance of the AesCipher class.
+
+        Args:
+            key (bytes): Key to use.
+            iv (Optional[bytes], optional): Initialization vector to use. Defaults to None.
+            mode (Optional[int], optional): Mode to use. Defaults to None.
+            enable (bool, optional): Whether to enable encryption. Defaults to True. ImageDataLocal is a pack that is not encrypted.
+        """
         self.key = key
         self.iv = iv
         if mode is None:
@@ -55,25 +86,60 @@ class AesCipher:
         self.enable = enable
 
     def get_cipher(self):
+        """Gets the cipher.
+
+        Returns:
+            AES: The cipher.
+        """
         if self.iv is None:
             return AES.new(self.key, self.mode)  # type: ignore
         else:
             return AES.new(self.key, self.mode, self.iv)  # type: ignore
 
     def encrypt(self, data: "io.data.Data") -> "io.data.Data":
+        """Encrypts the given data.
+
+        Args:
+            data (io.data.Data): The data to encrypt.
+
+        Returns:
+            io.data.Data: The encrypted data.
+        """
         if not self.enable:
             return data
         cipher = self.get_cipher()
         return io.data.Data(cipher.encrypt(data.get_bytes()))
 
     def decrypt(self, data: "io.data.Data") -> "io.data.Data":
+        """Decrypts the given data.
+
+        Args:
+            data (io.data.Data): The data to decrypt.
+
+        Returns:
+            io.data.Data: The decrypted data.
+        """
         if not self.enable:
             return data
         cipher = self.get_cipher()
         return io.data.Data(cipher.decrypt(data.get_bytes()))
 
     @staticmethod
-    def get_cipher_from_pack(cc: country_code.CountryCode, pack_name: str):
+    def get_cipher_from_pack(
+        cc: country_code.CountryCode, pack_name: str
+    ) -> "AesCipher":
+        """Gets the cipher from the pack.
+
+        Args:
+            cc (country_code.CountryCode): The country code.
+            pack_name (str): The pack name.
+
+        Raises:
+            Exception: Unknown country code.
+
+        Returns:
+            AesCipher: The cipher.
+        """
         aes_mode = AES.MODE_CBC
         if cc == country_code.CountryCode.JP:
             key = "d754868de89d717fa9e7b06da45ae9e3"
@@ -101,11 +167,30 @@ class AesCipher:
 
 
 class Hmac:
+    """A class to do HMAC stuff."""
+
     def __init__(self, key: "io.data.Data", algorithm: HashAlgorithm):
+        """Initializes a new instance of the Hmac class.
+
+        Args:
+            key (io.data.Data): Key to use.
+            algorithm (HashAlgorithm): Algorithm to use.
+        """
         self.key = key
         self.algorithm = algorithm
 
     def get_hmac(self, data: "io.data.Data") -> "io.data.Data":
+        """Gets the HMAC of the given data.
+
+        Args:
+            data (io.data.Data): The data to get the HMAC of.
+
+        Raises:
+            ValueError: Invalid hash algorithm.
+
+        Returns:
+            io.data.Data: The HMAC.
+        """
         if self.algorithm == HashAlgorithm.MD5:
             hash = hashlib.md5
         elif self.algorithm == HashAlgorithm.SHA1:
@@ -120,11 +205,29 @@ class Hmac:
 
 
 class Random:
+    """A class to get random data"""
+
     @staticmethod
     def get_bytes(length: int) -> bytes:
+        """Gets random bytes.
+
+        Args:
+            length (int): The length of the bytes.
+
+        Returns:
+            bytes: The random bytes.
+        """
         return bytes(random.getrandbits(8) for _ in range(length))
 
     @staticmethod
     def get_alpha_string(length: int) -> str:
+        """Gets a random string of the given length.
+
+        Args:
+            length (int): The length of the string.
+
+        Returns:
+            str: The random string.
+        """
         characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
         return "".join(random.choice(characters) for _ in range(length))
