@@ -807,9 +807,40 @@ class Apk:
         asset_path.copy(self.extracted_path.add("assets"))
 
     def add_audio(self, audio: "audio.AudioFile"):
-        audio.caf_to_little_endian().save(
-            self.extracted_path.add("assets").add(audio.get_bc_file_name())
+        audio.to_little_endian().data.to_file(
+            self.extracted_path.add("assets").add(audio.get_apk_name())
         )
+
+    def add_audio_mods(self, bc_mods: list["mods.bc_mod.Mod"]):
+        for mod in bc_mods:
+            for audio in mod.audio.audio_files.values():
+                self.add_audio(audio)
+
+    def get_all_audio(self) -> "audio.Audio":
+        audio_files: dict[str, "audio.AudioFile"] = {}
+        for file in self.extracted_path.add("assets").get_files():
+            if not file.get_extension() == "caf" and not file.get_extension() == "ogg":
+                continue
+            audio_files[file.basename()] = audio.AudioFile.from_file(file)
+        for file in self.get_server_path(self.country_code).get_files():
+            if not file.get_extension() == "caf" and not file.get_extension() == "ogg":
+                continue
+            audio_files[file.basename()] = audio.AudioFile.from_file(file)
+
+        return audio.Audio(audio_files)
+
+    def find_audio_path(self, audio: "audio.AudioFile") -> Optional["path.Path"]:
+        for file in self.extracted_path.add("assets").get_files():
+            if not file.get_extension() == "caf" and not file.get_extension() == "ogg":
+                continue
+            if file.basename() == audio.get_apk_name():
+                return file
+        for file in self.get_server_path(self.country_code).get_files():
+            if not file.get_extension() == "caf" and not file.get_extension() == "ogg":
+                continue
+            if file.basename() == audio.get_apk_name():
+                return file
+        return None
 
     def get_asset(self, asset_name: str) -> "path.Path":
         return self.extracted_path.add("assets").add(asset_name)

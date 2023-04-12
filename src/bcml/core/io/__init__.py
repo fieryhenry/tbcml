@@ -13,6 +13,7 @@ from bcml.core.io import (
     json_file,
     audio,
     xml_parse,
+    temp_file,
 )
 
 __all__ = [
@@ -30,4 +31,5 @@ __all__ = [
     "json_file",
     "audio",
     "xml_parse",
+    "temp_file",
 ]

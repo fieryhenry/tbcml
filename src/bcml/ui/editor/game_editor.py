@@ -4,7 +4,7 @@ from typing import Callable, Optional
 from PyQt5 import QtCore, QtWidgets
 
 from bcml.core import game_data, io, locale_handler, mods
-from bcml.ui.editor import cat_editor, localizable, shop_editor
+from bcml.ui.editor import cat_editor, localizable, shop_editor, audio_editor
 from bcml.ui.utils import ui_progress, ui_thread
 
 
@@ -12,6 +12,7 @@ class Tabs(enum.Enum):
     CAT = 0
     LOCALIZABLE = 1
     SHOP = 2
+    AUDIO = 3
 
 
 class GameEditor(QtWidgets.QWidget):
@@ -111,6 +112,10 @@ class GameEditor(QtWidgets.QWidget):
             self.create_item_shop_tab(),
             self.local_manager.search_key("item_shop_tab"),
         )
+        self._tab_widget.addTab(
+            self.create_audio_tab(),
+            self.local_manager.search_key("audio_tab"),
+        )
 
         self.tab_changed(0)
 
@@ -134,6 +139,12 @@ class GameEditor(QtWidgets.QWidget):
         self.cat_editor = cat_editor.CatEditor(self.mod, self.game_data, self)
         return self.cat_editor
 
+    def create_audio_tab(self):
+        if self.game_data is None:
+            return
+        self.audio_editor = audio_editor.AudioEditor(self.mod, self.apk, self)
+        return self.audio_editor
+
     def save(self):
         self._save_thread = ui_thread.ThreadWorker.run_in_thread(self.save_thread)
 
@@ -141,6 +152,7 @@ class GameEditor(QtWidgets.QWidget):
         self.shop_editor.save()
         self.text_editor.save()
         self.cat_editor.save()
+        self.audio_editor.save()
         mods.mod_manager.ModManager().save_mod(self.mod)
 
     def back(self):
@@ -161,3 +173,5 @@ class GameEditor(QtWidgets.QWidget):
             self.text_editor.setup_ui()
         elif index == Tabs.CAT.value:
             self.cat_editor.setup_ui()
+        elif index == Tabs.AUDIO.value:
+            self.audio_editor.setup_ui()

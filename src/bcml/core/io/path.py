@@ -73,7 +73,7 @@ class Path:
 
     def create(self) -> "Path":
         if not self.exists():
-            self.write(data.Data())
+            self.write(data.Data("test"))
         return self
 
     def exists(self) -> bool:
@@ -202,6 +202,8 @@ class Path:
         return Path(os.path.dirname(self.path))
 
     def change_extension(self, extension: str) -> "Path":
+        if extension.startswith("."):
+            extension = extension[1:]
         return Path(self.path.rsplit(".", 1)[0] + "." + extension)
 
     def remove_extension(self) -> "Path":
@@ -216,8 +218,14 @@ class Path:
     def get_file_name(self) -> str:
         return os.path.basename(self.path)
 
+    def get_file_name_path(self) -> "Path":
+        return Path(self.get_file_name())
+
     def get_file_name_without_extension(self) -> str:
         return self.get_file_name().rsplit(".", 1)[0]
 
     def get_file_size(self) -> int:
         return os.path.getsize(self.path)
+
+    def get_absolute_path(self) -> "Path":
+        return Path(os.path.abspath(self.path))

@@ -65,6 +65,7 @@ class Mod:
         self.cat_base = game_data.cat_base.cat_base.CatBase.create_empty()
         self.maps = game_data.map.map.Maps.create_empty()
         self.localizable = game_data.pack.Localizable.create_empty()
+        self.audio = io.audio.Audio.create_empty()
 
     def init_scripts(self):
         self.scripts: mods.frida_script.Scripts = mods.frida_script.Scripts(
@@ -96,6 +97,7 @@ class Mod:
         self.maps.add_to_zip(zip_file)
         self.localizable.add_to_zip(zip_file)
 
+        self.audio.add_to_zip(zip_file)
         self.scripts.add_to_zip(zip_file)
 
         json = io.json_file.JsonFile.from_object(self.create_mod_json())
@@ -120,6 +122,7 @@ class Mod:
         mod.maps = game_data.map.map.Maps.from_zip(zip_file)
         mod.localizable = game_data.pack.Localizable.from_zip(zip_file)
 
+        mod.audio = io.audio.Audio.from_zip(zip_file)
         mod.scripts = mods.frida_script.Scripts.from_zip(
             zip_file, mod.country_code, mod.game_version, mod
         )
@@ -150,6 +153,7 @@ class Mod:
         self.maps.import_maps(other.maps, game_packs)
         self.localizable.import_localizable(other.localizable, game_packs)
 
+        self.audio.import_audio(other.audio)
         self.scripts.import_scripts(other.scripts)
 
     def import_mods(self, others: list["Mod"], game_packs: "game_data.pack.GamePacks"):

@@ -136,8 +136,14 @@ class ModLoader(QtWidgets.QDialog):
             total_progress,
         )
         self.apk.add_script_mods(mds)
+        self.progress_bar.set_progress_str(
+            self.locale_manager.search_key("adding_audio_mods_progress"),
+            30,
+            total_progress,
+        )
+        self.apk.add_audio_mods(mds)
         self.apk.load_packs_into_game(
-            game_packs, self.progress_bar.set_progress_str, 25, 100
+            game_packs, self.progress_bar.set_progress_str, 35, 100
         )
 
         self.progress_bar.set_progress_str(
