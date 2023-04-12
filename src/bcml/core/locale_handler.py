@@ -2,7 +2,15 @@ from bcml.core import io
 
 
 class PropertySet:
+    """Represents a set of properties in a property file."""
+
     def __init__(self, locale: str, property: str):
+        """Initializes a new instance of the PropertySet class.
+
+        Args:
+            locale (str): Language code of the locale.
+            property (str): Name of the property file.
+        """
         self.locale = locale
         self.path = (
             io.path.Path("locales", True).add(locale).add(property + ".properties")
@@ -11,6 +19,11 @@ class PropertySet:
         self.parse()
 
     def parse(self):
+        """Parses the property file.
+
+        Raises:
+            KeyError: If a key is already defined in the property file.
+        """
         lines = self.path.read().to_str().splitlines()
         for line in lines:
             if line.startswith("#") or line == "":
@@ -25,15 +38,38 @@ class PropertySet:
             self.properties[key] = value
 
     def get_key(self, key: str) -> str:
+        """Gets a key from the property file.
+
+        Args:
+            key (str): Key to get.
+
+        Returns:
+            str: Value of the key.
+        """
         return self.properties[key].replace("\\n", "\n")
 
     @staticmethod
     def from_config(property: str) -> "PropertySet":
+        """Gets a PropertySet from the language code in the config.
+
+        Args:
+            property (str): Name of the property file.
+
+        Returns:
+            PropertySet: PropertySet for the property file.
+        """
         return PropertySet(io.config.Config().get(io.config.Key.LOCALE), property)
 
 
 class LocalManager:
+    """Manages properties for a locale"""
+
     def __init__(self, locale: str):
+        """Initializes a new instance of the LocalManager class.
+
+        Args:
+            locale (str): Language code of the locale.
+        """
         self.locale = locale
         self.path = io.path.Path("locales", True).add(locale)
         self.properties: dict[str, PropertySet] = {}
@@ -41,6 +77,7 @@ class LocalManager:
         self.parse()
 
     def parse(self):
+        """Parses all property files in the locale folder."""
         for file in self.path.get_files():
             file_name = file.basename()
             if file_name.endswith(".properties"):
@@ -49,16 +86,43 @@ class LocalManager:
                 self.properties[file_name[:-11]] = property_set
 
     def get_key(self, property: str, key: str) -> str:
+        """Gets a key from a property file.
+
+        Args:
+            property (str): Name of the property file.
+            key (str): Key to get.
+
+        Returns:
+            str: Value of the key.
+        """
         return self.properties[property].get_key(key)
 
     def search_key(self, key: str) -> str:
+        """Searches for a key in all property files.
+
+        Args:
+            key (str): Key to search for.
+
+        Returns:
+            str: Value of the key.
+        """
         return self.all_properties[key]
 
     @staticmethod
     def from_config() -> "LocalManager":
+        """Gets a LocalManager from the language code in the config.
+
+        Returns:
+            LocalManager: LocalManager for the locale.
+        """
         return LocalManager(io.config.Config().get(io.config.Key.LOCALE))
 
     def check_duplicates(self):
+        """Checks for duplicate keys in all property files.
+
+        Raises:
+            KeyError: If a key is already defined in the property file.
+        """
         keys: set[str] = set()
         for property in self.properties.values():
             for key in property.properties.keys():
