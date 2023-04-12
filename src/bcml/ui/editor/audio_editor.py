@@ -93,8 +93,7 @@ class AudioFilesList(QtWidgets.QWidget):
         file_path = ui_file_dialog.FileDialog(self).select_file(
             self.locale_manager.search_key("select_audio_file"),
             self.apk.get_server_path(self.apk.country_code).to_str(),
-            self.locale_manager.search_key("audio_files")
-            + " (*.ogg *.wav *.caf *.mp3)",
+            self.locale_manager.search_key("audio_files") + " (*.ogg *.caf)",
         )
         if file_path:
             path = io.path.Path(file_path)
