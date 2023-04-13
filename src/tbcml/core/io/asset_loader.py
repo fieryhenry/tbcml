@@ -37,3 +37,6 @@ class AssetLoader:
     @staticmethod
     def from_config() -> "AssetLoader":
         return AssetLoader(io.config.Config().get(io.config.Key.THEME))
+
+    def get_asset_path(self, local_path: str) -> io.path.Path:
+        return io.path.Path(is_relative=True).add("assets", local_path)

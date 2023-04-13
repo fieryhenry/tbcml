@@ -14,6 +14,8 @@ from tbcml.core.io import (
     audio,
     xml_parse,
     temp_file,
+    smali,
+    asset_loader,
 )
 
 __all__ = [
@@ -32,4 +34,6 @@ __all__ = [
     "audio",
     "xml_parse",
     "temp_file",
+    "smali",
+    "asset_loader",
 ]
