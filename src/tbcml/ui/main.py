@@ -3,7 +3,7 @@ from typing import Optional
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 from tbcml.core import io, locale_handler, mods
-from tbcml.ui import apk_manager, server_files_manager, utils
+from tbcml.ui import apk_manager, server_files_manager
 from tbcml.ui.mods import mod_loader, mod_manager
 
 
@@ -12,7 +12,7 @@ class MainWindow(QtWidgets.QMainWindow):
         super(MainWindow, self).__init__(parent)
         self.locale_manager = locale_handler.LocalManager.from_config()
         self.locale_manager.check_duplicates()
-        self.asset_manager = utils.asset_loader.AssetLoader.from_config()
+        self.asset_manager = io.asset_loader.AssetLoader.from_config()
         mods.mod_manager.ModManager().regenerate_mod_json()
         self.setup_ui()
 

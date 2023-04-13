@@ -148,12 +148,8 @@ class AnimViewerPage(QtWidgets.QWidget):
 
         self.play_button = QtWidgets.QPushButton(self)
         self.play_button.setObjectName("play_button")
-        self.play_svg = utils.asset_loader.AssetLoader.from_config().load_svg(
-            "play.svg"
-        )
-        self.pause_svg = utils.asset_loader.AssetLoader.from_config().load_svg(
-            "pause.svg"
-        )
+        self.play_svg = io.asset_loader.AssetLoader.from_config().load_svg("play.svg")
+        self.pause_svg = io.asset_loader.AssetLoader.from_config().load_svg("pause.svg")
         self.play_button.setIcon(self.pause_svg)
         self.play_button.clicked.connect(self.toggle_play)
         self.button_layout = QtWidgets.QHBoxLayout()
@@ -163,7 +159,7 @@ class AnimViewerPage(QtWidgets.QWidget):
 
         self.seek_back_button = QtWidgets.QPushButton(self)
         self.seek_back_button.setObjectName("seek_back_button")
-        self.seek_back_svg = utils.asset_loader.AssetLoader.from_config().load_svg(
+        self.seek_back_svg = io.asset_loader.AssetLoader.from_config().load_svg(
             "seek_backward.svg"
         )
         self.seek_back_button.setIcon(self.seek_back_svg)
@@ -172,7 +168,7 @@ class AnimViewerPage(QtWidgets.QWidget):
 
         self.seek_forward_button = QtWidgets.QPushButton(self)
         self.seek_forward_button.setObjectName("seek_forward_button")
-        self.seek_forward_svg = utils.asset_loader.AssetLoader.from_config().load_svg(
+        self.seek_forward_svg = io.asset_loader.AssetLoader.from_config().load_svg(
             "seek_forward.svg"
         )
         self.seek_forward_button.setIcon(self.seek_forward_svg)
@@ -196,7 +192,7 @@ class AnimViewerPage(QtWidgets.QWidget):
 
         self.save_frame_button = QtWidgets.QPushButton(self)
         self.save_frame_button.setObjectName("save_frame_button")
-        self.save_frame_svg = utils.asset_loader.AssetLoader.from_config().load_svg(
+        self.save_frame_svg = io.asset_loader.AssetLoader.from_config().load_svg(
             "dialog_save.svg"
         )
         self.save_frame_button.setIcon(self.save_frame_svg)
@@ -562,7 +558,7 @@ class AnimEditor(QtWidgets.QWidget):
         self.anim_id = anim_id
 
         self.locale_manager = locale_handler.LocalManager.from_config()
-        self.asset_loader = utils.asset_loader.AssetLoader()
+        self.asset_loader = io.asset_loader.AssetLoader()
         self.setup_ui()
 
     def setup_ui(self):
