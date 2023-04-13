@@ -5,10 +5,10 @@ block_cipher = None
 
 
 a = Analysis(
-    ['src/bcml/__main__.py'],
+    ['src/tbcml/__main__.py'],
     pathex=[],
     binaries=[],
-    datas=[('src/bcml/files', 'files')],
+    datas=[('src/tbcml/files', 'files')],
     hiddenimports=[],
     hookspath=[],
     runtime_hooks=[],
@@ -27,7 +27,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='bcml',
+    name='tbcml',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

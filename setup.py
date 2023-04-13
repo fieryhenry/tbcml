@@ -3,17 +3,17 @@ import setuptools
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
-with open("src/bcml/files/version.txt", "r", encoding="utf-8") as fh:
+with open("src/tbcml/files/version.txt", "r", encoding="utf-8") as fh:
     version = fh.read()
 
 setuptools.setup(
-    name="bcml",
+    name="tbcml",
     version=version,
     author="fieryhenry",
     description="",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/fieryhenry/bcml",
+    url="https://github.com/fieryhenry/tbcml",
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
@@ -41,6 +41,6 @@ setuptools.setup(
             "pytest-cov",
         ],
     },
-    package_data={"bcml": ["py.typed"]},
+    package_data={"tbcml": ["py.typed"]},
     flake8={"max-line-length": 160},
 )

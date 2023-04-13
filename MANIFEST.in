@@ -1,1 +1,1 @@
-recursive-include src/bcml/files *
+recursive-include src/tbcml/files *
