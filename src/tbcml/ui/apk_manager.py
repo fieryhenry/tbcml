@@ -214,6 +214,10 @@ class ApkList(QtWidgets.QListWidget):
             self.locale_manager.search_key("decrypt_apk_mods")
         )
         delete_action = menu.addAction(self.locale_manager.search_key("delete_apk"))
+        show_in_explorer_action = menu.addAction(
+            self.locale_manager.search_key("reveal_in_explorer")
+        )
+
         action = menu.exec_(self.mapToGlobal(pos))
         if action == delete_action:
             self.delete_apk()
@@ -225,6 +229,8 @@ class ApkList(QtWidgets.QListWidget):
             self.decrypt_apk()
         elif action == decryption_mods_action:
             self.decrypt_apk_with_mods()
+        elif action == show_in_explorer_action:
+            self.show_in_explorer()
 
     def get_apks(self):
         self.apks = io.apk.Apk.get_all_downloaded()
@@ -287,6 +293,10 @@ class ApkList(QtWidgets.QListWidget):
     def decrypt_apk_with_mods(self):
         apk = self.get_selected_apk()
         self.on_decrypt_apk(apk, True)
+
+    def show_in_explorer(self):
+        apk = self.get_selected_apk()
+        apk.apk_path.open()
 
 
 class ApkDownloader(QtWidgets.QWidget):
@@ -351,7 +361,7 @@ class ApkDownloader(QtWidgets.QWidget):
             self.add_call(apk)
 
     def download_thread(self, apk: io.apk.Apk):
-        apk.download_apk(self.progress_bar.set_progress_full)
+        apk.download_apk()  # self.progress_bar.set_progress_full)
 
     def select_element(self, apk: io.apk.Apk):
         for i in range(self.downloadable_apks_layout.count()):
