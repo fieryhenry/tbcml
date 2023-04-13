@@ -1,5 +1,5 @@
 from typing import Any, Optional
-from tbcml.core import io, country_code, crypto, langs, mods
+from tbcml.core import io, country_code, crypto, langs, mods, game_version
 import copy
 
 
@@ -10,6 +10,7 @@ class GameFile:
         file_name: str,
         pack_name: str,
         cc: country_code.CountryCode,
+        gv: game_version.GameVersion,
     ):
         """Initialize a new GameFile.
 
@@ -18,11 +19,13 @@ class GameFile:
             file_name (str): Name of the file.
             pack_name (str): Name of the pack the file is in.
             cc (country_code.CountryCode): Country code of the game data.
+            gv (game_version.GameVersion): Game version of the game data.
         """
         self.dec_data = dec_data
         self.file_name = file_name
         self.pack_name = pack_name
         self.cc = cc
+        self.gv = gv
 
     def set_data(self, data: "io.data.Data"):
         """Set the decrypted data.
@@ -38,6 +41,7 @@ class GameFile:
         file_name: str,
         pack_name: str,
         cc: country_code.CountryCode,
+        gv: game_version.GameVersion,
     ) -> "GameFile":
         """Create a GameFile from encrypted data.
 
@@ -46,17 +50,18 @@ class GameFile:
             file_name (str): The name of the file.
             pack_name (str): The name of the pack the file is in.
             cc (country_code.CountryCode): The country code of the game data.
+            gv (game_version.GameVersion): The game version of the game data.
 
         Returns:
             GameFile: The GameFile object.
         """
-        cipher = PackFile.get_cipher(cc, pack_name)
+        cipher = PackFile.get_cipher(cc, pack_name, gv)
         data = cipher.decrypt(enc_data)
         try:
             data = data.unpad_pkcs7()
         except ValueError:
             pass
-        return GameFile(data, file_name, pack_name, cc)
+        return GameFile(data, file_name, pack_name, cc, gv)
 
     def encrypt(self) -> "io.data.Data":
         """Encrypt the decrypted data.
@@ -66,7 +71,7 @@ class GameFile:
         """
         if PackFile.is_image_data_local_pack(self.pack_name):
             return self.dec_data
-        cipher = PackFile.get_cipher(self.cc, self.pack_name)
+        cipher = PackFile.get_cipher(self.cc, self.pack_name, self.gv)
         data = self.dec_data.pad_pkcs7()
         return cipher.encrypt(data)
 
@@ -95,6 +100,7 @@ class GameFile:
         file_name: str,
         pack_name: str,
         cc: country_code.CountryCode,
+        gv: game_version.GameVersion,
     ) -> "GameFile":
         """Deserialize a GameFile from a dictionary.
 
@@ -103,6 +109,7 @@ class GameFile:
             file_name (str): The name of the file.
             pack_name (str): The name of the pack the file is in.
             cc (country_code.CountryCode): The country code of the game data.
+            gv (game_version.GameVersion): The game version of the game data.
 
         Returns:
             GameFile: The deserialized GameFile.
@@ -112,6 +119,7 @@ class GameFile:
             file_name,
             pack_name,
             cc,
+            gv,
         )
 
     @staticmethod
@@ -125,15 +133,18 @@ class PackFile:
         self,
         pack_name: str,
         country_code: country_code.CountryCode,
+        gv: game_version.GameVersion,
     ):
         """Initialize a new PackFile.
 
         Args:
             pack_name (str): The name of the pack.
             country_code (country_code.CountryCode): The country code of the game data.
+            gv (game_version.GameVersion): The game version of the game data.
         """
         self.pack_name = pack_name
         self.country_code = country_code
+        self.gv = gv
         self.files: dict[str, GameFile] = {}
 
     def add_file(self, file: GameFile):
@@ -183,20 +194,25 @@ class PackFile:
         Returns:
             bool: True if the pack is ImageDataLocal, False otherwise.
         """
-        return "ImageDataLocal" in pack_name
+        return "imagedatalocal" in pack_name.lower()
 
     @staticmethod
-    def get_cipher(cc: country_code.CountryCode, pack_name: str) -> crypto.AesCipher:
+    def get_cipher(
+        cc: country_code.CountryCode,
+        pack_name: str,
+        gv: game_version.GameVersion,
+    ) -> crypto.AesCipher:
         """Get the cipher for a pack.
 
         Args:
             cc (country_code.CountryCode): The country code of the game data.
             pack_name (str): The name of the pack.
+            gv (game_version.GameVersion): The game version.
 
         Returns:
             crypto.AesCipher: The cipher for the pack.
         """
-        return crypto.AesCipher.get_cipher_from_pack(cc, pack_name)
+        return crypto.AesCipher.get_cipher_from_pack(cc, pack_name, gv)
 
     def get_file(self, file_name: str) -> Optional[GameFile]:
         """Get a file from the pack.
@@ -229,7 +245,9 @@ class PackFile:
         """
         file = self.get_file(file_name)
         if file is None:
-            file = GameFile(file_data, file_name, self.pack_name, self.country_code)
+            file = GameFile(
+                file_data, file_name, self.pack_name, self.country_code, self.gv
+            )
             self.add_file(file)
         else:
             file.dec_data = file_data
@@ -270,6 +288,7 @@ class PackFile:
         enc_pack_data: "io.data.Data",
         country_code: country_code.CountryCode,
         pack_name: str,
+        gv: game_version.GameVersion,
     ) -> Optional["PackFile"]:
         """Create a PackFile from a pack file.
 
@@ -278,6 +297,7 @@ class PackFile:
             enc_pack_data (io.data.Data): Encrypted pack data.
             country_code (country_code.CountryCode): The country code of the game data.
             pack_name (str): The name of the pack.
+            gv (game_version.GameVersion): The game version.
 
         Returns:
             Optional[PackFile]: The PackFile if it was created successfully, None otherwise.
@@ -294,7 +314,7 @@ class PackFile:
         if total_files is None:
             return None
         total_files = total_files[0].to_int()
-        pack_file = PackFile(pack_name, country_code)
+        pack_file = PackFile(pack_name, country_code, gv)
         files: dict[str, GameFile] = {}
         for _ in range(total_files):
             line = ls_data.read_line()
@@ -308,6 +328,7 @@ class PackFile:
                 file_name,
                 pack_name,
                 country_code,
+                gv,
             )
         pack_file.set_files(files)
         return pack_file
@@ -366,6 +387,7 @@ class PackFile:
         data: dict[str, Any],
         pack_name: str,
         country_code: country_code.CountryCode,
+        gv: game_version.GameVersion,
     ) -> Optional["PackFile"]:
         """Deserialize a pack file from a dictionary.
 
@@ -373,14 +395,17 @@ class PackFile:
             data (dict[str, Any]): The serialized pack file.
             pack_name (str): The name of the pack.
             country_code (country_code.CountryCode): The country code of the game data.
+            gv (game_version.GameVersion): The game version.
 
         Returns:
             Optional[PackFile]: The deserialized pack file.
         """
-        pack_file = PackFile(pack_name, country_code)
+        pack_file = PackFile(pack_name, country_code, gv)
         files: dict[str, GameFile] = {}
         for file_name, file_data in data["files"].items():
-            file = GameFile.deserialize(file_data, file_name, pack_name, country_code)
+            file = GameFile.deserialize(
+                file_data, file_name, pack_name, country_code, gv
+            )
             files[file_name] = file
         pack_file.set_files(files)
         return pack_file
@@ -391,15 +416,18 @@ class GamePacks:
         self,
         packs: dict[str, PackFile],
         country_code: country_code.CountryCode,
+        gv: game_version.GameVersion,
     ):
         """Create a GamePacks object.
 
         Args:
             packs (dict[str, PackFile]): The packs.
             country_code (country_code.CountryCode): The country code of the game data.
+            gv (game_version.GameVersion): The game version.
         """
         self.packs = packs
         self.country_code = country_code
+        self.gv = gv
         self.modified_packs: dict[str, bool] = {}
         self.__localizable: Optional[Localizable] = None
 
@@ -506,8 +534,10 @@ class GamePacks:
             else:
                 pack = self.get_pack("DataLocal")
             if pack is None:
+                pack = self.get_pack("datalocal2")
+            if pack is None:
                 raise Exception("Could not find pack")
-            file = GameFile(data, file_name, pack.pack_name, self.country_code)
+            file = GameFile(data, file_name, pack.pack_name, self.country_code, self.gv)
         new_pack_name = PackFile.convert_pack_name_server_local(file.pack_name)
         pack = self.get_pack(new_pack_name)
         if pack is None:
@@ -556,12 +586,12 @@ class GamePacks:
             list_data = list_file.read()
             pack_name = list_file.get_file_name_without_extension()
             pack = PackFile.from_pack_file(
-                list_data, pack_data, apk.country_code, pack_name
+                list_data, pack_data, apk.country_code, pack_name, apk.game_version
             )
             if pack is None:
                 continue
             packs[pack_name] = pack
-        return GamePacks(packs, apk.country_code)
+        return GamePacks(packs, apk.country_code, apk.game_version)
 
     def apply_mod(self, mod: "mods.bc_mod.Mod"):
         """Apply mod data to the game packs. Should be called after all mods have been imported into a single mod.
@@ -604,6 +634,7 @@ class GamePacks:
         """
         return {
             "country_code": self.country_code.get_code(),
+            "game_version": self.gv.serialize(),
             "packs": {
                 pack_name: pack.serialize() for pack_name, pack in self.packs.items()
             },
@@ -620,13 +651,14 @@ class GamePacks:
             GamePacks: The GamePacks object.
         """
         cc = country_code.CountryCode.from_code(data["country_code"])
+        gv = game_version.GameVersion.deserialize(data["game_version"])
         packs: dict[str, PackFile] = {}
         for pack_name, pack_data in data["packs"].items():
-            pack = PackFile.deserialize(pack_data, pack_name, cc)
+            pack = PackFile.deserialize(pack_data, pack_name, cc, gv)
             if pack is None:
                 continue
             packs[pack_name] = pack
-        return GamePacks(packs, cc)
+        return GamePacks(packs, cc, gv)
 
     def copy(self) -> "GamePacks":
         """Deep copy the game packs.

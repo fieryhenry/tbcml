@@ -93,6 +93,10 @@ class Apk:
             if file.get_extension() != "pack":
                 continue
             list_file = file.change_extension("list")
+            if self.is_java() and "local" in file.basename().lower():
+                list_file = list_file.change_name(
+                    f"{file.get_file_name_without_extension()[:-1]}1.list"
+                )
             if list_file.exists():
                 files.append((file, list_file))
         return files
@@ -103,7 +107,7 @@ class Apk:
 
     def copy_packs(self):
         self.packs_path.remove_tree().generate_dirs()
-        packs = self.extracted_path.add("assets").get_files()
+        packs = self.get_pack_location().get_files()
         for pack in packs:
             if pack.get_extension() == "pack" or pack.get_extension() == "list":
                 pack.copy(self.packs_path)
@@ -174,6 +178,17 @@ class Apk:
         self.copy_packs()
         self.libs = self.get_libs()
 
+    def extract_smali(self):
+        if not self.check_display_apktool_error():
+            return
+        cmd = command.Command(
+            f"apktool d -f {self.apk_path} -o {self.extracted_path}", False
+        )
+        res = cmd.run()
+        if res.exit_code != 0:
+            print(f"Failed to extract APK: {res.result}")
+            return
+
     def pack(self):
         if not self.check_display_apktool_error():
             return
@@ -227,7 +242,7 @@ class Apk:
 
     def copy_modded_packs(self):
         for file in self.modified_packs_path.get_files():
-            file.copy(self.extracted_path.add("assets").add(file.basename()))
+            file.copy(self.get_pack_location().add(file.basename()))
 
     def load_packs_into_game(
         self,
@@ -568,43 +583,6 @@ class Apk:
     def get_display_string(self) -> str:
         return f"{self.game_version.format()} <dark_green>({self.country_code})</>"
 
-    def download_server_files_v1(
-        self, progress_callback: Optional[Callable[[float, int, int], None]] = None
-    ):
-        if progress_callback is None:
-            progress_callback = self.progress
-        url = f"https://api.github.com/repos/fieryhenry/BCData/git/trees/master?recursive=2"
-        resp = request.RequestHandler(url).get()
-        json_data = resp.json()
-        if "tree" not in json_data:
-            self.copy_server_files()
-            return
-        urls: list[str] = []
-        for item in json_data["tree"]:
-            if (
-                str(item["path"]).split("/")[0]
-                == f"{self.country_code.get_code()}_server"
-                and len(str(item["path"]).split("/")) == 2
-            ):
-                url = f"https://raw.githubusercontent.com/fieryhenry/BCData/master/{item['path']}"
-                urls.append(url)
-
-        output_dir = self.get_server_path(self.country_code).generate_dirs()
-        new_urls: list[str] = []
-        for url in urls:
-            file_path = output_dir.add(url.split("/")[-1])
-            if file_path.exists():
-                continue
-            new_urls.append(url)
-        total = len(new_urls)
-        progress_callback(0, 0, total - 1)
-        for i, url in enumerate(new_urls):
-            file_path = output_dir.add(url.split("/")[-1])
-            res = request.RequestHandler(url).get()
-            file_path.write(data.Data(res.content))
-            progress_callback(i / total, i, total - 1)
-        self.copy_server_files()
-
     def download_server_files(
         self,
         progress_callback_individual: Optional[
@@ -668,9 +646,12 @@ class Apk:
         return self.get_display_string()
 
     def get_libnative_path(self, architecture: str) -> "path.Path":
-        if self.game_version >= game_version.GameVersion.from_string("7.0.0"):
+        if not self.is_java():
             return self.get_lib_path(architecture).add("libnative-lib.so")
         return self.get_lib_path(architecture).add("libbattlecats-jni.so")
+
+    def is_java(self):
+        return self.game_version < game_version.GameVersion.from_string("7.0.0")
 
     def parse_libnative(self, architecture: str) -> Optional["lib.Lib"]:
         path = self.get_libnative_path(architecture)
@@ -806,9 +787,14 @@ class Apk:
     def add_asset(self, asset_path: "path.Path"):
         asset_path.copy(self.extracted_path.add("assets"))
 
+    def get_pack_location(self) -> "path.Path":
+        if self.is_java():
+            return self.extracted_path.add("res").add("raw")
+        return self.extracted_path.add("assets")
+
     def add_audio(self, audio: "audio.AudioFile"):
         audio.caf_to_little_endian().data.to_file(
-            self.extracted_path.add("assets").add(audio.get_apk_name())
+            self.get_pack_location().add(audio.get_apk_name())
         )
 
     def add_audio_mods(self, bc_mods: list["mods.bc_mod.Mod"]):
@@ -818,7 +804,7 @@ class Apk:
 
     def get_all_audio(self) -> "audio.Audio":
         audio_files: dict[str, "audio.AudioFile"] = {}
-        for file in self.extracted_path.add("assets").get_files():
+        for file in self.get_pack_location().get_files():
             if not file.get_extension() == "caf" and not file.get_extension() == "ogg":
                 continue
             audio_files[file.basename()] = audio.AudioFile.from_file(file)
@@ -830,7 +816,7 @@ class Apk:
         return audio.Audio(audio_files)
 
     def find_audio_path(self, audio: "audio.AudioFile") -> Optional["path.Path"]:
-        for file in self.extracted_path.add("assets").get_files():
+        for file in self.get_pack_location().get_files():
             if not file.get_extension() == "caf" and not file.get_extension() == "ogg":
                 continue
             if file.basename() == audio.get_apk_name():

@@ -4,7 +4,7 @@ import hmac
 import random
 from typing import Optional
 from Cryptodome.Cipher import AES
-from tbcml.core import country_code, io, game_data
+from tbcml.core import country_code, io, game_data, game_version
 
 
 class HashAlgorithm(enum.Enum):
@@ -126,13 +126,16 @@ class AesCipher:
 
     @staticmethod
     def get_cipher_from_pack(
-        cc: country_code.CountryCode, pack_name: str
+        cc: country_code.CountryCode,
+        pack_name: str,
+        gv: game_version.GameVersion,
     ) -> "AesCipher":
         """Gets the cipher from the pack.
 
         Args:
             cc (country_code.CountryCode): The country code.
             pack_name (str): The pack name.
+            gv (game_version.GameVersion): The game version.
 
         Raises:
             Exception: Unknown country code.
@@ -156,7 +159,9 @@ class AesCipher:
         else:
             raise Exception("Unknown country code")
         enable = not game_data.pack.PackFile.is_image_data_local_pack(pack_name)
-        if game_data.pack.PackFile.is_server_pack(pack_name):
+        if game_data.pack.PackFile.is_server_pack(
+            pack_name
+        ) or gv < game_version.GameVersion.from_string("8.9.0"):
             aes_mode = AES.MODE_ECB
             key = (
                 Hash(HashAlgorithm.MD5).get_hash(io.data.Data("battlecats"), 8).to_hex()

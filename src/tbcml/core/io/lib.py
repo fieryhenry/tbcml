@@ -84,10 +84,8 @@ class LibFiles:
         duplicates: dict[path.Path, list[path.Path]] = {}
         for pack in self.modified_packs:
             duplicates[pack] = []
-            original_pack_path = self.apk.original_extracted_path.add("assets").add(
-                pack.basename()
-            )
-            for original in self.apk.original_extracted_path.add("assets").get_files(
+            original_pack_path = self.get_pack_folder_original().add(pack.basename())
+            for original in self.get_pack_folder_original().get_files(
                 regex=".*\\.pack|.*\\.list"
             ):
                 if original.basename() == pack.basename():
@@ -98,9 +96,13 @@ class LibFiles:
         return duplicates
 
     def get_original_packs_lists(self) -> list[path.Path]:
-        return self.apk.original_extracted_path.add("assets").get_files(
-            regex=".*\\.pack|.*\\.list"
-        )
+        return self.get_pack_folder_original().get_files(regex=".*\\.pack|.*\\.list")
+
+    def get_pack_folder_original(self):
+        if self.apk.is_java():
+            return self.apk.original_extracted_path.add("res").add("raw")
+        else:
+            return self.apk.original_extracted_path.add("assets")
 
     def write(self):
         for arc, so in self.so_files.items():
