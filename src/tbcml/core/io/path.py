@@ -1,3 +1,4 @@
+import glob
 import os
 import shutil
 import typing
@@ -189,6 +190,9 @@ class Path:
 
     def get_dirs(self) -> list["Path"]:
         return [file for file in self.get_files() if file.is_directory()]
+
+    def glob(self, pattern: str) -> list["Path"]:
+        return [Path(path) for path in glob.glob(self.add(pattern).path)]
 
     def is_directory(self) -> bool:
         return os.path.isdir(self.path)
