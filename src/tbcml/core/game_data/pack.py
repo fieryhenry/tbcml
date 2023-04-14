@@ -561,7 +561,7 @@ class GamePacks:
         data = io.data.Data.from_file(file_path)
         return self.set_file(file_name, data)
 
-    def set_file_from_folder(self, folder_path: "io.path.Path") -> None:
+    def set_files_from_folder(self, folder_path: "io.path.Path") -> None:
         """Set a file in the game packs from a folder.
 
         Args:
