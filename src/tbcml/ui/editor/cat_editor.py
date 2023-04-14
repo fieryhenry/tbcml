@@ -378,6 +378,7 @@ class CatEditor(QtWidgets.QWidget):
                     self.talents,
                     self.nyanko_picture_book,
                     self.evolve_text,
+                    self.mod,
                 )
 
             except AttributeError:
@@ -395,6 +396,7 @@ class CatEditor(QtWidgets.QWidget):
                     self.talents,
                     self.nyanko_picture_book,
                     self.evolve_text,
+                    self.mod,
                 )
                 has_name = cat_widget.has_name(
                     filter.form_name, filter.name_mode, filter.case_sensitive
@@ -479,8 +481,13 @@ class CatListItem(QtWidgets.QListWidget):
         talents: game_data.cat_base.cats.Talents,
         nyanko_pic_book: game_data.cat_base.cats.NyankoPictureBook,
         evov_text: game_data.cat_base.cats.EvolveText,
+        mod: mods.bc_mod.Mod,
     ):
         if self.cat is not None:
+            return
+        modded_cat = mod.cat_base.cats.get_cat(self.cat_id)
+        if modded_cat is not None:
+            self.set_cat(modded_cat)
             return
         cat = game_data.cat_base.cats.Cat.from_game_data(
             game_packs,

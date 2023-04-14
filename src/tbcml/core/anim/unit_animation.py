@@ -256,7 +256,7 @@ class KeyFrames:
     def serialize(self) -> dict[str, Any]:
         return {
             "part_id": self.part_id,
-            "modification_type": self.modification_type,
+            "modification_type": self.modification_type.value,
             "loop": self.loop,
             "min_value": self.min_value,
             "max_value": self.max_value,
@@ -268,7 +268,7 @@ class KeyFrames:
     def deserialize(data: dict[str, Any]):
         return KeyFrames(
             data["part_id"],
-            data["modification_type"],
+            ModificationType(data["modification_type"]),
             data["loop"],
             data["min_value"],
             data["max_value"],
@@ -570,7 +570,7 @@ class UnitAnim:
     def save(self, game_packs: "game_data.pack.GamePacks"):
         file = game_packs.find_file(self.name)
         if file is None:
-            raise FileNotFoundError(f"Could not find file {self.name}")
+            return
         csv = self.meta_data.to_csv(self.get_total_parts())
         for part in self.parts:
             for line in part.to_data():
