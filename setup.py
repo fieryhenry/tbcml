@@ -33,6 +33,7 @@ setuptools.setup(
         "PyYAML",
         "requests",
         "PyQt5",
+        "androguard",
     ],
     include_package_data=True,
     extras_require={

@@ -8,3 +8,4 @@ Pillow
 pycryptodomex
 requests
 pyYAML
+androguard
