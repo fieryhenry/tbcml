@@ -29,27 +29,25 @@ class GameEditor(QtWidgets.QWidget):
         self.game_data: Optional[game_data.pack.GamePacks] = None
         self.setup_ui()
 
-    def set_up_data(self):
-        self.progress_bar.set_progress_str(
-            self.local_manager.search_key("extracting_apk_progress"), 0
+    def set_up_data(self, progress_signal: QtCore.pyqtSignal):
+        progress_signal.emit(  # type: ignore
+            self.local_manager.search_key("extracting_apk_progress"), 0, 100
         )
         self.apk.extract()
-        self.progress_bar.set_progress_str(
-            self.local_manager.search_key("copying_server_files_progress"), 30
+        progress_signal.emit(  # type: ignore
+            self.local_manager.search_key("copying_server_files_progress"), 30, 100
         )
         self.apk.copy_server_files()
-        self.progress_bar.set_progress_str(
-            self.local_manager.search_key("loading_game_data_progress"), 50
+        progress_signal.emit(  # type: ignore
+            self.local_manager.search_key("loading_game_data_progress"), 50, 100
         )
         self.game_data = game_data.pack.GamePacks.from_apk(self.apk)
-        self.progress_bar.set_progress_str(
-            self.local_manager.search_key("loading_mod_data_progress"), 90
+        progress_signal.emit(  # type: ignore
+            self.local_manager.search_key("loading_mod_data_progress"), 90, 100
         )
 
         self.game_data.apply_mod(self.mod)
-        self.progress_bar.set_progress_str(
-            self.local_manager.search_key("done_progress"), 100
-        )
+        progress_signal.emit(self.local_manager.search_key("done_progress"), 100, 100)  # type: ignore
 
     def setup_ui(self):
         self.setObjectName("GameEditor")
@@ -69,9 +67,10 @@ class GameEditor(QtWidgets.QWidget):
 
         self.apk = io.apk.Apk(self.mod.game_version, self.mod.country_code)
 
-        self._thread = ui_thread.ThreadWorker.run_in_thread_on_finished(
-            self.set_up_data, self.add_tabs
+        self._thread = ui_thread.ThreadWorker.run_in_thread_progress_on_finished(
+            self.set_up_data, ui_thread.ProgressMode.TEXT, self.add_tabs
         )
+        self._thread.progress_text.connect(self.progress_bar.set_progress_str)
 
     def add_tabs(self):
         self._tab_widget = QtWidgets.QTabWidget(self)

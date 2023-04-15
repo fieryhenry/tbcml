@@ -1,4 +1,5 @@
 from typing import Optional
+
 from PyQt5 import QtCore, QtWidgets
 
 from tbcml.core import country_code, game_version, io, locale_handler
@@ -78,21 +79,27 @@ class ServerFilesManager(QtWidgets.QDialog):
 
     def download_server_files_wrapper(self):
         cc_obj = country_code.CountryCode.from_code(self.get_current_cc())
-        gv = game_version.GameVersion.from_string_latest("latest", cc_obj)
+        gv = io.apk.Apk.get_latest_downloaded_version_cc(cc_obj)
         self.progress_bar.show()
-        self._thread = ui_thread.ThreadWorker.run_in_thread(
-            self.download_server_files, gv, cc_obj
+        self._thread = ui_thread.ThreadWorker.run_in_thread_progress(
+            self.download_server_files, ui_thread.ProgressMode.SECONDARY, gv, cc_obj
         )
+        self._thread.progress.connect(self.progress_bar.set_progress_full_no_text)
+        self._thread.progress_mode.connect(self.progress_bar.set_progress_no_bar)
 
     def download_server_files(
-        self, gv: game_version.GameVersion, cc_obj: country_code.CountryCode
+        self,
+        progress_signal: QtCore.pyqtSignal,
+        progress_mode: QtCore.pyqtSignal,
+        gv: game_version.GameVersion,
+        cc_obj: country_code.CountryCode,
     ):
         apk = io.apk.Apk(gv, cc_obj)
         apk.extract()
         apk.copy_packs()
         apk.download_server_files(
-            self.progress_bar.set_progress_full_no_text,
-            self.progress_bar.set_progress_no_bar,
+            progress_signal,
+            progress_mode,
             False,
         )
         self.progress_bar.hide()

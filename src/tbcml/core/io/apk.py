@@ -3,17 +3,19 @@ from typing import Any, Callable, Optional
 import bs4
 import cloudscraper  # type: ignore
 import requests
+from PyQt5 import QtCore
 
 from tbcml.core import (
     country_code,
     game_data,
     game_version,
+    locale_handler,
     mods,
     request,
-    locale_handler,
     server_handler,
 )
 from tbcml.core.io import (
+    audio,
     command,
     config,
     data,
@@ -22,7 +24,6 @@ from tbcml.core.io import (
     lib,
     path,
     xml_parse,
-    audio,
 )
 
 
@@ -334,7 +335,9 @@ class Apk:
             cc = country_code.CountryCode.from_code(country_code_str)
             game_version_str = name[:-2]
             gv = game_version.GameVersion.from_string_latest(game_version_str, cc)
-            apks.append(Apk(gv, cc))
+            apk = Apk(gv, cc)
+            if apk.is_downloaded():
+                apks.append(apk)
 
         apks.sort(key=lambda apk: apk.game_version.game_version, reverse=True)
 
@@ -357,6 +360,25 @@ class Apk:
             if apk.country_code == cc:
                 apks_cc.append(apk)
         return apks_cc
+
+    @staticmethod
+    def get_latest_downloaded_version_cc(
+        cc: "country_code.CountryCode",
+    ) -> "game_version.GameVersion":
+        """
+        Get latest downloaded APK version for a country code
+
+        Args:
+            cc (country_code.CountryCode): Country code
+
+        Returns:
+            game_version.GameVersion: Latest APK version
+        """
+        max_version = game_version.GameVersion(0)
+        for apk in Apk.get_all_apks_cc(cc):
+            if apk.game_version > max_version:
+                max_version = apk.game_version
+        return max_version
 
     @staticmethod
     def get_all_versions(
@@ -422,12 +444,7 @@ class Apk:
             end="",
         )
 
-    def download_apk(
-        self,
-        progress_callback: Optional[Callable[[float, int, int, bool], None]] = None,
-    ) -> bool:
-        if progress_callback is None:
-            progress_callback = self.progress
+    def download_apk(self, progress_signal: QtCore.pyqtSignal) -> bool:
         if self.apk_path.exists():
             return True
         if (
@@ -435,7 +452,8 @@ class Apk:
             or self.country_code == country_code.CountryCode.JP
         ):
             return self.download_apk_en(
-                self.country_code == country_code.CountryCode.EN, progress_callback
+                progress_signal,
+                self.country_code == country_code.CountryCode.EN,
             )
         else:
             url = self.get_download_url()
@@ -450,11 +468,12 @@ class Apk:
             dl = 0
             chunk_size = 1024
             buffer: list[bytes] = []
+            progress_signal.emit(0, total_length)  # type: ignore
             for d in stream.iter_content(chunk_size=chunk_size):
                 dl += len(d)
                 buffer.append(d)
-                progress_callback(dl / total_length, dl, total_length, True)
-            progress_callback(1, total_length, total_length, True)
+                progress_signal.emit(dl, total_length)  # type: ignore
+            progress_signal.emit(total_length, total_length)  # type: ignore
 
             apk = data.Data(b"".join(buffer))
             apk.to_file(self.apk_path)
@@ -462,11 +481,9 @@ class Apk:
 
     def download_apk_en(
         self,
+        progress_signal: QtCore.pyqtSignal,
         is_en: bool = True,
-        progress_callback: Optional[Callable[[float, int, int, bool], None]] = None,
     ) -> bool:
-        if progress_callback is None:
-            progress_callback = self.progress
         urls = Apk.get_en_apk_urls("the-battle-cats" if is_en else "the-battle-cats-jp")
         if not urls:
             print("Failed to get APK URLs")
@@ -490,7 +507,7 @@ class Apk:
             "upgrade-insecure-requests": "1",
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
         }
-        stream = request.RequestHandler(url, headers).get_stream(progress_callback)
+        stream = request.RequestHandler(url, headers).get_stream(progress_signal)
         apk = data.Data(stream.content)
         apk.to_file(self.apk_path)
         return True
@@ -585,14 +602,12 @@ class Apk:
 
     def download_server_files(
         self,
-        progress_callback_individual: Optional[
-            Callable[[float, int, int], None]
-        ] = None,
-        progress_callback: Optional[Callable[[int, int], None]] = None,
+        progress_signal: QtCore.pyqtSignal,
+        progress_mode: QtCore.pyqtSignal,
         copy: bool = True,
     ):
         sfh = server_handler.ServerFileHandler(self)
-        sfh.extract_all(progress_callback_individual, progress_callback)
+        sfh.extract_all(progress_signal, progress_mode)
         if copy:
             self.copy_server_files()
 

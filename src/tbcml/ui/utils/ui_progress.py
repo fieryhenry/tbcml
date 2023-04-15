@@ -59,34 +59,30 @@ class ProgressBar(QtWidgets.QWidget):
         if self.on_progress:
             self.on_progress(current, total)
 
-    def set_progress_full(
-        self, progress: float, current: int, total: int, is_file_size: bool = False
-    ):
+    def set_progress_full_no_text(self, current: int, total: int):
         if total <= 0:
             total = 1
         self.progress_bar.setMaximum(100)
-        self.progress_bar.setValue(int(progress * 100))
-        if is_file_size:
-            current_str = io.file_handler.FileSize(current).format()
-            total_str = io.file_handler.FileSize(total).format()
-        else:
-            current_str = str(current)
-            total_str = str(total)
-        percent_str = f"{int(progress * 100)}%"
-        self.progress_label.setText(f"{current_str}/{total_str} ({percent_str})")
+        self.progress_bar.setValue(int(current / total * 100))
         if self.on_progress:
             self.on_progress(current, total)
-
-    def set_progress_full_no_text(self, progress: float, current: int, total: int):
-        if total <= 0:
-            total = 1
-        self.progress_bar.setMaximum(100)
-        self.progress_bar.setValue(int(progress * 100))
 
     def set_progress_no_bar(self, current: int, total: int):
         if total <= 0:
             total = 1
         percent_str = f"{int(current / total * 100)}%"
         self.progress_label.setText(f"{current}/{total} ({percent_str})")
+        if self.on_progress:
+            self.on_progress(current, total)
+
+    def set_progress_file_size(self, current: int, total: int):
+        if total <= 0:
+            total = 1
+        self.progress_bar.setMaximum(total)
+        self.progress_bar.setValue(current)
+        current_str = io.file_handler.FileSize(current).format()
+        total_str = io.file_handler.FileSize(total).format()
+        percent_str = f"{int(current / total * 100)}%"
+        self.progress_label.setText(f"{current_str}/{total_str} ({percent_str})")
         if self.on_progress:
             self.on_progress(current, total)

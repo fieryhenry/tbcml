@@ -160,11 +160,18 @@ class ApkManager(QtWidgets.QDialog):
         self._layout.addWidget(self.progress_bar)
         self.progress_bar.show()
 
-        self.decrypt_thread = ui_thread.ThreadWorker.run_in_thread(
-            self.decrypt_apk_thread, apk, path, with_mods
+        self.decrypt_thread = ui_thread.ThreadWorker.run_in_thread_progress(
+            self.decrypt_apk_thread, ui_thread.ProgressMode.NONE, apk, path, with_mods
         )
+        self.decrypt_thread.progress.connect(self.progress_bar.set_progress)
 
-    def decrypt_apk_thread(self, apk: io.apk.Apk, path: io.path.Path, with_mods: bool):
+    def decrypt_apk_thread(
+        self,
+        progress_signal: QtCore.pyqtSignal,
+        apk: io.apk.Apk,
+        path: io.path.Path,
+        with_mods: bool,
+    ):
         apk.extract()
         apk.copy_server_files()
         game_packs = game_data.pack.GamePacks.from_apk(apk)
@@ -175,7 +182,7 @@ class ApkManager(QtWidgets.QDialog):
         total_packs = len(game_packs.packs)
         for i, pck in enumerate(game_packs.packs.values()):
             pck.extract(path)
-            self.progress_bar.set_progress(i + 1, total_packs)
+            progress_signal.emit(i + 1, total_packs)  # type: ignore
         self.progress_bar.close()
         path.open()
 
@@ -317,10 +324,10 @@ class ApkDownloader(QtWidgets.QWidget):
 
     def setup_ui(self):
         self.setObjectName("ApkAdder")
-        self._layout = QtWidgets.QVBoxLayout()
-        self.setLayout(self._layout)
-
         self.resize(600, 500)
+
+        self._layout = QtWidgets.QVBoxLayout(self)
+        self.setLayout(self._layout)
 
         self.downloadable_apks_layout = QtWidgets.QHBoxLayout()
         self._layout.addLayout(self.downloadable_apks_layout)
@@ -349,19 +356,23 @@ class ApkDownloader(QtWidgets.QWidget):
         self.progress_bar = ui_progress.ProgressBar(title, None, self)
         self._layout.addWidget(self.progress_bar)
         self.progress_bar.show()
-        self._thread = ui_thread.ThreadWorker.run_in_thread_on_finished_args(
-            self.download_thread, self.on_download_finished, [apk], [apk]
+        self.apk = apk
+        self.thread_ = ui_thread.ThreadWorker.run_in_thread_progress_on_finished(
+            self.download_thread,
+            ui_thread.ProgressMode.PRIMARY,
+            self.on_download_finished,
         )
+        self.thread_.progress.connect(self.progress_bar.set_progress_file_size)
 
-    def on_download_finished(self, apk: io.apk.Apk):
-        apk_id = apk.get_id()
+    def on_download_finished(self):
+        apk_id = self.apk.get_id()
         if apk_id in self.downloading_apks:
             self.downloading_apks.remove(apk_id)
         if not self.downloading_apks:
-            self.add_call(apk)
+            self.add_call(self.apk)
 
-    def download_thread(self, apk: io.apk.Apk):
-        apk.download_apk()  # self.progress_bar.set_progress_full)
+    def download_thread(self, progress_signal: QtCore.pyqtSignal):
+        self.apk.download_apk(progress_signal)
 
     def select_element(self, apk: io.apk.Apk):
         for i in range(self.downloadable_apks_layout.count()):

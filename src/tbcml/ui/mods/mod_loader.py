@@ -26,13 +26,16 @@ class ModLoader(QtWidgets.QDialog):
         self._layout.addWidget(self.loading_progress_bar)
         self.loading_progress_bar.show()
 
-        self._data_thread = ui_thread.ThreadWorker.run_in_thread_on_finished(
-            self.load_data, self.add_ui
+        self._data_thread = ui_thread.ThreadWorker.run_in_thread_progress_on_finished(
+            self.load_data, ui_thread.ProgressMode.TEXT, self.add_ui
+        )
+        self._data_thread.progress_text.connect(
+            self.loading_progress_bar.set_progress_str
         )
 
-    def load_data(self):
-        self.loading_progress_bar.set_progress_str(
-            self.locale_manager.search_key("getting_selected_apk"), 0
+    def load_data(self, progress_signal: QtCore.pyqtSignal):
+        progress_signal.emit(  # type: ignore
+            self.locale_manager.search_key("getting_selected_apk"), 0, 100
         )
         self.selected_apk = io.config.Config().get(io.config.Key.SELECTED_APK)
         if not self.selected_apk:
@@ -43,12 +46,10 @@ class ModLoader(QtWidgets.QDialog):
             self.apk_manager.show()
             return
         self.apk = io.apk.Apk.from_format_string(self.selected_apk)
-        self.loading_progress_bar.set_progress_str(
-            self.locale_manager.search_key("extracting_apk"), 5
-        )
+        progress_signal.emit(self.locale_manager.search_key("extracting_apk"), 5, 100)  # type: ignore
         self.apk.extract()
-        self.loading_progress_bar.set_progress_str(
-            self.locale_manager.search_key("copying_server_files"), 50
+        progress_signal.emit(  # type: ignore
+            self.locale_manager.search_key("copying_server_files"), 50, 100
         )
         self.apk.copy_server_files()
 
@@ -108,20 +109,30 @@ class ModLoader(QtWidgets.QDialog):
         self._layout.addWidget(self.progress_bar)
         self.progress_bar.show()
 
-        self._thread = ui_thread.ThreadWorker.run_in_thread(
-            self.load_mods_thread, mod_names
+        self._thread = ui_thread.ThreadWorker.run_in_thread_progress_on_finished(
+            self.load_mods_thread,
+            ui_thread.ProgressMode.TEXT,
+            self.on_finished,
+            mod_names,
         )
+        self._thread.progress_text.connect(self.progress_bar.set_progress_str)
 
-    def load_mods_thread(self, mod_names: list[str]):
+    def on_finished(self):
+        self.progress_bar.close()
+        self.progress_bar.deleteLater()
+
+    def load_mods_thread(
+        self, progress_signal: QtCore.pyqtSignal, mod_names: list[str]
+    ):
         self.loading_mods = True
         total_progress = 100
-        self.progress_bar.set_progress_str(
+        progress_signal.emit(  # type: ignore
             self.locale_manager.search_key("loading_game_data_progress"),
             0,
             total_progress,
         )
         game_packs = game_data.pack.GamePacks.from_apk(self.apk)
-        self.progress_bar.set_progress_str(
+        progress_signal.emit(  # type: ignore
             self.locale_manager.search_key("applying_mods_progress"), 10, total_progress
         )
         mds: list[mods.bc_mod.Mod] = []
@@ -130,23 +141,21 @@ class ModLoader(QtWidgets.QDialog):
             if md is not None:
                 mds.append(md)
         game_packs.apply_mods(mds)
-        self.progress_bar.set_progress_str(
+        progress_signal.emit(  # type: ignore
             self.locale_manager.search_key("adding_script_mods_progress"),
             15,
             total_progress,
         )
         self.apk.add_script_mods(mds)
-        self.progress_bar.set_progress_str(
+        progress_signal.emit(  # type: ignore
             self.locale_manager.search_key("adding_audio_mods_progress"),
             30,
             total_progress,
         )
         self.apk.add_audio_mods(mds)
-        self.apk.load_packs_into_game(
-            game_packs, self.progress_bar.set_progress_str, 35, 100
-        )
+        self.apk.load_packs_into_game(game_packs, progress_signal.emit, 35, 100)  # type: ignore
 
-        self.progress_bar.set_progress_str(
+        progress_signal.emit(  # type: ignore
             self.locale_manager.search_key("finished_progress"),
             100,
             total_progress,

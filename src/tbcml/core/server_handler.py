@@ -2,13 +2,14 @@ import base64
 import datetime
 import json
 import time
-from typing import Optional, Callable
-from tbcml.core import io, request, country_code, crypto
+from typing import Optional
 
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
+from PyQt5 import QtCore
+
+from tbcml.core import country_code, crypto, io, request
 
 
 class ServerFileHandler:
@@ -86,13 +87,12 @@ class ServerFileHandler:
     def download(
         self,
         index: int,
-        progress_callback: Optional[Callable[[float, int, int], None]] = None,
+        progress_signal: Optional[QtCore.pyqtSignal],
     ) -> "io.zip.Zip":
         """Downloads game files from the server for a given game version
 
         Args:
             index (int): The index of the game version to download
-            progress_callback (Optional[Callable[[float, int, int], None]], optional): A callback function to call with progress updates. Defaults to None.
 
         Raises:
             ValueError: If the zip data is invalid
@@ -113,10 +113,10 @@ class ServerFileHandler:
             "user-agent": "Dalvik/2.1.0 (Linux; U; Android 9; Pixel 2 Build/PQ3A.190801.002)",
         }
         req = request.RequestHandler(url, headers=headers)
-        if progress_callback is None:
+        if progress_signal is None:
             resp = req.get()
         else:
-            resp = req.get_stream_no_file_size(progress_callback)
+            resp = req.get_stream(progress_signal)
         data = resp.content
         try:
             zipf = io.zip.Zip(io.data.Data(data))
@@ -127,14 +127,13 @@ class ServerFileHandler:
     def extract(
         self,
         index: int,
-        progress_callback: Optional[Callable[[float, int, int], None]] = None,
+        progress_signal: Optional[QtCore.pyqtSignal],
         force: bool = False,
     ) -> bool:
         """Extracts game files to the server files path for a given game version
 
         Args:
             index (int): The index of the game version to extract
-            progress_callback (Optional[Callable[[float, int, int], None]], optional): A callback function to call with progress updates. Defaults to None.
             force (bool, optional): Whether to force download even if the files already exist. Defaults to False.
 
         Returns:
@@ -162,17 +161,15 @@ class ServerFileHandler:
 
             if found and hashes_equal:
                 return False
-        zipf = self.download(index, progress_callback)
+        zipf = self.download(index, progress_signal)
         path = io.apk.Apk.get_server_path(self.apk.country_code)
         zipf.extract(path)
         return True
 
     def extract_all(
         self,
-        progress_callback_individual: Optional[
-            Callable[[float, int, int], None]
-        ] = None,
-        progress_callback: Optional[Callable[[int, int], None]] = None,
+        progress_signal: Optional[QtCore.pyqtSignal],
+        progress_mode: Optional[QtCore.pyqtSignal],
         force: bool = False,
     ):
         """Extracts all game versions
@@ -182,14 +179,14 @@ class ServerFileHandler:
             progress_callback (Optional[Callable[[int, int], None]], optional): Callback function to call with progress updates for each game version. Defaults to None.
             force (bool, optional): Whether to force extraction even if the files already exist. Defaults to False.
         """
-        if progress_callback:
-            progress_callback(0, len(self.tsv_paths))
+        if progress_mode is not None:
+            progress_mode.emit(0, len(self.tsv_paths))  # type: ignore
         for i in range(len(self.tsv_paths)):
-            if progress_callback_individual:
-                progress_callback_individual(0, 0, 0)
-            self.extract(i, progress_callback_individual, force)
-            if progress_callback is not None:
-                progress_callback(i + 1, len(self.tsv_paths))
+            if progress_signal is not None:
+                progress_signal.emit(0, 0)  # type: ignore
+            self.extract(i, progress_signal, force)
+            if progress_mode is not None:
+                progress_mode.emit(i + 1, len(self.tsv_paths))  # type: ignore
 
     def find_game_versions(self) -> list[int]:
         """Finds all game versions in the libnative.so file
