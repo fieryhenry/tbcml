@@ -93,6 +93,7 @@ class ServerFileHandler:
 
         Args:
             index (int): The index of the game version to download
+            progress_signal (Optional[QtCore.pyqtSignal]): The signal to emit progress on
 
         Raises:
             ValueError: If the zip data is invalid
@@ -134,6 +135,7 @@ class ServerFileHandler:
 
         Args:
             index (int): The index of the game version to extract
+            progress_signal (Optional[QtCore.pyqtSignal]): The signal to emit progress on
             force (bool, optional): Whether to force download even if the files already exist. Defaults to False.
 
         Returns:
@@ -168,25 +170,25 @@ class ServerFileHandler:
 
     def extract_all(
         self,
-        progress_signal: Optional[QtCore.pyqtSignal],
-        progress_mode: Optional[QtCore.pyqtSignal],
+        progress_primary: Optional[QtCore.pyqtSignal],
+        progress_secondary: Optional[QtCore.pyqtSignal],
         force: bool = False,
     ):
         """Extracts all game versions
 
         Args:
-            progress_callback_individual (Optional[ Callable[[float, int, int], None] ], optional): Callback function to call with progress updates for each game version. Defaults to None.
-            progress_callback (Optional[Callable[[int, int], None]], optional): Callback function to call with progress updates for each game version. Defaults to None.
+            progress_primary (Optional[QtCore.pyqtSignal]): The signal to emit progress on for each game version
+            progress_secondary (Optional[QtCore.pyqtSignal]): The signal to emit progress on for each file
             force (bool, optional): Whether to force extraction even if the files already exist. Defaults to False.
         """
-        if progress_mode is not None:
-            progress_mode.emit(0, len(self.tsv_paths))  # type: ignore
+        if progress_secondary is not None:
+            progress_secondary.emit(0, len(self.tsv_paths))  # type: ignore
         for i in range(len(self.tsv_paths)):
-            if progress_signal is not None:
-                progress_signal.emit(0, 0)  # type: ignore
-            self.extract(i, progress_signal, force)
-            if progress_mode is not None:
-                progress_mode.emit(i + 1, len(self.tsv_paths))  # type: ignore
+            if progress_primary is not None:
+                progress_primary.emit(0, 0)  # type: ignore
+            self.extract(i, progress_primary, force)
+            if progress_secondary is not None:
+                progress_secondary.emit(i + 1, len(self.tsv_paths))  # type: ignore
 
     def find_game_versions(self) -> list[int]:
         """Finds all game versions in the libnative.so file
