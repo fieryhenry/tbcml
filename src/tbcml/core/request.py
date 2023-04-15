@@ -42,6 +42,8 @@ class RequestHandler:
     ) -> requests.Response:
         """Sends a GET request and streams the response.
 
+        Args:
+            progress_signal (QtCore.pyqtSignal): Signal to emit progress on.
 
         Returns:
             requests.Response: Response from the server.
@@ -58,6 +60,9 @@ class RequestHandler:
         progress_signal: QtCore.pyqtSignal,
     ) -> Callable[[requests.Response], None]:
         """Creates a progress hook for a GET request.
+
+        Args:
+            progress_signal (QtCore.pyqtSignal): Signal to emit progress on.
 
         Returns:
             Callable[[requests.Response], None]: Hook to pass to requests.
