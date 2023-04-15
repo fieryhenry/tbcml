@@ -42,8 +42,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.resize(900, 700)
         self.create_toolbar()
         self.setWindowTitle(self.locale_manager.search_key("main_title"))
-        icon_path = io.path.Path(is_relative=True).add("assets", "icon.png")
-        self.setWindowIcon(QtGui.QIcon(str(icon_path)))
+        icon = self.asset_manager.load_icon("icon.png")
+        self.setWindowIcon(icon)
 
         self.centralwidget = QtWidgets.QWidget(self)
         self.centralwidget.setObjectName("centralwidget")
