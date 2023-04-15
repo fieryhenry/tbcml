@@ -279,6 +279,7 @@ class CatEditor(QtWidgets.QWidget):
             return
         self.setup = True
         self.local_manager = locale_handler.LocalManager.from_config()
+        self.asset_manager = io.asset_loader.AssetLoader.from_config()
         self.setObjectName("CatEditor")
         self._layout = QtWidgets.QVBoxLayout(self)
         self._layout.setObjectName("layout")
@@ -307,9 +308,8 @@ class CatEditor(QtWidgets.QWidget):
         self.edited_cats: list[game_data.cat_base.cats.Cat] = list(
             self.mod.cat_base.cats.cats.values()
         )
-        self.blank_uni_path = io.path.Path("assets", True)
         names = ["uni_c.png", "uni_f.png", "uni_s.png"]
-        paths = [self.blank_uni_path.add(name) for name in names]
+        paths = [self.asset_manager.get_asset_file_path(name) for name in names]
         self.blank_icons = {
             game_data.cat_base.cats.FormType.FIRST: io.bc_image.BCImage(
                 paths[0].read()

@@ -1,5 +1,6 @@
+import math
 from typing import Any, Optional
-from tbcml.core.anim import rect, anim_transformer, unit_animation, model
+from tbcml.core.anim import rect, unit_animation, model
 from tbcml.core import io
 from PyQt5 import QtGui, QtCore
 
@@ -56,6 +57,7 @@ class ModelPart:
         self.rotation = rotation
         self.alpha = alpha
         self.glow = glow
+        self.glow_support = (glow >= 1 and glow <= 3) or glow == -1
         self.name = name
 
         self.pos_x_orig = x
@@ -79,8 +81,14 @@ class ModelPart:
         self.angle_unit: int
         self.alpha_unit: int
 
+        self.__scale_x = None
+        self.__scale_y = None
+        self.__sv_x = None
+        self.__sv_y = None
+
     def load_texs(self):
         """Loads the texture and rect for the part."""
+
         rct = self.model.tex.get_rect(self.rect_id)
         if rct is None:
             self.rect = rect.Rect.create_empty()
@@ -146,18 +154,17 @@ class ModelPart:
                 self.pivot_y = change_in_value + self.pivot_y_orig
             elif mod == unit_animation.ModificationType.SCALE_UNIT:
                 self.gsca = change_in_value
-                self.set_scale(self.scale_x, self.scale_y)
+                self.calc_scale()
             elif mod == unit_animation.ModificationType.SCALE_X:
                 self.scale_x = int(
                     change_in_value * self.scale_x_orig / self.scale_unit
                 )
-                self.set_scale(self.scale_x, self.scale_y)
+                self.calc_scale()
             elif mod == unit_animation.ModificationType.SCALE_Y:
                 self.scale_y = int(
                     change_in_value * self.scale_y_orig / self.scale_unit
                 )
-
-                self.set_scale(self.scale_x, self.scale_y)
+                self.calc_scale()
             elif mod == unit_animation.ModificationType.ANGLE:
                 self.rotation = change_in_value + self.rotation_orig
                 self.set_rotation(self.rotation)
@@ -169,20 +176,11 @@ class ModelPart:
             elif mod == unit_animation.ModificationType.V_FLIP:
                 self.v_flip = change_in_value
 
-    def set_scale(self, scale_x: int, scale_y: int):
-        """Sets the scale of the part.
-
-        Args:
-            scale_x (int): Scale on the x axis. Should not have been divided by the scale unit.
-            scale_y (int): Scale on the y axis. Should not have been divided by the scale unit.
-        """
-        self.scale_x = scale_x
-        self.scale_y = scale_y
-        scl_x = scale_x / self.scale_unit
-        scl_y = scale_y / self.scale_unit
-        gcsa = self.gsca / self.scale_unit
-        self.real_scale_x = scl_x * gcsa
-        self.real_scale_y = scl_y * gcsa
+    def calc_scale(self):
+        """Calculates the real scale of the part."""
+        gsca = self.gsca / self.scale_unit
+        self.real_scale_x = (self.scale_x / self.scale_unit) * gsca
+        self.real_scale_y = (self.scale_y / self.scale_unit) * gsca
 
     def set_alpha(self, alpha: int):
         """Sets the alpha of the part.
@@ -280,7 +278,6 @@ class ModelPart:
         painter: "QtGui.QPainter",
         base_x: float,
         base_y: float,
-        local: bool = False,
         draw_overlay: bool = False,
         just_overlay: bool = False,
     ):
@@ -290,40 +287,54 @@ class ModelPart:
             painter (QtGui.QPainter): The painter to use to draw the part on.
             base_x (float): A base scale on the x axis. Used for zooming.
             base_y (float): A base scale on the y axis. Used for zooming.
-            local (bool, optional): Whether to not draw it in relation to the parent. Defaults to False.
             draw_overlay (bool, optional): Whether to draw the overlay. Defaults to False.
             just_overlay (bool, optional): Whether to only draw the overlay. Defaults to False.
         """
-        img = self.image
+        self.__scale_x = None
+        self.__scale_y = None
+        in_valid = self.parent_id < 0 or self.unit_id < 0
+        if in_valid and not draw_overlay:
+            return
         rct = self.rect
-        current_transform = painter.transform()
-        transformer = anim_transformer.AnimTransformer()
-        scale_x, scale_y = self.get_recursive_scale()
-        if local:
-            self.local_transform(transformer, base_x, base_y)
-        else:
-            self.transform(transformer, base_x, base_y)
 
-        flip_x, flip_y = self.get_flip(scale_x, scale_y)
-        t_piv_x = self.pivot_x * scale_x * flip_x * base_x
-        t_piv_y = self.pivot_y * scale_y * flip_y * base_y
-        transformer.scale(flip_x, flip_y)
-        sc_w = rct.width * scale_x * base_x
-        sc_h = rct.height * scale_y * base_y
-        painter.setTransform(transformer.to_q_transform(), True)
-        if self.parent_id >= 0 and self.unit_id >= 0 and not just_overlay:
+        current_transform = painter.transform()
+        scale_x, scale_y = self.get_recursive_scale()
+        matrix = self.transform([0.1, 0.0, 0.0, 0.0, 0.1, 0.0], base_x, base_y)
+
+        scx_bx = scale_x * base_x
+        scy_by = scale_y * base_y
+
+        flip_x = -1 if scale_x < 0 else 1
+        flip_y = -1 if scale_y < 0 else 1
+        t_piv_x = self.pivot_x * scx_bx * flip_x
+        t_piv_y = self.pivot_y * scy_by * flip_y
+
+        m0 = matrix[0] * flip_x
+        m3 = matrix[3] * flip_x
+        m1 = matrix[1] * flip_y
+        m4 = matrix[4] * flip_y
+
+        sc_w = rct.width * scx_bx
+        sc_h = rct.height * scy_by
+        painter.setTransform(
+            QtGui.QTransform(m0, m3, m1, m4, matrix[2], matrix[5]),
+            True,
+        )
+        if not in_valid and not just_overlay:
+            alpha = self.get_recursive_alpha()
             self.draw_img(
-                img,
+                self.image,
                 (t_piv_x, t_piv_y),
                 (sc_w, sc_h),
-                self.get_recursive_alpha(),
-                self.glow,
+                alpha,
                 painter,
             )
-        painter.setOpacity(1.0)
-        painter.setCompositionMode(
-            QtGui.QPainter.CompositionMode.CompositionMode_SourceOver
-        )
+            if self.glow_support:
+                painter.setCompositionMode(
+                    QtGui.QPainter.CompositionMode.CompositionMode_SourceOver
+                )
+            if alpha != 1.0:
+                painter.setOpacity(1.0)
         if draw_overlay:
             self.draw_part_overlay(painter, t_piv_x, t_piv_y, sc_w, sc_h)
         painter.setTransform(current_transform)
@@ -374,7 +385,6 @@ class ModelPart:
         pivot: tuple[float, float],
         size: tuple[float, float],
         alpha: float,
-        glow: int,
         painter: "QtGui.QPainter",
     ):
         """Draws the part's image.
@@ -389,8 +399,7 @@ class ModelPart:
         """
         painter.setOpacity(alpha)
 
-        glow_support = (glow >= 1 and glow <= 3) or glow == -1
-        if glow_support:
+        if self.glow_support:
             painter.setCompositionMode(
                 QtGui.QPainter.CompositionMode.CompositionMode_Plus
             )
@@ -423,69 +432,65 @@ class ModelPart:
             -1 if flip_y else 1,
         )
 
-    def local_transform(
-        self,
-        transformer: anim_transformer.AnimTransformer,
-        sizer_x: float,
-        sizer_y: float,
-    ):
-        """Transforms the part without regard to the parent.
-
-        Args:
-            transformer (anim_transformer.AnimTransformer): The transformer to use to
-            sizer_x (float): The multiplier for the x axis.
-            sizer_y (float): The multiplier for the y axis.
-        """
-        scale_x, scale_y = self.get_recursive_scale()
-        siz_x = scale_x * sizer_x
-        siz_y = scale_y * sizer_y
-        t_pos_x = self.x * siz_x
-        t_pos_y = self.y * siz_y
-        transformer.translate(t_pos_x, t_pos_y)
-        transformer.rotate(fraction=self.real_rotation)
-
     def transform(
         self,
-        transformer: anim_transformer.AnimTransformer,
+        matrix: list[float],
         sizer_x: float,
         sizer_y: float,
-    ):
+    ) -> list[float]:
         """Transforms the part. Recursively calls the parent's transform method.
 
         Args:
-            transformer (anim_transformer.AnimTransformer): The transformer to use to
+            matrix (list[float]): The matrix to transform the part by.
             sizer_x (float): The multiplier for the x axis.
             sizer_y (float): The multiplier for the y axis.
         """
+
         siz_x, siz_y = sizer_x, sizer_y
         if self.parent is not None:
-            self.parent.transform(transformer, sizer_x, sizer_y)
+            matrix = self.parent.transform(matrix, sizer_x, sizer_y)
             scale_x, scale_y = self.parent.get_recursive_scale()
             siz_x = scale_x * sizer_x
             siz_y = scale_y * sizer_y
 
-        t_pos_x = self.x * siz_x
-        t_pos_y = self.y * siz_y
+        m0, m1, m2, m3, m4, m5 = matrix
+
         if self.index != 0:
-            transformer.translate(t_pos_x, t_pos_y)
+            t_pos_x = self.x * siz_x
+            t_pos_y = self.y * siz_y
+            m2 += (m0 * t_pos_x) + (m1 * t_pos_y)
+            m5 += (m3 * t_pos_x) + (m4 * t_pos_y)
         else:
-            p3_x = 0
-            p3_y = 0
-            if self.ints:
-                data = self.ints[0]
-                p0_x, p0_y = self.get_base_size(False)
-                shi_x = data[2] * p0_x
-                shi_y = data[3] * p0_y
-                p3_x = shi_x * sizer_x
-                p3_y = shi_y * sizer_y
+            data = self.ints[0]
+            p0_x, p0_y = self.get_base_size(False)
+            shi_x = data[2] * p0_x
+            shi_y = data[3] * p0_y
+            p3_x = shi_x * sizer_x
+            p3_y = shi_y * sizer_y
 
             p0_x, p0_y = self.get_recursive_scale()
             px = self.pivot_x * p0_x * sizer_x
             py = self.pivot_y * p0_y * sizer_y
-            transformer.translate(px - p3_x, py - p3_y)
+            x = px - p3_x
+            y = py - p3_y
+            m2 += (m0 * x) + (m1 * y)
+            m5 += (m3 * x) + (m4 * y)
 
         if self.rotation != 0:
-            transformer.rotate(fraction=self.real_rotation)
+            degrees = self.real_rotation * 360
+            radians = math.radians(degrees)
+            sin = math.sin(radians)
+            cos = math.cos(radians)
+            f = (m0 * cos) + (m1 * sin)
+            f2 = (m0 * -sin) + (m1 * cos)
+            f3 = (m3 * cos) + (m4 * sin)
+            f4 = (m3 * -sin) + (m4 * cos)
+            m0 = f
+            m1 = f2
+            m3 = f3
+            m4 = f4
+
+        return [m0, m1, m2, m3, m4, m5]
 
     def get_base_size(self, parent: bool) -> tuple[float, float]:
         """Gets the base size of the part.
@@ -496,27 +501,39 @@ class ModelPart:
         Returns:
             tuple[float, float]: The base size of the part.
         """
+        if self.__sv_x is not None and self.__sv_y is not None:
+            return self.__sv_x, self.__sv_y
         signum_x = 1 if self.scale_x >= 0 else -1
         signum_y = 1 if self.scale_y >= 0 else -1
         if parent:
             if self.parent is not None:
                 size_x, size_y = self.parent.get_base_size(True)
-                return size_x * signum_x, size_y * signum_y
+                self.__sv_x = size_x * signum_x
+                self.__sv_y = size_y * signum_y
+                return self.__sv_x, self.__sv_y
             else:
-                return signum_x, signum_y
+                self.__sv_x = signum_x
+                self.__sv_y = signum_y
+                return self.__sv_x, self.__sv_y
         else:
             part_id = self.ints[0][0]
             if part_id == -1:
-                return self.real_scale_x, self.real_scale_y
+                self.__sv_x = self.real_scale_x
+                self.__sv_y = self.real_scale_y
+                return self.__sv_x, self.__sv_y
             else:
                 if part_id == self.index:
-                    return self.real_scale_x, self.real_scale_y
+                    self.__sv_x = self.real_scale_x
+                    self.__sv_y = self.real_scale_y
+                    return self.__sv_x, self.__sv_y
                 else:
                     part = self.model.get_part(part_id)
                     size_x, size_y = part.get_base_size(True)
                     size_x *= self.real_scale_x
                     size_y *= self.real_scale_y
-                    return size_x * signum_x, size_y * signum_y
+                    self.__sv_x = size_x * signum_x
+                    self.__sv_y = size_y * signum_y
+                    return self.__sv_x, self.__sv_y
 
     def get_recursive_scale(self) -> tuple[float, float]:
         """Gets the recursive scale of the part. Recursively calls the parent's
@@ -525,12 +542,16 @@ class ModelPart:
         Returns:
             tuple[float, float]: The recursive scale of the part.
         """
+        if self.__scale_x is not None and self.__scale_y is not None:
+            return self.__scale_x, self.__scale_y
         current_scale_x = self.real_scale_x
         current_scale_y = self.real_scale_y
         if self.parent is not None:
             parent_scale_x, parent_scale_y = self.parent.get_recursive_scale()
             current_scale_x *= parent_scale_x
             current_scale_y *= parent_scale_y
+        self.__scale_x = current_scale_x
+        self.__scale_y = current_scale_y
         return current_scale_x, current_scale_y
 
     def get_recursive_alpha(self) -> float:

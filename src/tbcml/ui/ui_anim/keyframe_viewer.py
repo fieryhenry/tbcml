@@ -12,26 +12,23 @@ class PartGraphDrawer(QtWidgets.QWidget):
         part: anim.model_part.ModelPart,
         keyframes: anim.unit_animation.KeyFrames,
         clock: utils.clock.Clock,
-        change_spin_box_value: Callable[[], None],
         width: int = 500,
     ):
         super(PartGraphDrawer, self).__init__(parent)
         self.model = model
         self.part = part
         self.keyframes = keyframes
-        self.current_frame = clock.get_frame()
         self.clock = clock
         self.width_ = width
-        self.change_spin_box_value = change_spin_box_value
         self.selected_keyframe = None
-        self.clock.connect(self.update_frame)
+        self.clock.connect(self.update)
 
         self.locale_manager = locale_handler.LocalManager.from_config()
         self.setup_ui()
         self.setup_data()
 
     def disconnect_clock(self):
-        self.clock.disconnect(self.update_frame)
+        self.clock.disconnect(self.update)
 
     def setup_ui(self):
         self.setObjectName("part_graph_drawer")
@@ -55,28 +52,24 @@ class PartGraphDrawer(QtWidgets.QWidget):
         self.calc()
 
     def calc(self):
+        self.data: dict[int, tuple[int, int]] = {}
         self.total_frames = self.model.get_total_frames()
         self.frame_width = self.total_width // self.total_frames
+        self.pen = QtGui.QPen()
+        self.pen.setWidth(2)
+        self.pen.setColor(QtGui.QColor(0, 0, 0))
         self.calc_maxes()
         self.calc_true()
         self.update()
 
-    def set_frame(self, frame: int):
-        self.current_frame = frame
-        self.update()
-
-    def update_frame(self):
-        self.current_frame += 1
-        self.update()
-
     def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
         super(PartGraphDrawer, self).paintEvent(a0)
-        self.change_spin_box_value()
+
+        self.paint()
+
+    def paint(self):
         self.painter = QtGui.QPainter(self)
 
-        self.pen = QtGui.QPen()
-        self.pen.setWidth(2)
-        self.pen.setColor(QtGui.QColor(0, 0, 0))
         self.painter.setPen(self.pen)
 
         self.draw_0_line()
@@ -124,6 +117,10 @@ class PartGraphDrawer(QtWidgets.QWidget):
         change_in_value = 0
         self.changed: list[int] = []
 
+        frame_width = self.frame_width
+        if frame_width == 0:
+            frame_width = 1
+
         for frame in range(self.total_frames):
             for keyframe_index in range(len(self.keyframes.keyframes) - 1):
                 current_keyframe = self.keyframes.keyframes[keyframe_index]
@@ -145,6 +142,9 @@ class PartGraphDrawer(QtWidgets.QWidget):
 
             chng = int((self.max_change_in_value - change_in_value) * self.scale_factor)
             self.changed.append(chng)
+            x_pos = (frame * frame_width) + self.x_offset
+            y_pos = chng + self.y_offset
+            self.data[frame] = (x_pos, y_pos)
 
     def get_keyframe(self, frame: int) -> Optional["anim.unit_animation.KeyFrame"]:
         for keyframe in self.keyframes.keyframes:
@@ -153,24 +153,19 @@ class PartGraphDrawer(QtWidgets.QWidget):
         return None
 
     def draw_graph_true(self):
-        frame_width = self.frame_width
-        if frame_width == 0:
-            frame_width = 1
-        for frame in range(1, self.total_frames):
-            x_pos = (frame * frame_width) + self.x_offset
-            y_pos = self.changed[frame] + self.y_offset
-            previous_x_pos = ((frame - 1) * frame_width) + self.x_offset
-            previous_y_pos = self.changed[frame - 1] + self.y_offset
-
-            if y_pos == previous_y_pos:
-                self.painter.drawLine(x_pos, y_pos, previous_x_pos, previous_y_pos)
-            else:
-                self.painter.drawLine(x_pos, y_pos, x_pos, previous_y_pos)
-                self.painter.drawLine(
-                    x_pos, previous_y_pos, previous_x_pos, previous_y_pos
-                )
-
         for frame in range(self.total_frames):
+            if frame != 0:
+                x_pos, y_pos = self.data[frame]
+                previous_x_pos, previous_y_pos = self.data[frame - 1]
+
+                if y_pos == previous_y_pos:
+                    self.painter.drawLine(x_pos, y_pos, previous_x_pos, previous_y_pos)
+                else:
+                    self.painter.drawLine(x_pos, y_pos, x_pos, previous_y_pos)
+                    self.painter.drawLine(
+                        x_pos, previous_y_pos, previous_x_pos, previous_y_pos
+                    )
+
             keyframe = self.get_keyframe(frame)
             if keyframe is not None:
                 self.draw_keyframe(keyframe)
@@ -346,21 +341,27 @@ class PartGraphDrawer(QtWidgets.QWidget):
 
     # move the keyframe with arrow keys
     def move_keyframe(self, a0: QtGui.QKeyEvent):
-        if self.selected_keyframe is not None:
-            if a0.key() == QtCore.Qt.Key.Key_Left:
-                if self.can_move_left(self.selected_keyframe):
-                    self.selected_keyframe.frame -= 1
-                    self.calc()
-            elif a0.key() == QtCore.Qt.Key.Key_Right:
-                if self.can_move_right(self.selected_keyframe):
-                    self.selected_keyframe.frame += 1
-                    self.calc()
-            elif a0.key() == QtCore.Qt.Key.Key_Up:
-                self.selected_keyframe.change += 1
-                self.calc()
-            elif a0.key() == QtCore.Qt.Key.Key_Down:
-                self.selected_keyframe.change -= 1
-                self.calc()
+        if self.selected_keyframe is None:
+            return
+
+        moved = False
+
+        if a0.key() == QtCore.Qt.Key.Key_Left:
+            if self.can_move_left(self.selected_keyframe):
+                self.selected_keyframe.frame -= 1
+                moved = True
+        if a0.key() == QtCore.Qt.Key.Key_Right:
+            if self.can_move_right(self.selected_keyframe):
+                self.selected_keyframe.frame += 1
+                moved = True
+        if a0.key() == QtCore.Qt.Key.Key_Up:
+            self.selected_keyframe.change += 1
+            moved = True
+        if a0.key() == QtCore.Qt.Key.Key_Down:
+            self.selected_keyframe.change -= 1
+            moved = True
+        if moved:
+            self.calc()
 
     def can_move_left(self, keyframe: anim.unit_animation.KeyFrame) -> bool:
         if keyframe.frame == 0:
@@ -417,7 +418,6 @@ class PartAnimWidget(QtWidgets.QWidget):
             self.part,
             self.keyframes,
             self.clock,
-            self.update_spin_box,
             self.width_,
         )
         self._layout.addWidget(self.keyframes_graph)
@@ -438,8 +438,8 @@ class PartAnimWidget(QtWidgets.QWidget):
         self._layout.addStretch(1)
 
     def set_frame(self, frame: int):
-        self.keyframes_graph.set_frame(frame)
         self.update_spin_box()
+        self.keyframes_graph.update()
 
     def disconnect_clock(self):
         self.clock.disconnect(self.update_spin_box)
@@ -453,3 +453,4 @@ class PartAnimWidget(QtWidgets.QWidget):
 
     def move_keyframe(self, a0: QtGui.QKeyEvent) -> None:
         self.keyframes_graph.move_keyframe(a0)
+        self.update_spin_box()

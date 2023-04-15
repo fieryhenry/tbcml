@@ -1,5 +1,4 @@
 from tbcml.core.anim import (
-    anim_transformer,
     rect,
     texture,
     model,
@@ -8,7 +7,6 @@ from tbcml.core.anim import (
 )
 
 __all__ = [
-    "anim_transformer",
     "rect",
     "texture",
     "model",

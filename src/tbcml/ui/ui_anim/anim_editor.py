@@ -605,14 +605,13 @@ class AnimEditor(QtWidgets.QWidget):
 
     def set_frame(self, frame: int):
         self.anim_viewer_page.anim_viewer_box.anim_viewer.set_frame(frame)
-        self.anim_viewer_page.anim_viewer_box.update()
-        self.anim_viewer_page.part_viewer_box.update()
+        self.update_anim()
 
         self.part_timeline.set_frame(frame)
 
     def update_anim(self):
-        self.anim_viewer_page.anim_viewer_box.update()
-        self.anim_viewer_page.part_viewer_box.update()
+        self.anim_viewer_page.anim_viewer_box.anim_viewer.update()
+        self.anim_viewer_page.part_viewer_box.part_viewer.update()
 
     def frame_tick(self):
         pass

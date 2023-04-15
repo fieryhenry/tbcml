@@ -4,7 +4,7 @@ from typing import Optional
 from tbcml.ui import utils
 
 
-class AnimViewer(QtWidgets.QWidget):
+class AnimViewer(QtWidgets.QOpenGLWidget):
     def __init__(
         self,
         model: anim.model.Model,
@@ -92,7 +92,7 @@ class AnimViewer(QtWidgets.QWidget):
         self.gradient.setColorAt(0.5, self.color_2)
         self.gradient.setColorAt(1, self.color_1)
 
-    def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
+    def paintEvent(self, e: QtGui.QPaintEvent) -> None:
         self.paint()
 
     def paint(self):
@@ -197,7 +197,7 @@ class AnimViewer(QtWidgets.QWidget):
             self.update()
 
 
-class PartViewer(QtWidgets.QWidget):
+class PartViewer(QtWidgets.QOpenGLWidget):
     def __init__(
         self,
         model: anim.model.Model,
@@ -257,7 +257,7 @@ class PartViewer(QtWidgets.QWidget):
         self.gradient.setColorAt(0.5, self.color_2)
         self.gradient.setColorAt(1, self.color_1)
 
-    def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
+    def paintEvent(self, e: QtGui.QPaintEvent) -> None:
         self.paint()
 
     def paint(self):
