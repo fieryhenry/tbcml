@@ -406,7 +406,7 @@ class PartAnimWidget(QtWidgets.QWidget):
 
         self.modification_label = QtWidgets.QLabel(self)
         self.modification_label.setText(
-            self.locale_manager.search_key(
+            self.locale_manager.get_key(
                 f"modification_{self.keyframes.modification_type.value}"
             )
         )
@@ -423,7 +423,7 @@ class PartAnimWidget(QtWidgets.QWidget):
         self._layout.addWidget(self.keyframes_graph)
 
         self.change_in_value_label = QtWidgets.QLabel(self)
-        self.change_in_value_label.setText(self.locale_manager.search_key("value"))
+        self.change_in_value_label.setText(self.locale_manager.get_key("value"))
         self._layout.addWidget(self.change_in_value_label)
 
         self.change_in_value_spinbox = QtWidgets.QSpinBox(self)

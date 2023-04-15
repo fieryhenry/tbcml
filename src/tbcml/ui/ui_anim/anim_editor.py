@@ -27,7 +27,7 @@ class AnimViewerBox(QtWidgets.QGroupBox):
 
         self.anim_label = QtWidgets.QLabel(self)
         self.anim_label.setObjectName("anim_label")
-        self.anim_label.setText(self.locale_manager.search_key("anim"))
+        self.anim_label.setText(self.locale_manager.get_key("anim"))
         self._layout.addWidget(self.anim_label, 0, 0)
 
         self.anim_viewer = anim_viewer.AnimViewer(
@@ -70,7 +70,7 @@ class PartViewerBox(QtWidgets.QGroupBox):
 
         self.part_label = QtWidgets.QLabel(self)
         self.part_label.setObjectName("part_label")
-        self.part_label.setText(self.locale_manager.search_key("part"))
+        self.part_label.setText(self.locale_manager.get_key("part"))
         self._layout.addWidget(self.part_label, 0, 0)
 
         self.part_viewer = anim_viewer.PartViewer(
@@ -178,9 +178,7 @@ class AnimViewerPage(QtWidgets.QWidget):
         self.button_layout.addStretch(1)
         self.current_frame_label = QtWidgets.QLabel(self)
         self.current_frame_label.setObjectName("current_frame_label")
-        self.current_frame_label.setText(
-            self.locale_manager.search_key("current_frame")
-        )
+        self.current_frame_label.setText(self.locale_manager.get_key("current_frame"))
         self.button_layout.addWidget(self.current_frame_label)
         self.current_frame_spinbox = QtWidgets.QSpinBox(self)
         self.current_frame_spinbox.setObjectName("current_frame_spinbox")
@@ -214,7 +212,7 @@ class AnimViewerPage(QtWidgets.QWidget):
 
     def save_frame(self):
         path = utils.ui_file_dialog.FileDialog(self).select_save_file(
-            self.locale_manager.search_key("save_frame"),
+            self.locale_manager.get_key("save_frame"),
             ".",
             filter="PNG (*.png)",
             options=None,
@@ -566,7 +564,7 @@ class AnimEditor(QtWidgets.QWidget):
         self.setWindowIcon(self.asset_loader.load_icon("icon.png"))
         self.showMaximized()
 
-        self.setWindowTitle(self.locale_manager.search_key("anim_editor_title"))
+        self.setWindowTitle(self.locale_manager.get_key("anim_editor_title"))
 
         self.setObjectName("anim_editor")
 

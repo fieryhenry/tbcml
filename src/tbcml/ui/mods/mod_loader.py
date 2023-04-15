@@ -14,14 +14,14 @@ class ModLoader(QtWidgets.QDialog):
     def setup_ui(self):
         self.setObjectName("ModLoader")
         self.resize(400, 300)
-        self.setWindowTitle(self.locale_manager.search_key("mod_loader_title"))
+        self.setWindowTitle(self.locale_manager.get_key("mod_loader_title"))
         self.setWindowModality(QtCore.Qt.WindowModality.WindowModal)
 
         self._layout = QtWidgets.QVBoxLayout(self)
         self.setLayout(self._layout)
 
         self.loading_progress_bar = ui_progress.ProgressBar(
-            self.locale_manager.search_key("preparing_apk"), None, self
+            self.locale_manager.get_key("preparing_apk"), None, self
         )
         self._layout.addWidget(self.loading_progress_bar)
         self.loading_progress_bar.show()
@@ -35,21 +35,21 @@ class ModLoader(QtWidgets.QDialog):
 
     def load_data(self, progress_signal: QtCore.pyqtSignal):
         progress_signal.emit(  # type: ignore
-            self.locale_manager.search_key("getting_selected_apk"), 0, 100
+            self.locale_manager.get_key("getting_selected_apk"), 0, 100
         )
         self.selected_apk = io.config.Config().get(io.config.Key.SELECTED_APK)
         if not self.selected_apk:
             self._layout.addWidget(
-                QtWidgets.QLabel(self.locale_manager.search_key("no_apk_selected"))
+                QtWidgets.QLabel(self.locale_manager.get_key("no_apk_selected"))
             )
             self.apk_manager = apk_manager.ApkManager()
             self.apk_manager.show()
             return
         self.apk = io.apk.Apk.from_format_string(self.selected_apk)
-        progress_signal.emit(self.locale_manager.search_key("extracting_apk"), 5, 100)  # type: ignore
+        progress_signal.emit(self.locale_manager.get_key("extracting_apk"), 5, 100)  # type: ignore
         self.apk.extract()
         progress_signal.emit(  # type: ignore
-            self.locale_manager.search_key("copying_server_files"), 50, 100
+            self.locale_manager.get_key("copying_server_files"), 50, 100
         )
         self.apk.copy_server_files()
 
@@ -59,7 +59,7 @@ class ModLoader(QtWidgets.QDialog):
 
         self._layout.addWidget(
             QtWidgets.QLabel(
-                self.locale_manager.search_key("selected_apk") % self.apk.format()
+                self.locale_manager.get_key("selected_apk") % self.apk.format()
             )
         )
 
@@ -70,25 +70,25 @@ class ModLoader(QtWidgets.QDialog):
         self._layout.addWidget(self.mod_list)
 
         self.load_button = QtWidgets.QPushButton(
-            self.locale_manager.search_key("load_selected_mods")
+            self.locale_manager.get_key("load_selected_mods")
         )
         self.load_button.clicked.connect(self.load_mods)  # type: ignore
         self._layout.addWidget(self.load_button)
 
         self.load_all_button = QtWidgets.QPushButton(
-            self.locale_manager.search_key("load_all_mods")
+            self.locale_manager.get_key("load_all_mods")
         )
         self.load_all_button.clicked.connect(self.load_all_mods)  # type: ignore
         self._layout.addWidget(self.load_all_button)
 
         self.refresh_button = QtWidgets.QPushButton(
-            self.locale_manager.search_key("refresh")
+            self.locale_manager.get_key("refresh")
         )
         self.refresh_button.clicked.connect(self.refresh_mods)  # type: ignore
         self._layout.addWidget(self.refresh_button)
 
         self.open_folder_button = QtWidgets.QPushButton(
-            self.locale_manager.search_key("reveal_final_apk_folder")
+            self.locale_manager.get_key("reveal_final_apk_folder")
         )
         self.open_folder_button.clicked.connect(self.open_final_apk_folder)
         self._layout.addWidget(self.open_folder_button)
@@ -104,7 +104,7 @@ class ModLoader(QtWidgets.QDialog):
         if self.loading_mods:
             return
         self.progress_bar = ui_progress.ProgressBar(
-            self.locale_manager.search_key("loading_mods_progress"), None, self
+            self.locale_manager.get_key("loading_mods_progress"), None, self
         )
         self._layout.addWidget(self.progress_bar)
         self.progress_bar.show()
@@ -127,13 +127,13 @@ class ModLoader(QtWidgets.QDialog):
         self.loading_mods = True
         total_progress = 100
         progress_signal.emit(  # type: ignore
-            self.locale_manager.search_key("loading_game_data_progress"),
+            self.locale_manager.get_key("loading_game_data_progress"),
             0,
             total_progress,
         )
         game_packs = game_data.pack.GamePacks.from_apk(self.apk)
         progress_signal.emit(  # type: ignore
-            self.locale_manager.search_key("applying_mods_progress"), 10, total_progress
+            self.locale_manager.get_key("applying_mods_progress"), 10, total_progress
         )
         mds: list[mods.bc_mod.Mod] = []
         for mod_name in mod_names:
@@ -142,13 +142,13 @@ class ModLoader(QtWidgets.QDialog):
                 mds.append(md)
         game_packs.apply_mods(mds)
         progress_signal.emit(  # type: ignore
-            self.locale_manager.search_key("adding_script_mods_progress"),
+            self.locale_manager.get_key("adding_script_mods_progress"),
             15,
             total_progress,
         )
         self.apk.add_script_mods(mds)
         progress_signal.emit(  # type: ignore
-            self.locale_manager.search_key("adding_audio_mods_progress"),
+            self.locale_manager.get_key("adding_audio_mods_progress"),
             30,
             total_progress,
         )
@@ -156,7 +156,7 @@ class ModLoader(QtWidgets.QDialog):
         self.apk.load_packs_into_game(game_packs, progress_signal.emit, 35, 100)  # type: ignore
 
         progress_signal.emit(  # type: ignore
-            self.locale_manager.search_key("finished_progress"),
+            self.locale_manager.get_key("finished_progress"),
             100,
             total_progress,
         )

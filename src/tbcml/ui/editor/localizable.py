@@ -26,9 +26,7 @@ class LocalizableSelector(QtWidgets.QDialog):
 
     def setup_ui(self):
         self.resize(600, 500)
-        self.setWindowTitle(
-            self.locale_manager.search_key("localizable_selector_title")
-        )
+        self.setWindowTitle(self.locale_manager.get_key("localizable_selector_title"))
         layout = QtWidgets.QVBoxLayout(self)
         layout.setObjectName("localizable_selector_layout")
         self.setLayout(layout)
@@ -36,7 +34,7 @@ class LocalizableSelector(QtWidgets.QDialog):
         self.search_bar = QtWidgets.QLineEdit(self)
         self.search_bar.setObjectName("search_bar")
         self.search_bar.setPlaceholderText(
-            self.locale_manager.search_key("search_placeholder")
+            self.locale_manager.get_key("search_placeholder")
         )
         layout.addWidget(self.search_bar)
         self.search_bar.textChanged.connect(self.on_search)  # type: ignore
@@ -46,8 +44,8 @@ class LocalizableSelector(QtWidgets.QDialog):
         self._localizable_table.setColumnCount(2)
         self._localizable_table.setHorizontalHeaderLabels(
             [
-                self.locale_manager.search_key("text_key"),
-                self.locale_manager.search_key("rendered_text"),
+                self.locale_manager.get_key("text_key"),
+                self.locale_manager.get_key("rendered_text"),
             ]
         )
         self._localizable_table.verticalHeader().setVisible(False)
@@ -242,7 +240,7 @@ class TextRenderBox(QtWidgets.QWidget):
 
         self.text_edit.setWindowFlag(QtCore.Qt.WindowType.Window)
         self.text_edit.setWindowModality(QtCore.Qt.WindowModality.ApplicationModal)
-        self.text_edit.setWindowTitle(self.locale_manager.search_key("edit_text"))
+        self.text_edit.setWindowTitle(self.locale_manager.get_key("edit_text"))
         self.text_edit.resize(400, 400)
 
         self.text_edit.show()
@@ -362,13 +360,13 @@ class TextEditor(QtWidgets.QWidget):
 
         self.add_row_button = QtWidgets.QPushButton(self)
         self.add_row_button.setObjectName("add_row_button")
-        self.add_row_button.setText(self.locale_manager.search_key("add_text_entry"))
+        self.add_row_button.setText(self.locale_manager.get_key("add_text_entry"))
         self.add_row_button.clicked.connect(self.on_add_row_clicked)  # type: ignore
         self._layout.addWidget(self.add_row_button)
 
         self.reset_button = QtWidgets.QPushButton(self)
         self.reset_button.setObjectName("reset_button")
-        self.reset_button.setText(self.locale_manager.search_key("reset_to_original"))
+        self.reset_button.setText(self.locale_manager.get_key("reset_to_original"))
         self.reset_button.clicked.connect(self.reset)  # type: ignore
         self._layout.addWidget(self.reset_button)
 
@@ -386,7 +384,7 @@ class TextEditor(QtWidgets.QWidget):
     def on_context_menu(self, pos: QtCore.QPoint):
         menu = QtWidgets.QMenu()
         menu.addAction(
-            self.locale_manager.search_key("remove_text_entry"),
+            self.locale_manager.get_key("remove_text_entry"),
             self.on_delete_row_clicked,
         )
         menu.exec_(self.text_editor_table.mapToGlobal(pos))
@@ -400,7 +398,7 @@ class TextEditor(QtWidgets.QWidget):
     def create_search_box(self):
         self.search_box = QtWidgets.QLineEdit(self)
         self.search_box.setPlaceholderText(
-            self.locale_manager.search_key("search_placeholder")
+            self.locale_manager.get_key("search_placeholder")
         )
         self.search_box.textChanged.connect(self.search)  # type: ignore
 
@@ -432,8 +430,8 @@ class TextEditor(QtWidgets.QWidget):
         self.text_editor_table.setColumnCount(2)
         self.text_editor_table.setHorizontalHeaderLabels(
             [
-                self.locale_manager.search_key("text_key"),
-                self.locale_manager.search_key("rendered_text"),
+                self.locale_manager.get_key("text_key"),
+                self.locale_manager.get_key("rendered_text"),
             ]
         )
         self.text_editor_table.verticalHeader().setVisible(False)

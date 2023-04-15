@@ -31,23 +31,23 @@ class GameEditor(QtWidgets.QWidget):
 
     def set_up_data(self, progress_signal: QtCore.pyqtSignal):
         progress_signal.emit(  # type: ignore
-            self.local_manager.search_key("extracting_apk_progress"), 0, 100
+            self.local_manager.get_key("extracting_apk_progress"), 0, 100
         )
         self.apk.extract()
         progress_signal.emit(  # type: ignore
-            self.local_manager.search_key("copying_server_files_progress"), 30, 100
+            self.local_manager.get_key("copying_server_files_progress"), 30, 100
         )
         self.apk.copy_server_files()
         progress_signal.emit(  # type: ignore
-            self.local_manager.search_key("loading_game_data_progress"), 50, 100
+            self.local_manager.get_key("loading_game_data_progress"), 50, 100
         )
         self.game_data = game_data.pack.GamePacks.from_apk(self.apk)
         progress_signal.emit(  # type: ignore
-            self.local_manager.search_key("loading_mod_data_progress"), 90, 100
+            self.local_manager.get_key("loading_mod_data_progress"), 90, 100
         )
 
         self.game_data.apply_mod(self.mod)
-        progress_signal.emit(self.local_manager.search_key("done_progress"), 100, 100)  # type: ignore
+        progress_signal.emit(self.local_manager.get_key("done_progress"), 100, 100)  # type: ignore
 
     def setup_ui(self):
         self.setObjectName("GameEditor")
@@ -58,7 +58,7 @@ class GameEditor(QtWidgets.QWidget):
         self.setLayout(self._layout)
 
         self.progress_bar = ui_progress.ProgressBar(
-            self.local_manager.search_key("loading_game_data_progress"), None, self
+            self.local_manager.get_key("loading_game_data_progress"), None, self
         )
         self._layout.addWidget(self.progress_bar)
         self._layout.setAlignment(
@@ -81,19 +81,19 @@ class GameEditor(QtWidgets.QWidget):
 
         self.save_button = QtWidgets.QPushButton(self)
         self.save_button.setObjectName("save_button")
-        self.save_button.setText(self.local_manager.search_key("save"))
+        self.save_button.setText(self.local_manager.get_key("save"))
         self.save_button.clicked.connect(self.save)  # type: ignore
         self._layout.addWidget(self.save_button)
 
         self.refresh_button = QtWidgets.QPushButton(self)
         self.refresh_button.setObjectName("reload_button")
-        self.refresh_button.setText(self.local_manager.search_key("reload"))
+        self.refresh_button.setText(self.local_manager.get_key("reload"))
         self.refresh_button.clicked.connect(self.refresh_tabs)  # type: ignore
         self._layout.addWidget(self.refresh_button)
 
         self.back_button = QtWidgets.QPushButton(self)
         self.back_button.setObjectName("back_button")
-        self.back_button.setText(self.local_manager.search_key("back"))
+        self.back_button.setText(self.local_manager.get_key("back"))
         self.back_button.clicked.connect(self.back)  # type: ignore
         self._layout.addWidget(self.back_button)
         self.insert_tabs()
@@ -101,19 +101,19 @@ class GameEditor(QtWidgets.QWidget):
     def insert_tabs(self):
         self._tab_widget.addTab(
             self.create_cat_tab(),
-            self.local_manager.search_key("cats_tab"),
+            self.local_manager.get_key("cats_tab"),
         )
         self._tab_widget.addTab(
             self.create_text_tab(),
-            self.local_manager.search_key("text_tab"),
+            self.local_manager.get_key("text_tab"),
         )
         self._tab_widget.addTab(
             self.create_item_shop_tab(),
-            self.local_manager.search_key("item_shop_tab"),
+            self.local_manager.get_key("item_shop_tab"),
         )
         self._tab_widget.addTab(
             self.create_audio_tab(),
-            self.local_manager.search_key("audio_tab"),
+            self.local_manager.get_key("audio_tab"),
         )
 
         self.tab_changed(0)

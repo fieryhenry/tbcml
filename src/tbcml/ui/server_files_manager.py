@@ -15,9 +15,7 @@ class ServerFilesManager(QtWidgets.QDialog):
     def setup_ui(self):
         self.setObjectName("ServerFilesManager")
         self.resize(700, 700)
-        self.setWindowTitle(
-            self.locale_manager.search_key("server_files_manager_title")
-        )
+        self.setWindowTitle(self.locale_manager.get_key("server_files_manager_title"))
         self.setWindowModality(QtCore.Qt.WindowModality.ApplicationModal)
 
         self._layout = QtWidgets.QVBoxLayout(self)
@@ -38,25 +36,25 @@ class ServerFilesManager(QtWidgets.QDialog):
         self._layout.addWidget(self._server_files)
 
         self.refresh_button = QtWidgets.QPushButton(
-            self.locale_manager.search_key("refresh"), self
+            self.locale_manager.get_key("refresh"), self
         )
         self.refresh_button.clicked.connect(self._server_files.refresh)  # type: ignore
         self._layout.addWidget(self.refresh_button)
 
         self.open_button = QtWidgets.QPushButton(
-            self.locale_manager.search_key("open_server_files_folder"), self
+            self.locale_manager.get_key("open_server_files_folder"), self
         )
         self.open_button.clicked.connect(self.open_folder)  # type: ignore
         self._layout.addWidget(self.open_button)
 
         self.download_button = QtWidgets.QPushButton(
-            self.locale_manager.search_key("download_missing_server_files"), self
+            self.locale_manager.get_key("download_missing_server_files"), self
         )
         self.download_button.clicked.connect(self.download_server_files_wrapper)  # type: ignore
         self._layout.addWidget(self.download_button)
 
         self.progress_bar = ui_progress.ProgressBar(
-            self.locale_manager.search_key("downloading_missing_server_files_progress"),
+            self.locale_manager.get_key("downloading_missing_server_files_progress"),
             None,
             self,
         )
@@ -124,7 +122,7 @@ class ServerFilesList(QtWidgets.QWidget):
 
         self.pack_file_tab = QtWidgets.QWidget()
         self.tab_widget.addTab(
-            self.pack_file_tab, self.locale_manager.search_key("pack_files")
+            self.pack_file_tab, self.locale_manager.get_key("pack_files")
         )
         self.pack_file_layout = QtWidgets.QVBoxLayout(self.pack_file_tab)
         self.pack_file_tab.setLayout(self.pack_file_layout)
@@ -133,7 +131,7 @@ class ServerFilesList(QtWidgets.QWidget):
 
         self.list_file_tab = QtWidgets.QWidget()
         self.tab_widget.addTab(
-            self.list_file_tab, self.locale_manager.search_key("list_files")
+            self.list_file_tab, self.locale_manager.get_key("list_files")
         )
         self.list_file_layout = QtWidgets.QVBoxLayout(self.list_file_tab)
         self.list_file_tab.setLayout(self.list_file_layout)
@@ -142,7 +140,7 @@ class ServerFilesList(QtWidgets.QWidget):
 
         self.audio_file_tab = QtWidgets.QWidget()
         self.tab_widget.addTab(
-            self.audio_file_tab, self.locale_manager.search_key("audio_files")
+            self.audio_file_tab, self.locale_manager.get_key("audio_files")
         )
         self.audio_file_layout = QtWidgets.QVBoxLayout(self.audio_file_tab)
         self.audio_file_tab.setLayout(self.audio_file_layout)
@@ -194,7 +192,7 @@ class FileList(QtWidgets.QListWidget):
         self.addItems([f.get_file_name() for f in self._files])
         self.context_menu = QtWidgets.QMenu(self)
         self.context_menu.addAction(
-            self.locale_manager.search_key("reveal_in_explorer"),
+            self.locale_manager.get_key("reveal_in_explorer"),
             self.reveal_in_explorer,
         )
         self.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)

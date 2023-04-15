@@ -16,7 +16,7 @@ class Dialog:
         title: Optional[str] = None,
     ):
         if title is None:
-            title = self.locale_manager.search_key("error")
+            title = self.locale_manager.get_key("error")
         dialog = QtWidgets.QMessageBox()
         dialog.setIcon(QtWidgets.QMessageBox.Icon.Critical)
         dialog.setText(message)
@@ -98,9 +98,9 @@ class Dialog:
     ):
         self.three_button_box(
             QtWidgets.QMessageBox.Icon.Warning,
-            self.locale_manager.search_key("save_changes_q"),
-            self.locale_manager.search_key("save_changes_info"),
-            self.locale_manager.search_key("save_changes_q"),
+            self.locale_manager.get_key("save_changes_q"),
+            self.locale_manager.get_key("save_changes_info"),
+            self.locale_manager.get_key("save_changes_q"),
             QtWidgets.QMessageBox.StandardButton.Yes,
             on_yes,
             on_no,

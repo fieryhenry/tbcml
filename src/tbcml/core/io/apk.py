@@ -255,38 +255,38 @@ class Apk:
         if not progress_callback:
             progress_callback = lambda x, y, z: None
         progress_callback(
-            self.locale_manager.search_key("creating_pack_list_progress"),
+            self.locale_manager.get_key("creating_pack_list_progress"),
             start_prog,
             end_prog,
         )
         base_increment = (end_prog - start_prog) / 100
         self.add_packs_lists(packs)
         progress_callback(
-            self.locale_manager.search_key("patching_lib_progress"),
+            self.locale_manager.get_key("patching_lib_progress"),
             int(start_prog + base_increment * 5),
             end_prog,
         )
         lib.LibFiles(self).patch()
         progress_callback(
-            self.locale_manager.search_key("copying_modded_packs_progress"),
+            self.locale_manager.get_key("copying_modded_packs_progress"),
             int(start_prog + base_increment * 15),
             end_prog,
         )
         self.copy_modded_packs()
         progress_callback(
-            self.locale_manager.search_key("packing_apk_progress"),
+            self.locale_manager.get_key("packing_apk_progress"),
             int(start_prog + base_increment * 20),
             end_prog,
         )
         self.pack()
         progress_callback(
-            self.locale_manager.search_key("signing_apk_progress"),
+            self.locale_manager.get_key("signing_apk_progress"),
             int(start_prog + base_increment * 60),
             end_prog,
         )
         self.sign()
         progress_callback(
-            self.locale_manager.search_key("copying_final_apk_progress"),
+            self.locale_manager.get_key("copying_final_apk_progress"),
             int(start_prog + base_increment * 90),
             end_prog,
         )

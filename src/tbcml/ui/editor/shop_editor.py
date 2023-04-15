@@ -45,14 +45,14 @@ class ShopEditor(QtWidgets.QWidget):
         self._item_shop_table.setColumnCount(8)
         self._item_shop_table.setHorizontalHeaderLabels(
             [
-                self.locale_manager.search_key("item_id"),
-                self.locale_manager.search_key("item_name"),
-                self.locale_manager.search_key("item_price"),
-                self.locale_manager.search_key("item_amount"),
-                self.locale_manager.search_key("item_effective_amount"),
-                self.locale_manager.search_key("draw_item_amount"),
-                self.locale_manager.search_key("shop_item_category"),
-                self.locale_manager.search_key("item_image"),
+                self.locale_manager.get_key("item_id"),
+                self.locale_manager.get_key("item_name"),
+                self.locale_manager.get_key("item_price"),
+                self.locale_manager.get_key("item_amount"),
+                self.locale_manager.get_key("item_effective_amount"),
+                self.locale_manager.get_key("draw_item_amount"),
+                self.locale_manager.get_key("shop_item_category"),
+                self.locale_manager.get_key("item_image"),
             ]
         )
         self._item_shop_table.horizontalHeader().setSectionResizeMode(
@@ -66,47 +66,47 @@ class ShopEditor(QtWidgets.QWidget):
         self._item_shop_table.horizontalHeader().setStretchLastSection(True)
 
         item_id_header = self._item_shop_table.horizontalHeaderItem(Rows.ITEM_ID.value)
-        item_id_header.setToolTip(self.locale_manager.search_key("shop_item_id_tip"))
+        item_id_header.setToolTip(self.locale_manager.get_key("shop_item_id_tip"))
 
         price_header = self._item_shop_table.horizontalHeaderItem(Rows.PRICE.value)
-        price_header.setToolTip(self.locale_manager.search_key("item_price_tip"))
+        price_header.setToolTip(self.locale_manager.get_key("item_price_tip"))
         amount_header = self._item_shop_table.horizontalHeaderItem(Rows.AMOUNT.value)
-        amount_header.setToolTip(self.locale_manager.search_key("item_amount_tip"))
+        amount_header.setToolTip(self.locale_manager.get_key("item_amount_tip"))
 
         effective_amount_header = self._item_shop_table.horizontalHeaderItem(
             Rows.EFFECTIVE_AMOUNT.value
         )
         effective_amount_header.setToolTip(
-            self.locale_manager.search_key("item_effective_amount_tip")
+            self.locale_manager.get_key("item_effective_amount_tip")
         )
 
         image_header = self._item_shop_table.horizontalHeaderItem(Rows.IMAGE.value)
-        image_header.setToolTip(self.locale_manager.search_key("item_image_tip"))
+        image_header.setToolTip(self.locale_manager.get_key("item_image_tip"))
 
         display_current_amount_header = self._item_shop_table.horizontalHeaderItem(
             Rows.DRAW_ITEM_AMOUNT.value
         )
         display_current_amount_header.setToolTip(
-            self.locale_manager.search_key("draw_item_amount_tip")
+            self.locale_manager.get_key("draw_item_amount_tip")
         )
 
         item_category_header = self._item_shop_table.horizontalHeaderItem(
             Rows.ITEM_CATEGORY.value
         )
         item_category_header.setToolTip(
-            self.locale_manager.search_key("shop_item_category_tip")
+            self.locale_manager.get_key("shop_item_category_tip")
         )
 
         layout.addWidget(self._item_shop_table)
 
         self.add_row_button = QtWidgets.QPushButton(
-            self.locale_manager.search_key("add_shop_item"), self
+            self.locale_manager.get_key("add_shop_item"), self
         )
         self.add_row_button.clicked.connect(self.add_row)  # type: ignore
         layout.addWidget(self.add_row_button)
 
         self.reset_button = QtWidgets.QPushButton(
-            self.locale_manager.search_key("reset_to_original"), self
+            self.locale_manager.get_key("reset_to_original"), self
         )
         self.reset_button.clicked.connect(self.reset)  # type: ignore
         layout.addWidget(self.reset_button)
@@ -176,11 +176,9 @@ class ShopEditor(QtWidgets.QWidget):
 
         if column == Rows.IMAGE.value:
             replace_image_action = menu.addAction(
-                self.locale_manager.search_key("replace_image")
+                self.locale_manager.get_key("replace_image")
             )
-        remove_action = menu.addAction(
-            self.locale_manager.search_key("remove_shop_item")
-        )
+        remove_action = menu.addAction(self.locale_manager.get_key("remove_shop_item"))
         action = menu.exec_(self._item_shop_table.mapToGlobal(pos))  #
         if column == Rows.IMAGE.value and action == replace_image_action:
             self.replace_image()
@@ -210,9 +208,9 @@ class ShopEditor(QtWidgets.QWidget):
     def remove_row(self):
         self.msg_box = ui_dialog.Dialog().yes_no_box(
             QtWidgets.QMessageBox.Icon.Warning,
-            self.locale_manager.search_key("remove_shop_item"),
-            self.locale_manager.search_key("remove_shop_item_confirm"),
-            self.locale_manager.search_key("remove_shop_item_confirm_title"),
+            self.locale_manager.get_key("remove_shop_item"),
+            self.locale_manager.get_key("remove_shop_item_confirm"),
+            self.locale_manager.get_key("remove_shop_item_confirm_title"),
             QtWidgets.QMessageBox.StandardButton.No,
             self.remove_confirm,
         )
@@ -228,9 +226,9 @@ class ShopEditor(QtWidgets.QWidget):
     def replace_image(self):
         default_location = io.apk.Apk.get_default_apk_folder()
         file = ui_file_dialog.FileDialog(self).select_file(
-            self.locale_manager.search_key("image_select_title"),
+            self.locale_manager.get_key("image_select_title"),
             default_location.to_str(),
-            self.locale_manager.search_key("image_select_filter"),
+            self.locale_manager.get_key("image_select_filter"),
         )
         if not file:
             return
@@ -312,7 +310,7 @@ class ShopEditor(QtWidgets.QWidget):
             if item_category_str is None:
                 item_category_str = (
                     shop_item.category_name
-                    + f" {self.locale_manager.search_key('localize_fail')}"
+                    + f" {self.locale_manager.get_key('localize_fail')}"
                 )
 
             item_category = QtWidgets.QTableWidgetItem(item_category_str)

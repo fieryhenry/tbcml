@@ -85,23 +85,11 @@ class LocalManager:
                 self.all_properties.update(property_set.properties)
                 self.properties[file_name[:-11]] = property_set
 
-    def get_key(self, property: str, key: str) -> str:
-        """Gets a key from a property file.
+    def get_key(self, key: str) -> str:
+        """Gets a key from the property file.
 
         Args:
-            property (str): Name of the property file.
             key (str): Key to get.
-
-        Returns:
-            str: Value of the key.
-        """
-        return self.properties[property].get_key(key)
-
-    def search_key(self, key: str) -> str:
-        """Searches for a key in all property files.
-
-        Args:
-            key (str): Key to search for.
 
         Returns:
             str: Value of the key.

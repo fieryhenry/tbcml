@@ -33,7 +33,7 @@ class ApkManager(QtWidgets.QDialog):
         io.apk.Apk.clean_up()
 
         self.selected_apk_label = QtWidgets.QLabel(
-            self.locale_manager.search_key("selected_apk_label")
+            self.locale_manager.get_key("selected_apk_label")
         )
         self._layout.addWidget(self.selected_apk_label)
 
@@ -44,7 +44,7 @@ class ApkManager(QtWidgets.QDialog):
             self.selected_apk_label.setText(self.selected_apk)
             self.selected_apk_label.setStyleSheet("color: #4e9a06")
         else:
-            self.selected_apk_label.setText(self.locale_manager.search_key("none"))
+            self.selected_apk_label.setText(self.locale_manager.get_key("none"))
             self.selected_apk_label.setStyleSheet("color: #b00020")
 
         self._layout.addWidget(self.selected_apk_label)
@@ -57,25 +57,25 @@ class ApkManager(QtWidgets.QDialog):
         self._layout.addLayout(self.button_layout)
 
         self.download_apk = QtWidgets.QPushButton(
-            self.locale_manager.search_key("download_apk")
+            self.locale_manager.get_key("download_apk")
         )
         self.download_apk.clicked.connect(self.download_apk_clicked)  # type: ignore
         self.button_layout.addWidget(self.download_apk)
 
         self.add_apk_file = QtWidgets.QPushButton(
-            self.locale_manager.search_key("add_apk")
+            self.locale_manager.get_key("add_apk")
         )
         self.add_apk_file.clicked.connect(self.add_apk_clicked)  # type: ignore
         self.button_layout.addWidget(self.add_apk_file)
 
         self.refresh_apk_list_button = QtWidgets.QPushButton(
-            self.locale_manager.search_key("refresh_apk")
+            self.locale_manager.get_key("refresh_apk")
         )
         self.refresh_apk_list_button.clicked.connect(self.refresh_apk_list)  # type: ignore
         self._layout.addWidget(self.refresh_apk_list_button)
 
         self.open_folder_button = QtWidgets.QPushButton(
-            self.locale_manager.search_key("open_apk_folder")
+            self.locale_manager.get_key("open_apk_folder")
         )
         self.open_folder_button.clicked.connect(self.open_apk_folder)  # type: ignore
         self._layout.addWidget(self.open_folder_button)
@@ -101,7 +101,7 @@ class ApkManager(QtWidgets.QDialog):
 
     def prompt_download(self, apk: io.apk.Apk):
         self.prompt_label = QtWidgets.QLabel(
-            self.locale_manager.search_key("prompt_download") % apk.format()
+            self.locale_manager.get_key("prompt_download") % apk.format()
         )
         main.clear_layout(self._layout)
         self._layout.addWidget(self.prompt_label)
@@ -126,9 +126,9 @@ class ApkManager(QtWidgets.QDialog):
         io.apk.Apk.get_default_apk_folder().open()
 
     def add_apk_clicked(self):
-        file_filter = self.locale_manager.search_key("apk_filter")
+        file_filter = self.locale_manager.get_key("apk_filter")
         apk_path = ui_file_dialog.FileDialog(self).select_file(
-            self.locale_manager.search_key("select_apk"),
+            self.locale_manager.get_key("select_apk"),
             io.apk.Apk.get_default_apk_folder().path,
             file_filter,
             None,
@@ -145,7 +145,7 @@ class ApkManager(QtWidgets.QDialog):
 
     def decrypt_apk(self, apk: io.apk.Apk, with_mods: Optional[bool] = False):
         directory = ui_file_dialog.FileDialog(self).select_directory(
-            self.locale_manager.search_key("decrypt_folder_select_title"),
+            self.locale_manager.get_key("decrypt_folder_select_title"),
             apk.decrypted_path.to_str(),
             QtWidgets.QFileDialog.Option.ShowDirsOnly,  # type: ignore
         )
@@ -155,7 +155,7 @@ class ApkManager(QtWidgets.QDialog):
             return
 
         self.progress_bar = ui_progress.ProgressBar(
-            self.locale_manager.search_key("decrypt_progress_bar_title"), None, self
+            self.locale_manager.get_key("decrypt_progress_bar_title"), None, self
         )
         self._layout.addWidget(self.progress_bar)
         self.progress_bar.show()
@@ -210,19 +210,15 @@ class ApkList(QtWidgets.QListWidget):
         menu = QtWidgets.QMenu()
         if not self.currentItem():
             return
-        select_apk_action = menu.addAction(self.locale_manager.search_key("select_apk"))
-        extraction_action = menu.addAction(
-            self.locale_manager.search_key("extract_apk")
-        )
-        decryption_action = menu.addAction(
-            self.locale_manager.search_key("decrypt_apk")
-        )
+        select_apk_action = menu.addAction(self.locale_manager.get_key("select_apk"))
+        extraction_action = menu.addAction(self.locale_manager.get_key("extract_apk"))
+        decryption_action = menu.addAction(self.locale_manager.get_key("decrypt_apk"))
         decryption_mods_action = menu.addAction(
-            self.locale_manager.search_key("decrypt_apk_mods")
+            self.locale_manager.get_key("decrypt_apk_mods")
         )
-        delete_action = menu.addAction(self.locale_manager.search_key("delete_apk"))
+        delete_action = menu.addAction(self.locale_manager.get_key("delete_apk"))
         show_in_explorer_action = menu.addAction(
-            self.locale_manager.search_key("reveal_in_explorer")
+            self.locale_manager.get_key("reveal_in_explorer")
         )
 
         action = menu.exec_(self.mapToGlobal(pos))
@@ -257,9 +253,9 @@ class ApkList(QtWidgets.QListWidget):
     def delete_apk(self):
         ui_dialog.Dialog().yes_no_box(
             icon=QtWidgets.QMessageBox.Icon.Question,
-            text=self.locale_manager.search_key("delete_apk_text"),
-            informative_text=self.locale_manager.search_key("delete_apk_info"),
-            window_title=self.locale_manager.search_key("delete_apk_title"),
+            text=self.locale_manager.get_key("delete_apk_text"),
+            informative_text=self.locale_manager.get_key("delete_apk_info"),
+            window_title=self.locale_manager.get_key("delete_apk_title"),
             default_button=QtWidgets.QMessageBox.StandardButton.No,
             on_yes=self.delete_apk_call,
         )
@@ -273,11 +269,9 @@ class ApkList(QtWidgets.QListWidget):
         if not io.apk.Apk.check_apktool_installed():
             ui_dialog.Dialog().yes_no_box(
                 icon=QtWidgets.QMessageBox.Icon.Warning,
-                text=self.locale_manager.search_key("apk_tool_missing_text"),
-                informative_text=self.locale_manager.search_key(
-                    "apk_tool_missing_info"
-                ),
-                window_title=self.locale_manager.search_key("apk_tool_missing_title"),
+                text=self.locale_manager.get_key("apk_tool_missing_text"),
+                informative_text=self.locale_manager.get_key("apk_tool_missing_info"),
+                window_title=self.locale_manager.get_key("apk_tool_missing_title"),
                 default_button=QtWidgets.QMessageBox.StandardButton.No,
                 on_yes=self.open_apktool_install_page,
             )
@@ -343,7 +337,7 @@ class ApkDownloader(QtWidgets.QWidget):
         self.button_layout.setColumnStretch(1, 1)
         self.button_layout.setContentsMargins(5, 0, 0, 0)
 
-        self.back_button = QtWidgets.QPushButton(self.locale_manager.search_key("back"))
+        self.back_button = QtWidgets.QPushButton(self.locale_manager.get_key("back"))
         self.button_layout.addWidget(self.back_button, 0, 0)
         self.back_button.clicked.connect(self.go_back_call)  # type: ignore
 
@@ -351,7 +345,7 @@ class ApkDownloader(QtWidgets.QWidget):
         apk_id = apk.get_id()
         if apk_id in self.downloading_apks:
             return
-        title = self.locale_manager.search_key("downloading_apk") % apk.format()
+        title = self.locale_manager.get_key("downloading_apk") % apk.format()
         self.downloading_apks.append(apk_id)
         self.progress_bar = ui_progress.ProgressBar(title, None, self)
         self._layout.addWidget(self.progress_bar)

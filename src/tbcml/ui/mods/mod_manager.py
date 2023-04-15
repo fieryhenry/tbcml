@@ -120,17 +120,17 @@ class ModInfoView(QtWidgets.QWidget):
         self._layout.setColumnStretch(0, 1)
         self._layout.setColumnStretch(1, 5)
 
-        required_str = f" ({self.locale_manager.search_key('required')})"
+        required_str = f" ({self.locale_manager.get_key('required')})"
 
         self.mod_name_label = QtWidgets.QLabel(
-            f"{self.locale_manager.search_key('mod_name_label')}{required_str}"
+            f"{self.locale_manager.get_key('mod_name_label')}{required_str}"
         )
         self._layout.addWidget(self.mod_name_label, 0, 0)
         self.mod_name = QtWidgets.QLineEdit()
         self._layout.addWidget(self.mod_name, 0, 1)
 
         self.mod_desc_label = QtWidgets.QLabel(
-            self.locale_manager.search_key("mod_description_label")
+            self.locale_manager.get_key("mod_description_label")
         )
         self._layout.addWidget(self.mod_desc_label, 1, 0)
         self.mod_desc = QtWidgets.QTextEdit()
@@ -138,21 +138,21 @@ class ModInfoView(QtWidgets.QWidget):
         self._layout.addWidget(self.mod_desc, 1, 1)
 
         self.mod_author_label = QtWidgets.QLabel(
-            f"{self.locale_manager.search_key('mod_author_label')}{required_str}"
+            f"{self.locale_manager.get_key('mod_author_label')}{required_str}"
         )
         self._layout.addWidget(self.mod_author_label, 2, 0)
         self.mod_author = QtWidgets.QLineEdit()
         self._layout.addWidget(self.mod_author, 2, 1)
 
         self.mod_game_version_label = QtWidgets.QLabel(
-            f"{self.locale_manager.search_key('game_version')}{required_str}"
+            f"{self.locale_manager.get_key('game_version')}{required_str}"
         )
         self._layout.addWidget(self.mod_game_version_label, 3, 0)
         self.mod_game_version = QtWidgets.QLineEdit()
         self._layout.addWidget(self.mod_game_version, 3, 1)
 
         self.mod_country_code_label = QtWidgets.QLabel(
-            f"{self.locale_manager.search_key('country_code')}{required_str}"
+            f"{self.locale_manager.get_key('country_code')}{required_str}"
         )
         self._layout.addWidget(self.mod_country_code_label, 4, 0)
         self.mod_country_code_dropdown = QtWidgets.QComboBox()
@@ -160,21 +160,21 @@ class ModInfoView(QtWidgets.QWidget):
         self._layout.addWidget(self.mod_country_code_dropdown, 4, 1)
 
         self.mod_version_label = QtWidgets.QLabel(
-            f"{self.locale_manager.search_key('mod_version_label')}{required_str}"
+            f"{self.locale_manager.get_key('mod_version_label')}{required_str}"
         )
         self._layout.addWidget(self.mod_version_label, 5, 0)
         self.mod_version = QtWidgets.QLineEdit()
         self._layout.addWidget(self.mod_version, 5, 1)
 
         self.mod_url_label = QtWidgets.QLabel(
-            f"{self.locale_manager.search_key('mod_website_label')}"
+            f"{self.locale_manager.get_key('mod_website_label')}"
         )
         self._layout.addWidget(self.mod_url_label, 6, 0)
         self.mod_url = QtWidgets.QLineEdit()
         self._layout.addWidget(self.mod_url, 6, 1)
 
         self.mod_id_label = QtWidgets.QLabel(
-            f"{self.locale_manager.search_key('mod_id_label')}"
+            f"{self.locale_manager.get_key('mod_id_label')}"
         )
         self._layout.addWidget(self.mod_id_label, 7, 0)
         self.mod_id = QtWidgets.QLineEdit()
@@ -187,35 +187,35 @@ class ModInfoView(QtWidgets.QWidget):
         self._layout.addLayout(self.button_layout, 9, 0, 1, 2)
 
         self.create_mod_button = QtWidgets.QPushButton(
-            f"{self.locale_manager.search_key('create_mod_button')}"
+            f"{self.locale_manager.get_key('create_mod_button')}"
         )
         self.create_mod_button.clicked.connect(self.create_mod)  # type: ignore
         self.button_layout.addWidget(self.create_mod_button)
         self.create_mod_button.hide()
 
         self.save_mod_button = QtWidgets.QPushButton(
-            f"{self.locale_manager.search_key('save_changes_button')}"
+            f"{self.locale_manager.get_key('save_changes_button')}"
         )
         self.save_mod_button.clicked.connect(self.save_mod)  # type: ignore
         self.button_layout.addWidget(self.save_mod_button)
         self.save_mod_button.hide()
 
         self.edit_mod_button = QtWidgets.QPushButton(
-            f"{self.locale_manager.search_key('edit_mod_data_button')}"
+            f"{self.locale_manager.get_key('edit_mod_data_button')}"
         )
         self.edit_mod_button.clicked.connect(self.edit_mod)  # type: ignore
         self.button_layout.addWidget(self.edit_mod_button)
         self.edit_mod_button.hide()
 
         self.delete_mod_button = QtWidgets.QPushButton(
-            f"{self.locale_manager.search_key('delete_mod')}"
+            f"{self.locale_manager.get_key('delete_mod')}"
         )
         self.delete_mod_button.clicked.connect(self.delete_mod)  # type: ignore
         self.button_layout.addWidget(self.delete_mod_button)
         self.delete_mod_button.hide()
 
         self.cancel_button = QtWidgets.QPushButton(
-            f"{self.locale_manager.search_key('close')}"
+            f"{self.locale_manager.get_key('close')}"
         )
         self.cancel_button.clicked.connect(self.close_wrapper)  # type: ignore
         self.button_layout.addWidget(self.cancel_button)
@@ -392,14 +392,14 @@ class ModInfoView(QtWidgets.QWidget):
         if self.mod is None:
             return
         secondary_text = (
-            self.locale_manager.search_key("delete_mod_confirm_secondary_text")
+            self.locale_manager.get_key("delete_mod_confirm_secondary_text")
             % self.mod.get_full_mod_name()
         )
         ui_dialog.Dialog().yes_no_box(
             QtWidgets.QMessageBox.Icon.Warning,
-            f"{self.locale_manager.search_key('delete_mod_confirm')}",
+            f"{self.locale_manager.get_key('delete_mod_confirm')}",
             f"{secondary_text}",
-            f"{self.locale_manager.search_key('delete_mod')}",
+            f"{self.locale_manager.get_key('delete_mod')}",
             QtWidgets.QMessageBox.StandardButton.No,
             self.delete_mod_wrapper,
         )
@@ -435,7 +435,7 @@ class ModList(QtWidgets.QWidget):
         self.add_ui()
 
     def add_ui(self):
-        self.label = QtWidgets.QLabel(f"{self.locale_manager.search_key('mods')}")
+        self.label = QtWidgets.QLabel(f"{self.locale_manager.get_key('mods')}")
         self._layout.addWidget(self.label)
 
         self.mod_list = QtWidgets.QListWidget()
@@ -447,13 +447,13 @@ class ModList(QtWidgets.QWidget):
         self._layout.addLayout(self.button_layout)
 
         self.add_mod_button = QtWidgets.QPushButton(
-            f"{self.locale_manager.search_key('add_mod_button')}"
+            f"{self.locale_manager.get_key('add_mod_button')}"
         )
         self.add_mod_button.clicked.connect(self.add_mod)  # type: ignore
         self.button_layout.addWidget(self.add_mod_button)
 
         self.create_mod_button = QtWidgets.QPushButton(
-            f"{self.locale_manager.search_key('create_mod_button')}"
+            f"{self.locale_manager.get_key('create_mod_button')}"
         )
         self.create_mod_button.clicked.connect(self.create_mod)  # type: ignore
         self.button_layout.addWidget(self.create_mod_button)
@@ -461,13 +461,13 @@ class ModList(QtWidgets.QWidget):
         self.button_layout.addStretch(1)
 
         self.refresh_mod_button = QtWidgets.QPushButton(
-            f"{self.locale_manager.search_key('refresh_mods_button')}"
+            f"{self.locale_manager.get_key('refresh_mods_button')}"
         )
         self.refresh_mod_button.clicked.connect(self.refresh_mods)  # type: ignore
         self.button_layout.addWidget(self.refresh_mod_button)
 
         self.open_mod_folder_button = QtWidgets.QPushButton(
-            f"{self.locale_manager.search_key('open_mod_folder_button')}"
+            f"{self.locale_manager.get_key('open_mod_folder_button')}"
         )
         self.open_mod_folder_button.clicked.connect(self.open_mod_folder)  # type: ignore
         self.button_layout.addWidget(self.open_mod_folder_button)
@@ -484,11 +484,11 @@ class ModList(QtWidgets.QWidget):
             return
         menu = QtWidgets.QMenu()
         menu.addAction(
-            f"{self.locale_manager.search_key('delete_mod')}",
+            f"{self.locale_manager.get_key('delete_mod')}",
             self.delete_mod_wrapper,
         )
         menu.addAction(
-            f"{self.locale_manager.search_key('open_mod_in_explorer')}",
+            f"{self.locale_manager.get_key('open_mod_in_explorer')}",
             self.open_mod_in_explorer,
         )
         menu.exec_(self.mod_list.mapToGlobal(pos))
@@ -499,14 +499,14 @@ class ModList(QtWidgets.QWidget):
             md = mods.mod_manager.ModManager().get_mod_by_full_name(items[0].text())
             if md is not None:
                 secondary_text = (
-                    self.locale_manager.search_key("delete_mod_confirm_secondary_text")
+                    self.locale_manager.get_key("delete_mod_confirm_secondary_text")
                     % md.get_full_mod_name()
                 )
                 ui_dialog.Dialog().yes_no_box(
                     QtWidgets.QMessageBox.Icon.Warning,
-                    f"{self.locale_manager.search_key('delete_mod_confirm')}",
+                    f"{self.locale_manager.get_key('delete_mod_confirm')}",
                     f"{secondary_text}",
-                    f"{self.locale_manager.search_key('delete_mod')}",
+                    f"{self.locale_manager.get_key('delete_mod')}",
                     QtWidgets.QMessageBox.StandardButton.No,
                     self.delete_mod,
                 )
@@ -549,9 +549,9 @@ class ModList(QtWidgets.QWidget):
     def add_mod(self):
         extension = mods.bc_mod.Mod.get_extension()
         files = ui_file_dialog.FileDialog(self).select_files(
-            self.locale_manager.search_key("mod_file_select_dialog_title"),
+            self.locale_manager.get_key("mod_file_select_dialog_title"),
             "",
-            f"{self.locale_manager.search_key('mod_file_select_dialog_filter_mod')} (*{extension});;{self.locale_manager.search_key('all_filter')}",
+            f"{self.locale_manager.get_key('mod_file_select_dialog_filter_mod')} (*{extension});;{self.locale_manager.get_key('all_filter')}",
             None,
         )
         for file in files:
@@ -562,16 +562,16 @@ class ModList(QtWidgets.QWidget):
                 self.refresh_mods()
             else:
                 secondary_text = (
-                    self.locale_manager.search_key(
+                    self.locale_manager.get_key(
                         "mod_load_failed_dialog_informative_text"
                     )
                     % path
                 )
 
                 ui_dialog.Dialog().error_dialog(
-                    f"{self.locale_manager.search_key('mod_load_failed_dialog_message')}",
+                    f"{self.locale_manager.get_key('mod_load_failed_dialog_message')}",
                     f"{secondary_text}",
-                    self.locale_manager.search_key("error"),
+                    self.locale_manager.get_key("error"),
                 )
 
     def add_mod_obj(self, md: mods.bc_mod.Mod):

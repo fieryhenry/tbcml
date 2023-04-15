@@ -54,7 +54,7 @@ class AudioFilesList(QtWidgets.QWidget):
         self.setLayout(self._layout)
 
         self._layout.addWidget(
-            QtWidgets.QLabel(self.locale_manager.search_key("audio_files"))
+            QtWidgets.QLabel(self.locale_manager.get_key("audio_files"))
         )
         self.audio_files_list = QtWidgets.QListWidget(self)
         self.audio_files_list.setObjectName("audio_files_list")
@@ -80,24 +80,24 @@ class AudioFilesList(QtWidgets.QWidget):
     def context_menu(self, pos: QtCore.QPoint):
         menu = QtWidgets.QMenu(self)
         menu.addAction(
-            self.locale_manager.search_key("add_audio_file"), self.add_audio_file
+            self.locale_manager.get_key("add_audio_file"), self.add_audio_file
         )
         if self.is_selected():
             menu.addAction(
-                self.locale_manager.search_key("reveal_in_explorer"),
+                self.locale_manager.get_key("reveal_in_explorer"),
                 self.reveal_in_explorer,
             )
             menu.addAction(
-                self.locale_manager.search_key("play_audio_file"),
+                self.locale_manager.get_key("play_audio_file"),
                 self.get_selected_audio_file().play,
             )
         menu.exec_(self.audio_files_list.mapToGlobal(pos))
 
     def add_audio_file(self):
         file_path = ui_file_dialog.FileDialog(self).select_file(
-            self.locale_manager.search_key("select_audio_file"),
+            self.locale_manager.get_key("select_audio_file"),
             self.apk.get_server_path(self.apk.country_code).to_str(),
-            self.locale_manager.search_key("audio_files") + " (*.ogg *.caf)",
+            self.locale_manager.get_key("audio_files") + " (*.ogg *.caf)",
         )
         if file_path:
             path = io.path.Path(file_path)

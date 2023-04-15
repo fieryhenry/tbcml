@@ -21,7 +21,7 @@ class GatyaItemSelector(QtWidgets.QDialog):
 
     def setup_ui(self):
         self.resize(600, 500)
-        self.setWindowTitle(self.local_manager.search_key("item_selector_title"))
+        self.setWindowTitle(self.local_manager.get_key("item_selector_title"))
         layout = QtWidgets.QVBoxLayout(self)
         layout.setObjectName("gatya_item_selector_layout")
         self.setLayout(layout)
@@ -31,9 +31,9 @@ class GatyaItemSelector(QtWidgets.QDialog):
         self._gatya_item_table.setColumnCount(3)
         self._gatya_item_table.setHorizontalHeaderLabels(
             [
-                self.tr(self.local_manager.search_key("item_id")),
-                self.tr(self.local_manager.search_key("item_name")),
-                self.tr(self.local_manager.search_key("image")),
+                self.tr(self.local_manager.get_key("item_id")),
+                self.tr(self.local_manager.get_key("item_name")),
+                self.tr(self.local_manager.get_key("image")),
             ]
         )
         self._gatya_item_table.verticalHeader().setVisible(False)
@@ -67,7 +67,7 @@ class GatyaItemSelector(QtWidgets.QDialog):
 
             name = item.gatya_item_name_item.name
             if name == "＠":
-                name = self.tr(self.local_manager.search_key("unknown"))
+                name = self.tr(self.local_manager.get_key("unknown"))
 
             item_name = QtWidgets.QTableWidgetItem(name)
             item_name.setFlags(

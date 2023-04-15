@@ -23,16 +23,16 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         self.addToolBar(QtCore.Qt.ToolBarArea.TopToolBarArea, self.toolbar)
 
-        self.file_menu = QtWidgets.QMenu(self.locale_manager.search_key("file_menu"))
+        self.file_menu = QtWidgets.QMenu(self.locale_manager.get_key("file_menu"))
         self.file_menu.addAction(
-            self.locale_manager.search_key("apk_manager"), self.open_apk_manager
+            self.locale_manager.get_key("apk_manager"), self.open_apk_manager
         )
         self.file_menu.addAction(
-            self.locale_manager.search_key("server_files_manager"),
+            self.locale_manager.get_key("server_files_manager"),
             self.open_server_files_manager,
         )
         self.file_menu.addAction(
-            self.locale_manager.search_key("load_mods"), self.load_mods_into_game
+            self.locale_manager.get_key("load_mods"), self.load_mods_into_game
         )
         self.toolbar.addAction(self.file_menu.menuAction())
 
@@ -41,7 +41,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setObjectName("MainWindow")
         self.resize(900, 700)
         self.create_toolbar()
-        self.setWindowTitle(self.locale_manager.search_key("main_title"))
+        self.setWindowTitle(self.locale_manager.get_key("main_title"))
         icon = self.asset_manager.load_icon("icon.png")
         self.setWindowIcon(icon)
 

@@ -72,14 +72,14 @@ class CatSearchBox(QtWidgets.QWidget):
 
         self._search_box = QtWidgets.QLineEdit(self)
         self._search_box.setPlaceholderText(
-            self.locale_manager.search_key("search_placeholder")
+            self.locale_manager.get_key("search_placeholder")
         )
         self._layout.addWidget(self._search_box)
 
         self._search_box.textChanged.connect(self.on_search_text)
 
         self.filter_button = QtWidgets.QPushButton(self)
-        self.filter_button.setText(self.locale_manager.search_key("filter"))
+        self.filter_button.setText(self.locale_manager.get_key("filter"))
         self.filter_button.setFixedWidth(100)
         self.filter_button.clicked.connect(self.on_filter)
         self.filter: Optional[SearchFilter] = None
@@ -110,9 +110,9 @@ class CatSearchBox(QtWidgets.QWidget):
 
     def set_filter_changed(self, changed: bool):
         if changed:
-            self.filter_button.setText(self.locale_manager.search_key("filter_applied"))
+            self.filter_button.setText(self.locale_manager.get_key("filter_applied"))
         else:
-            self.filter_button.setText(self.locale_manager.search_key("filter"))
+            self.filter_button.setText(self.locale_manager.get_key("filter"))
 
 
 class FilterWindow(QtWidgets.QDialog):
@@ -135,7 +135,7 @@ class FilterWindow(QtWidgets.QDialog):
 
     def setup_ui(self):
         self.locale_manager = locale_handler.LocalManager.from_config()
-        self.setWindowTitle(self.locale_manager.search_key("filter_title"))
+        self.setWindowTitle(self.locale_manager.get_key("filter_title"))
         self.resize(400, 300)
 
         self._layout = QtWidgets.QVBoxLayout(self)
@@ -145,7 +145,7 @@ class FilterWindow(QtWidgets.QDialog):
 
         self._form_name = QtWidgets.QLineEdit(self)
         self._form_name.setPlaceholderText(
-            self.locale_manager.search_key("cat_editor_form_name")
+            self.locale_manager.get_key("cat_editor_form_name")
         )
         self.form_name_layout.addWidget(self._form_name)
         self._form_name.setText(self.filter.form_name)
@@ -154,16 +154,16 @@ class FilterWindow(QtWidgets.QDialog):
         self.form_name = self._form_name.text()
 
         self.case_sensitive = QtWidgets.QCheckBox(self)
-        self.case_sensitive.setText(self.locale_manager.search_key("case_sensitive"))
+        self.case_sensitive.setText(self.locale_manager.get_key("case_sensitive"))
         self.case_sensitive.setChecked(self.filter.case_sensitive)
         self.case_sensitive.stateChanged.connect(self.update_filter)
         self.form_name_layout.addWidget(self.case_sensitive)
 
         self.name_search_mode = QtWidgets.QComboBox(self)
-        self.name_search_mode.addItem(self.locale_manager.search_key("contains"))
-        self.name_search_mode.addItem(self.locale_manager.search_key("starts_with"))
-        self.name_search_mode.addItem(self.locale_manager.search_key("ends_with"))
-        self.name_search_mode.addItem(self.locale_manager.search_key("exact_match"))
+        self.name_search_mode.addItem(self.locale_manager.get_key("contains"))
+        self.name_search_mode.addItem(self.locale_manager.get_key("starts_with"))
+        self.name_search_mode.addItem(self.locale_manager.get_key("ends_with"))
+        self.name_search_mode.addItem(self.locale_manager.get_key("exact_match"))
         self.name_search_mode.currentIndexChanged.connect(self.on_name_search_mode)
         self.name_mode = self.filter.name_mode.value
         self.name_search_mode.setCurrentIndex(self.name_mode)
@@ -173,7 +173,7 @@ class FilterWindow(QtWidgets.QDialog):
         self._layout.addLayout(self._rarity_layout)
 
         self._rarity_label = QtWidgets.QLabel(self)
-        self._rarity_label.setText(self.locale_manager.search_key("cat_editor_rarity"))
+        self._rarity_label.setText(self.locale_manager.get_key("cat_editor_rarity"))
         self._rarity_layout.addWidget(self._rarity_label, 0, 0, 1, 2)
 
         self._rarity_buttons: dict[int, QtWidgets.QCheckBox] = {}
@@ -193,7 +193,7 @@ class FilterWindow(QtWidgets.QDialog):
 
         self.select_all_rarities = QtWidgets.QPushButton(self)
         self.select_all_rarities.setText(
-            self.locale_manager.search_key("cat_editor_select_all_rarities")
+            self.locale_manager.get_key("cat_editor_select_all_rarities")
         )
         self.select_all_rarities.clicked.connect(self.on_select_all_rarities)
         self._rarity_layout.addWidget(self.select_all_rarities, 4, 0, 1, 2)
@@ -201,13 +201,13 @@ class FilterWindow(QtWidgets.QDialog):
         self._layout.addStretch()
 
         self.or_mode = QtWidgets.QCheckBox(self)
-        self.or_mode.setText(self.locale_manager.search_key("or_filter_mode"))
+        self.or_mode.setText(self.locale_manager.get_key("or_filter_mode"))
         self.or_mode.setChecked(self.filter.or_mode)
         self.or_mode.stateChanged.connect(self.update_filter)
         self._layout.addWidget(self.or_mode)
 
         self.clear_filter = QtWidgets.QPushButton(self)
-        self.clear_filter.setText(self.locale_manager.search_key("reset"))
+        self.clear_filter.setText(self.locale_manager.get_key("reset"))
         self.clear_filter.clicked.connect(self.on_clear_filter)
         self._layout.addWidget(self.clear_filter)
 
@@ -620,7 +620,7 @@ class CatEditScreen(QtWidgets.QWidget):
 
     def setup_ui(self):
         self.setObjectName("CatEditScreen")
-        self.setWindowTitle(self.locale_manager.search_key("cat_editor_title"))
+        self.setWindowTitle(self.locale_manager.get_key("cat_editor_title"))
         self.setGeometry(0, 0, 800, 600)
 
         self._layout = QtWidgets.QGridLayout(self)
@@ -632,16 +632,16 @@ class CatEditScreen(QtWidgets.QWidget):
 
         self._tab_widget.addTab(
             self._create_general_tab(),
-            self.locale_manager.search_key("cat_editor_general_tab"),
+            self.locale_manager.get_key("cat_editor_general_tab"),
         )
         self._tab_widget.addTab(
             self._create_forms_tab(),
-            self.locale_manager.search_key("cat_editor_forms_tab"),
+            self.locale_manager.get_key("cat_editor_forms_tab"),
         )
 
         self.save_button = QtWidgets.QPushButton(self)
         self.save_button.setObjectName("save_button")
-        self.save_button.setText(self.locale_manager.search_key("apply"))
+        self.save_button.setText(self.locale_manager.get_key("apply"))
         self.save_button.clicked.connect(self.save)
         self._layout.addWidget(self.save_button, 1, 0)
 
@@ -693,7 +693,7 @@ class GeneralTab(QtWidgets.QWidget):
         self.evolve_text_group = QtWidgets.QGroupBox(self)
         self.evolve_text_group.setObjectName("evolve_text_group")
         self.evolve_text_group.setTitle(
-            self.locale_manager.search_key("cat_editor_evolve_text"),
+            self.locale_manager.get_key("cat_editor_evolve_text"),
         )
         self._layout.addWidget(self.evolve_text_group, 0, 0)
 
@@ -703,7 +703,7 @@ class GeneralTab(QtWidgets.QWidget):
         self.evolve_text_1_label = QtWidgets.QLabel(self.evolve_text_group)
         self.evolve_text_1_label.setObjectName("evolve_text_1_label")
         self.evolve_text_1_label.setText(
-            self.locale_manager.search_key("cat_editor_evolve_text_1_label"),
+            self.locale_manager.get_key("cat_editor_evolve_text_1_label"),
         )
         self.evolve_text_layout.addWidget(self.evolve_text_1_label, 0, 0)
 
@@ -717,7 +717,7 @@ class GeneralTab(QtWidgets.QWidget):
         self.evolve_text_2_label = QtWidgets.QLabel(self.evolve_text_group)
         self.evolve_text_2_label.setObjectName("evolve_text_2_label")
         self.evolve_text_2_label.setText(
-            self.locale_manager.search_key("cat_editor_evolve_text_2_label"),
+            self.locale_manager.get_key("cat_editor_evolve_text_2_label"),
         )
         self.evolve_text_layout.addWidget(self.evolve_text_2_label, 1, 0)
 
@@ -798,15 +798,15 @@ class FormTab(QtWidgets.QWidget):
 
         self.form_tabs.addTab(
             FormDataTab(self.form),
-            self.locale_manager.search_key("cat_editor_form_data_tab"),
+            self.locale_manager.get_key("cat_editor_form_data_tab"),
         )
         self.form_tabs.addTab(
             StatsTab(self.form),
-            self.locale_manager.search_key("cat_editor_form_stats_tab"),
+            self.locale_manager.get_key("cat_editor_form_stats_tab"),
         )
         self.form_tabs.addTab(
             AnimsTab(self.form),
-            self.locale_manager.search_key("cat_editor_form_anims_tab"),
+            self.locale_manager.get_key("cat_editor_form_anims_tab"),
         )
 
     def save(self):
@@ -844,7 +844,7 @@ class FormDataTab(QtWidgets.QWidget):
         self.name_label = QtWidgets.QLabel(self)
         self.name_label.setObjectName("name_label")
         self.name_label.setText(
-            self.locale_manager.search_key("cat_editor_form_name"),
+            self.locale_manager.get_key("cat_editor_form_name"),
         )
         self.name_group_layout.addWidget(self.name_label, 0, 0)
 
@@ -853,7 +853,7 @@ class FormDataTab(QtWidgets.QWidget):
         self.name_edit.setText(self.form.name)
         self.name_group_layout.addWidget(self.name_edit, 1, 0)
         self.name_edit.setPlaceholderText(
-            self.locale_manager.search_key("cat_editor_form_name"),
+            self.locale_manager.get_key("cat_editor_form_name"),
         )
 
         self.description_group = QtWidgets.QGroupBox(self)
@@ -865,7 +865,7 @@ class FormDataTab(QtWidgets.QWidget):
         self.description_label = QtWidgets.QLabel(self)
         self.description_label.setObjectName("description_label")
         self.description_label.setText(
-            self.locale_manager.search_key("cat_editor_form_description"),
+            self.locale_manager.get_key("cat_editor_form_description"),
         )
         self.description_group_layout.addWidget(self.description_label, 0, 0)
 
@@ -874,7 +874,7 @@ class FormDataTab(QtWidgets.QWidget):
         self.description_edit.setText("\n".join(self.form.description))
         self.description_group_layout.addWidget(self.description_edit, 1, 0)
         self.description_edit.setPlaceholderText(
-            self.locale_manager.search_key("cat_editor_form_description"),
+            self.locale_manager.get_key("cat_editor_form_description"),
         )
 
         self._layout.setRowStretch(2, 1)
@@ -936,7 +936,7 @@ class StatsTab(QtWidgets.QWidget):
         self.stats_group_layout.addLayout(self.column_1_layout, 0, 1)
 
         self.hp_edit = SpinBoxEdit(
-            self.locale_manager.search_key("hp"),
+            self.locale_manager.get_key("hp"),
             self.form.stats.hp,
             self,
         )
@@ -947,42 +947,42 @@ class StatsTab(QtWidgets.QWidget):
 
         self.attack_1_tab = AttackTab(self.form.stats.attack_1, self)
         self.attack_tabs.addTab(
-            self.attack_1_tab, self.locale_manager.search_key("attack_1")
+            self.attack_1_tab, self.locale_manager.get_key("attack_1")
         )
 
         self.attack_2_tab = AttackTab(self.form.stats.attack_2, self)
         self.attack_tabs.addTab(
-            self.attack_2_tab, self.locale_manager.search_key("attack_2")
+            self.attack_2_tab, self.locale_manager.get_key("attack_2")
         )
 
         self.attack_3_tab = AttackTab(self.form.stats.attack_3, self)
         self.attack_tabs.addTab(
-            self.attack_3_tab, self.locale_manager.search_key("attack_3")
+            self.attack_3_tab, self.locale_manager.get_key("attack_3")
         )
 
         self.range_edit = SpinBoxEdit(
-            self.locale_manager.search_key("range"),
+            self.locale_manager.get_key("range"),
             self.form.stats.range.raw,
             self,
         )
         self.column_1_layout.addWidget(self.range_edit)
 
         self.kbs_edit = SpinBoxEdit(
-            self.locale_manager.search_key("kbs"),
+            self.locale_manager.get_key("kbs"),
             self.form.stats.kbs,
             self,
         )
         self.column_0_layout.addWidget(self.kbs_edit)
 
         self.mv_speed_edit = SpinBoxEdit(
-            self.locale_manager.search_key("mv_speed"),
+            self.locale_manager.get_key("mv_speed"),
             self.form.stats.speed.raw,
             self,
         )
         self.column_0_layout.addWidget(self.mv_speed_edit)
 
         self.tba_edit = SpinBoxEdit(
-            self.locale_manager.search_key("tba"),
+            self.locale_manager.get_key("tba"),
             self.form.stats.attack_interval.frames,
             self,
             show_seconds=True,
@@ -990,14 +990,14 @@ class StatsTab(QtWidgets.QWidget):
         self.column_1_layout.addWidget(self.tba_edit)
 
         self.cost_edit = SpinBoxEdit(
-            self.locale_manager.search_key("cost"),
+            self.locale_manager.get_key("cost"),
             self.form.stats.cost,
             self,
         )
         self.column_0_layout.addWidget(self.cost_edit)
 
         self.recharge_edit = SpinBoxEdit(
-            self.locale_manager.search_key("recharge"),
+            self.locale_manager.get_key("recharge"),
             self.form.stats.recharge_time.frames,
             self,
             show_seconds=True,
@@ -1037,7 +1037,7 @@ class AttackTab(QtWidgets.QWidget):
         self._layout.setObjectName("layout")
 
         self._damage_edit = SpinBoxEdit(
-            self.locale_manager.search_key("damage"),
+            self.locale_manager.get_key("damage"),
             self.attack.damage,
             self,
         )
@@ -1052,7 +1052,7 @@ class AttackTab(QtWidgets.QWidget):
         self.long_distance_line_edit.setObjectName("long_distance_line_edit")
         self.long_distance_line_edit.setReadOnly(True)
         self.long_distance_line_edit.setText(
-            self.locale_manager.search_key("long_distance"),
+            self.locale_manager.get_key("long_distance"),
         )
         self.long_distance_line_edit.setFixedWidth(
             self.long_distance_line_edit.fontMetrics()
@@ -1086,7 +1086,7 @@ class AttackTab(QtWidgets.QWidget):
         self.long_distance_layout.addWidget(self._long_distance_end_edit)
 
         self._foreswing_edit = SpinBoxEdit(
-            self.locale_manager.search_key("foreswing"),
+            self.locale_manager.get_key("foreswing"),
             self.attack.foreswing.frames,
             self,
             show_seconds=True,
@@ -1097,7 +1097,7 @@ class AttackTab(QtWidgets.QWidget):
         self._use_ability_box = QtWidgets.QCheckBox(self)
         self._use_ability_box.setObjectName("use_ability_box")
         self._use_ability_box.setText(
-            self.locale_manager.search_key("use_ability"),
+            self.locale_manager.get_key("use_ability"),
         )
         self._use_ability_box.setChecked(self.attack.use_ability)
         self._layout.addWidget(self._use_ability_box)
@@ -1157,7 +1157,7 @@ class SpinBoxEdit(QtWidgets.QWidget):
             self.seconds_label = QtWidgets.QLabel(self)
             self.seconds_label.setObjectName("seconds_label")
             self.seconds_label.setText(
-                self.locale_manager.search_key("seconds") + ":",
+                self.locale_manager.get_key("seconds") + ":",
             )
             self._layout.addWidget(self.seconds_label)
 
@@ -1175,7 +1175,7 @@ class SpinBoxEdit(QtWidgets.QWidget):
             self.frames_label = QtWidgets.QLabel(self)
             self.frames_label.setObjectName("frames_label")
             self.frames_label.setText(
-                self.locale_manager.search_key("frames") + ":",
+                self.locale_manager.get_key("frames") + ":",
             )
             self._layout.insertWidget(2, self.frames_label)
 
@@ -1221,7 +1221,7 @@ class AnimsTab(QtWidgets.QWidget):
 
         self.edit_button = QtWidgets.QPushButton(self)
         self.edit_button.setObjectName("edit_button")
-        self.edit_button.setText(self.locale_manager.search_key("edit"))
+        self.edit_button.setText(self.locale_manager.get_key("edit"))
         self.edit_button.clicked.connect(self.on_edit_button_clicked)
         self._layout.addWidget(self.edit_button)
 

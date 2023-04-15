@@ -45,7 +45,7 @@ class AnimViewer(QtWidgets.QOpenGLWidget):
             self.anim_dropdown = QtWidgets.QComboBox(self)
             keys = ["walk", "idle", "attack", "knockback"]
             for key in keys:
-                self.anim_dropdown.addItem(self.locale_manager.search_key(key))
+                self.anim_dropdown.addItem(self.locale_manager.get_key(key))
             self.anim_dropdown.currentIndexChanged.connect(self.change_anim)
             self._layout.addWidget(self.anim_dropdown)
             self.change_anim(0)
