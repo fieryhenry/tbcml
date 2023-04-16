@@ -39,6 +39,11 @@ class Clock:
         self._timer.timeout.disconnect(func)
         self.total_funcs -= 1
 
+    def disconnect_all(self):
+        for _ in range(self.total_funcs):
+            self._timer.timeout.disconnect()
+        self.total_funcs = 0
+
     def is_stopped(self):
         return not self._timer.isActive()
 
