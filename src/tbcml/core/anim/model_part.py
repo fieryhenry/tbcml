@@ -128,6 +128,8 @@ class ModelPart:
             keyframes (unit_animation.PartAnim): The collection of keyframes to use for the animation.
         """
         change_in_value = keyframes.set_action(frame_counter)
+        if change_in_value is None:
+            return
 
         start_frame = keyframes.keyframes[0].frame
         if frame_counter >= start_frame:

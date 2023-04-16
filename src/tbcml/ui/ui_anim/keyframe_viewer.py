@@ -100,9 +100,10 @@ class PartGraphDrawer(QtWidgets.QWidget):
                 else:
                     change_in_value = int(self.keyframes.ease(keyframe_index, frame))
                     break
-            last_keyframe = self.keyframes.keyframes[-1]
-            if frame >= last_keyframe.frame:
-                change_in_value = int(last_keyframe.change)
+            if self.keyframes.keyframes:
+                last_keyframe = self.keyframes.keyframes[-1]
+                if frame >= last_keyframe.frame:
+                    change_in_value = int(last_keyframe.change)
             self.max_change_in_value = max(self.max_change_in_value, change_in_value)
             self.min_change_in_value = min(self.min_change_in_value, change_in_value)
 
@@ -339,9 +340,65 @@ class PartGraphDrawer(QtWidgets.QWidget):
         else:
             self.selected_keyframe = None
 
-    # move the keyframe with arrow keys
-    def move_keyframe(self, a0: QtGui.QKeyEvent):
+    def select_next_keyframe(self):
         if self.selected_keyframe is None:
+            return
+        next_keyframe = self.get_next_keyframe(self.selected_keyframe)
+        if next_keyframe is not None:
+            self.selected_keyframe = next_keyframe
+            self.update()
+
+    def select_previous_keyframe(self):
+        if self.selected_keyframe is None:
+            return
+        previous_keyframe = self.get_previous_keyframe(self.selected_keyframe)
+        if previous_keyframe is not None:
+            self.selected_keyframe = previous_keyframe
+            self.update()
+
+    def get_next_keyframe(
+        self, keyframe: anim.unit_animation.KeyFrame
+    ) -> Optional[anim.unit_animation.KeyFrame]:
+        next_keyframe = None
+        for i in range(len(self.keyframes.keyframes)):
+            if self.keyframes.keyframes[i] == keyframe:
+                if i + 1 < len(self.keyframes.keyframes):
+                    next_keyframe = self.keyframes.keyframes[i + 1]
+                break
+        return next_keyframe
+
+    def get_previous_keyframe(
+        self, keyframe: anim.unit_animation.KeyFrame
+    ) -> Optional[anim.unit_animation.KeyFrame]:
+        previous_keyframe = None
+        for i in range(len(self.keyframes.keyframes)):
+            if self.keyframes.keyframes[i] == keyframe:
+                if i - 1 >= 0:
+                    previous_keyframe = self.keyframes.keyframes[i - 1]
+                break
+        return previous_keyframe
+
+    def remove_keyframe(self, keyframe: anim.unit_animation.KeyFrame):
+        self.keyframes.remove_keyframe(keyframe)
+        self.calc()
+
+    # move the keyframe with arrow keys
+    def key_press_event(self, a0: QtGui.QKeyEvent):
+        if self.selected_keyframe is None:
+            return
+
+        if a0.key() == QtCore.Qt.Key.Key_Escape:
+            self.selected_keyframe.frame = self.selected_keyframe_original_frame
+            self.selected_keyframe.change = self.selected_keyframe_original_change
+            self.selected_keyframe = None
+            self.update()
+            return
+
+        if a0.key() == QtCore.Qt.Key.Key_Delete:
+            selected_keyframe = self.selected_keyframe
+            self.select_next_keyframe()
+            self.remove_keyframe(selected_keyframe)
+            self.update()
             return
 
         moved = False
@@ -451,6 +508,6 @@ class PartAnimWidget(QtWidgets.QWidget):
         )
         self.update_callback()
 
-    def move_keyframe(self, a0: QtGui.QKeyEvent) -> None:
-        self.keyframes_graph.move_keyframe(a0)
+    def key_press_event(self, a0: QtGui.QKeyEvent) -> None:
+        self.keyframes_graph.key_press_event(a0)
         self.update_spin_box()

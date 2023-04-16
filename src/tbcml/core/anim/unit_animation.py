@@ -377,6 +377,9 @@ class KeyFrames:
         local_frame = 0
         change_in_value = 0
 
+        if not self.keyframes:
+            return None
+
         start_frame = self.keyframes[0].frame
         end_frame = self.keyframes[-1].frame
         if frame_counter >= start_frame:
@@ -455,6 +458,10 @@ class KeyFrames:
 
     def add_keyframe(self, keyframe: "KeyFrame"):
         self.keyframes.append(keyframe)
+
+    def remove_keyframe(self, keyframe: "KeyFrame"):
+        if keyframe in self.keyframes:
+            self.keyframes.remove(keyframe)
 
 
 class UnitAnimMetaData:

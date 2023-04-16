@@ -514,7 +514,7 @@ class TimeLine(QtWidgets.QWidget):
                 keyframe_viewer.PartAnimWidget, self.time_line_group_layout
             )
             for widget in widgets:
-                widget.move_keyframe(a0)
+                widget.key_press_event(a0)
 
     def get_top_highlighted_part(self) -> int:
         widgets = self.get_widgets(PartLeftPannel)
