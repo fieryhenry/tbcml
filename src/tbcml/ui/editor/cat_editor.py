@@ -345,11 +345,11 @@ class CatEditor(QtWidgets.QWidget):
     def wheelEvent(self, a0: QtGui.QWheelEvent):
         if a0.angleDelta().y() > 0:
             self._cat_list.verticalScrollBar().triggerAction(
-                QtWidgets.QAbstractSlider.SliderSingleStepSub
+                QtWidgets.QAbstractSlider.SliderAction.SliderSingleStepSub
             )
         else:
             self._cat_list.verticalScrollBar().triggerAction(
-                QtWidgets.QAbstractSlider.SliderSingleStepAdd
+                QtWidgets.QAbstractSlider.SliderAction.SliderSingleStepAdd
             )
 
     def is_cat_item_visible(self, item: QtWidgets.QListWidgetItem):
