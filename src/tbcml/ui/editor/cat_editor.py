@@ -341,6 +341,17 @@ class CatEditor(QtWidgets.QWidget):
         self._cat_list.verticalScrollBar().valueChanged.connect(self.check_items)
         self.check_items(True)
 
+    # handle scroll events to reduce how many items are scrolled
+    def wheelEvent(self, a0: QtGui.QWheelEvent):
+        if a0.angleDelta().y() > 0:
+            self._cat_list.verticalScrollBar().triggerAction(
+                QtWidgets.QAbstractSlider.SliderSingleStepSub
+            )
+        else:
+            self._cat_list.verticalScrollBar().triggerAction(
+                QtWidgets.QAbstractSlider.SliderSingleStepAdd
+            )
+
     def is_cat_item_visible(self, item: QtWidgets.QListWidgetItem):
         return self._cat_list.visualItemRect(item).bottom() <= self._cat_list.height()
 
