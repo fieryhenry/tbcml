@@ -2,8 +2,8 @@ import enum
 import hashlib
 import hmac
 import random
-from typing import Optional
-from Cryptodome.Cipher import AES
+from typing import Optional, Union
+from Cryptodome.Cipher import AES, _mode_ecb, _mode_cbc
 from tbcml.core import country_code, io, game_data, game_version
 
 
@@ -85,11 +85,11 @@ class AesCipher:
         self.mode = mode
         self.enable = enable
 
-    def get_cipher(self):
+    def get_cipher(self) -> Union[_mode_ecb.EcbMode, _mode_cbc.CbcMode]:
         """Gets the cipher.
 
         Returns:
-            AES: The cipher.
+            Union[_mode_ecb.EcbMode, _mode_cbc.CbcMode]: The cipher.
         """
         if self.iv is None:
             return AES.new(self.key, self.mode)  # type: ignore
