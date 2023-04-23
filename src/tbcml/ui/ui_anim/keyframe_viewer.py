@@ -319,16 +319,28 @@ class PartGraphDrawer(QtWidgets.QWidget):
             keyframe.frame = new_frame
             self.calc()
 
-    def get_frame_from_pos(self, x_pos: int) -> int:
-        frame = int((x_pos - self.x_offset) / self.frame_width)
-        return frame
+    def get_keyframe_poses(self) -> list[int]:
+        poses: list[int] = []
+        for keyframe in self.keyframes.keyframes:
+            frame = keyframe.frame
+            pos = (frame * self.frame_width) + self.x_offset
+            poses.append(pos)
+        return poses
+
+    def get_keyframe_from_pos(
+        self, x_pos: int
+    ) -> Optional["anim.unit_animation.KeyFrame"]:
+        poses = self.get_keyframe_poses()
+        for i, pos in enumerate(poses):
+            if abs(pos - x_pos) < self.frame_width // 2:
+                return self.keyframes.keyframes[i]
+        return None
 
     # select a keyframe if the mouse is clicked over it
     def mousePressEvent(self, a0: QtGui.QMouseEvent):
         x_pos = a0.pos().x()
         y_pos = a0.pos().y()
-        frame = self.get_frame_from_pos(x_pos)
-        keyframe = self.get_keyframe(frame)
+        keyframe = self.get_keyframe_from_pos(x_pos)
         if keyframe is not None:
             self.selected_keyframe = keyframe
             self.selected_keyframe_original_frame = keyframe.frame
