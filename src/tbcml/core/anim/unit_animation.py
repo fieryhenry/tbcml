@@ -458,10 +458,15 @@ class KeyFrames:
 
     def add_keyframe(self, keyframe: "KeyFrame"):
         self.keyframes.append(keyframe)
+        self.sort_keyframes()
 
     def remove_keyframe(self, keyframe: "KeyFrame"):
         if keyframe in self.keyframes:
             self.keyframes.remove(keyframe)
+            self.sort_keyframes()
+
+    def sort_keyframes(self):
+        self.keyframes.sort(key=lambda x: x.frame)
 
 
 class UnitAnimMetaData:

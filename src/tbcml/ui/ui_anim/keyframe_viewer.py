@@ -336,7 +336,24 @@ class PartGraphDrawer(QtWidgets.QWidget):
                 return self.keyframes.keyframes[i]
         return None
 
-    # select a keyframe if the mouse is clicked over it
+    def get_frame_from_pos(self, x_pos: int) -> int:
+        return (x_pos - self.x_offset) // self.frame_width
+
+    def mouseDoubleClickEvent(self, a0: QtGui.QMouseEvent):
+        x_pos = a0.pos().x()
+        y_pos = a0.pos().y()
+        frame = self.get_frame_from_pos(x_pos)
+        change = self.get_change_in_value_from_pos(y_pos)
+        keyframe = anim.unit_animation.KeyFrame(frame, change, 1, 0)
+        self.keyframes.add_keyframe(keyframe)
+        self.calc()
+
+    def get_change_in_value_from_pos(self, y_pos: int) -> int:
+        change = self.max_change_in_value - (
+            (y_pos - self.y_offset) / self.scale_factor
+        )
+        return int(change)
+
     def mousePressEvent(self, a0: QtGui.QMouseEvent):
         x_pos = a0.pos().x()
         y_pos = a0.pos().y()
