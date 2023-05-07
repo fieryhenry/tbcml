@@ -181,6 +181,8 @@ class Mod:
         self, zip: "io.zip.Zip", dict_data: dict[Any, Any], parent: str = "mod_edits/"
     ):
         for key, value in dict_data.items():
+            if key == "*":
+                key = "all"
             if self.is_dict_of_dicts(value):
                 self.add_mod_edits_to_zip(zip, value, f"{parent}{key}/")
             else:
@@ -208,12 +210,15 @@ class Mod:
     ):
         if parent is None:
             parent = self.mod_edits
+        key = path[0]
+        if key == "all":
+            key = "*"
         if len(path) == 1:
-            parent[path[0]] = io.json_file.JsonFile.from_data(file).get_json()
+            parent[key] = io.json_file.JsonFile.from_data(file).get_json()
         else:
-            if path[0] not in parent:
-                parent[path[0]] = {}
-            self.add_mod_edit_path(path[1:], file, parent[path[0]])
+            if key not in parent:
+                parent[key] = {}
+            self.add_mod_edit_path(path[1:], file, parent[key])
 
     def is_dict_of_dicts(self, data: dict[Any, Any]) -> bool:
         for key in data:
