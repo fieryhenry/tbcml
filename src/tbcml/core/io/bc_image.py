@@ -99,26 +99,25 @@ class BCImage:
         self.image.save(bytes_io, format="PNG", compress_level=0)
         return data.Data(bytes_io.getvalue())
 
-    def serialize(self) -> dict[str, Any]:
-        return {"data": self.to_data().to_base_64()}
-
     @staticmethod
-    def deserialize(dt: dict[str, Any]) -> "BCImage":
-        return BCImage(data.Data.from_base_64(dt["data"]))
+    def from_base_64(base_64: str) -> "BCImage":
+        return BCImage(data.Data.from_base_64(base_64))
+
+    def apply_dict(self, dt: dict[str, Any]):
+        self.data = data.Data.from_base_64(dt["data"])
 
     def paste(self, image: "BCImage", x: int, y: int):
         self.image.paste(image.image, (x, y), image.image)
 
+    def paste_rect(self, image: "BCImage", rect: "anim.rect.Rect"):
+        self.image.paste(
+            image.image,
+            (rect.x, rect.y, rect.x + rect.width, rect.y + rect.height),
+            image.image,
+        )
+
     def putpixel(self, x: int, y: int, color: tuple[int, int, int, int]):
         self.image.putpixel((x, y), color)
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, BCImage):
-            return False
-        return self.to_data() == other.to_data()
-
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
 
     def fix_libpng_warning(self):
         """Fixes the libpng warning: iCCP: known incorrect sRGB profile"""

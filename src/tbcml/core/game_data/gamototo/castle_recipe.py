@@ -1,5 +1,5 @@
 import enum
-from typing import Any, Optional
+from typing import Optional
 from tbcml.core.game_data import pack
 from tbcml.core import io, anim
 
@@ -19,25 +19,6 @@ class CastleRecipeUnlock:
         self.max_level = max_level
         self.local_index = local_index
 
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "castle_id": self.castle_id,
-            "unknown_1": self.unknown_1,
-            "unknown_2": self.unknown_2,
-            "max_level": self.max_level,
-            "local_index": self.local_index,
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any]) -> "CastleRecipeUnlock":
-        return CastleRecipeUnlock(
-            data["castle_id"],
-            data["unknown_1"],
-            data["unknown_2"],
-            data["max_level"],
-            data["local_index"],
-        )
-
 
 class CastleRecipeUnlockSet:
     def __init__(
@@ -45,24 +26,6 @@ class CastleRecipeUnlockSet:
     ):
         self.castle_recipe_unlocks = castle_recipe_unlocks
         self.castle_id = castle_id
-
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "castle_id": self.castle_id,
-            "castle_recipe_unlocks": {
-                k: v.serialize() for k, v in self.castle_recipe_unlocks.items()
-            },
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any]) -> "CastleRecipeUnlockSet":
-        return CastleRecipeUnlockSet(
-            data["castle_id"],
-            {
-                k: CastleRecipeUnlock.deserialize(v)
-                for k, v in data["castle_recipe_unlocks"].items()
-            },
-        )
 
 
 class BaseItem(enum.Enum):
@@ -113,43 +76,6 @@ class Recipe:
         self.beast_bones = 0
         self.ammonite = 0
 
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "level": self.level,
-            "time_hours": self.time_hours,
-            "engineers": self.engineers,
-            "bricks": self.bricks,
-            "feathers": self.feathers,
-            "coal": self.coal,
-            "sprockets": self.sprockets,
-            "gold": self.gold,
-            "meteorite": self.meteorite,
-            "beast_bones": self.beast_bones,
-            "ammonite": self.ammonite,
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any]) -> "Recipe":
-        return Recipe(
-            data["level"],
-            data["time_hours"],
-            data["engineers"],
-            data["bricks"],
-            data["feathers"],
-            data["coal"],
-            data["sprockets"],
-            data["gold"],
-            data["meteorite"],
-            data["beast_bones"],
-            data["ammonite"],
-        )
-
-    def __str__(self):
-        return f"Recipe(level={self.level}, time_hours={self.time_hours}, engineers={self.engineers}, bricks={self.bricks}, feathers={self.feathers}, coal={self.coal}, sprockets={self.sprockets}, gold={self.gold}, meteorite={self.meteorite}, beast_bones={self.beast_bones}, ammonite={self.ammonite})"
-
-    def __repr__(self):
-        return self.__str__()
-
 
 class CastleRecipe:
     def __init__(
@@ -179,46 +105,6 @@ class CastleRecipe:
         self.name = name
         self.description = description
         self.name_texture = name_texture
-
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "recipe_id": self.recipe_id,
-            "dev_level": self.dev_level,
-            "stage_unlocked": self.stage_unlocked,
-            "user_rank_unlocked": self.user_rank_unlocked,
-            "attack_level": self.attack_level,
-            "charge_level": self.charge_level,
-            "castle_type": self.castle_type,
-            "recipies": {
-                level: recipie.serialize() for level, recipie in self.recipies.items()
-            },
-            "unlock_set": self.unlock_set.serialize(),
-            "name": self.name,
-            "description": self.description,
-            "name_texture": self.name_texture.serialize(),
-        }
-
-    @staticmethod
-    def deserialize(
-        data: dict[str, Any],
-    ) -> "CastleRecipe":
-        return CastleRecipe(
-            {
-                level: Recipe.deserialize(recipie)
-                for level, recipie in data["recipies"].items()
-            },
-            data["castle_type"],
-            data["recipe_id"],
-            data["dev_level"],
-            data["stage_unlocked"],
-            data["user_rank_unlocked"],
-            data["attack_level"],
-            data["charge_level"],
-            CastleRecipeUnlockSet.deserialize(data["unlock_set"]),
-            data["name"],
-            data["description"],
-            data["name_texture"],
-        )
 
     @staticmethod
     def get_file_name_recipe(castle_type: int) -> str:
@@ -252,16 +138,16 @@ class CastleRecipe:
         for i, line in enumerate(csv.lines):
             recipies[i] = Recipe(
                 i,
-                line[0].to_int(),
-                line[1].to_int(),
-                line[2].to_int(),
-                line[3].to_int(),
-                line[4].to_int(),
-                line[5].to_int(),
-                line[6].to_int(),
-                line[7].to_int(),
-                line[8].to_int(),
-                line[9].to_int(),
+                int(line[0]),
+                int(line[1]),
+                int(line[2]),
+                int(line[3]),
+                int(line[4]),
+                int(line[5]),
+                int(line[6]),
+                int(line[7]),
+                int(line[8]),
+                int(line[9]),
             )
 
         return CastleRecipe(
@@ -295,34 +181,34 @@ class CastleRecipe:
                 recipie = self.recipies[i]
             except KeyError:
                 continue
-            line[0].set(recipie.time_hours)
-            line[1].set(recipie.engineers)
-            line[2].set(recipie.bricks)
-            line[3].set(recipie.feathers)
-            line[4].set(recipie.coal)
-            line[5].set(recipie.sprockets)
-            line[6].set(recipie.gold)
-            line[7].set(recipie.meteorite)
-            line[8].set(recipie.beast_bones)
-            line[9].set(recipie.ammonite)
-            csv.set_line(i, line)
+            line[0] = str(recipie.time_hours)
+            line[1] = str(recipie.engineers)
+            line[2] = str(recipie.bricks)
+            line[3] = str(recipie.feathers)
+            line[4] = str(recipie.coal)
+            line[5] = str(recipie.sprockets)
+            line[6] = str(recipie.gold)
+            line[7] = str(recipie.meteorite)
+            line[8] = str(recipie.beast_bones)
+            line[9] = str(recipie.ammonite)
+            csv.lines[i] = line
             remaining_recipies.remove(i)
 
         for i in remaining_recipies:
             recipie = self.recipies[i]
             line = [
-                recipie.time_hours,
-                recipie.engineers,
-                recipie.bricks,
-                recipie.feathers,
-                recipie.coal,
-                recipie.sprockets,
-                recipie.gold,
-                recipie.meteorite,
-                recipie.beast_bones,
-                recipie.ammonite,
+                str(recipie.time_hours),
+                str(recipie.engineers),
+                str(recipie.bricks),
+                str(recipie.feathers),
+                str(recipie.coal),
+                str(recipie.sprockets),
+                str(recipie.gold),
+                str(recipie.meteorite),
+                str(recipie.beast_bones),
+                str(recipie.ammonite),
             ]
-            csv.add_line(line)
+            csv.lines.append(line)
 
         game_data.set_file(file_name, csv.to_data())
 
@@ -334,27 +220,12 @@ class CastleRecipies:
     def __init__(self, recipies: dict[int, CastleRecipe]):
         self.recipies = recipies
 
-    def serialize(self) -> dict[int, Any]:
-        return {
-            castle_type: castle_recipe.serialize()
-            for castle_type, castle_recipe in self.recipies.items()
-        }
-
     def get_recipe(self) -> Optional[CastleRecipe]:
         recipie_lst = list(self.recipies.values())
         try:
             return recipie_lst[0]
         except IndexError:
             return None
-
-    @staticmethod
-    def deserialize(
-        data: dict[str, Any],
-    ) -> "CastleRecipies":
-        recipies = {}
-        for castle_type, castle_recipe in data.items():
-            recipies[castle_type] = CastleRecipe.deserialize(castle_recipe)
-        return CastleRecipies(recipies)
 
     @staticmethod
     def get_unlock_file_name() -> str:
@@ -390,9 +261,9 @@ class CastleRecipies:
         names: dict[int, str] = {}
         descriptions: dict[int, list[str]] = {}
         for line in description_csv.lines:
-            castle_id = line[0].to_int()
-            name = line[1].to_str()
-            description = io.data.Data.data_list_string_list(line[2:])
+            castle_id = int(line[0])
+            name = line[1]
+            description = line[2:]
             names[castle_id] = name
             descriptions[castle_id] = description
 
@@ -419,12 +290,12 @@ class CastleRecipies:
         while i < len(unlock_csv.lines):
             castle_recipe_unlocks: dict[int, CastleRecipeUnlock] = {}
             j = 0
-            id = unlock_csv.lines[i + j][0].to_int()
-            while unlock_csv.lines[i + j][0].to_int() == id:
-                castle_id = unlock_csv.lines[i + j][0].to_int()
-                unknown_1 = unlock_csv.lines[i + j][1].to_int()
-                unknown_2 = unlock_csv.lines[i + j][2].to_int()
-                max_level = unlock_csv.lines[i + j][3].to_int()
+            id = int(unlock_csv.lines[i + j][0])
+            while int(unlock_csv.lines[i + j][0]) == id:
+                castle_id = int(unlock_csv.lines[i + j][0])
+                unknown_1 = int(unlock_csv.lines[i + j][1])
+                unknown_2 = int(unlock_csv.lines[i + j][2])
+                max_level = int(unlock_csv.lines[i + j][3])
                 castle_recipe_unlocks[j] = CastleRecipeUnlock(
                     castle_id, unknown_1, unknown_2, max_level, j
                 )
@@ -435,13 +306,13 @@ class CastleRecipies:
 
         castle_recipies: dict[int, CastleRecipe] = {}
         for i, line in enumerate(unlock_data_csv.lines[1:]):
-            castle_type = line[0].to_int()
-            recipe_id = line[1].to_int()
-            dev_level = line[2].to_int()
-            stage_unlocked = line[3].to_int()
-            user_rank_unlocked = line[4].to_int()
-            attack_level = line[5].to_int()
-            charge_level = line[6].to_int()
+            castle_type = int(line[0])
+            recipe_id = int(line[1])
+            dev_level = int(line[2])
+            stage_unlocked = int(line[3])
+            user_rank_unlocked = int(line[4])
+            attack_level = int(line[5])
+            charge_level = int(line[6])
             name_imgcut = anim.texture.Texture.load(
                 CastleRecipe.get_name_png_file_name(castle_type),
                 CastleRecipies.get_name_imgcut_file_name(),
@@ -499,7 +370,7 @@ class CastleRecipies:
         remaining_recipies = self.recipies.copy()
 
         for i, line in enumerate(unlock_csv.lines):
-            castle_type = line[0].to_int()
+            castle_type = int(line[0])
             try:
                 castle_recipe = self.recipies[castle_type]
             except KeyError:
@@ -509,11 +380,11 @@ class CastleRecipies:
                 j,
                 castle_recipe_unlock,
             ) in castle_recipe_unlock_set.castle_recipe_unlocks.items():
-                line[0].set(castle_recipe_unlock_set.castle_id)
-                line[1].set(castle_recipe_unlock.unknown_1)
-                line[2].set(castle_recipe_unlock.unknown_2)
-                line[3].set(castle_recipe_unlock.max_level)
-                unlock_csv.set_line(i + j, line)
+                line[0] = str(castle_recipe_unlock_set.castle_id)
+                line[1] = str(castle_recipe_unlock.unknown_1)
+                line[2] = str(castle_recipe_unlock.unknown_2)
+                line[3] = str(castle_recipe_unlock.max_level)
+                unlock_csv.lines[i + j] = line
             remaining_recipies.pop(castle_type)
 
         for castle_type, castle_recipe in remaining_recipies.items():
@@ -522,41 +393,41 @@ class CastleRecipies:
                 j,
                 castle_recipe_unlock,
             ) in castle_recipe_unlock_set.castle_recipe_unlocks.items():
-                unlock_csv.add_line(
+                unlock_csv.lines.append(
                     [
-                        castle_recipe_unlock_set.castle_id,
-                        castle_recipe_unlock.unknown_1,
-                        castle_recipe_unlock.unknown_2,
-                        castle_recipe_unlock.max_level,
+                        str(castle_recipe_unlock_set.castle_id),
+                        str(castle_recipe_unlock.unknown_1),
+                        str(castle_recipe_unlock.unknown_2),
+                        str(castle_recipe_unlock.max_level),
                     ]
                 )
         remaining_recipies = self.recipies.copy()
 
         for i, line in enumerate(unlock_data_csv.lines[1:]):
-            castle_type = line[0].to_int()
+            castle_type = int(line[0])
             try:
                 castle_recipe = self.recipies[castle_type]
             except KeyError:
                 continue
-            line[1].set(castle_recipe.recipe_id)
-            line[2].set(castle_recipe.dev_level)
-            line[3].set(castle_recipe.stage_unlocked)
-            line[4].set(castle_recipe.user_rank_unlocked)
-            line[5].set(castle_recipe.attack_level)
-            line[6].set(castle_recipe.charge_level)
-            unlock_data_csv.set_line(i + 1, line)
+            line[1] = str(castle_recipe.recipe_id)
+            line[2] = str(castle_recipe.dev_level)
+            line[3] = str(castle_recipe.stage_unlocked)
+            line[4] = str(castle_recipe.user_rank_unlocked)
+            line[5] = str(castle_recipe.attack_level)
+            line[6] = str(castle_recipe.charge_level)
+            unlock_data_csv.lines[i + 1] = line
             remaining_recipies.pop(castle_type)
 
         for castle_type, castle_recipe in remaining_recipies.items():
-            unlock_data_csv.add_line(
+            unlock_data_csv.lines.append(
                 [
-                    castle_type,
-                    castle_recipe.recipe_id,
-                    castle_recipe.dev_level,
-                    castle_recipe.stage_unlocked,
-                    castle_recipe.user_rank_unlocked,
-                    castle_recipe.attack_level,
-                    castle_recipe.charge_level,
+                    str(castle_type),
+                    str(castle_recipe.recipe_id),
+                    str(castle_recipe.dev_level),
+                    str(castle_recipe.stage_unlocked),
+                    str(castle_recipe.user_rank_unlocked),
+                    str(castle_recipe.attack_level),
+                    str(castle_recipe.charge_level),
                 ]
             )
 
@@ -565,24 +436,24 @@ class CastleRecipies:
         for i, line in enumerate(description_csv.lines):
             if len(line) < 2:
                 continue
-            castle_id = line[0].to_int()
+            castle_id = int(line[0])
             try:
                 castle_recipe = self.recipies[castle_id]
             except KeyError:
                 continue
-            line[1].set(castle_recipe.name)
+            line[1] = str(castle_recipe.name)
             line[2:] = []
             for j, description_line in enumerate(castle_recipe.description):
-                line.append(io.data.Data(description_line))
-            description_csv.set_line(i, line)
+                line.append(description_line)
+            description_csv.lines[i] = line
             remaining_recipies.pop(i)
 
         for castle_type, castle_recipe in remaining_recipies.items():
-            description_csv.add_line(
+            description_csv.lines.append(
                 [
                     castle_recipe.name,
                     *[
-                        io.data.Data(description_line)
+                        description_line
                         for description_line in castle_recipe.description
                     ],
                 ]

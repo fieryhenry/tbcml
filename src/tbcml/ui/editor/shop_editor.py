@@ -258,9 +258,6 @@ class ShopEditor(QtWidgets.QWidget):
         self.gatya_items = gatya_items
         self.locals = game_data.pack.Localizable.from_game_data(self.game_packs)
 
-        self.item_shop.import_item_shop(self.mod.cat_base.item_shop, self.game_packs)
-        self.gatya_items.import_items(self.mod.cat_base.gatya_items, self.game_packs)
-        self.locals.import_localizable(self.mod.localizable, self.game_packs)
         self.item_shop.tex.split_cuts()
 
     def fill_table(self):

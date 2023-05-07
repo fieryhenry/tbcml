@@ -1,5 +1,4 @@
 from typing import Any, Optional
-from tbcml.core import io
 
 
 class Rect:
@@ -11,53 +10,29 @@ class Rect:
         self.name = name
 
     @staticmethod
-    def from_list(l: list["io.data.Data"]) -> Optional["Rect"]:
+    def from_list(l: list[str]) -> Optional["Rect"]:
         if len(l) < 4:
             return None
         if len(l) > 4:
-            name = l[4].to_str()
+            name = l[4]
         else:
             name = ""
-        return Rect(l[0].to_int(), l[1].to_int(), l[2].to_int(), l[3].to_int(), name)
-
-    def to_list(self) -> list["io.data.Data"]:
-        return [
-            io.data.Data(self.x),
-            io.data.Data(self.y),
-            io.data.Data(self.width),
-            io.data.Data(self.height),
-            io.data.Data(self.name),
-        ]
-
-    def __str__(self):
-        return f"Rect({self.x}, {self.y}, {self.width}, {self.height}, {self.name})"
-
-    def __repr__(self):
-        return f"Rect({self.x}, {self.y}, {self.width}, {self.height}, {self.name})"
-
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "x": self.x,
-            "y": self.y,
-            "width": self.width,
-            "height": self.height,
-            "name": self.name,
-        }
-
-    @staticmethod
-    def deserialize(d: dict[str, Any]) -> "Rect":
-        return Rect(d["x"], d["y"], d["width"], d["height"], d["name"])
-
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, Rect):
-            return False
-        return (
-            self.x == other.x
-            and self.y == other.y
-            and self.width == other.width
-            and self.height == other.height
-            and self.name == other.name
+        return Rect(
+            int(l[0]),
+            int(l[1]),
+            int(l[2]),
+            int(l[3]),
+            name,
         )
+
+    def to_list(self) -> list[str]:
+        return [
+            str(self.x),
+            str(self.y),
+            str(self.width),
+            str(self.height),
+            str(self.name),
+        ]
 
     def copy(self) -> "Rect":
         return Rect(self.x, self.y, self.width, self.height, self.name)
@@ -65,3 +40,20 @@ class Rect:
     @staticmethod
     def create_empty() -> "Rect":
         return Rect(0, 0, 0, 0)
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        x = dict_data.get("x")
+        if x is not None:
+            self.x = x
+        y = dict_data.get("y")
+        if y is not None:
+            self.y = y
+        width = dict_data.get("width")
+        if width is not None:
+            self.width = width
+        height = dict_data.get("height")
+        if height is not None:
+            self.height = height
+        name = dict_data.get("name")
+        if name is not None:
+            self.name = name

@@ -1,6 +1,6 @@
 import time
 import enum
-from typing import Any, Callable, Optional, Union
+from typing import Callable, Optional, Union
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
@@ -30,26 +30,6 @@ class SearchFilter:
         self.or_mode = or_mode
         self.name_mode = name_mode
         self.case_sensitive = case_sensitive
-
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, SearchFilter):
-            return False
-        return (
-            self.form_name == other.form_name
-            and self.rarities == other.rarities
-            and self.or_mode == other.or_mode
-            and self.name_mode == other.name_mode
-            and self.case_sensitive == other.case_sensitive
-        )
-
-    def __ne__(self, other: Any) -> bool:
-        return not self.__eq__(other)
-
-    def __str__(self) -> str:
-        return f"SearchFilter(form_name={self.form_name}, rarities={self.rarities}, or_mode={self.or_mode}, name_mode={self.name_mode}, case_sensitive={self.case_sensitive})"
-
-    def __repr__(self) -> str:
-        return self.__str__()
 
 
 class CatSearchBox(QtWidgets.QWidget):

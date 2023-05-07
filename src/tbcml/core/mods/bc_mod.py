@@ -1,27 +1,104 @@
-from typing import Any, Optional
+from typing import Any, Optional, Union
 import zipfile
-from tbcml.core import io, game_version, country_code, crypto, game_data, mods
+from tbcml.core import io, game_version, country_code, crypto, mods
 
 
-class ModError:
-    def __init__(self, message: str):
-        self.message = message
+class ModEdit:
+    def __init__(self, tree: list[Any], content: Any):
+        self.tree = tree
+        self.content = content
 
-    def __str__(self):
-        return self.message
+    def tree_to_dict(self):
+        tree_dict: dict[Any, Any] = {}
+        temp_dict = tree_dict
+        for i in range(len(self.tree)):
+            if i == len(self.tree) - 1:
+                temp_dict[self.tree[i]] = self.content
+            else:
+                temp_dict[self.tree[i]] = {}
+                temp_dict = temp_dict[self.tree[i]]
+        return tree_dict
 
 
-class ModErrors:
-    def __init__(self, errors: Optional[list[ModError]] = None):
-        if errors is None:
-            errors = []
-        self.errors = errors
+class ModEditValueHandler:
+    def __init__(self, mod_edit_value: Any, current_value: Any):
+        self.mod_edit_value = str(mod_edit_value)
+        self.current_value = current_value
 
-    def __str__(self):
-        return "\n".join([str(error) for error in self.errors])
+    def get_value(self) -> int:
+        whitelist = [
+            "+",
+            "-",
+            "*",
+            "/",
+            "%",
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "(",
+            ")",
+            " ",
+            "-",
+        ]
+        expression = self.mod_edit_value.replace("x", str(self.current_value))
+        for char in expression:
+            if char not in whitelist:
+                try:
+                    return int(self.mod_edit_value)
+                except ValueError:
+                    return self.current_value
+        try:
+            return int(eval(expression))
+        except ZeroDivisionError:
+            return self.current_value
+        except SyntaxError:
+            return self.current_value
 
-    def add_error(self, error: ModError):
-        self.errors.append(error)
+
+class ModEditDictHandler:
+    def __init__(
+        self, mod_edit_dict: dict[Any, Any], current: Union[dict[Any, Any], list[Any]]
+    ):
+        self.mod_edit_dict = mod_edit_dict
+        self.current = current
+
+    def get_dict(self, convert_int: bool = False) -> dict[Any, Any]:
+        dict_data: dict[Any, Any] = {}
+        if "*" in self.mod_edit_dict:
+            if isinstance(self.current, list):
+                for i in range(len(self.current)):
+                    dict_data[i] = self.mod_edit_dict["*"]
+            else:
+                for key in self.current:
+                    if convert_int:
+                        try:
+                            key = int(key)
+                        except ValueError:
+                            pass
+                    dict_data[key] = self.mod_edit_dict["*"]
+
+        for key, value in self.mod_edit_dict.items():
+            if key == "*":
+                continue
+            if convert_int:
+                try:
+                    key = int(key)
+                except ValueError:
+                    pass
+            if isinstance(value, dict):
+                dict_data = Mod.merge_dicts(dict_data, {key: value})
+            else:
+                dict_data[key] = value
+
+        # print(dict_data)
+        return dict_data
 
 
 class Mod:
@@ -45,8 +122,10 @@ class Mod:
         self.mod_version = mod_version
         self.mod_url = mod_url
 
-        self.errors: Optional[ModErrors] = None
-        self.init_custom()
+        self.mod_edits: dict[str, Any] = {}
+        self.raw_files: dict[str, io.data.Data] = {}
+
+        self.init_audio()
         self.init_scripts()
 
     @staticmethod
@@ -59,18 +138,13 @@ class Mod:
     def get_file_name(self) -> str:
         return f"{self.mod_id}{self.get_extension()}"
 
-    def init_custom(self):
-        self.gamototo = game_data.gamototo.gamototo.Gamototo.create_empty()
-        self.battle = game_data.battle.battle.Battle.create_empty()
-        self.cat_base = game_data.cat_base.cat_base.CatBase.create_empty()
-        self.maps = game_data.map.map.Maps.create_empty()
-        self.localizable = game_data.pack.Localizable.create_empty()
-        self.audio = io.audio.Audio.create_empty()
-
     def init_scripts(self):
         self.scripts: mods.frida_script.Scripts = mods.frida_script.Scripts(
             [], self.country_code, self.game_version
         )
+
+    def init_audio(self):
+        self.audio = io.audio.Audio.create_empty()
 
     def create_mod_json(self) -> dict[str, Any]:
         return {
@@ -91,18 +165,61 @@ class Mod:
     def to_data(self):
         zip_file = io.zip.Zip()
 
-        self.gamototo.add_to_zip(zip_file)
-        self.battle.add_to_zip(zip_file)
-        self.cat_base.add_to_zip(zip_file)
-        self.maps.add_to_zip(zip_file)
-        self.localizable.add_to_zip(zip_file)
-
         self.audio.add_to_zip(zip_file)
         self.scripts.add_to_zip(zip_file)
+
+        self.add_mod_edits_to_zip(zip_file, self.mod_edits)
+
+        for file_name, data in self.raw_files.items():
+            zip_file.add_file(io.path.Path("raw_files/" + file_name), data)
 
         json = io.json_file.JsonFile.from_object(self.create_mod_json())
         zip_file.add_file(io.path.Path("mod.json"), json.to_data())
         return zip_file.to_data()
+
+    def add_mod_edits_to_zip(
+        self, zip: "io.zip.Zip", dict_data: dict[Any, Any], parent: str = "mod_edits/"
+    ):
+        for key, value in dict_data.items():
+            if self.is_dict_of_dicts(value):
+                self.add_mod_edits_to_zip(zip, value, f"{parent}{key}/")
+            else:
+                zip.add_file(
+                    io.path.Path(f"{parent}{key}.json"),
+                    io.json_file.JsonFile.from_object(value).to_data(),
+                )
+
+    def get_mod_edits_from_zip(self, zip: "io.zip.Zip"):
+        for file in zip.get_paths():
+            if file.path.startswith("mod_edits/"):
+                path = file.path.split("/")
+                path = path[1:]
+                path = path[: len(path) - 1]
+                zip_file = zip.get_file(file)
+                path.append(file.get_file_name_without_extension())
+                if zip_file is not None:
+                    self.add_mod_edit_path(path, zip_file)
+
+    def add_mod_edit_path(
+        self,
+        path: list[str],
+        file: "io.data.Data",
+        parent: Optional[dict[Any, Any]] = None,
+    ):
+        if parent is None:
+            parent = self.mod_edits
+        if len(path) == 1:
+            parent[path[0]] = io.json_file.JsonFile.from_data(file).get_json()
+        else:
+            if path[0] not in parent:
+                parent[path[0]] = {}
+            self.add_mod_edit_path(path[1:], file, parent[path[0]])
+
+    def is_dict_of_dicts(self, data: dict[Any, Any]) -> bool:
+        for key in data:
+            if not isinstance(data[key], dict):
+                return False
+        return True
 
     @staticmethod
     def load(path: "io.path.Path") -> Optional["Mod"]:
@@ -116,16 +233,20 @@ class Mod:
         json = io.json_file.JsonFile.from_data(json_file)
         mod = Mod.from_mod_json(json.get_json())
 
-        mod.gamototo = game_data.gamototo.gamototo.Gamototo.from_zip(zip_file)
-        mod.battle = game_data.battle.battle.Battle.from_zip(zip_file)
-        mod.cat_base = game_data.cat_base.cat_base.CatBase.from_zip(zip_file)
-        mod.maps = game_data.map.map.Maps.from_zip(zip_file)
-        mod.localizable = game_data.pack.Localizable.from_zip(zip_file)
-
         mod.audio = io.audio.Audio.from_zip(zip_file)
         mod.scripts = mods.frida_script.Scripts.from_zip(
             zip_file, mod.country_code, mod.game_version, mod
         )
+
+        mod.mod_edits = {}
+        mod.get_mod_edits_from_zip(zip_file)
+
+        mod.raw_files = {}
+        for file in zip_file.get_paths():
+            if file.path.startswith("raw_files/"):
+                file_zip = zip_file.get_file(file)
+                if file_zip is not None:
+                    mod.raw_files[file.get_file_name()] = file_zip
 
         return mod
 
@@ -146,26 +267,51 @@ class Mod:
     def create_mod_id() -> str:
         return crypto.Random.get_alpha_string(16)
 
-    def import_mod(self, other: "Mod", game_packs: "game_data.pack.GamePacks"):
-        self.gamototo.import_gamototo(other.gamototo, game_packs)
-        self.battle.import_battle(other.battle, game_packs)
-        self.cat_base.import_cat_base(other.cat_base, game_packs)
-        self.maps.import_maps(other.maps, game_packs)
-        self.localizable.import_localizable(other.localizable, game_packs)
-
+    def import_mod(self, other: "Mod"):
         self.audio.import_audio(other.audio)
         self.scripts.import_scripts(other.scripts)
+        self.raw_files = self.merge_dicts(self.raw_files, other.raw_files)
+        self.add_mod_edit(other.mod_edits)
 
-    def import_mods(self, others: list["Mod"], game_packs: "game_data.pack.GamePacks"):
+    def import_mods(self, others: list["Mod"]):
         for other in others:
-            self.import_mod(other, game_packs)
+            self.import_mod(other)
 
     def get_hash(self) -> str:
         return (
             crypto.Hash(crypto.HashAlgorithm.SHA256).get_hash(self.to_data()).to_hex()
         )
 
-    def add_error(self, error: "ModError"):
-        if self.errors is None:
-            self.errors = ModErrors()
-        self.errors.add_error(error)
+    def add_mod_edit(self, mod_edit: Union[dict[str, Any], "ModEdit"]):
+        if isinstance(mod_edit, dict):
+            self.mod_edits = self.merge_dicts(self.mod_edits, mod_edit)
+        else:
+            self.mod_edits = self.merge_dicts(self.mod_edits, mod_edit.tree_to_dict())
+
+        self.mod_edits_key_int_to_str(self.mod_edits)
+
+    def mod_edits_key_int_to_str(self, mod_edits: dict[str, Any]):
+        new_mod_edits: dict[str, Any] = {}
+        for key, value in mod_edits.items():
+            if isinstance(key, int):
+                new_mod_edits[str(key)] = value
+            else:
+                new_mod_edits[key] = value
+        for key, value in new_mod_edits.items():
+            if isinstance(value, dict):
+                self.mod_edits_key_int_to_str(value)  # type: ignore
+        self.mod_edits = new_mod_edits
+
+    @staticmethod
+    def merge_dicts(dict_1: dict[Any, Any], dict_2: dict[Any, Any]) -> dict[Any, Any]:
+        for key, value in dict_2.copy().items():
+            if (
+                key in dict_1
+                and isinstance(dict_1[key], dict)
+                and isinstance(value, dict)
+            ):
+                dict_1[key] = Mod.merge_dicts(dict_1[key].copy(), value.copy())  # type: ignore
+            else:
+                dict_1[key] = value
+
+        return dict_1

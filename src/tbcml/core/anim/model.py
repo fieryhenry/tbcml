@@ -14,17 +14,17 @@ class ModelMetaData:
         head_line = csv.read_line()
         if head_line is None:
             raise ValueError("Invalid model file")
-        head_name = head_line[0].to_str()
+        head_name = head_line[0]
 
         version_line = csv.read_line()
         if version_line is None:
             raise ValueError("Invalid model file")
-        version_code = version_line[0].to_int()
+        version_code = int(version_line[0])
 
         total_parts_line = csv.read_line()
         if total_parts_line is None:
             raise ValueError("Invalid model file")
-        total_parts = total_parts_line[0].to_int()
+        total_parts = int(total_parts_line[0])
 
         return ModelMetaData(head_name, version_code, total_parts)
 
@@ -32,44 +32,14 @@ class ModelMetaData:
         self.set_total_parts(total_parts)
 
         csv = io.bc_csv.CSV()
-        csv.add_line(self.head_name)
-        csv.add_line(self.version_code)
-        csv.add_line(self.total_parts)
+        csv.lines.append([self.head_name])
+        csv.lines.append([str(self.version_code)])
+        csv.lines.append([str(self.total_parts)])
 
         return csv
 
     def set_total_parts(self, total_parts: int):
         self.total_parts = total_parts
-
-    def __repr__(self) -> str:
-        return (
-            f"ModelMetaData({self.head_name}, {self.version_code}, {self.total_parts})"
-        )
-
-    def __str__(self) -> str:
-        return repr(self)
-
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, ModelMetaData):
-            return False
-        return (
-            self.head_name == other.head_name
-            and self.version_code == other.version_code
-            and self.total_parts == other.total_parts
-        )
-
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "head_name": self.head_name,
-            "version_code": self.version_code,
-            "total_parts": self.total_parts,
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any]) -> "ModelMetaData":
-        return ModelMetaData(
-            data["head_name"], data["version_code"], data["total_parts"]
-        )
 
     def copy(self) -> "ModelMetaData":
         return ModelMetaData(
@@ -81,6 +51,19 @@ class ModelMetaData:
     @staticmethod
     def create_empty() -> "ModelMetaData":
         return ModelMetaData("", 0, 0)
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        head_name = dict_data.get("head_name")
+        if head_name is not None:
+            self.head_name = head_name
+
+        version_code = dict_data.get("version_code")
+        if version_code is not None:
+            self.version_code = version_code
+
+        total_parts = dict_data.get("total_parts")
+        if total_parts is not None:
+            self.total_parts = total_parts
 
 
 class MamodelLoaderInfo:
@@ -114,29 +97,6 @@ class Mamodel:
         self.parts = parts
         self.comments = comments
 
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "meta_data": self.meta_data.serialize(),
-            "scale_unit": self.scale_unit,
-            "angle_unit": self.angle_unit,
-            "alpha_unit": self.alpha_unit,
-            "ints": self.ints,
-            "parts": [part.serialize() for part in self.parts],
-            "comments": self.comments,
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any]) -> "Mamodel":
-        return Mamodel(
-            ModelMetaData.deserialize(data["meta_data"]),
-            data["scale_unit"],
-            data["angle_unit"],
-            data["alpha_unit"],
-            data["ints"],
-            [model_part.ModelPart.deserialize(part) for part in data["parts"]],
-            data["comments"],
-        )
-
     def copy(self) -> "Mamodel":
         return Mamodel(
             self.meta_data.copy(),
@@ -146,25 +106,6 @@ class Mamodel:
             self.ints,
             [part.copy() for part in self.parts],
             self.comments.copy(),
-        )
-
-    def __repr__(self) -> str:
-        return f"Mamodel({self.meta_data}, {self.scale_unit}, {self.angle_unit}, {self.alpha_unit}, {self.ints}, {self.parts}, {self.comments})"
-
-    def __str__(self) -> str:
-        return repr(self)
-
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, Mamodel):
-            return False
-        return (
-            self.meta_data == other.meta_data
-            and self.scale_unit == other.scale_unit
-            and self.angle_unit == other.angle_unit
-            and self.alpha_unit == other.alpha_unit
-            and self.ints == other.ints
-            and self.parts == other.parts
-            and self.comments == other.comments
         )
 
     @staticmethod
@@ -195,15 +136,15 @@ class Mamodel:
         if units_line is None:
             return None
 
-        scale_unit = units_line[0].to_int()
-        angle_unit = units_line[1].to_int()
-        alpha_unit = units_line[2].to_int()
+        scale_unit = int(units_line[0])
+        angle_unit = int(units_line[1])
+        alpha_unit = int(units_line[2])
 
         ints: list[list[int]] = []
         total_ints_line = csv.read_line()
         if total_ints_line is None:
             return None
-        total_ints = total_ints_line[0].to_int()
+        total_ints = int(total_ints_line[0])
         comments: list[str] = []
 
         for _ in range(total_ints):
@@ -212,14 +153,50 @@ class Mamodel:
                 continue
             comment = ""
             if len(line_data) == 7:
-                comment = line_data[6].to_str()
-            ints.append(io.data.Data.data_list_int_list(line_data[:6]))
+                comment = line_data[6]
+            ints.append([int(x) for x in line_data[:6]])
             comments.append(comment)
 
         mamodel = Mamodel(
             meta_data, scale_unit, angle_unit, alpha_unit, ints, parts, comments
         )
         return mamodel
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        meta_data = dict_data.get("meta_data")
+        if meta_data is not None:
+            self.meta_data.apply_dict(meta_data)
+
+        scale_unit = dict_data.get("scale_unit")
+        if scale_unit is not None:
+            self.scale_unit = scale_unit
+
+        angle_unit = dict_data.get("angle_unit")
+        if angle_unit is not None:
+            self.angle_unit = angle_unit
+
+        alpha_unit = dict_data.get("alpha_unit")
+        if alpha_unit is not None:
+            self.alpha_unit = alpha_unit
+
+        ints = dict_data.get("ints")
+        if ints is not None:
+            self.ints = ints
+
+        parts = dict_data.get("parts")
+        if parts is not None:
+            for part_id, data_part in parts.items():
+                part_id = int(part_id)
+                if part_id < len(self.parts):
+                    self.parts[part_id].apply_dict(data_part)
+                else:
+                    part = model_part.ModelPart.create_empty(part_id)
+                    part.apply_dict(data_part)
+                    self.parts.append(part)
+
+        comments = dict_data.get("comments")
+        if comments is not None:
+            self.comments = comments
 
 
 class Model:
@@ -235,9 +212,9 @@ class Model:
         self.__mamodel = mamodel
         self.name = name
 
-    def get_part(self, index: int) -> model_part.ModelPart:
+    def get_part(self, index: int) -> Optional[model_part.ModelPart]:
         if index < 0 or index >= len(self.mamodel.parts):
-            raise ValueError("Invalid model part index")
+            return None
         return self.mamodel.parts[index]
 
     def get_sorted_parts(self) -> list[model_part.ModelPart]:
@@ -250,7 +227,9 @@ class Model:
     def set_parents(self):
         for part in self.mamodel.parts:
             if part.parent_id != -1:
-                part.set_parent(self.get_part(part.parent_id))
+                pp = self.get_part(part.parent_id)
+                if pp is not None:
+                    part.set_parent(pp)
 
     def set_children(self):
         for part in self.mamodel.parts:
@@ -286,14 +265,6 @@ class Model:
             anim_parts = self.anims[anim_index].get_parts(part.index)
             part.set_keyframes_sets(anim_parts)
 
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "tex": self.tex.serialize(),
-            "anims": [anim.serialize() for anim in self.anims],
-            "mamodel": self.mamodel.serialize(),
-            "name": self.name,
-        }
-
     @property
     def tex(self) -> texture.Texture:
         if isinstance(self.__tex, texture.TexLoaderInfo):
@@ -317,17 +288,17 @@ class Model:
             self.__mamodel = self.__mamodel.load()
         return self.__mamodel
 
-    @staticmethod
-    def deserialize(data: dict[str, Any]) -> "Model":
-        return Model(
-            texture.Texture.deserialize(data["tex"]),
-            [
-                unit_animation.UnitAnim.deserialize(anim_data)
-                for anim_data in data["anims"]
-            ],
-            Mamodel.deserialize(data["mamodel"]),
-            data["name"],
+    def tex_loaded(self) -> bool:
+        return not isinstance(self.__tex, texture.TexLoaderInfo)
+
+    def anims_loaded(self) -> bool:
+        return all(
+            not isinstance(anim, unit_animation.UnitAnimLoaderInfo)
+            for anim in self.__anims
         )
+
+    def mamodel_loaded(self) -> bool:
+        return not isinstance(self.__mamodel, MamodelLoaderInfo)
 
     def copy(self) -> "Model":
         return Model(
@@ -335,22 +306,6 @@ class Model:
             [anim.copy() for anim in self.anims],
             self.mamodel.copy(),
             self.name,
-        )
-
-    def __repr__(self) -> str:
-        return f"Model({self.tex}, {self.anims}, {self.mamodel}, {self.name})"
-
-    def __str__(self) -> str:
-        return repr(self)
-
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, Model):
-            return False
-        return (
-            self.tex == other.tex
-            and self.anims == other.anims
-            and self.mamodel == other.mamodel
-            and self.name == other.name
         )
 
     @staticmethod
@@ -381,26 +336,35 @@ class Model:
         self,
         game_packs: "game_data.pack.GamePacks",
     ):
-        self.tex.save(game_packs)
-        for anim in self.anims:
-            anim.save(game_packs)
-        mamodel_file = game_packs.find_file(self.name)
-        if mamodel_file is None:
-            return
-        csv = self.mamodel.meta_data.to_csv(self.get_total_parts())
-        for part in self.mamodel.parts:
-            csv.add_line(part.to_data())
+        if self.tex_loaded():
+            self.tex.save(game_packs)
 
-        csv.add_line(
-            [self.mamodel.scale_unit, self.mamodel.angle_unit, self.mamodel.alpha_unit]
-        )
-        csv.add_line([len(self.mamodel.ints)])
-        for i, ints in enumerate(self.mamodel.ints):
-            csv.add_line(ints)
-            if self.mamodel.comments[i]:
-                csv.lines[-1].append(io.data.Data(self.mamodel.comments[i]))
+        if self.anims_loaded():
+            for anim in self.anims:
+                anim.save(game_packs)
 
-        game_packs.set_file(self.name, csv.to_data())
+        if self.mamodel_loaded():
+            mamodel_file = game_packs.find_file(self.name)
+            if mamodel_file is None:
+                return
+            csv = self.mamodel.meta_data.to_csv(self.get_total_parts())
+            for part in self.mamodel.parts:
+                csv.lines.append(part.to_data())
+
+            csv.lines.append(
+                [
+                    str(self.mamodel.scale_unit),
+                    str(self.mamodel.angle_unit),
+                    str(self.mamodel.alpha_unit),
+                ]
+            )
+            csv.lines.append([str(len(self.mamodel.ints))])
+            for i, ints in enumerate(self.mamodel.ints):
+                csv.lines.append([str(x) for x in ints])
+                if self.mamodel.comments[i]:
+                    csv.lines[-1].append(self.mamodel.comments[i])
+
+            game_packs.set_file(self.name, csv.to_data())
 
     def get_total_parts(self) -> int:
         return len(self.mamodel.parts)
@@ -438,3 +402,35 @@ class Model:
 
     def get_total_frames(self) -> int:
         return self.get_end_frame() + 1
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        parts = dict_data.get("parts")
+        if parts is not None:
+            for part_id, data_part in parts.items():
+                part = self.get_part(part_id)
+                if part is None:
+                    part = model_part.ModelPart.create_empty(part_id)
+                    self.mamodel.parts.append(part)
+                part.apply_dict(data_part)
+
+        mamodel = dict_data.get("mamodel")
+        if mamodel is not None:
+            self.mamodel.apply_dict(mamodel)
+
+        tex = dict_data.get("tex")
+        if tex is not None:
+            self.tex.apply_dict(tex)
+
+        anims = dict_data.get("anims")
+        if anims is not None:
+            for anim_id, data_anim in anims.items():
+                anim = self.get_anim(anim_id)
+                if anim is None:
+                    anim = unit_animation.UnitAnim.create_empty()
+                    self.anims.append(anim)
+                anim.apply_dict(data_anim)
+
+    def get_anim(self, anim_id: int) -> Optional[unit_animation.UnitAnim]:
+        if anim_id < len(self.anims):
+            return self.anims[anim_id]
+        return None

@@ -1,8 +1,7 @@
-import csv as csv_module
 import enum
-from typing import Any, Optional, Union
+from typing import Optional, Union
 from tbcml.core.io import data, path
-from tbcml.core import country_code, log
+from tbcml.core import country_code
 
 
 class DelimeterType(enum.Enum):
@@ -46,34 +45,25 @@ class CSV:
                 self.file_data = self.file_data.unpad_pkcs7()
             except ValueError:
                 pass
-        self.delimeter = delimeter
+        self.delimeter = str(delimeter)
         self.remove_comments = remove_comments
         self.remove_empty = remove_empty
         self.index = 0
         self.parse()
 
     def parse(self):
-        reader = csv_module.reader(
-            self.file_data.data.decode("utf-8").splitlines(),
-            delimiter=str(self.delimeter),
-        )
-        self.lines: list[list["data.Data"]] = []
-        for row in reader:
-            new_row: list["data.Data"] = []
-            full_row = f"{str(self.delimeter)}".join(row)
+        lines: list[list[str]] = []
+        for line in self.file_data.to_str().splitlines():
             if self.remove_comments:
-                full_row = full_row.split("//")[0]
-            row = full_row.split(str(self.delimeter))
-            if row or not self.remove_empty:
-                for item in row:
-                    item = item.strip()
-                    if item or not self.remove_empty:
-                        new_row.append(data.Data(item))
-                if new_row or not self.remove_empty:
-                    self.lines.append(new_row)
-
-    def get_row(self, index: int) -> list["data.Data"]:
-        return self.lines[index]
+                line = line.split("//")[0]
+            line = line.strip()
+            line = line.split(self.delimeter)
+            if self.remove_empty:
+                line = [x for x in line if x]
+                if not line:
+                    continue
+            lines.append(line)
+        self.lines = lines
 
     @staticmethod
     def from_file(
@@ -81,60 +71,33 @@ class CSV:
     ) -> "CSV":
         return CSV(path.read(), delimeter)
 
-    def add_line(self, line: Union[list[Any], Any]):
-        if not isinstance(line, list):
-            line = [line]
-        new_line: list["data.Data"] = []
-        for item in line:
-            new_line.append(data.Data(str(item)))
-        self.lines.append(new_line)
+    def reset_index(self):
+        self.index = 0
 
-    def set_line(self, index: int, line: list[Any]):
-        new_line: list["data.Data"] = []
-        for item in line:
-            new_line.append(data.Data(item))
-        try:
-            self.lines[index] = new_line
-        except IndexError:
-            self.lines.append(new_line)
+    def __iter__(self):
+        return self
 
-    def to_data(self) -> "data.Data":
-        csv: list[str] = []
-        for line in self.lines:
-            for i, item in enumerate(line):
-                csv.append(str(item))
-                if i != len(line) - 1:
-                    csv.append(str(self.delimeter))
-            csv.append("\r\n")
-        return data.Data("".join(csv))
+    def __next__(self) -> list[str]:
+        line = self.read_line()
+        if line is None:
+            raise StopIteration
+        return line
 
-    def read_line(self, lg: bool = False) -> Optional[list["data.Data"]]:
+    def read_line(self) -> Optional[list[str]]:
         if self.index >= len(self.lines):
-            if lg:
-                log.Logger().log_error("CSV read index out of range")
             return None
         line = self.lines[self.index]
         self.index += 1
         return line
 
-    def reset_index(self):
-        self.index = 0
-
-    def has_line(self) -> bool:
-        return self.index < len(self.lines)
-
-    def __iter__(self):
-        return self
-
-    def __next__(self) -> list["data.Data"]:
-        line = self.read_line()
-        if line is None:
-            raise StopIteration
-        return line
+    def to_data(self) -> "data.Data":
+        return data.Data(
+            "\n".join([self.delimeter.join(line) for line in self.lines if line])
+        )
 
     def extend(self, length: int, sub_length: int = 0):
         for _ in range(length):
             if sub_length == 0:
                 self.lines.append([])
             else:
-                self.lines.append([data.Data("")] * sub_length)
+                self.lines.append([""] * sub_length)

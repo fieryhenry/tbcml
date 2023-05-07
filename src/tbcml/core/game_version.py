@@ -87,26 +87,6 @@ class GameVersion:
         """
         data.write_int(self.game_version)
 
-    def serialize(self) -> dict[str, Any]:
-        """Serializes the game version to a dictionary.
-
-        Returns:
-            dict[str, Any]: Serialized game version.
-        """
-        return {"game_version": self.game_version}
-
-    @staticmethod
-    def deserialize(game_version: dict[str, Any]) -> "GameVersion":
-        """Deserializes a game version from a dictionary.
-
-        Args:
-            game_version (dict[str, Any]): Serialized game version.
-
-        Returns:
-            GameVersion: Deserialized game version.
-        """
-        return GameVersion(game_version["game_version"])
-
     @staticmethod
     def from_string(game_version: str) -> "GameVersion":
         """Converts a string to a GameVersion object.

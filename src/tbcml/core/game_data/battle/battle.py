@@ -1,7 +1,5 @@
 """Contains the Battle class, which contains all battle-related data."""
 from tbcml.core.game_data import pack
-from tbcml.core import io
-from typing import Any
 from tbcml.core.game_data.battle import battle_shake_setting, bg, chara_group
 
 
@@ -22,34 +20,6 @@ class Battle:
         self.shake_effects = shake_effects
         self.bgs = bgs
         self.groups = groups
-
-    def serialize(self) -> dict[str, Any]:
-        """Serializes the Battle object into a dictionary that can be written to a json file.
-
-        Returns:
-            dict[str, Any]: The serialized Battle object.
-        """
-        return {
-            "battle_shake_setting": self.shake_effects.serialize(),
-            "bg": self.bgs.serialize(),
-            "chara_group": self.groups.serialize(),
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any]) -> "Battle":
-        """Deserializes a Battle object from a dictionary.
-
-        Args:
-            data (dict[str, Any]): The dictionary to deserialize from.
-
-        Returns:
-            Battle: The deserialized Battle object.
-        """
-        return Battle(
-            battle_shake_setting.ShakeEffects.deserialize(data["battle_shake_setting"]),
-            bg.Bgs.deserialize(data["bg"]),
-            chara_group.CharaGroups.deserialize(data["chara_group"]),
-        )
 
     @staticmethod
     def from_game_data(game_data: "pack.GamePacks") -> "Battle":
@@ -80,35 +50,6 @@ class Battle:
         self.bgs.to_game_data(game_data)
         self.groups.to_game_data(game_data)
 
-    def add_to_zip(self, zip: "io.zip.Zip"):
-        """Adds the Battle object to a mod zip.
-
-        Args:
-            zip (io.zip.Zip): The zip to add the Battle object to.
-        """
-        self.shake_effects.add_to_zip(zip)
-        self.bgs.add_to_zip(zip)
-        self.groups.add_to_zip(zip)
-
-    @staticmethod
-    def from_zip(zip: "io.zip.Zip") -> "Battle":
-        """Creates a Battle object from a mod zip.
-
-        Args:
-            zip (io.zip.Zip): The zip to create the Battle object from.
-
-        Returns:
-            Battle: The Battle object.
-        """
-        shake_effects = battle_shake_setting.ShakeEffects.from_zip(zip)
-        bgs = bg.Bgs.from_zip(zip)
-        groups = chara_group.CharaGroups.from_zip(zip)
-        return Battle(
-            shake_effects,
-            bgs,
-            groups,
-        )
-
     @staticmethod
     def create_empty() -> "Battle":
         """Creates an empty Battle object.
@@ -121,14 +62,3 @@ class Battle:
             bg.Bgs.create_empty(),
             chara_group.CharaGroups.create_empty(),
         )
-
-    def import_battle(self, other: "Battle", game_data: "pack.GamePacks"):
-        """Imports the data from another Battle object.
-
-        Args:
-            other (Battle): The Battle object to import from.
-            game_data (pack.GamePacks): The game data to check if the imported Battle Object is different from the game data. This is used to prevent overwriting the current Battle data with base game data.
-        """
-        self.shake_effects.import_shake_effects(other.shake_effects, game_data)
-        self.bgs.import_bgs(other.bgs, game_data)
-        self.groups.import_chara_groups(other.groups, game_data)

@@ -204,7 +204,7 @@ class ModelPart:
         self.real_rotation = rotation / self.angle_unit
 
     @staticmethod
-    def from_data(data: list["io.data.Data"], index: int) -> "ModelPart":
+    def from_data(data: list[str], index: int) -> "ModelPart":
         """Creates a ModelPart from a list of data.
 
         Args:
@@ -214,21 +214,21 @@ class ModelPart:
         Returns:
             ModelPart: The created ModelPart.
         """
-        parent_id = data[0].to_int()
-        unit_id = data[1].to_int()
-        cut_id = data[2].to_int()
-        z_depth = data[3].to_int()
-        x = data[4].to_int()
-        y = data[5].to_int()
-        pivot_x = data[6].to_int()
-        pivot_y = data[7].to_int()
-        scale_x = data[8].to_int()
-        scale_y = data[9].to_int()
-        rotation = data[10].to_int()
-        alpha = data[11].to_int()
-        glow = data[12].to_int()
+        parent_id = int(data[0])
+        unit_id = int(data[1])
+        cut_id = int(data[2])
+        z_depth = int(data[3])
+        x = int(data[4])
+        y = int(data[5])
+        pivot_x = int(data[6])
+        pivot_y = int(data[7])
+        scale_x = int(data[8])
+        scale_y = int(data[9])
+        rotation = int(data[10])
+        alpha = int(data[11])
+        glow = int(data[12])
         try:
-            name = data[13].to_str()
+            name = data[13]
         except IndexError:
             name = ""
 
@@ -250,26 +250,26 @@ class ModelPart:
             name,
         )
 
-    def to_data(self) -> list[Any]:
+    def to_data(self) -> list[str]:
         """Converts the ModelPart to a list of data.
 
         Returns:
-            list[Any]: The list of data.
+            list[str]: The list of data.
         """
-        data: list[Any] = [
-            self.parent_id,
-            self.unit_id,
-            self.rect_id,
-            self.z_depth,
-            self.x,
-            self.y,
-            self.pivot_x,
-            self.pivot_y,
-            self.scale_x,
-            self.scale_y,
-            self.rotation,
-            self.alpha,
-            self.glow,
+        data: list[str] = [
+            str(self.parent_id),
+            str(self.unit_id),
+            str(self.rect_id),
+            str(self.z_depth),
+            str(self.x),
+            str(self.y),
+            str(self.pivot_x),
+            str(self.pivot_y),
+            str(self.scale_x),
+            str(self.scale_y),
+            str(self.rotation),
+            str(self.alpha),
+            str(self.glow),
         ]
         if self.name:
             data.append(self.name)
@@ -530,6 +530,10 @@ class ModelPart:
                     return self.__sv_x, self.__sv_y
                 else:
                     part = self.model.get_part(part_id)
+                    if part is None:
+                        raise Exception(
+                            f"Part with id {part_id} does not exist in the model."
+                        )
                     size_x, size_y = part.get_base_size(True)
                     size_x *= self.real_scale_x
                     size_y *= self.real_scale_y
@@ -568,58 +572,6 @@ class ModelPart:
             current_alpha *= self.parent.get_recursive_alpha()
         return current_alpha
 
-    def serialize(self) -> dict[str, Any]:
-        """Serializes the part to a dictionary.
-
-        Returns:
-            dict[str, Any]: The serialized part.
-        """
-        return {
-            "index": self.index,
-            "parent_id": self.parent_id,
-            "unit_id": self.unit_id,
-            "cut_id": self.rect_id,
-            "z_depth": self.z_depth,
-            "x": self.x,
-            "y": self.y,
-            "pivot_x": self.pivot_x,
-            "pivot_y": self.pivot_y,
-            "scale_x": self.scale_x,
-            "scale_y": self.scale_y,
-            "rotation": self.rotation,
-            "alpha": self.alpha,
-            "glow": self.glow,
-            "name": self.name,
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any]) -> "ModelPart":
-        """Deserializes the part to a ModelPart object.
-
-        Args:
-            data (dict[str, Any]): The serialized part.
-
-        Returns:
-            ModelPart: The deserialized part.
-        """
-        return ModelPart(
-            data["index"],
-            data["parent_id"],
-            data["unit_id"],
-            data["cut_id"],
-            data["z_depth"],
-            data["x"],
-            data["y"],
-            data["pivot_x"],
-            data["pivot_y"],
-            data["scale_x"],
-            data["scale_y"],
-            data["rotation"],
-            data["alpha"],
-            data["glow"],
-            data["name"],
-        )
-
     def copy(self) -> "ModelPart":
         """Copies the part.
 
@@ -642,51 +594,6 @@ class ModelPart:
             self.alpha,
             self.glow,
             self.name,
-        )
-
-    def __repr__(self) -> str:
-        """Gets the string representation of the part.
-
-        Returns:
-            str: The string representation of the part.
-        """
-        return f"ModelPart({self.index}, {self.parent_id}, {self.unit_id}, {self.rect_id}, {self.z_depth}, {self.x}, {self.y}, {self.pivot_x}, {self.pivot_y}, {self.scale_x}, {self.scale_y}, {self.rotation}, {self.alpha}, {self.glow}, {self.name})"
-
-    def __str__(self) -> str:
-        """Gets the string representation of the part.
-
-        Returns:
-            str: The string representation of the part.
-        """
-        return repr(self)
-
-    def __eq__(self, other: Any) -> bool:
-        """Checks if the part is equal to another object.
-
-        Args:
-            other (Any): The other object.
-
-        Returns:
-            bool: True if the part is equal to the other object, False otherwise.
-        """
-        if not isinstance(other, ModelPart):
-            return False
-        return (
-            self.index == other.index
-            and self.parent_id == other.parent_id
-            and self.unit_id == other.unit_id
-            and self.rect_id == other.rect_id
-            and self.z_depth == other.z_depth
-            and self.x == other.x
-            and self.y == other.y
-            and self.pivot_x == other.pivot_x
-            and self.pivot_y == other.pivot_y
-            and self.scale_x == other.scale_x
-            and self.scale_y == other.scale_y
-            and self.rotation == other.rotation
-            and self.alpha == other.alpha
-            and self.glow == other.glow
-            and self.name == other.name
         )
 
     def set_model(self, model: "model.Model"):
@@ -815,3 +722,47 @@ class ModelPart:
             children.append(child)
             children.extend(child.get_all_children())
         return children
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        x = dict_data.get("x")
+        if x is not None:
+            self.x = x
+        y = dict_data.get("y")
+        if y is not None:
+            self.y = y
+        pivot_x = dict_data.get("pivot_x")
+        if pivot_x is not None:
+            self.pivot_x = pivot_x
+        pivot_y = dict_data.get("pivot_y")
+        if pivot_y is not None:
+            self.pivot_y = pivot_y
+        scale_x = dict_data.get("scale_x")
+        if scale_x is not None:
+            self.scale_x = scale_x
+        scale_y = dict_data.get("scale_y")
+        if scale_y is not None:
+            self.scale_y = scale_y
+        rotation = dict_data.get("rotation")
+        if rotation is not None:
+            self.rotation = rotation
+        alpha = dict_data.get("alpha")
+        if alpha is not None:
+            self.alpha = alpha
+        parent_id = dict_data.get("parent_id")
+        if parent_id is not None:
+            self.parent_id = parent_id
+            self.set_parent_by_id(self.parent_id)
+        z_depth = dict_data.get("z_depth")
+        if z_depth is not None:
+            self.z_depth = z_depth
+        unit_id = dict_data.get("unit_id")
+        if unit_id is not None:
+            self.unit_id = unit_id
+        rect_id = dict_data.get("rect_id")
+        if rect_id is not None:
+            self.rect_id = rect_id
+            self.set_rect(self.rect_id)
+        self.real_alpha = self.alpha / self.alpha_unit
+        self.real_rotation = self.rotation / self.angle_unit
+        self.real_scale_x = self.scale_x / self.scale_unit
+        self.real_scale_y = self.scale_y / self.scale_unit
