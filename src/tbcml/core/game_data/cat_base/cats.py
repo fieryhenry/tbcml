@@ -1007,8 +1007,13 @@ class UnitBuyData:
         raw_data = dict_data.get("raw_data")
         if raw_data is not None:
             current_raw_data = self.to_raw_data()
-            for stat_id, value in raw_data.items():
-                current_raw_data[int(stat_id)] = value
+            mod_raw_data = mods.bc_mod.ModEditDictHandler(
+                raw_data, current_raw_data
+            ).get_dict(convert_int=True)
+            for stat_id, value in mod_raw_data.items():
+                current_raw_data[stat_id] = mods.bc_mod.ModEditValueHandler(
+                    value, current_raw_data[stat_id]
+                ).get_value()
             self.assign(current_raw_data)
 
     @staticmethod
@@ -1175,38 +1180,35 @@ class NyankoPictureBookData:
     def __init__(
         self,
         cat_id: int,
-        obtainable: bool,
+        is_displayed_in_catguide: bool,
         limited: bool,
         total_forms: int,
-        unknown: int,
+        hint_display_type: int,
         scale_0: int,
         scale_1: int,
         scale_2: int,
         scale_3: int,
-        other: list[int],
     ):
         self.cat_id = cat_id
-        self.obtainable = obtainable
+        self.is_displayed_in_catguide = is_displayed_in_catguide
         self.limited = limited
         self.total_forms = total_forms
-        self.unknown = unknown
+        self.hint_display_type = hint_display_type
         self.scale_0 = scale_0
         self.scale_1 = scale_1
         self.scale_2 = scale_2
         self.scale_3 = scale_3
-        self.other = other
 
-    def set_obtainable(self, obtainable: bool):
-        self.obtainable = obtainable
+    def set_is_displayed_in_catguide(self, is_displayed_in_catguide: bool):
+        self.is_displayed_in_catguide = is_displayed_in_catguide
 
-    def is_obtainable(self) -> bool:
-        return self.obtainable
+    def is_displayed_in_cat_guide(self) -> bool:
+        return self.is_displayed_in_catguide
 
     def apply_dict(self, dict_data: dict[str, Any]):
-        obtainable = dict_data.get("obtainable")
-        if obtainable is not None:
-            self.obtainable = obtainable
-
+        is_displayed_in_catguide = dict_data.get("is_displayed_in_catguide")
+        if is_displayed_in_catguide is not None:
+            self.is_displayed_in_catguide = is_displayed_in_catguide
         limited = dict_data.get("limited")
         if limited is not None:
             self.limited = limited
@@ -1215,9 +1217,9 @@ class NyankoPictureBookData:
         if total_forms is not None:
             self.total_forms = total_forms
 
-        unknown = dict_data.get("unknown")
-        if unknown is not None:
-            self.unknown = unknown
+        hint_display_type = dict_data.get("hint_display_type")
+        if hint_display_type is not None:
+            self.hint_display_type = hint_display_type
 
         scale_0 = dict_data.get("scale_0")
         if scale_0 is not None:
@@ -1235,13 +1237,9 @@ class NyankoPictureBookData:
         if scale_3 is not None:
             self.scale_3 = scale_3
 
-        other = dict_data.get("other")
-        if other is not None:
-            self.other = other
-
     @staticmethod
     def create_empty(cat_id: int) -> "NyankoPictureBookData":
-        return NyankoPictureBookData(cat_id, False, False, 0, 0, 0, 0, 0, 0, [])
+        return NyankoPictureBookData(cat_id, False, False, 0, 0, 0, 0, 0, 0)
 
 
 class NyankoPictureBook:
@@ -1273,7 +1271,6 @@ class NyankoPictureBook:
                 int(line[5]),
                 int(line[6]),
                 int(line[7]),
-                [int(x) for x in line[8:]],
             )
         nypb = NyankoPictureBook(data)
         game_data.nyanko_picture_book = nypb
@@ -1287,15 +1284,14 @@ class NyankoPictureBook:
         csv = io.bc_csv.CSV(file.dec_data)
         for data in self.data.values():
             line: list[str] = []
-            line.append("1" if data.obtainable else "0")
+            line.append("1" if data.is_displayed_in_catguide else "0")
             line.append("1" if data.limited else "0")
             line.append(str(data.total_forms))
-            line.append(str(data.unknown))
+            line.append(str(data.hint_display_type))
             line.append(str(data.scale_0))
             line.append(str(data.scale_1))
             line.append(str(data.scale_2))
             line.append(str(data.scale_3))
-            line.extend(str(data.other))
             csv.lines[data.cat_id] = line
 
         game_data.set_file(NyankoPictureBook.get_file_name(), csv.to_data())
@@ -1308,7 +1304,11 @@ class NyankoPictureBook:
         return NyankoPictureBook({})
 
     def apply_dict(self, dict_data: dict[str, Any]):
-        for cat_id, data in dict_data.items():
+        current_data = self.data.copy()
+        mod_data = mods.bc_mod.ModEditDictHandler(dict_data, current_data).get_dict(
+            convert_int=True
+        )
+        for cat_id, data in mod_data.items():
             cat_id = int(cat_id)
             cat = self.data.get(cat_id)
             if cat is None:
@@ -1322,15 +1322,6 @@ class EvolveTextText:
         self.text = text
         self.evolve = evolve
 
-    def apply_dict(self, dict_data: dict[str, Any]):
-        text = dict_data.get("text")
-        if text is not None:
-            self.text = text
-
-        evolve = dict_data.get("evolve")
-        if evolve is not None:
-            self.evolve = evolve
-
 
 class EvolveTextCat:
     def __init__(self, cat_id: int, text: dict[int, EvolveTextText]):
@@ -1338,18 +1329,16 @@ class EvolveTextCat:
         self.text = text
 
     def apply_dict(self, dict_data: dict[str, Any]):
-        text = dict_data.get("text")
-        if text is not None:
-            current_texts = self.text.copy()
-            mod_texts = mods.bc_mod.ModEditDictHandler(text, current_texts).get_dict(
-                convert_int=True
-            )
-            for evolve, text in mod_texts.items():
-                current_text = self.text.get(evolve)
-                if current_text is None:
-                    current_text = EvolveTextText(evolve, [])
-                current_text.apply_dict(text)
-                self.text[evolve] = current_text
+        current_texts = self.text.copy()
+        mod_texts = mods.bc_mod.ModEditDictHandler(dict_data, current_texts).get_dict(
+            convert_int=True
+        )
+        for evolve, text in mod_texts.items():
+            current_text = self.text.get(evolve)
+            if current_text is None:
+                current_text = EvolveTextText(evolve, [])
+            current_text.text = text
+            self.text[evolve] = current_text
 
     @staticmethod
     def create_empty(cat_id: int) -> "EvolveTextCat":
@@ -1590,14 +1579,16 @@ class Cat:
             self.talent.cat_id = cat_id
         self.nyanko_picture_book_data.cat_id = cat_id
 
-    def set_obtainable(self, obtainable: bool):
-        self.unit_buy_data.set_obtainable(obtainable)
-        self.nyanko_picture_book_data.set_obtainable(obtainable)
+    def set_is_displayed_in_catguide(self, is_displayed_in_catguide: bool):
+        self.unit_buy_data.set_obtainable(is_displayed_in_catguide)
+        self.nyanko_picture_book_data.set_is_displayed_in_catguide(
+            is_displayed_in_catguide
+        )
 
-    def is_obtainable(self) -> bool:
+    def is_displayed_in_catguide(self) -> bool:
         return (
             self.unit_buy_data.is_obtainable()
-            and self.nyanko_picture_book_data.is_obtainable()
+            and self.nyanko_picture_book_data.is_displayed_in_cat_guide()
         )
 
     def apply_dict(self, dict_data: dict[str, Any]):
