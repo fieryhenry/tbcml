@@ -245,12 +245,12 @@ class MapOptions:
             line[5] = str(option.star_mult_4)
             line[6] = str(option.guerrilla_set)
             line[7] = str(option.reset_type.value)
-            line[8] = str(option.one_time_display)
+            line[8] = "1" if option.one_time_display else "0"
             line[9] = str(option.display_order)
             line[10] = str(option.interval)
-            line[11] = str(option.challenge_flag)
+            line[11] = "1" if option.challenge_flag else "0"
             line[12] = str(option.difficulty_mask)
-            line[13] = str(option.hide_after_clear)
+            line[13] = "1" if option.hide_after_clear else "0"
             line[14] = option.map_comment
             csv.lines[i + 1] = line
             del remaining[stage_id]
@@ -264,12 +264,12 @@ class MapOptions:
             line.append(str(option.star_mult_4))
             line.append(str(option.guerrilla_set))
             line.append(str(option.reset_type.value))
-            line.append(str(option.one_time_display))
+            line.append("1" if option.one_time_display else "0")
             line.append(str(option.display_order))
             line.append(str(option.interval))
-            line.append(str(option.challenge_flag))
+            line.append("1" if option.challenge_flag else "0")
             line.append(str(option.difficulty_mask))
-            line.append(str(option.hide_after_clear))
+            line.append("1" if option.hide_after_clear else "0")
             line.append(option.map_comment)
             csv.lines.append(line)
 
@@ -467,7 +467,7 @@ class StageStats:
         csv = io.bc_csv.CSV(file.dec_data)
         line_1 = [
             str(self.castle_type),
-            str(self.no_continues),
+            "1" if self.no_continues else "0",
             str(self.ex_stage_prob),
             str(self.ex_stage_chapter_id),
             str(self.ex_stage_stage_id),
@@ -493,7 +493,7 @@ class StageStats:
                 str(enemy.spawn_base_percentage),
                 str(enemy.min_z),
                 str(enemy.max_z),
-                str(enemy.boss_flag),
+                "1" if enemy.boss_flag else "0",
                 str(enemy.magnification),
             ]
             if enemy.spawn_1 is not None:

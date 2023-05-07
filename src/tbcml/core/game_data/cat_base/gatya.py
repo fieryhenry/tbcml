@@ -213,7 +213,7 @@ class GatyaOptions:
         for i, line in enumerate(csv.lines[1:]):
             id = int(line[0])
             option = self.options[id]
-            line[1] = str(option.banner_enabled)
+            line[1] = "1" if option.banner_enabled else "0"
             line[2] = str(option.ticket_item_id)
             line[3] = str(option.anime_id)
             line[4] = str(option.btn_cut_id)
@@ -228,7 +228,7 @@ class GatyaOptions:
         for id, option in remaining.items():
             aline: list[str] = []
             aline.append(str(id))
-            aline.append(str(option.banner_enabled))
+            aline.append("1" if option.banner_enabled else "0")
             aline.append(str(option.ticket_item_id))
             aline.append(str(option.anime_id))
             aline.append(str(option.btn_cut_id))

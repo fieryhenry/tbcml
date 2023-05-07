@@ -1287,8 +1287,8 @@ class NyankoPictureBook:
         csv = io.bc_csv.CSV(file.dec_data)
         for data in self.data.values():
             line: list[str] = []
-            line.append(str(data.obtainable))
-            line.append(str(data.limited))
+            line.append("1" if data.obtainable else "0")
+            line.append("1" if data.limited else "0")
             line.append(str(data.total_forms))
             line.append(str(data.unknown))
             line.append(str(data.scale_0))
@@ -1340,7 +1340,11 @@ class EvolveTextCat:
     def apply_dict(self, dict_data: dict[str, Any]):
         text = dict_data.get("text")
         if text is not None:
-            for evolve, text in text.items():
+            current_texts = self.text.copy()
+            mod_texts = mods.bc_mod.ModEditDictHandler(text, current_texts).get_dict(
+                convert_int=True
+            )
+            for evolve, text in mod_texts.items():
                 current_text = self.text.get(evolve)
                 if current_text is None:
                     current_text = EvolveTextText(evolve, [])
@@ -1397,7 +1401,14 @@ class EvolveText:
         for cat_id, line in self.text.items():
             first_evolve = line.text[0].text
             second_evolve = line.text[1].text
-            csv.lines[cat_id] = first_evolve + ["＠"] + second_evolve
+            padd_len_1 = max(0, 4 - len(first_evolve))
+            padd_len_2 = max(0, 4 - len(second_evolve))
+            csv.lines[cat_id] = (
+                first_evolve
+                + (["＠"] * padd_len_1)
+                + second_evolve
+                + (["＠"] * padd_len_2)
+            )
 
         game_data.set_file(
             EvolveText.get_file_name(game_data.localizable.get_lang()), csv.to_data()

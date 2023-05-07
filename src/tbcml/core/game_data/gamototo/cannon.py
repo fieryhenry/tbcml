@@ -69,11 +69,11 @@ class CannonStatuses:
             if id in self.statuses:
                 status = self.statuses[id]
                 line[1] = str(status.type)
-                line[2] = str(status.wave)
+                line[2] = "1" if status.wave else "0"
                 line[3] = str(status.option)
-                line[4] = str(status.knockback)
-                line[5] = str(status.mark)
-                line[6] = str(status.unknown)
+                line[4] = "1" if status.knockback else "0"
+                line[5] = "1" if status.mark else "0"
+                line[6] = "1" if status.unknown else "0"
                 csv.lines[i + 1] = line
                 remaining_statuses.remove(id)
 
@@ -82,11 +82,11 @@ class CannonStatuses:
             line = [
                 str(status.id),
                 str(status.type),
-                str(status.wave),
+                "1" if status.wave else "0",
                 str(status.option),
-                str(status.knockback),
-                str(status.mark),
-                str(status.unknown),
+                "1" if status.knockback else "0",
+                "1" if status.mark else "0",
+                "1" if status.unknown else "0",
             ]
             csv.lines.append(line)
 

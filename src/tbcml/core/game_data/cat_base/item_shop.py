@@ -91,7 +91,7 @@ class ItemShop:
         """Get the name of the file containing the ItemShop icons.
 
         Args:
-            cc (country_code.CountryCode): The country code of the game.
+            lang (str): The language of the icons.
 
         Returns:
             str: The name of the file containing the ItemShop icons.
@@ -159,7 +159,7 @@ class ItemShop:
             line[1] = str(item.gatya_item_id)
             line[2] = str(item.count)
             line[3] = str(item.price)
-            line[4] = str(item.draw_item_value)
+            line[4] = "1" if item.draw_item_value else "0"
             line[5] = str(item.category_name)
             line[6] = str(item.rect_id)
             del remaning_items[int(line[0])]
@@ -171,7 +171,7 @@ class ItemShop:
             line.append(str(item.gatya_item_id))
             line.append(str(item.count))
             line.append(str(item.price))
-            line.append(str(item.draw_item_value))
+            line.append("1" if item.draw_item_value else "0")
             line.append(str(item.category_name))
             line.append(str(item.rect_id))
             tsv.lines.append(line)
@@ -260,7 +260,11 @@ class ItemShop:
         items = dict_data.get("items")
         tex = dict_data.get("tex")
         if items is not None:
-            for shop_id, data_item in items.items():
+            current_items = self.items.copy()
+            mod_items = mods.bc_mod.ModEditDictHandler(items, current_items).get_dict(
+                convert_int=True
+            )
+            for shop_id, data_item in mod_items.items():
                 shop_id = int(shop_id)
                 item = self.get_item(shop_id)
                 if item is None:

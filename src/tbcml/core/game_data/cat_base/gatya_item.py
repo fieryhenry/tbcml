@@ -104,7 +104,7 @@ class GatyaItemBuy:
         for item in self.gatya_item_buys.values():
             line: list[str] = []
             line.append(str(item.rarity))
-            line.append(str(item.storage))
+            line.append("1" if item.storage else "0")
             line.append(str(item.sell_price))
             line.append(str(item.stage_drop_item_id))
             line.append(str(item.quantity))
