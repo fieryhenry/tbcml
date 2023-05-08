@@ -516,7 +516,7 @@ class GamePacks:
         game_data.cat_base.cats.Cats.apply_mod_to_game_data(mod, self)
         Localizable.apply_mod_to_game_data(mod, self)
 
-        for file_name, data in mod.raw_files.items():
+        for file_name, data in mod.game_files.items():
             self.set_file(file_name, data)
 
     def extract(self, path: "io.path.Path"):
