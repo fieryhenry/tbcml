@@ -121,10 +121,12 @@ class Mod:
         self.mod_url = mod_url
 
         self.mod_edits: dict[str, Any] = {}
-        self.raw_files: dict[str, io.data.Data] = {}
+        self.game_files: dict[str, io.data.Data] = {}
+        self.apk_files: dict[str, io.data.Data] = {}
 
         self.init_audio()
         self.init_scripts()
+        self.init_smali()
 
     @staticmethod
     def get_extension() -> str:
@@ -143,6 +145,9 @@ class Mod:
 
     def init_audio(self):
         self.audio = io.audio.Audio.create_empty()
+
+    def init_smali(self):
+        self.smali = mods.smali.SmaliSet.create_empty()
 
     def create_mod_json(self) -> dict[str, Any]:
         return {
@@ -165,11 +170,15 @@ class Mod:
 
         self.audio.add_to_zip(zip_file)
         self.scripts.add_to_zip(zip_file)
+        self.smali.add_to_zip(zip_file)
 
         self.add_mod_edits_to_zip(zip_file, self.mod_edits)
 
-        for file_name, data in self.raw_files.items():
-            zip_file.add_file(io.path.Path("raw_files/" + file_name), data)
+        for file_name, data in self.game_files.items():
+            zip_file.add_file(io.path.Path("game_files/" + file_name), data)
+
+        for file_name, data in self.apk_files.items():
+            zip_file.add_file(io.path.Path("apk_files/" + file_name), data)
 
         json = io.json_file.JsonFile.from_object(self.create_mod_json())
         zip_file.add_file(io.path.Path("mod.json"), json.to_data())
@@ -240,16 +249,24 @@ class Mod:
         mod.scripts = mods.frida_script.Scripts.from_zip(
             zip_file, mod.country_code, mod.game_version, mod
         )
+        mod.smali = mods.smali.SmaliSet.from_zip(zip_file)
 
         mod.mod_edits = {}
         mod.get_mod_edits_from_zip(zip_file)
 
-        mod.raw_files = {}
+        mod.game_files = {}
         for file in zip_file.get_paths():
-            if file.path.startswith("raw_files/"):
+            if file.path.startswith("game_files/"):
                 file_zip = zip_file.get_file(file)
                 if file_zip is not None:
-                    mod.raw_files[file.get_file_name()] = file_zip
+                    mod.game_files[file.get_file_name()] = file_zip
+
+        mod.apk_files = {}
+        for file in zip_file.get_paths():
+            if file.path.startswith("apk_files/"):
+                file_zip = zip_file.get_file(file)
+                if file_zip is not None:
+                    mod.apk_files[file.get_file_name()] = file_zip
 
         return mod
 
@@ -273,7 +290,9 @@ class Mod:
     def import_mod(self, other: "Mod"):
         self.audio.import_audio(other.audio)
         self.scripts.import_scripts(other.scripts)
-        self.raw_files = self.merge_dicts(self.raw_files, other.raw_files)
+        self.smali.import_smali(other.smali)
+        self.game_files = self.merge_dicts(self.game_files, other.game_files)
+        self.apk_files = self.merge_dicts(self.apk_files, other.apk_files)
         self.add_mod_edit(other.mod_edits)
 
     def import_mods(self, others: list["Mod"]):

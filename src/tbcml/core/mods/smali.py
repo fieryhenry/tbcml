@@ -56,7 +56,7 @@ class SmaliSet:
 
             path = io.path.Path(file.path)
             class_name = path.remove_extension().to_str_forwards()
-            json_file = zip_file.get_file(path + ".json")
+            json_file = zip_file.get_file(path.change_extension("json"))
             if json_file is None:
                 continue
 

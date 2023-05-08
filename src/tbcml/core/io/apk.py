@@ -43,6 +43,8 @@ class Apk:
         self.apk_folder = apk_folder
         self.locale_manager = locale_handler.LocalManager.from_config()
 
+        self.smali_handler: Optional[mods.smali.SmaliHandler] = None
+
         self.init_paths()
 
     @staticmethod
@@ -857,3 +859,8 @@ class Apk:
             files.append(file)
             counter += 1
         return files
+
+    def apply_mod_smali(self, mod: "mods.bc_mod.Mod"):
+        if self.smali_handler is None:
+            self.smali_handler = mods.smali.SmaliHandler(self)
+        self.smali_handler.inject_into_on_create(mod.smali.get_list())
