@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 from tbcml.core import io, country_code, crypto, langs, mods, game_version, game_data
 import copy
 
@@ -342,7 +342,6 @@ class GamePacks:
         self.country_code = country_code
         self.gv = gv
         self.modified_packs: dict[str, bool] = {}
-        self.__localizable: Optional[Localizable] = None
         self.init_data()
 
     def init_data(self):
@@ -352,17 +351,7 @@ class GamePacks:
         self.nyanko_picture_book: Optional[cats.NyankoPictureBook] = None
         self.evolve_text: Optional[cats.EvolveText] = None
         self.cats: Optional[cats.Cats] = None
-
-    @property
-    def localizable(self) -> "Localizable":
-        """Get the localizable object.
-
-        Returns:
-            Localizable: The localizable object.
-        """
-        if self.__localizable is None:
-            self.__localizable = Localizable.from_game_data(self)
-        return self.__localizable
+        self.localizable = Localizable.from_game_data(self)
 
     def get_pack(self, pack_name: str) -> Optional[PackFile]:
         """Get a pack from the game packs.
@@ -460,6 +449,8 @@ class GamePacks:
             if pack is None:
                 raise Exception("Could not find pack")
             file = GameFile(data, file_name, pack.pack_name, self.country_code, self.gv)
+        if file.dec_data == data:
+            return file
         new_pack_name = PackFile.convert_pack_name_server_local(file.pack_name)
         pack = self.get_pack(new_pack_name)
         if pack is None:
@@ -523,6 +514,7 @@ class GamePacks:
         """
         game_data.cat_base.item_shop.ItemShop.apply_mod_to_game_data(mod, self)
         game_data.cat_base.cats.Cats.apply_mod_to_game_data(mod, self)
+        Localizable.apply_mod_to_game_data(mod, self)
 
         for file_name, data in mod.raw_files.items():
             self.set_file(file_name, data)
@@ -606,7 +598,9 @@ class Localizable:
                 localizable[key] = LocalItem(key, value)
             except IndexError:
                 pass
-        return Localizable(localizable)
+        localizable_o = Localizable(localizable)
+        game_data.localizable = localizable_o
+        return localizable_o
 
     @staticmethod
     def get_file_name() -> str:
@@ -715,3 +709,32 @@ class Localizable:
         """Sort the localizable items by key alphabetically in ascending order."""
 
         self.localizable = dict(sorted(self.localizable.items()))
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        """Apply a dictionary to the localizable items.
+
+        Args:
+            dict_data (dict[str, Any]): The dictionary.
+        """
+        localizable = dict_data.get("localizable")
+        if localizable is None:
+            return
+        current_data = self.localizable.copy()
+        mod_data = mods.bc_mod.ModEditDictHandler(localizable, current_data).get_dict()
+        for key, value in mod_data.items():
+            self.set(key, value)
+
+    @staticmethod
+    def apply_mod_to_game_data(mod: "mods.bc_mod.Mod", game_data: "GamePacks"):
+        """Apply a mod to a GamePacks object.
+
+        Args:
+            mod (mods.bc_mod.Mod): The mod.
+            game_data (GamePacks): The GamePacks object.
+        """
+        localizable_data = mod.mod_edits.get("localizable")
+        if localizable_data is None:
+            return
+        localizable = game_data.localizable
+        localizable.apply_dict(mod.mod_edits)
+        localizable.to_game_data(game_data)
