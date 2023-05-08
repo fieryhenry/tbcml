@@ -45,7 +45,7 @@ class ModEditValueHandler:
             "(",
             ")",
             " ",
-            "-",
+            ".",
         ]
         expression = self.mod_edit_value.replace("x", str(self.current_value))
         for char in expression:
@@ -56,9 +56,7 @@ class ModEditValueHandler:
                     return self.current_value
         try:
             return int(eval(expression))
-        except ZeroDivisionError:
-            return self.current_value
-        except SyntaxError:
+        except:
             return self.current_value
 
 
