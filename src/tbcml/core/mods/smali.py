@@ -142,7 +142,6 @@ class SmaliHandler:
         for i, line in enumerate(text):
             if line.startswith(".method") and "onCreate(" in line:
                 for j, smali in enumerate(smali_codes):
-                    print(smali.class_name)
                     text.insert(
                         i + 2 + j,
                         f"    invoke-static {{p0}}, Lcom/tbcml/{smali.class_name};->{smali.function_sig_to_call}",
