@@ -12,3 +12,5 @@ __pycache__
 /.frida
 /row.py
 /script.js
+*.pack.bcuzip
+/out
