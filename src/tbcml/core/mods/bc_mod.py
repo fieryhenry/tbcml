@@ -193,10 +193,16 @@ class Mod:
             if self.is_dict_of_dicts(value):
                 self.add_mod_edits_to_zip(zip, value, f"{parent}{key}/")
             else:
-                zip.add_file(
-                    io.path.Path(f"{parent}{key}.json"),
-                    io.json_file.JsonFile.from_object(value).to_data(),
-                )
+                if key == "__image__":
+                    zip.add_file(
+                        io.path.Path(f"{parent}{key}.png"),
+                        io.bc_image.BCImage.from_base_64(value["data"]).to_data(),
+                    )
+                else:
+                    zip.add_file(
+                        io.path.Path(f"{parent}{key}.json"),
+                        io.json_file.JsonFile.from_object(value).to_data(),
+                    )
 
     def get_mod_edits_from_zip(self, zip: "io.zip.Zip"):
         for file in zip.get_paths():
@@ -207,12 +213,13 @@ class Mod:
                 zip_file = zip.get_file(file)
                 path.append(file.get_file_name_without_extension())
                 if zip_file is not None:
-                    self.add_mod_edit_path(path, zip_file)
+                    self.add_mod_edit_path(path, zip_file, file)
 
     def add_mod_edit_path(
         self,
         path: list[str],
         file: "io.data.Data",
+        file_path: "io.path.Path",
         parent: Optional[dict[Any, Any]] = None,
     ):
         if parent is None:
@@ -221,11 +228,14 @@ class Mod:
         if key == "all":
             key = "*"
         if len(path) == 1:
-            parent[key] = io.json_file.JsonFile.from_data(file).get_json()
+            if file_path.get_extension() == "json":
+                parent[key] = io.json_file.JsonFile.from_data(file).get_json()
+            elif file_path.get_extension() == "png":
+                parent[key] = io.bc_image.BCImage(file).to_base_64()
         else:
             if key not in parent:
                 parent[key] = {}
-            self.add_mod_edit_path(path[1:], file, parent[key])
+            self.add_mod_edit_path(path[1:], file, file_path, parent[key])
 
     def is_dict_of_dicts(self, data: dict[Any, Any]) -> bool:
         for key in data:
