@@ -172,6 +172,9 @@ class Mod:
         self.scripts.add_to_zip(zip_file)
         self.smali.add_to_zip(zip_file)
 
+        self.add_images(zip_file, self.mod_edits)
+        self.remove__image__(self.mod_edits)
+
         self.add_mod_edits_to_zip(zip_file, self.mod_edits)
 
         for file_name, data in self.game_files.items():
@@ -193,18 +196,36 @@ class Mod:
             if self.is_dict_of_dicts(value):
                 self.add_mod_edits_to_zip(zip, value, f"{parent}{key}/")
             else:
-                if key == "__image__":
-                    zip.add_file(
-                        io.path.Path(f"{parent}{key}.png"),
-                        io.bc_image.BCImage.from_base_64(value["data"]).to_data(),
-                    )
-                else:
-                    zip.add_file(
-                        io.path.Path(f"{parent}{key}.json"),
-                        io.json_file.JsonFile.from_object(value).to_data(),
-                    )
+                zip.add_file(
+                    io.path.Path(f"{parent}{key}.json"),
+                    io.json_file.JsonFile.from_object(value).to_data(),
+                )
 
-    def get_mod_edits_from_zip(self, zip: "io.zip.Zip"):
+    def add_images(
+        self, zip: "io.zip.Zip", dict_data: dict[Any, Any], parent: str = "mod_edits/"
+    ):
+        for key, value in dict_data.items():
+            if key == "*":
+                key = "all"
+            if isinstance(value, dict):
+                self.add_images(zip, value, f"{parent}{key}/")  # type: ignore
+            else:
+                if key != "__image__":
+                    continue
+                zip.add_file(
+                    io.path.Path(f"{parent[:-1]}.png"),
+                    io.bc_image.BCImage.from_base_64(value).to_data(),
+                )
+
+    def remove__image__(self, dict_data: dict[Any, Any]):
+        keys = list(dict_data.keys())
+        for key in keys:
+            if key == "__image__":
+                del dict_data[key]
+            elif isinstance(dict_data[key], dict):
+                self.remove__image__(dict_data[key])
+
+    def get_mod_edits_from_zip(self, zip: "io.zip.Zip", only_images: bool = False):
         for file in zip.get_paths():
             if file.path.startswith("mod_edits/"):
                 path = file.path.split("/")
@@ -213,7 +234,13 @@ class Mod:
                 zip_file = zip.get_file(file)
                 path.append(file.get_file_name_without_extension())
                 if zip_file is not None:
-                    self.add_mod_edit_path(path, zip_file, file)
+                    self.add_mod_edit_path(
+                        path,
+                        zip_file,
+                        file,
+                        self.mod_edits,
+                        only_images,
+                    )
 
     def add_mod_edit_path(
         self,
@@ -221,6 +248,7 @@ class Mod:
         file: "io.data.Data",
         file_path: "io.path.Path",
         parent: Optional[dict[Any, Any]] = None,
+        only_images: bool = False,
     ):
         if parent is None:
             parent = self.mod_edits
@@ -228,14 +256,14 @@ class Mod:
         if key == "all":
             key = "*"
         if len(path) == 1:
-            if file_path.get_extension() == "json":
+            if file_path.get_extension() == "json" and not only_images:
                 parent[key] = io.json_file.JsonFile.from_data(file).get_json()
-            elif file_path.get_extension() == "png":
-                parent[key] = io.bc_image.BCImage(file).to_base_64()
+            elif file_path.get_extension() == "png" and only_images:
+                parent[key] = {"__image__": io.bc_image.BCImage(file).to_base_64()}
         else:
             if key not in parent:
                 parent[key] = {}
-            self.add_mod_edit_path(path[1:], file, file_path, parent[key])
+            self.add_mod_edit_path(path[1:], file, file_path, parent[key], only_images)
 
     def is_dict_of_dicts(self, data: dict[Any, Any]) -> bool:
         for key in data:
@@ -262,7 +290,8 @@ class Mod:
         mod.smali = mods.smali.SmaliSet.from_zip(zip_file)
 
         mod.mod_edits = {}
-        mod.get_mod_edits_from_zip(zip_file)
+        mod.get_mod_edits_from_zip(zip_file, False)
+        mod.get_mod_edits_from_zip(zip_file, True)
 
         mod.game_files = {}
         for file in zip_file.get_paths():
