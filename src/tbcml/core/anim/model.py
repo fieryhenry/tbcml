@@ -119,8 +119,11 @@ class Mamodel:
         mamodel_file = game_packs.find_file(mamodel_name)
         if mamodel_file is None:
             return None
+        return Mamodel.from_data(mamodel_file.dec_data)
 
-        csv = mamodel_file.dec_data.to_csv()
+    @staticmethod
+    def from_data(mamodel_data: "io.data.Data") -> Optional["Mamodel"]:
+        csv = mamodel_data.to_csv()
         meta_data = ModelMetaData.from_csv(csv)
         total_parts = meta_data.total_parts
 
@@ -161,6 +164,27 @@ class Mamodel:
             meta_data, scale_unit, angle_unit, alpha_unit, ints, parts, comments
         )
         return mamodel
+
+    def to_data(self) -> "io.data.Data":
+        csv = self.meta_data.to_csv(len(self.parts))
+        for part in self.parts:
+            csv.lines.append(part.to_data())
+
+        csv.lines.append(
+            [
+                str(self.scale_unit),
+                str(self.angle_unit),
+                str(self.alpha_unit),
+            ]
+        )
+
+        csv.lines.append([str(len(self.ints))])
+        for i, ints in enumerate(self.ints):
+            csv.lines.append([str(x) for x in ints])
+            if self.comments[i]:
+                csv.lines[-1].append(self.comments[i])
+
+        return csv.to_data()
 
     def apply_dict(self, dict_data: dict[str, Any]):
         meta_data = dict_data.get("meta_data")
@@ -332,6 +356,29 @@ class Model:
         )
         return model
 
+    @staticmethod
+    def from_data(
+        mamodel_data: "io.data.Data",
+        mamodel_name: str,
+        imgcut_data: "io.data.Data",
+        imgcut_name: str,
+        img_data: "io.data.Data",
+        img_name: str,
+        maanim_datas: list["io.data.Data"],
+        maanim_names: list[str],
+    ):
+        tex = texture.Texture.from_data(imgcut_data, img_data, img_name, imgcut_name)
+        anims: list[unit_animation.UnitAnim] = []
+        for maanim_data, maanim_name in zip(maanim_datas, maanim_names):
+            anim = unit_animation.UnitAnim.from_data(maanim_name, maanim_data)
+            anims.append(anim)
+
+        mamodel = Mamodel.from_data(mamodel_data)
+        if mamodel is None:
+            mamodel = Mamodel.create_empty()
+        model = Model(tex, anims, mamodel, mamodel_name)  # type: ignore
+        return model
+
     def save(
         self,
         game_packs: "game_data.pack.GamePacks",
@@ -366,16 +413,37 @@ class Model:
 
             game_packs.set_file(self.name, csv.to_data())
 
+    def to_data(self) -> dict[str, Any]:
+        data = {
+            "tex": self.tex.to_data(),
+            "anims": [anim.to_data() for anim in self.anims],
+            "mamodel": self.mamodel.to_data(),
+        }
+        return data
+
     def get_total_parts(self) -> int:
         return len(self.mamodel.parts)
 
     def set_unit_id(self, unit_id: int):
         self.tex.set_unit_id(unit_id)
-        for part in self.mamodel.parts:
+        name = self.name
+        parts = name.split("_")
+        parts[0] = io.data.PaddedInt(unit_id, 3).to_str()
+        name = "_".join(parts)
+        self.name = name
+        for part in self.mamodel.parts[1:]:
             part.set_unit_id(unit_id)
+        for anim in self.anims:
+            anim.set_unit_id(unit_id)
 
     def set_unit_form(self, unit_form: str):
         self.tex.set_unit_form(unit_form)
+        name = self.name
+        parts = name.split("_")
+        cat_id = parts[0]
+        self.name = f"{cat_id}_{unit_form}.mamodel"
+        for anim in self.anims:
+            anim.set_unit_form(unit_form)
 
     def is_empty(self) -> bool:
         return self.tex.is_empty()

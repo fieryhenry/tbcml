@@ -73,12 +73,14 @@ class TexMetadata:
         parts = img_name.split("_")
         parts[0] = f"{id:03}"
         self.img_name = "_".join(parts)
+        if not self.img_name.endswith(".png"):
+            self.img_name += ".png"
 
     def set_unit_form(self, form: str):
-        img_name = self.img_name
-        parts = img_name.split("_")
-        parts[1] = form
-        self.img_name = "_".join(parts)
+        name = self.img_name
+        parts = name.split("_")
+        cat_id = parts[0]
+        self.img_name = f"{cat_id}_{form}.png"
 
     def apply_dict(self, dict_data: dict[str, Any]):
         head_name = dict_data.get("head_name")
@@ -147,7 +149,16 @@ class Texture:
         if not imgcut or not png:
             return Texture.create_empty()
 
-        csv = imgcut.dec_data.to_csv()
+        return Texture.from_data(imgcut.dec_data, png.dec_data, png_name, imgcut_name)
+
+    @staticmethod
+    def from_data(
+        imgcut_data: "io.data.Data",
+        png_data: "io.data.Data",
+        png_name: str,
+        imgcut_name: str,
+    ):
+        csv = imgcut_data.to_csv()
         meta_data = TexMetadata.from_csv(csv)
 
         total_rects = meta_data.total_rects
@@ -162,7 +173,7 @@ class Texture:
             rects.append(rect_)
 
         return Texture(
-            io.bc_image.BCImage(png.dec_data), rects, meta_data, png_name, imgcut_name
+            io.bc_image.BCImage(png_data), rects, meta_data, png_name, imgcut_name
         )
 
     @staticmethod
@@ -172,17 +183,17 @@ class Texture:
         )
 
     def save(self, game_packs: "game_data.pack.GamePacks"):
-        imgcut = game_packs.find_file(self.imgcut_name)
-        if not imgcut:
-            return
-        png_data = self.image.to_data()
+        imgcut_data, png_data = self.to_data()
+        game_packs.set_file(self.imgcut_name, imgcut_data)
         game_packs.set_file(self.img_name, png_data)
 
+    def to_data(self):
         csv = self.metadata.to_csv(len(self.rects))
         for r in self.rects:
             csv.lines.append(r.to_list())
         imgcut_data = csv.to_data()
-        game_packs.set_file(self.imgcut_name, imgcut_data)
+        png_data = self.image.to_data()
+        return imgcut_data, png_data
 
     def copy(self) -> "Texture":
         return Texture(
@@ -218,9 +229,12 @@ class Texture:
 
     def set_unit_id(self, id: int):
         self.metadata.set_unit_id(id)
+        self.img_name = self.metadata.img_name
+        self.imgcut_name = self.metadata.img_name.replace(".png", ".imgcut")
 
     def set_unit_form(self, form: str):
         self.metadata.set_unit_form(form)
+        self.img_name = self.metadata.img_name
 
     def split_cuts(self):
         self.cuts: list[Cut] = []

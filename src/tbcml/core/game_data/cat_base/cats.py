@@ -78,11 +78,11 @@ class Stats:
     """The HP of the cat.Index 0."""
     kbs: int
     """The number of knockbacks the cat has. Index 1."""
-    speed: unit.Speed
+    speed: int
     """The movement speed of the cat, real value is 2x what is stored. Index 2."""
     attack_interval: unit.Frames
     """The interval between attacks of the cat, real value is 2x what is stored. Index 4."""
-    range: unit.Range
+    range: int
     """The attack range of the cat. real value is 4x what is stored. Index 5."""
     cost: int
     """The cost of the cat to deploy. Index 6."""
@@ -90,7 +90,7 @@ class Stats:
     """The time it takes for the cat to recharge after being used, real value is 2x what is stored. Index 7."""
     collision_start: int
     """The X coordinate of the start of the collision box of the cat. Index 8."""
-    collision_width: unit.Range
+    collision_width: int
     """The width of the collision box, real value is 4x what is stored. Seemingly unused? Index 9."""
     target_red: bool
     """Whether the cat has the target red trait. Index 10."""
@@ -324,13 +324,13 @@ class Stats:
     def assign(self, raw_data: list[int]):
         self.hp = raw_data[0]
         self.kbs = raw_data[1]
-        self.speed = unit.Speed.from_raw(raw_data[2])
+        self.speed = raw_data[2]
         self.attack_interval = unit.Frames.from_pair_frames(raw_data[4])
-        self.range = unit.Range.from_raw(raw_data[5])
+        self.range = raw_data[5]
         self.cost = raw_data[6]
         self.recharge_time = unit.Frames.from_pair_frames(raw_data[7])
         self.collision_start = raw_data[8]
-        self.collision_width = unit.Range.from_raw(raw_data[9])
+        self.collision_width = raw_data[9]
         self.target_red = bool(raw_data[10])
         self.unused = raw_data[11]
         self.area_attack = bool(raw_data[12])
@@ -430,14 +430,14 @@ class Stats:
         return [
             self.hp,  # 0
             self.kbs,  # 1
-            self.speed.raw,  # 2
+            self.speed,  # 2
             self.attack_1.damage,  # 3
             self.attack_interval.pair_frames,  # 4
-            self.range.raw,  # 5
+            self.range,  # 5
             self.cost,  # 6
             self.recharge_time.pair_frames,  # 7
             self.collision_start,  # 8
-            self.collision_width.raw,  # 9
+            self.collision_width,  # 9
             int(self.target_red),  # 10
             self.unused,  # 11
             int(self.area_attack),  # 12
@@ -472,8 +472,8 @@ class Stats:
             self.strengthen.multiplier_percent,  # 41
             self.lethal_strike.prob.percent,  # 42
             int(self.is_metal),  # 43
-            self.attack_1.long_distance_start.raw,  # 44
-            self.attack_1.long_distance_range.raw,  # 45
+            self.attack_1.long_distance_start,  # 44
+            self.attack_1.long_distance_range,  # 45
             int(self.wave_immunity),  # 46
             int(self.wave_blocker),  # 47
             int(self.knockback_immunity),  # 48
@@ -515,8 +515,8 @@ class Stats:
             self.dodge.prob.percent,  # 84
             self.dodge.time.frames,  # 85
             self.surge.prob.percent,  # 86
-            self.surge.start.raw,  # 87
-            self.surge.range.raw,  # 88
+            self.surge.start,  # 87
+            self.surge.range,  # 88
             self.surge.level,  # 89
             int(self.toxic_immunity),  # 90
             int(self.surge_immunity),  # 91
@@ -528,11 +528,11 @@ class Stats:
             int(self.collossus_slayer),  # 97
             int(self.soul_strike),  # 98
             int(self.attack_2.long_distance_flag),  # 99
-            self.attack_2.long_distance_start.raw,  # 100
-            self.attack_2.long_distance_range.raw,  # 101
+            self.attack_2.long_distance_start,  # 100
+            self.attack_2.long_distance_range,  # 101
             int(self.attack_3.long_distance_flag),  # 102
-            self.attack_3.long_distance_start.raw,  # 103
-            self.attack_3.long_distance_range.raw,  # 104
+            self.attack_3.long_distance_start,  # 103
+            self.attack_3.long_distance_range,  # 104
             int(self.behemoth_slayer),  # 105
             self.behemoth_dodge.prob.percent,  # 106
             self.behemoth_dodge.time.frames,  # 107
@@ -568,13 +568,13 @@ class Stats:
         self.wipe()
         self.hp = enemy_stats.hp
         self.kbs = enemy_stats.kbs
-        self.speed = enemy_stats.speed.copy()
+        self.speed = enemy_stats.speed
         self.attack_1 = enemy_stats.attack_1.copy()
-        self.range = enemy_stats.range.copy()
+        self.range = enemy_stats.range
         self.cost = enemy_stats.money_drop // 2
         self.recharge_time.frames = 0
         self.collision_start = enemy_stats.collision_start
-        self.collision_width = enemy_stats.collision_width.copy()
+        self.collision_width = enemy_stats.collision_width
         self.target_red = has_targeted_effect
         self.unused = enemy_stats.unused
         self.area_attack = enemy_stats.area_attack
@@ -1083,17 +1083,6 @@ class UnitBuy:
 
         return {rarity_id: rarity_names[rarity_id] for rarity_id in rarity_ids}
 
-    def apply_dict(self, dict_data: dict[str, Any]):
-        unit_buy_data = dict_data.get("unit_buy_data")
-        if unit_buy_data is not None:
-            for cat_id, data in unit_buy_data.items():
-                unit_buy = self.unit_buy_data.get(int(cat_id))
-                if unit_buy is None:
-                    unit_buy = UnitBuyData.create_empty(int(cat_id))
-
-                unit_buy.apply_dict(data)
-                self.unit_buy_data[int(cat_id)] = unit_buy
-
 
 class Talent:
     def __init__(self, cat_id: int, raw_data: list[int]):
@@ -1163,17 +1152,6 @@ class Talents:
     @staticmethod
     def create_empty() -> "Talents":
         return Talents({})
-
-    def apply_dict(self, dict_data: dict[str, Any]):
-        talents = dict_data.get("talents")
-        if talents is not None:
-            for cat_id, data in talents.items():
-                talent = self.talents.get(int(cat_id))
-                if talent is None:
-                    talent = Talent(int(cat_id), [])
-
-                talent.apply_dict(data)
-                self.talents[int(cat_id)] = talent
 
 
 class NyankoPictureBookData:
@@ -1303,19 +1281,6 @@ class NyankoPictureBook:
     def create_empty() -> "NyankoPictureBook":
         return NyankoPictureBook({})
 
-    def apply_dict(self, dict_data: dict[str, Any]):
-        current_data = self.data.copy()
-        mod_data = mods.bc_mod.ModEditDictHandler(dict_data, current_data).get_dict(
-            convert_int=True
-        )
-        for cat_id, data in mod_data.items():
-            cat_id = int(cat_id)
-            cat = self.data.get(cat_id)
-            if cat is None:
-                cat = NyankoPictureBookData.create_empty(cat_id)
-            cat.apply_dict(data)
-            self.data[cat_id] = cat
-
 
 class EvolveTextText:
     def __init__(self, evolve: int, text: list[str]):
@@ -1420,16 +1385,6 @@ class EvolveText:
             0: EvolveTextText(0, first_evolve),
             1: EvolveTextText(1, second_evolve),
         }
-
-    def apply_dict(self, dict_data: dict[str, Any]):
-        evolve_text = dict_data.get("evolve_text")
-        if evolve_text is not None:
-            for cat_id, text in evolve_text.items():
-                current_text = self.text.get(cat_id)
-                if current_text is None:
-                    current_text = EvolveTextCat(cat_id, {})
-                current_text.apply_dict(text)
-                self.text[cat_id] = current_text
 
 
 class Cat:
@@ -1702,20 +1657,6 @@ class Cats:
     @staticmethod
     def get_total_cats(game_data: "pack.GamePacks") -> int:
         return len(NyankoPictureBook.from_game_data(game_data).data)
-
-    def apply_dict(self, dict_data: dict[str, Any]):
-        cats = dict_data.get("cats")
-        if cats is not None:
-            current_cats = self.cats.copy()
-            mod_cats = mods.bc_mod.ModEditDictHandler(cats, current_cats).get_dict(
-                convert_int=True
-            )
-            for cat_id, cat in mod_cats.items():
-                current_cat = self.get_cat(int(cat_id))
-                if current_cat is None:
-                    current_cat = Cat.create_empty(int(cat_id))
-                    self.set_cat(current_cat)
-                current_cat.apply_dict(cat)
 
     @staticmethod
     def apply_mod_to_game_data(mod: "mods.bc_mod.Mod", game_data: "pack.GamePacks"):

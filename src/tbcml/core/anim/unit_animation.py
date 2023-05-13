@@ -512,7 +512,11 @@ class UnitAnim:
         if file is None:
             return None
 
-        csv = io.bc_csv.CSV(file.dec_data)
+        return UnitAnim.from_data(name, file.dec_data)
+
+    @staticmethod
+    def from_data(name: str, data: "io.data.Data") -> "UnitAnim":
+        csv = io.bc_csv.CSV(data)
         meta_data = UnitAnimMetaData.from_csv(csv)
 
         parts: list[KeyFrames] = []
@@ -530,11 +534,17 @@ class UnitAnim:
         file = game_packs.find_file(self.name)
         if file is None:
             return
+
+        data = self.to_data()
+
+        game_packs.set_file(self.name, data)
+
+    def to_data(self) -> "io.data.Data":
         csv = self.meta_data.to_csv(self.get_total_parts())
         for part in self.parts:
             for line in part.to_data():
                 csv.lines.append(line)
-        game_packs.set_file(self.name, csv.to_data())
+        return csv.to_data()
 
     def get_total_parts(self) -> int:
         return len(self.parts)
@@ -575,3 +585,15 @@ class UnitAnim:
         name = dict_data.get("name")
         if name is not None:
             self.name = name
+
+    def set_unit_id(self, unit_id: int):
+        parts = self.name.split("_")
+        parts[0] = io.data.PaddedInt(unit_id, 3).to_str()
+        self.name = "_".join(parts)
+
+    def set_unit_form(self, form: str):
+        name = self.name
+        parts = name.split("_")
+        cat_id = parts[0]
+        anim_id = parts[1][1:3]
+        self.name = f"{cat_id}_{form}{anim_id}.maanim"

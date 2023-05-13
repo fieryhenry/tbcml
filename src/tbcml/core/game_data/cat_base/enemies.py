@@ -1,7 +1,7 @@
-from typing import Optional
+from typing import Any, Optional
 from tbcml.core.game_data.cat_base import unit
 from tbcml.core.game_data import pack
-from tbcml.core import io, anim
+from tbcml.core import io, anim, mods
 
 
 class Stats:
@@ -30,12 +30,12 @@ class Stats:
     def assign(self, raw_data: list[int]):
         self.hp = raw_data[0]
         self.kbs = raw_data[1]
-        self.speed = unit.Speed.from_raw(raw_data[2])
+        self.speed = raw_data[2]
         self.attack_interval = unit.Frames.from_pair_frames(raw_data[4])
-        self.range = unit.Range.from_raw(raw_data[5])
+        self.range = raw_data[5]
         self.money_drop = raw_data[6]
         self.collision_start = raw_data[7]
-        self.collision_width = unit.Range.from_raw(raw_data[8])
+        self.collision_width = raw_data[8]
         self.unused = raw_data[9]
         self.red = bool(raw_data[10])
         self.area_attack = bool(raw_data[11])
@@ -124,13 +124,13 @@ class Stats:
         return [
             self.hp,  # 0
             self.kbs,  # 1
-            self.speed.raw,  # 2
+            self.speed,  # 2
             self.attack_1.damage,  # 3
             self.attack_interval.pair_frames,  # 4
-            self.range.raw,  # 5
+            self.range,  # 5
             self.money_drop,  # 6
             self.collision_start,  # 7
-            self.collision_width.raw,  # 8
+            self.collision_width,  # 8
             self.unused,  # 9
             int(self.red),  # 10
             int(self.area_attack),  # 11
@@ -157,8 +157,8 @@ class Stats:
             self.strengthen.hp_percent,  # 32
             self.strengthen.multiplier_percent,  # 33
             self.survive_lethal_strike.prob.percent,  # 34
-            self.attack_1.long_distance_start.raw,  # 35
-            self.attack_1.long_distance_range.raw,  # 36
+            self.attack_1.long_distance_start,  # 35
+            self.attack_1.long_distance_range,  # 36
             int(self.wave_immunity),  # 37
             int(self.wave_blocker),  # 38
             int(self.knockback_immunity),  # 39
@@ -204,27 +204,44 @@ class Stats:
             self.toxic.prob.percent,  # 79
             self.toxic.hp_percent,  # 80
             self.surge.prob.percent,  # 81
-            self.surge.start.raw,  # 82
-            self.surge.range.raw,  # 83
+            self.surge.start,  # 82
+            self.surge.range,  # 83
             self.surge.level,  # 84
             int(self.surge_immunity),  # 85
             int(self.wave.is_mini),  # 86
             self.shield.hp,  # 87
             self.shield.percent_heal_kb,  # 88
             self.death_surge.prob.percent,  # 89
-            self.death_surge.start.raw,  # 90
-            self.death_surge.range.raw,  # 91
+            self.death_surge.start,  # 90
+            self.death_surge.range,  # 91
             self.death_surge.level,  # 92
             int(self.aku),  # 93
             int(self.baron),  # 94
             int(self.attack_2.long_distance_flag),  # 95
-            self.attack_2.long_distance_start.raw,  # 96
-            self.attack_2.long_distance_range.raw,  # 97
+            self.attack_2.long_distance_start,  # 96
+            self.attack_2.long_distance_range,  # 97
             int(self.attack_3.long_distance_flag),  # 98
-            self.attack_3.long_distance_start.raw,  # 99
-            self.attack_3.long_distance_range.raw,  # 100
+            self.attack_3.long_distance_start,  # 99
+            self.attack_3.long_distance_range,  # 100
             int(self.behemoth),  # 101
         ]
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        raw_stats = dict_data.get("raw_stats")
+        if raw_stats is not None:
+            current_raw_stats = self.to_raw_data()
+            mod_stats = mods.bc_mod.ModEditDictHandler(
+                raw_stats, current_raw_stats
+            ).get_dict(True)
+            for stat_id, stat_value in mod_stats.items():
+                current_raw_stats[stat_id] = mods.bc_mod.ModEditValueHandler(
+                    stat_value, current_raw_stats[stat_id]
+                ).get_value()
+            self.assign(current_raw_stats)
+
+    @staticmethod
+    def create_empty(enemy_id: int) -> "Stats":
+        return Stats(enemy_id, [])
 
 
 class StatsData:
@@ -237,6 +254,8 @@ class StatsData:
 
     @staticmethod
     def from_game_data(game_data: "pack.GamePacks") -> "StatsData":
+        if game_data.enemy_stats is not None:
+            return game_data.enemy_stats
         stats_data = game_data.find_file(StatsData.get_file_name())
         if stats_data is None:
             return StatsData.create_empty()
@@ -245,7 +264,9 @@ class StatsData:
         for enemy_id, line in enumerate(csv.lines):
             enemy_id -= 2
             stats[enemy_id] = Stats(enemy_id, [int(x) for x in line])
-        return StatsData(stats)
+        enemy_stats = StatsData(stats)
+        game_data.enemy_stats = enemy_stats
+        return enemy_stats
 
     def to_game_data(self, game_data: "pack.GamePacks"):
         stats_data = game_data.find_file(StatsData.get_file_name())
@@ -325,6 +346,15 @@ class Model:
         self.model.set_unit_id(enemy_id)
         self.model.set_unit_form("e")
 
+    def apply_dict(self, dict_data: dict[str, Any]):
+        model = dict_data.get("model")
+        if model is not None:
+            self.model.apply_dict(model)
+
+    @staticmethod
+    def create_empty(enemy_id: int) -> "Model":
+        return Model(enemy_id, anim.model.Model.create_empty())
+
 
 class Names:
     def __init__(self, names: dict[int, str]):
@@ -336,6 +366,8 @@ class Names:
 
     @staticmethod
     def from_game_data(game_data: "pack.GamePacks") -> "Names":
+        if game_data.enemy_names is not None:
+            return game_data.enemy_names
         names_data = game_data.find_file(Names.get_file_name())
         if names_data is None:
             return Names.create_empty()
@@ -346,7 +378,9 @@ class Names:
                 names[enemy_id] = line[0]
             except IndexError:
                 pass
-        return Names(names)
+        enemy_names = Names(names)
+        game_data.enemy_names = enemy_names
+        return enemy_names
 
     def to_game_data(self, game_data: "pack.GamePacks"):
         names_data = game_data.find_file(Names.get_file_name())
@@ -497,6 +531,39 @@ class Enemy:
         self.stats.enemy_id = enemy_id
         self.anim.set_enemy_id(enemy_id)
 
+    def apply_dict(self, dict_data: dict[str, Any]):
+        stats = dict_data.get("stats")
+        if stats is not None:
+            self.stats.apply_dict(stats)
+
+        name = dict_data.get("name")
+        if name is not None:
+            self.name = name
+
+        description = dict_data.get("description")
+        if description is not None:
+            self.description = description
+
+        anim = dict_data.get("anim")
+        if anim is not None:
+            self.anim.apply_dict(anim)
+
+        enemy_icon = dict_data.get("enemy_icon")
+        if enemy_icon is not None:
+            self.enemy_icon = enemy_icon
+
+    @staticmethod
+    def create_empty(enemy_id: int) -> "Enemy":
+        return Enemy(
+            enemy_id,
+            Stats.create_empty(enemy_id),
+            "",
+            [],
+            Model.create_empty(enemy_id),
+            io.bc_image.BCImage.create_empty(),
+            None,
+        )
+
 
 class Enemies:
     def __init__(self, enemies: dict[int, Enemy]):
@@ -504,6 +571,8 @@ class Enemies:
 
     @staticmethod
     def from_game_data(game_data: "pack.GamePacks") -> "Enemies":
+        if game_data.enemies is not None:
+            return game_data.enemies
         stats = StatsData.from_game_data(game_data)
         names = Names.from_game_data(game_data)
         descriptions = Descriptions.from_game_data(game_data)
@@ -514,7 +583,9 @@ class Enemies:
             )
             if enemy is not None:
                 enemies[enemy_id] = enemy
-        return Enemies(enemies)
+        enemies_o = Enemies(enemies)
+        game_data.enemies = enemies_o
+        return enemies_o
 
     def to_game_data(self, game_data: "pack.GamePacks"):
         stats = StatsData(
@@ -539,3 +610,26 @@ class Enemies:
 
     def set_enemy(self, enemy: Enemy):
         self.enemies[enemy.enemy_id] = enemy
+
+    @staticmethod
+    def apply_mod_to_game_data(mod: "mods.bc_mod.Mod", game_data: "pack.GamePacks"):
+        enemies_data = mod.mod_edits.get("enemies")
+        if enemies_data is None:
+            return
+
+        enemies_dict: dict[int, Enemy] = {}
+
+        current_enemies = Enemies.from_game_data(game_data)
+        mod_enemies = mods.bc_mod.ModEditDictHandler(
+            enemies_data, current_enemies.enemies
+        ).get_dict(convert_int=True)
+
+        for enemy_id, enemy_data in mod_enemies.items():
+            game_enemy = current_enemies.get_enemy(enemy_id)
+            if game_enemy is None:
+                game_enemy = Enemy.create_empty(enemy_id)
+            game_enemy.apply_dict(enemy_data)
+            enemies_dict[enemy_id] = game_enemy
+
+        enemies = Enemies(enemies_dict)
+        enemies.to_game_data(game_data)

@@ -14,6 +14,7 @@ class BCImage:
         self.__image: Optional[Image.Image] = None
         self._qimg: Optional[QImage] = None
         self.__original_data = self.data.copy()
+        self.__original_img: Optional[Image.Image] = None
 
     @property
     def image(self) -> Image.Image:
@@ -23,10 +24,13 @@ class BCImage:
             else:
                 self.__image = Image.open(self.data.to_bytes_io())
             self.__original_img = self.__image.copy()
+        if self.__original_img is None:
+            self.__original_img = self.__image.copy()
         return self.__image
 
     def copy(self):
-        return BCImage(self.data.copy())
+        data = self.to_data()
+        return BCImage(data)
 
     @staticmethod
     def create_empty():

@@ -2,7 +2,7 @@ from typing import Any, Optional
 from tbcml.core import io, country_code, crypto, langs, mods, game_version, game_data
 import copy
 
-from tbcml.core.game_data.cat_base import cats, item_shop
+from tbcml.core.game_data.cat_base import cats, enemies, item_shop
 
 
 class GameFile:
@@ -352,6 +352,9 @@ class GamePacks:
         self.evolve_text: Optional[cats.EvolveText] = None
         self.cats: Optional[cats.Cats] = None
         self.localizable = Localizable.from_game_data(self)
+        self.enemies: Optional[enemies.Enemies] = None
+        self.enemy_stats: Optional[enemies.StatsData] = None
+        self.enemy_names: Optional[enemies.Names] = None
 
     def get_pack(self, pack_name: str) -> Optional[PackFile]:
         """Get a pack from the game packs.
@@ -514,17 +517,20 @@ class GamePacks:
         """
         game_data.cat_base.item_shop.ItemShop.apply_mod_to_game_data(mod, self)
         game_data.cat_base.cats.Cats.apply_mod_to_game_data(mod, self)
+        game_data.cat_base.enemies.Enemies.apply_mod_to_game_data(mod, self)
         Localizable.apply_mod_to_game_data(mod, self)
 
         for file_name, data in mod.game_files.items():
             self.set_file(file_name, data)
 
-    def extract(self, path: "io.path.Path"):
+    def extract(self, path: "io.path.Path", clear: bool = False):
         """Extract the game packs to a path.
 
         Args:
             path (io.path.Path): The path.
         """
+        if clear:
+            path.remove()
         for pack in self.packs.values():
             pack.extract(path)
 
