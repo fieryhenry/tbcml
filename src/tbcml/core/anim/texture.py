@@ -99,6 +99,14 @@ class TexMetadata:
         if total_rects is not None:
             self.total_rects = total_rects
 
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "head_name": self.head_name,
+            "version_code": self.version_code,
+            "img_name": self.img_name,
+            "total_rects": self.total_rects,
+        }
+
 
 class Cut:
     def __init__(self, rect: rect.Rect, img: "io.bc_image.BCImage"):
@@ -113,6 +121,9 @@ class Cut:
         img_data = dict_data.get("img")
         if img_data is not None:
             self.img.apply_dict(img_data)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"rect": self.rect.to_dict(), "img": self.img.to_dict()}
 
 
 class TexLoaderInfo:
@@ -141,6 +152,7 @@ class Texture:
         self.metadata = metadata
         self.img_name = img_name
         self.imgcut_name = imgcut_name
+        self.cuts: list[Cut] = []
 
     @staticmethod
     def load(png_name: str, imgcut_name: str, game_packs: "game_data.pack.GamePacks"):
@@ -271,12 +283,14 @@ class Texture:
         if imgcut_name is not None:
             self.imgcut_name = imgcut_name
 
-        cuts = dict_data.get("cuts")
-        if cuts is not None:
-            for i, data_cut in enumerate(cuts):
-                if i < len(self.cuts):
-                    self.cuts[i].apply_dict(data_cut)
-            self.reconstruct_image_from_cuts()
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "image": self.image.to_dict(),
+            "rects": [r.to_dict() for r in self.rects],
+            "metadata": self.metadata.to_dict(),
+            "img_name": self.img_name,
+            "imgcut_name": self.imgcut_name,
+        }
 
     def reconstruct_image_from_cuts(self):
         self.image = io.bc_image.BCImage.create_empty()

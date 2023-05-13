@@ -115,6 +115,9 @@ class BCImage:
     def apply_dict(self, dt: dict[str, Any]):
         self.data = data.Data.from_base_64(dt["__image__"])
 
+    def to_dict(self) -> dict[str, Any]:
+        return {"__image__": self.to_base_64()}
+
     def paste(self, image: "BCImage", x: int, y: int):
         self.image.paste(image.image, (x, y), image.image)
 

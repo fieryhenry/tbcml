@@ -65,6 +65,13 @@ class ModelMetaData:
         if total_parts is not None:
             self.total_parts = total_parts
 
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "head_name": self.head_name,
+            "version_code": self.version_code,
+            "total_parts": self.total_parts,
+        }
+
 
 class MamodelLoaderInfo:
     def __init__(self, mamodel_name: str, game_packs: "game_data.pack.GamePacks"):
@@ -221,6 +228,17 @@ class Mamodel:
         comments = dict_data.get("comments")
         if comments is not None:
             self.comments = comments
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "meta_data": self.meta_data.to_dict(),
+            "scale_unit": self.scale_unit,
+            "angle_unit": self.angle_unit,
+            "alpha_unit": self.alpha_unit,
+            "ints": self.ints,
+            "parts": {str(part.index): part.to_dict() for part in self.parts},
+            "comments": self.comments,
+        }
 
 
 class Model:
@@ -497,6 +515,15 @@ class Model:
                     anim = unit_animation.UnitAnim.create_empty()
                     self.anims.append(anim)
                 anim.apply_dict(data_anim)
+
+    def to_dict(self) -> dict[str, Any]:
+        data = {
+            "parts": {part.index: part.to_dict() for part in self.mamodel.parts},
+            "mamodel": self.mamodel.to_dict(),
+            "tex": self.tex.to_dict(),
+            "anims": {i: anim.to_dict() for i, anim in enumerate(self.anims)},
+        }
+        return data
 
     def get_anim(self, anim_id: int) -> Optional[unit_animation.UnitAnim]:
         if anim_id < len(self.anims):

@@ -631,6 +631,13 @@ class Stats:
                 ).get_value()
             self.assign(current_raw_stats)
 
+    def to_dict(self) -> dict[int, Any]:
+        raw_stats = self.to_raw_data()
+        data: dict[int, Any] = {}
+        for stat_id, stat_value in enumerate(raw_stats):
+            data[stat_id] = stat_value
+        return data
+
     @staticmethod
     def create_empty(cat_id: int, form: FormType) -> "Stats":
         return Stats(cat_id, form, [])
@@ -715,6 +722,11 @@ class Model:
         model = dict_data.get("model")
         if model is not None:
             self.model.apply_dict(model)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "model": self.model.to_dict(),
+        }
 
     @staticmethod
     def create_empty(cat_id: int, form: FormType) -> "Model":
@@ -847,6 +859,16 @@ class Form:
         deploy_icon = dict_data.get("deploy_icon")
         if deploy_icon is not None:
             self.deploy_icon.apply_dict(deploy_icon)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "name": self.name,
+            "description": self.description,
+            "stats": self.stats.to_dict(),
+            "anim": self.anim.to_dict(),
+            "upgrade_icon": self.upgrade_icon.to_dict(),
+            "deploy_icon": self.deploy_icon.to_dict(),
+        }
 
     @staticmethod
     def create_empty(cat_id: int, form: FormType) -> "Form":

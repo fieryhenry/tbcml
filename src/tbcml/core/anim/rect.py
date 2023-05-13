@@ -57,3 +57,12 @@ class Rect:
         name = dict_data.get("name")
         if name is not None:
             self.name = name
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "x": self.x,
+            "y": self.y,
+            "width": self.width,
+            "height": self.height,
+            "name": self.name,
+        }

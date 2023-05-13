@@ -76,7 +76,7 @@ class ModelPart:
         self.parent: Optional[ModelPart] = None
         self.children: list[ModelPart] = []
         self.keyframes_sets: list[unit_animation.KeyFrames] = []
-        self.model: model.Model
+        self.model: Optional[model.Model] = None
         self.scale_unit: int
         self.angle_unit: int
         self.alpha_unit: int
@@ -86,9 +86,12 @@ class ModelPart:
         self.__sv_x = None
         self.__sv_y = None
 
+        self.units_set = False
+
     def load_texs(self):
         """Loads the texture and rect for the part."""
-
+        if self.model is None:
+            return
         rct = self.model.tex.get_rect(self.rect_id)
         if rct is None:
             self.rect = rect.Rect.create_empty()
@@ -108,7 +111,8 @@ class ModelPart:
             rect_id (int): The rect ID to set the part to.
         """
         self.rect_id = rect_id
-        self.load_texs()
+        if self.model is not None:
+            self.load_texs()
 
     def get_end_frame(self) -> int:
         """Gets the end frame of the part. Note that this doesn't really work for infinite looping animations.
@@ -142,7 +146,10 @@ class ModelPart:
             elif mod == unit_animation.ModificationType.SPRITE:
                 self.rect_id = change_in_value
                 self.set_rect(self.rect_id)
-            elif mod == unit_animation.ModificationType.Z_ORDER:
+            elif (
+                mod == unit_animation.ModificationType.Z_ORDER
+                and self.model is not None
+            ):
                 self.z_depth = (
                     change_in_value * len(self.model.mamodel.parts) + self.index
                 )
@@ -529,6 +536,8 @@ class ModelPart:
                     self.__sv_y = self.real_scale_y
                     return self.__sv_x, self.__sv_y
                 else:
+                    if self.model is None:
+                        return 1, 1
                     part = self.model.get_part(part_id)
                     if part is None:
                         raise Exception(
@@ -621,6 +630,8 @@ class ModelPart:
         if parent_id == -1:
             self.parent = None
         else:
+            if self.model is None:
+                return
             self.parent = self.model.get_part(parent_id)
 
     def set_children(self, all_parts: list["ModelPart"]):
@@ -650,6 +661,8 @@ class ModelPart:
         self.real_scale_y = self.scale_y / scale_unit
         self.real_rotation = self.rotation / angle_unit
         self.real_alpha = self.alpha / alpha_unit
+
+        self.units_set = True
 
     def set_keyframes_sets(self, keyframes_sets: list["unit_animation.KeyFrames"]):
         """Sets the keyframes sets of the part. Also resets the animation.
@@ -762,7 +775,30 @@ class ModelPart:
         if rect_id is not None:
             self.rect_id = rect_id
             self.set_rect(self.rect_id)
-        self.real_alpha = self.alpha / self.alpha_unit
-        self.real_rotation = self.rotation / self.angle_unit
-        self.real_scale_x = self.scale_x / self.scale_unit
-        self.real_scale_y = self.scale_y / self.scale_unit
+
+        if self.units_set:
+            self.real_alpha = self.alpha / self.alpha_unit
+            self.real_rotation = self.rotation / self.angle_unit
+            self.real_scale_x = self.scale_x / self.scale_unit
+            self.real_scale_y = self.scale_y / self.scale_unit
+
+    def to_dict(self) -> dict[str, Any]:
+        """Converts the part to a dictionary.
+
+        Returns:
+            dict[str, Any]: The dictionary of the part.
+        """
+        return {
+            "x": self.x,
+            "y": self.y,
+            "pivot_x": self.pivot_x,
+            "pivot_y": self.pivot_y,
+            "scale_x": self.scale_x,
+            "scale_y": self.scale_y,
+            "rotation": self.rotation,
+            "alpha": self.alpha,
+            "parent_id": self.parent_id,
+            "z_depth": self.z_depth,
+            "unit_id": self.unit_id,
+            "rect_id": self.rect_id,
+        }

@@ -176,6 +176,14 @@ class KeyFrame:
         if ease_power is not None:
             self.ease_power = ease_power
 
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "frame": self.frame,
+            "change": self.change,
+            "ease_mode": self.ease_mode,
+            "ease_power": self.ease_power,
+        }
+
 
 class KeyFrames:
     def __init__(
@@ -433,6 +441,17 @@ class KeyFrames:
                     new_keyframe.apply_dict(data_keyframe)
                     self.add_keyframe(new_keyframe)
 
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "loop": self.loop,
+            "part_id": self.part_id,
+            "modification_type": self.modification_type.value,
+            "min_value": self.min_value,
+            "max_value": self.max_value,
+            "name": self.name,
+            "keyframes": [keyframe.to_dict() for keyframe in self.keyframes],
+        }
+
 
 class UnitAnimMetaData:
     def __init__(self, head_name: str, version_code: int, total_parts: int):
@@ -489,6 +508,13 @@ class UnitAnimMetaData:
         total_parts = dict_data.get("total_parts")
         if total_parts is not None:
             self.total_parts = total_parts
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "head_name": self.head_name,
+            "version_code": self.version_code,
+            "total_parts": self.total_parts,
+        }
 
 
 class UnitAnimLoaderInfo:
@@ -585,6 +611,13 @@ class UnitAnim:
         name = dict_data.get("name")
         if name is not None:
             self.name = name
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "parts": [part.to_dict() for part in self.parts],
+            "meta_data": self.meta_data.to_dict(),
+            "name": self.name,
+        }
 
     def set_unit_id(self, unit_id: int):
         parts = self.name.split("_")
