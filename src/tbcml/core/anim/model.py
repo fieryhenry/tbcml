@@ -1,6 +1,6 @@
 from typing import Any, Optional, Union
 from tbcml.core.anim import texture, unit_animation, model_part
-from tbcml.core import io, game_data
+from tbcml.core import io, game_data, mods
 
 
 class ModelMetaData:
@@ -492,7 +492,11 @@ class Model:
     def apply_dict(self, dict_data: dict[str, Any]):
         parts = dict_data.get("parts")
         if parts is not None:
-            for part_id, data_part in parts.items():
+            current_parts = {part.index: part for part in self.mamodel.parts}
+            mod_parts = mods.bc_mod.ModEditDictHandler(parts, current_parts).get_dict(
+                convert_int=True
+            )
+            for part_id, data_part in mod_parts.items():
                 part = self.get_part(part_id)
                 if part is None:
                     part = model_part.ModelPart.create_empty(part_id)
@@ -509,7 +513,11 @@ class Model:
 
         anims = dict_data.get("anims")
         if anims is not None:
-            for anim_id, data_anim in anims.items():
+            current_anims = {i: anim for i, anim in enumerate(self.anims)}
+            mod_anims = mods.bc_mod.ModEditDictHandler(anims, current_anims).get_dict(
+                convert_int=True
+            )
+            for anim_id, data_anim in mod_anims.items():
                 anim = self.get_anim(anim_id)
                 if anim is None:
                     anim = unit_animation.UnitAnim.create_empty()
