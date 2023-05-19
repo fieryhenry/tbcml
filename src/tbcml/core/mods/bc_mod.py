@@ -1,6 +1,7 @@
 from typing import Any, Optional, Union
 import zipfile
 from tbcml.core import io, game_version, country_code, crypto, mods
+import copy
 
 
 class ModEdit:
@@ -95,30 +96,47 @@ class ModEditDictHandler:
             else:
                 dict_data[key] = value
 
-        # print(dict_data)
         return dict_data
+
+
+class Dependency:
+    def __init__(self, mod_id: str, mod_version: str):
+        self.mod_id = mod_id
+        self.mod_version = mod_version
+
+    def to_dict(self):
+        return {"mod_id": self.mod_id, "mod_version": self.mod_version}
+
+    @staticmethod
+    def from_dict(data: dict[str, Any]):
+        return Dependency(data["mod_id"], data["mod_version"])
+
+    def to_html(self):
+        return f"<a href='https://tbcml.net/mods/{self.mod_id}'>{self.mod_id}</a> v{self.mod_version}"
 
 
 class Mod:
     def __init__(
         self,
         name: str,
-        author: str,
-        descritpion: str,
+        authors: list[str],
+        description: str,
         country_code: "country_code.CountryCode",
         game_version: "game_version.GameVersion",
         mod_id: str,
         mod_version: str,
-        mod_url: Optional[str] = None,
+        credits: Optional[list[str]] = None,
+        dependencies: Optional[list[Dependency]] = None,
     ):
         self.name = name
-        self.author = author
-        self.description = descritpion
+        self.authors = authors
+        self.description = description
         self.country_code = country_code
         self.game_version = game_version
         self.mod_id = mod_id
         self.mod_version = mod_version
-        self.mod_url = mod_url
+        self.credits = credits if credits is not None else []
+        self.dependencies = dependencies if dependencies is not None else []
 
         self.mod_edits: dict[str, Any] = {}
         self.game_files: dict[str, io.data.Data] = {}
@@ -133,7 +151,7 @@ class Mod:
         return ".bcmod"
 
     def get_full_mod_name(self) -> str:
-        return f"{self.name}-{self.author}-{self.mod_id}{self.get_extension()}"
+        return f"{self.name}-{self.mod_id}{self.get_extension()}"
 
     def get_file_name(self) -> str:
         return f"{self.mod_id}{self.get_extension()}"
@@ -152,13 +170,14 @@ class Mod:
     def create_mod_json(self) -> dict[str, Any]:
         return {
             "name": self.name,
-            "author": self.author,
+            "authors": self.authors,
             "description": self.description,
-            "country_code": self.country_code.value,
+            "country_code": self.country_code.get_code(),
             "game_version": self.game_version.to_string(),
             "mod_id": self.mod_id,
             "mod_version": self.mod_version,
-            "mod_url": self.mod_url,
+            "credits": self.credits,
+            "dependencies": [dependency.to_dict() for dependency in self.dependencies],
         }
 
     def save(self, path: "io.path.Path"):
@@ -172,10 +191,14 @@ class Mod:
         self.scripts.add_to_zip(zip_file)
         self.smali.add_to_zip(zip_file)
 
+        orignal_mod_edits = copy.deepcopy(self.mod_edits)
+
         self.add_images(zip_file, self.mod_edits)
         self.remove__image__(self.mod_edits)
 
         self.add_mod_edits_to_zip(zip_file, self.mod_edits)
+
+        self.mod_edits = orignal_mod_edits
 
         for file_name, data in self.game_files.items():
             zip_file.add_file(io.path.Path("game_files/" + file_name), data)
@@ -313,13 +336,14 @@ class Mod:
     def from_mod_json(data: dict[str, Any]) -> "Mod":
         return Mod(
             data["name"],
-            data["author"],
+            data["authors"],
             data["description"],
-            country_code.CountryCode(data["country_code"]),
+            country_code.CountryCode.from_code(data["country_code"]),
             game_version.GameVersion.from_string(data["game_version"]),
             data["mod_id"],
             data["mod_version"],
-            data["mod_url"],
+            data["credits"],
+            [Dependency.from_dict(x) for x in data["dependencies"]],
         )
 
     @staticmethod
