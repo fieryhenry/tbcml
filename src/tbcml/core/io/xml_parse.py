@@ -1,18 +1,18 @@
 from typing import Optional
-import xml
-import xml.etree.ElementTree
+import xml.etree.ElementTree as ET
 from tbcml.core import io
 
 
 class XML:
     def __init__(self, data: io.data.Data):
         self.data = data
-        self.root = xml.etree.ElementTree.fromstring(data.to_str())
+        ET.register_namespace("android", "http://schemas.android.com/apk/res/android")
+        self.root = ET.fromstring(self.data.to_str())
 
-    def get_element(self, path: str) -> Optional[xml.etree.ElementTree.Element]:
+    def get_element(self, path: str) -> Optional[ET.Element]:
         return self.root.find(path)
 
-    def get_elements(self, path: str) -> list[xml.etree.ElementTree.Element]:
+    def get_elements(self, path: str) -> list[ET.Element]:
         return self.root.findall(path)
 
     def set_element(self, path: str, value: str):
@@ -22,9 +22,34 @@ class XML:
         element.text = value
 
     def save(self):
-        self.data = io.data.Data(
-            xml.etree.ElementTree.tostring(self.root).decode("utf-8")
-        )
+        self.data = io.data.Data(ET.tostring(self.root).decode("utf-8"))
 
     def to_file(self, path: io.path.Path):
+        self.save()
         path.write(self.data)
+
+    def get_attribute_name(self, attribute: str) -> str:
+        return attribute.replace(
+            "android:", "{http://schemas.android.com/apk/res/android}"
+        )
+
+    def set_attribute(self, path: str, attribute: str, value: str):
+        attribute = self.get_attribute_name(attribute)
+        element = self.root.find(path)
+        if element is None:
+            raise ValueError("Element not found")
+        element.set(attribute, value)
+
+    def get_attribute(self, path: str, attribute: str) -> Optional[str]:
+        attribute = self.get_attribute_name(attribute)
+        element = self.root.find(path)
+        if element is None:
+            return None
+        return element.get(attribute)
+
+    def remove_attribute(self, path: str, attribute: str):
+        attribute = self.get_attribute_name(attribute)
+        element = self.root.find(path)
+        if element is None:
+            raise ValueError("Element not found")
+        element.attrib.pop(attribute)
