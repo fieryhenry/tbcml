@@ -1,7 +1,8 @@
 """Module for handling the screen shake effects in battle. This feature was added in version 11.8.0"""
 import enum
+from typing import Any
 from tbcml.core.game_data import pack
-from tbcml.core import io
+from tbcml.core import io, mods
 
 
 class ShakeLocation(enum.Enum):
@@ -43,6 +44,41 @@ class ShakeEffect:
         self.events_until_next_shake = events_until_next_shake
         self.reset_frame = reset_frame
         self.priority = priority
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        """Applies the data from a dictionary to the ShakeEffect.
+
+        Args:
+            dict_data (dict[str, Any]): The dictionary to apply the data from.
+        """
+        shake_location = dict_data.get("shake_location")
+        if shake_location is not None:
+            self.shake_location = ShakeLocation(shake_location)
+        self.start_distance = dict_data.get("start_distance", self.start_distance)
+        self.end_distance = dict_data.get("end_distance", self.end_distance)
+        self.frames = dict_data.get("frames", self.frames)
+        self.events_until_next_shake = dict_data.get(
+            "events_until_next_shake", self.events_until_next_shake
+        )
+        self.reset_frame = dict_data.get("reset_frame", self.reset_frame)
+        self.priority = dict_data.get("priority", self.priority)
+
+    @staticmethod
+    def create_empty() -> "ShakeEffect":
+        """Creates an empty ShakeEffect.
+
+        Returns:
+            ShakeEffect: An empty ShakeEffect.
+        """
+        return ShakeEffect(
+            ShakeLocation.BASE_HIT,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+        )
 
 
 class ShakeEffects:
@@ -145,3 +181,24 @@ class ShakeEffects:
             ShakeEffects: The empty ShakeEffects object.
         """
         return ShakeEffects({})
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        """Applies the data from a dictionary to the ShakeEffects.
+
+        Args:
+            dict_data (dict[str, Any]): The dictionary to apply the data from.
+        """
+        effects = dict_data.get("effects")
+        if effects is not None:
+            current_effects = self.effects.copy()
+            modded_effects = mods.bc_mod.ModEditDictHandler(
+                effects, current_effects
+            ).get_dict(convert_int=True)
+            for effect_id, effect_data in modded_effects.items():
+                if effect_id in current_effects:
+                    effect = current_effects[effect_id]
+                else:
+                    effect = ShakeEffect.create_empty()
+                effect.apply_dict(effect_data)
+                current_effects[effect_id] = effect
+            self.effects = current_effects

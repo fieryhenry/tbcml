@@ -1,7 +1,7 @@
 import enum
-from typing import Optional
+from typing import Any, Optional
 from tbcml.core.game_data import pack
-from tbcml.core import io
+from tbcml.core import io, mods
 
 
 class ColorType(enum.Enum):
@@ -27,6 +27,26 @@ class Color:
         self.r = r
         self.g = g
         self.b = b
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        c_type = dict_data.get("type")
+        if c_type is not None:
+            self.type = ColorType(c_type)
+        self.r = dict_data.get("r", self.r)
+        self.g = dict_data.get("g", self.g)
+        self.b = dict_data.get("b", self.b)
+
+    @staticmethod
+    def create_empty(c_type: ColorType) -> "Color":
+        """Creates an empty Color.
+
+        Args:
+            c_type (ColorType): The location where the color is applied.
+
+        Returns:
+            Color: An empty Color.
+        """
+        return Color(c_type, 0, 0, 0)
 
 
 class Bg:
@@ -61,6 +81,38 @@ class Bg:
         self.imgcut_id = imgcut_id
         self.is_upper_side_bg_enabled = is_upper_side_bg_enabled
         self.extra = extra
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.id = dict_data.get("id", self.id)
+        self.sky_top.apply_dict(dict_data.get("sky_top", {}))
+        self.sky_bottom.apply_dict(dict_data.get("sky_bottom", {}))
+        self.ground_top.apply_dict(dict_data.get("ground_top", {}))
+        self.ground_bottom.apply_dict(dict_data.get("ground_bottom", {}))
+        self.imgcut_id = dict_data.get("imgcut_id", self.imgcut_id)
+        self.is_upper_side_bg_enabled = dict_data.get(
+            "is_upper_side_bg_enabled", self.is_upper_side_bg_enabled
+        )
+        self.extra = dict_data.get("extra", self.extra)
+
+    @staticmethod
+    def create_empty(id: int) -> "Bg":
+        """Creates an empty Bg.
+
+        Args:
+            id (int): The ID of the background.
+
+        Returns:
+            Bg: An empty Bg.
+        """
+        return Bg(
+            id,
+            Color.create_empty(ColorType.SKY_TOP),
+            Color.create_empty(ColorType.SKY_BOTTOM),
+            Color.create_empty(ColorType.GROUND_TOP),
+            Color.create_empty(ColorType.GROUND_BOTTOM),
+            0,
+            False,
+        )
 
 
 class Bgs:
@@ -227,3 +279,18 @@ class Bgs:
             Bgs: The created Bgs object.
         """
         return Bgs({})
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        bgs = dict_data.get("bgs")
+        if bgs is None:
+            return
+        current_bgs = self.bgs.copy()
+        modded_bgs = mods.bc_mod.ModEditDictHandler(bgs, current_bgs).get_dict(
+            convert_int=True
+        )
+        for id, modded_bg in modded_bgs.items():
+            bg = self.bgs.get(id)
+            if bg is None:
+                bg = Bg.create_empty(id)
+            bg.apply_dict(modded_bg)
+            self.bgs[id] = bg

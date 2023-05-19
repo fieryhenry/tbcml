@@ -1,6 +1,7 @@
 import enum
+from typing import Any
 from tbcml.core.game_data import pack
-from tbcml.core import io
+from tbcml.core import io, mods
 
 
 class GroupType(enum.Enum):
@@ -32,6 +33,26 @@ class CharaGroupSet:
         self.text_id = text_id
         self.group_type = group_type
         self.chara_ids = chara_ids
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.group_id = dict_data.get("group_id", self.group_id)
+        self.text_id = dict_data.get("text_id", self.text_id)
+        group_type = dict_data.get("group_type")
+        if group_type is not None:
+            self.group_type = GroupType(group_type)
+        self.chara_ids = dict_data.get("chara_ids", self.chara_ids)
+
+    @staticmethod
+    def create_empty(group_id: int) -> "CharaGroupSet":
+        """Creates an empty CharaGroupSet.
+
+        Args:
+            group_id (int): The ID of the group.
+
+        Returns:
+            CharaGroupSet: An empty CharaGroupSet.
+        """
+        return CharaGroupSet(group_id, "", GroupType.EXCLUDE, [])
 
 
 class CharaGroups:
@@ -119,3 +140,18 @@ class CharaGroups:
             CharaGroups: The empty CharaGroups.
         """
         return CharaGroups({})
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        groups = dict_data.get("groups")
+        if groups is not None:
+            current_groups = self.groups.copy()
+            modded_groups = mods.bc_mod.ModEditDictHandler(
+                groups, current_groups
+            ).get_dict(convert_int=True)
+            for id, modded_group in modded_groups.items():
+                group = current_groups.get(id)
+                if group is None:
+                    group = CharaGroupSet.create_empty(id)
+                group.apply_dict(modded_group)
+                current_groups[id] = group
+            self.groups = current_groups
