@@ -1,7 +1,7 @@
 import enum
-from typing import Optional
+from typing import Any, Optional
 from tbcml.core.game_data import pack
-from tbcml.core import io
+from tbcml.core import io, mods
 
 
 class SchemeType(enum.Enum):
@@ -22,12 +22,44 @@ class Item:
         self.id = id
         self.value = value
 
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.drop_category = DropCategory(
+            dict_data.get("drop_category", self.drop_category.value)
+        )
+        self.id = dict_data.get("id", self.id)
+        self.value = dict_data.get("value", self.value)
+
+    @staticmethod
+    def create_empty() -> "Item":
+        return Item(DropCategory.ITEM, 0, 0)
+
 
 class SchemeItem:
     def __init__(self, id: int, type: SchemeType, items: list[Item]):
         self.id = id
         self.type = type
         self.items = items
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.id = dict_data.get("id", self.id)
+        self.type = SchemeType(dict_data.get("type", self.type.value))
+        items = dict_data.get("items")
+        if items is not None:
+            current_items_dict = {i: i for i in range(len(self.items))}
+            modded_items = mods.bc_mod.ModEditDictHandler(
+                items, current_items_dict
+            ).get_dict(convert_int=True)
+            for item_id, modded_item in modded_items:
+                try:
+                    item = self.items[int(item_id)]
+                except IndexError:
+                    item = Item.create_empty()
+                    self.items.append(item)
+                item.apply_dict(modded_item)
+
+    @staticmethod
+    def create_empty(id: int) -> "SchemeItem":
+        return SchemeItem(id, SchemeType.URL_SCHEME, [])
 
 
 class SchemeItems:
@@ -94,6 +126,20 @@ class SchemeItems:
             csv.lines.append(line)
 
         game_data.set_file(SchemeItems.get_file_name(), csv.to_data())
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        items = dict_data.get("items")
+        if items is not None:
+            current_items = self.items.copy()
+            modded_items = mods.bc_mod.ModEditDictHandler(
+                items, current_items
+            ).get_dict(convert_int=True)
+            for item_id, modded_item in modded_items:
+                item = self.items.get(int(item_id))
+                if item is None:
+                    item = SchemeItem.create_empty(int(item_id))
+                    self.items[item.id] = item
+                item.apply_dict(modded_item)
 
     @staticmethod
     def create_empty() -> "SchemeItems":
