@@ -1,7 +1,7 @@
 import enum
-from typing import Optional
+from typing import Any, Optional
 from tbcml.core.game_data import pack
-from tbcml.core import io
+from tbcml.core import io, mods
 
 
 class GatyaType(enum.Enum):
@@ -18,6 +18,14 @@ class GatyaDataSetData:
     ):
         self.id = id
         self.cats = cats
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.id = dict_data.get("id", self.id)
+        self.cats = dict_data.get("cats", self.cats)
+
+    @staticmethod
+    def create_empty(id: int) -> "GatyaDataSetData":
+        return GatyaDataSetData(id, [])
 
 
 class GatyaDataSet:
@@ -71,6 +79,28 @@ class GatyaDataSet:
             csv.lines[set.id] = line
         game_data.set_file(file_name, csv.to_data())
 
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.gatya_type = dict_data.get("gatya_type", self.gatya_type)
+        self.index = dict_data.get("index", self.index)
+
+        sets = dict_data.get("sets")
+        if sets is not None:
+            current_sets = self.sets.copy()
+            modded_sets = mods.bc_mod.ModEditDictHandler(sets, current_sets).get_dict(
+                convert_int=True
+            )
+            for id, modded_set in modded_sets.items():
+                set = current_sets.get(id, None)
+                if set is None:
+                    set = GatyaDataSetData.create_empty(id)
+                set.apply_dict(modded_set)
+                current_sets[id] = set
+            self.sets = current_sets
+
+    @staticmethod
+    def create_empty(type: GatyaType, index: int) -> "GatyaDataSet":
+        return GatyaDataSet(type, index, {})
+
 
 class GatyaDataSets:
     def __init__(
@@ -105,6 +135,27 @@ class GatyaDataSets:
         gatya_set.gatya_type = self.type
         self.gatya_sets[index] = gatya_set
 
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.type = dict_data.get("type", self.type)
+
+        gatya_sets = dict_data.get("gatya_sets")
+        if gatya_sets is not None:
+            current_sets = self.gatya_sets.copy()
+            modded_sets = mods.bc_mod.ModEditDictHandler(
+                gatya_sets, current_sets
+            ).get_dict(convert_int=True)
+            for id, modded_set in modded_sets.items():
+                set = current_sets.get(id, None)
+                if set is None:
+                    set = GatyaDataSet.create_empty(self.type, id)
+                set.apply_dict(modded_set)
+                current_sets[id] = set
+            self.gatya_sets = current_sets
+
+    @staticmethod
+    def create_empty(type: GatyaType) -> "GatyaDataSets":
+        return GatyaDataSets(type, {})
+
 
 class GatyaDataSetsAll:
     def __init__(
@@ -133,6 +184,21 @@ class GatyaDataSetsAll:
         gatya_data_sets.type = type
         self.gatya_data_sets[type] = gatya_data_sets
 
+    def apply_dict(self, dict_data: dict[str, Any]):
+        gatya_data_sets = dict_data.get("gatya_data_sets")
+        if gatya_data_sets is not None:
+            current_sets = self.gatya_data_sets.copy()
+            modded_sets = mods.bc_mod.ModEditDictHandler(
+                gatya_data_sets, current_sets
+            ).get_dict(convert_int=True)
+            for type, modded_set in modded_sets.items():
+                set = current_sets.get(type, None)
+                if set is None:
+                    set = GatyaDataSets.create_empty(type)
+                set.apply_dict(modded_set)
+                current_sets[type] = set
+            self.gatya_data_sets = current_sets
+
     @staticmethod
     def create_empty() -> "GatyaDataSetsAll":
         return GatyaDataSetsAll({})
@@ -160,6 +226,31 @@ class GatyaOptionSet:
         self.menu_cut_id = menu_cut_id
         self.chara_id = chara_id
         self.extra = extra
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.gatya_set_id = dict_data.get("gatya_set_id", self.gatya_set_id)
+        self.banner_enabled = dict_data.get("banner_enabled", self.banner_enabled)
+        self.ticket_item_id = dict_data.get("ticket_item_id", self.ticket_item_id)
+        self.anime_id = dict_data.get("anime_id", self.anime_id)
+        self.btn_cut_id = dict_data.get("btn_cut_id", self.btn_cut_id)
+        self.series_id = dict_data.get("series_id", self.series_id)
+        self.menu_cut_id = dict_data.get("menu_cut_id", self.menu_cut_id)
+        self.chara_id = dict_data.get("chara_id", self.chara_id)
+        self.extra = dict_data.get("extra", self.extra)
+
+    @staticmethod
+    def create_empty(gatya_set_id: int) -> "GatyaOptionSet":
+        return GatyaOptionSet(
+            gatya_set_id,
+            False,
+            0,
+            0,
+            0,
+            0,
+            0,
+            None,
+            [],
+        )
 
 
 class GatyaOptions:
@@ -240,6 +331,21 @@ class GatyaOptions:
             csv.lines.append(aline)
         game_data.set_file(file_name, csv.to_data())
 
+    def apply_dict(self, dict_data: dict[str, Any]):
+        options = dict_data.get("options")
+        if options is not None:
+            current_options = self.options.copy()
+            modded_options = mods.bc_mod.ModEditDictHandler(
+                options, current_options
+            ).get_dict(convert_int=True)
+            for id, modded_option in modded_options:
+                option = current_options.get(id)
+                if option is None:
+                    option = GatyaOptionSet.create_empty(id)
+                option.apply_dict(modded_option)
+                current_options[id] = option
+            self.options = current_options
+
     @staticmethod
     def create_empty(type: GatyaType) -> "GatyaOptions":
         return GatyaOptions(type, {})
@@ -260,6 +366,22 @@ class GatyaOptionsAll:
     def to_game_data(self, game_data: "pack.GamePacks"):
         for options in self.gatya_options.values():
             options.to_game_data(game_data)
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        gatya_options = dict_data.get("gatya_options")
+        if gatya_options is not None:
+            current_gatya_options = self.gatya_options.copy()
+            modded_gatya_options = mods.bc_mod.ModEditDictHandler(
+                gatya_options, current_gatya_options
+            ).get_dict()
+            for type, modded_gatya_option in modded_gatya_options:
+                type = GatyaType(type)
+                gatya_option = current_gatya_options.get(type)
+                if gatya_option is None:
+                    gatya_option = GatyaOptions.create_empty(type)
+                gatya_option.apply_dict(modded_gatya_option)
+                current_gatya_options[type] = gatya_option
+            self.gatya_options = current_gatya_options
 
     @staticmethod
     def create_empty() -> "GatyaOptionsAll":
@@ -292,6 +414,14 @@ class Gatya:
     def to_game_data(self, game_data: "pack.GamePacks"):
         self.gatya_options.to_game_data(game_data)
         self.gatya_data_sets.to_game_data(game_data)
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        gatya_options = dict_data.get("gatya_options")
+        if gatya_options is not None:
+            self.gatya_options.apply_dict(gatya_options)
+        gatya_data_sets = dict_data.get("gatya_data_sets")
+        if gatya_data_sets is not None:
+            self.gatya_data_sets.apply_dict(gatya_data_sets)
 
     @staticmethod
     def create_empty() -> "Gatya":

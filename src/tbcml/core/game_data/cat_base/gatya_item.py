@@ -1,6 +1,6 @@
-from typing import Optional
+from typing import Any, Optional
 from tbcml.core.game_data import pack
-from tbcml.core import io
+from tbcml.core import io, mods
 import enum
 
 
@@ -52,6 +52,45 @@ class GatyaItemBuyItem:
 
     def set_id(self, item_id: int) -> None:
         self.item_id = item_id
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.item_id = dict_data.get("item_id", self.item_id)
+        self.rarity = dict_data.get("rarity", self.rarity)
+        self.storage = dict_data.get("storage", self.storage)
+        self.sell_price = dict_data.get("sell_price", self.sell_price)
+        self.stage_drop_item_id = dict_data.get(
+            "stage_drop_item_id", self.stage_drop_item_id
+        )
+        self.quantity = dict_data.get("quantity", self.quantity)
+        self.server_id = dict_data.get("server_id", self.server_id)
+        category = dict_data.get("category")
+        if category is not None:
+            self.category = ItemBuyCategory(category)
+        self.index_in_category = dict_data.get(
+            "index_in_category", self.index_in_category
+        )
+        self.src_item_id = dict_data.get("src_item_id", self.src_item_id)
+        self.main_menu_type = dict_data.get("main_menu_type", self.main_menu_type)
+        self.gatya_ticket_id = dict_data.get("gatya_ticket_id", self.gatya_ticket_id)
+        self.comment = dict_data.get("comment", self.comment)
+
+    @staticmethod
+    def create_empty(item_id: int) -> "GatyaItemBuyItem":
+        return GatyaItemBuyItem(
+            item_id,
+            0,
+            False,
+            0,
+            0,
+            0,
+            0,
+            ItemBuyCategory.NONE,
+            0,
+            0,
+            0,
+            0,
+            "",
+        )
 
 
 class GatyaItemBuy:
@@ -130,6 +169,20 @@ class GatyaItemBuy:
     def create_empty() -> "GatyaItemBuy":
         return GatyaItemBuy({})
 
+    def apply_dict(self, dict_data: dict[str, Any]):
+        gatya_item_buys = dict_data.get("gatya_item_buys")
+        if gatya_item_buys is not None:
+            current_gatya_item_buys = self.gatya_item_buys
+            modded_gatya_item_buys = mods.bc_mod.ModEditDictHandler(
+                gatya_item_buys, current_gatya_item_buys
+            ).get_dict(convert_int=True)
+            for item_id, modded_item in modded_gatya_item_buys.items():
+                item = current_gatya_item_buys.get(item_id)
+                if item is None:
+                    item = GatyaItemBuyItem.create_empty(item_id)
+                item.apply_dict(modded_item)
+                self.set_item(item_id, item)
+
 
 class GatyaItemNameItem:
     def __init__(self, id: int, name: str, description: list[str]):
@@ -147,6 +200,14 @@ class GatyaItemNameItem:
 
     def set_id(self, id: int) -> None:
         self.id = id
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.name = dict_data.get("name", self.name)
+        self.description = dict_data.get("description", self.description)
+
+    @staticmethod
+    def create_empty(id: int) -> "GatyaItemNameItem":
+        return GatyaItemNameItem(id, "", [])
 
 
 class GatyaItemName:
@@ -202,6 +263,20 @@ class GatyaItemName:
     @staticmethod
     def create_empty() -> "GatyaItemName":
         return GatyaItemName({})
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        gatya_item_names = dict_data.get("gatya_item_names")
+        if gatya_item_names is not None:
+            current_gatya_item_names = self.gatya_item_names
+            modded_gatya_item_names = mods.bc_mod.ModEditDictHandler(
+                gatya_item_names, current_gatya_item_names
+            ).get_dict(convert_int=True)
+            for item_id, modded_item in modded_gatya_item_names.items():
+                item = current_gatya_item_names.get(item_id)
+                if item is None:
+                    item = GatyaItemNameItem.create_empty(item_id)
+                item.apply_dict(modded_item)
+                self.set_item(item_id, item)
 
 
 class GatyaItem:
@@ -260,6 +335,24 @@ class GatyaItem:
         self.gatya_item_buy_item.set_id(id)
         self.gatya_item_name_item.set_id(id)
 
+    @staticmethod
+    def create_empty(id: int) -> "GatyaItem":
+        return GatyaItem(
+            id,
+            GatyaItemBuyItem.create_empty(id),
+            GatyaItemNameItem.create_empty(id),
+            io.bc_image.BCImage.create_empty(),
+            io.bc_image.BCImage.create_empty(),
+        )
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        gatya_item_buy_item = dict_data.get("gatya_item_buy_item")
+        if gatya_item_buy_item is not None:
+            self.gatya_item_buy_item.apply_dict(gatya_item_buy_item)
+        gatya_item_name_item = dict_data.get("gatya_item_name_item")
+        if gatya_item_name_item is not None:
+            self.gatya_item_name_item.apply_dict(gatya_item_name_item)
+
 
 class GatyaItems:
     def __init__(self, items: dict[int, GatyaItem]):
@@ -310,6 +403,20 @@ class GatyaItems:
     @staticmethod
     def create_empty() -> "GatyaItems":
         return GatyaItems({})
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        items = dict_data.get("items")
+        if items is not None:
+            current_items = self.items.copy()
+            modded_items = mods.bc_mod.ModEditDictHandler(
+                items, current_items
+            ).get_dict(convert_int=True)
+            for id, modded_item in modded_items.items():
+                item = current_items.get(id)
+                if item is None:
+                    item = GatyaItem.create_empty(id)
+                item.apply_dict(modded_item)
+                self.set_item(id, item)
 
     def get_item_stage_drop_id(self, id: int) -> Optional[int]:
         item = self.get_item(id)
