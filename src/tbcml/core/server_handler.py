@@ -310,7 +310,7 @@ oPSxLzYw2sBjmwVooXMVr6GxEw==
         private_key = serialization.load_pem_private_key(
             self.cf_private_key.encode(), password=None, backend=default_backend()
         )
-        return private_key.sign(message.encode(), padding.PKCS1v15(), hashes.SHA1())
+        return private_key.sign(message.encode(), padding.PKCS1v15(), hashes.SHA1())  # type: ignore
 
     @staticmethod
     def aws_base64_encode(data: bytes) -> bytes:
