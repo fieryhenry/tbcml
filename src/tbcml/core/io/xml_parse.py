@@ -35,7 +35,10 @@ class XML:
 
     def set_attribute(self, path: str, attribute: str, value: str):
         attribute = self.get_attribute_name(attribute)
-        element = self.root.find(path)
+        if path == "manifest":
+            element = self.root
+        else:
+            element = self.root.find(path)
         if element is None:
             raise ValueError("Element not found")
         element.set(attribute, value)

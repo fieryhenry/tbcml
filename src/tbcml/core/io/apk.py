@@ -883,6 +883,35 @@ class Apk:
             manifest.set_attribute(path, "android:debuggable", "false")
         self.set_manifest(manifest)
 
+    def set_package_name(self, package_name: str):
+        manifest = self.parse_manifest()
+        manifest.set_attribute("manifest", "package", package_name)
+
+        strings_xml = self.extracted_path.add("res").add("values").add("strings.xml")
+        strings_o = xml_parse.XML(strings_xml.read())
+        strings = strings_o.get_elements("string")
+        for string in strings:
+            if string.get("name") == "package_name":
+                string.text = package_name
+                break
+        strings_o.to_file(strings_xml)
+
+        path = "application/provider"
+        for provider in manifest.get_elements(path):
+            attribute = manifest.get_attribute_name("android:authorities")
+            name = provider.get(attribute)
+            if name is None:
+                continue
+
+            parts = name.split(".")
+            if len(parts) < 2:
+                continue
+            end = parts[-1]
+
+            provider.set(attribute, package_name + "." + end)
+
+        self.set_manifest(manifest)
+
     def set_modded_html(self, mods: list["mods.bc_mod.Mod"]):
         template_file_name = "kisyuhen_01_top_en.html"
         template_file = (
@@ -894,9 +923,7 @@ class Apk:
         mod_html = ""
         for mod in mods:
             mod_url = f"https://tbcml.net/mods/{mod.name}"
-            mod_html += (
-                f'<a class="Buttonbig" href="{mod_url}">{mod.name}</a><br><br>'
-            )
+            mod_html += f'<a class="Buttonbig" href="{mod_url}">{mod.name}</a><br><br>'
         template_file = template_file.replace("{{modlist}}", mod_html)
         self.extracted_path.add("assets", template_file_name).write(
             data.Data(template_file)
