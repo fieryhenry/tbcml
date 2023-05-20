@@ -518,6 +518,7 @@ class GamePacks:
         game_data.cat_base.item_shop.ItemShop.apply_mod_to_game_data(mod, self)
         game_data.cat_base.cats.Cats.apply_mod_to_game_data(mod, self)
         game_data.cat_base.enemies.Enemies.apply_mod_to_game_data(mod, self)
+        game_data.gamototo.cannon.Castles.apply_mod_to_game_data(mod, self)
         Localizable.apply_mod_to_game_data(mod, self)
 
         for file_name, data in mod.game_files.items():
