@@ -1,12 +1,20 @@
-from typing import Optional
+from typing import Any, Optional
 from tbcml.core.game_data import pack
-from tbcml.core import io
+from tbcml.core import io, mods
 
 
 class Reward:
     def __init__(self, reward_id: int, reward_amout: int):
         self.reward_id = reward_id
         self.reward_amout = reward_amout
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.reward_id = dict_data.get("reward_id", self.reward_id)
+        self.reward_amout = dict_data.get("reward_amout", self.reward_amout)
+
+    @staticmethod
+    def create_empty() -> "Reward":
+        return Reward(0, 0)
 
 
 class RewardSet:
@@ -17,6 +25,27 @@ class RewardSet:
         self.reward_threshold = reward_threshold
         self.rewards = rewards
         self.text = text
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.index = dict_data.get("index", self.index)
+        self.reward_threshold = dict_data.get("reward_threshold", self.reward_threshold)
+        rewards = dict_data.get("rewards")
+        if rewards is not None:
+            current_rewards = {i: reward for i, reward in enumerate(self.rewards)}
+            modded_rewards = mods.bc_mod.ModEditDictHandler(
+                rewards, current_rewards
+            ).get_dict(convert_int=True)
+            for reward_id, modded_reward in modded_rewards.items():
+                reward = current_rewards.get(reward_id)
+                if reward is None:
+                    reward = Reward.create_empty()
+                    self.rewards.append(reward)
+                reward.apply_dict(modded_reward)
+        self.text = dict_data.get("text", self.text)
+
+    @staticmethod
+    def create_empty(id: int) -> "RewardSet":
+        return RewardSet(id, 0, [], "")
 
 
 class UserRankReward:
@@ -109,6 +138,22 @@ class UserRankReward:
 
         game_data.set_file(UserRankReward.get_file_name(), csv.to_data())
         game_data.set_file(UserRankReward.get_file_name_text(), tsv.to_data())
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        reward_sets = dict_data.get("reward_sets")
+        if reward_sets is not None:
+            current_reward_sets = {
+                i: reward_set for i, reward_set in self.reward_sets.items()
+            }
+            modded_reward_sets = mods.bc_mod.ModEditDictHandler(
+                reward_sets, current_reward_sets
+            ).get_dict(convert_int=True)
+            for reward_set_id, modded_reward_set in modded_reward_sets.items():
+                reward_set = current_reward_sets.get(reward_set_id)
+                if reward_set is None:
+                    reward_set = RewardSet.create_empty(reward_set_id)
+                    self.reward_sets[reward_set_id] = reward_set
+                reward_set.apply_dict(modded_reward_set)
 
     @staticmethod
     def create_empty() -> "UserRankReward":
