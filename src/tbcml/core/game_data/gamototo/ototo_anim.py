@@ -1,4 +1,5 @@
 import enum
+from typing import Any
 from tbcml.core.game_data import pack
 from tbcml.core import anim
 
@@ -59,6 +60,11 @@ class MainChara:
 
     def to_game_data(self, game_data: "pack.GamePacks"):
         self.model.save(game_data)
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        model = dict_data.get("model")
+        if model is not None:
+            self.model.apply_dict(model)
 
     @staticmethod
     def create_empty() -> "MainChara":
