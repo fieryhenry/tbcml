@@ -1,7 +1,7 @@
 import enum
-from typing import Optional
+from typing import Any, Optional
 from tbcml.core.game_data import pack
-from tbcml.core import io
+from tbcml.core import io, mods
 
 
 class StageNameNameType(enum.Enum):
@@ -184,6 +184,52 @@ class MapOption:
         self.hide_after_clear = hide_after_clear
         self.map_comment = map_comment
 
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.stage_id = dict_data.get("stage_id", self.stage_id)
+        self.map_index_type = MapIndexType.from_index(self.stage_id)
+        if self.map_index_type is not None:
+            self.map_name_type = self.map_index_type.get_map_name_type()
+            self.map_stage_data_name_type = (
+                self.map_index_type.get_map_stage_data_name_type()
+            )
+
+        self.number_of_stars = dict_data.get("number_of_stars", self.number_of_stars)
+        self.star_mult_1 = dict_data.get("star_mult_1", self.star_mult_1)
+        self.star_mult_2 = dict_data.get("star_mult_2", self.star_mult_2)
+        self.star_mult_3 = dict_data.get("star_mult_3", self.star_mult_3)
+        self.star_mult_4 = dict_data.get("star_mult_4", self.star_mult_4)
+        self.guerrilla_set = dict_data.get("guerrilla_set", self.guerrilla_set)
+        reset_type = dict_data.get("reset_type")
+        if reset_type is not None:
+            self.reset_type = ResetType[reset_type]
+        self.one_time_display = dict_data.get("one_time_display", self.one_time_display)
+        self.display_order = dict_data.get("display_order", self.display_order)
+        self.interval = dict_data.get("interval", self.interval)
+        self.challenge_flag = dict_data.get("challenge_flag", self.challenge_flag)
+        self.difficulty_mask = dict_data.get("difficulty_mask", self.difficulty_mask)
+        self.hide_after_clear = dict_data.get("hide_after_clear", self.hide_after_clear)
+        self.map_comment = dict_data.get("map_comment", self.map_comment)
+
+    @staticmethod
+    def create_empty(stage_id: int) -> "MapOption":
+        return MapOption(
+            stage_id,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            ResetType.NONE,
+            False,
+            0,
+            0,
+            False,
+            0,
+            False,
+            "",
+        )
+
 
 class MapOptions:
     def __init__(self, options: dict[int, MapOption]):
@@ -275,6 +321,20 @@ class MapOptions:
 
         game_data.set_file(MapOptions.get_file_name(), csv.to_data())
 
+    def apply_dict(self, dict_data: dict[str, Any]):
+        options = dict_data.get("options")
+        if options is not None:
+            current_options = self.options.copy()
+            modded_options = mods.bc_mod.ModEditDictHandler(
+                options, current_options
+            ).get_dict(convert_int=True)
+            for id, modded_option in modded_options.items():
+                option = current_options.get(id)
+                if option is None:
+                    option = MapOption.create_empty(id)
+                option.apply_dict(modded_option)
+                self.set(option)
+
     @staticmethod
     def create_empty() -> "MapOptions":
         return MapOptions({})
@@ -314,6 +374,34 @@ class EnemyRow:
         self.castle_1 = castle_1
         self.group = group
         self.kill_count = kill_count
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.enemy_id = dict_data.get("enemy_id", self.enemy_id)
+        self.total_spawn_count = dict_data.get(
+            "total_spawn_count", self.total_spawn_count
+        )
+        self.start_frame = dict_data.get("start_frame", self.start_frame)
+        self.min_spawn_interval = dict_data.get(
+            "min_spawn_interval", self.min_spawn_interval
+        )
+        self.max_spawn_interval = dict_data.get(
+            "max_spawn_interval", self.max_spawn_interval
+        )
+        self.spawn_base_percentage = dict_data.get(
+            "spawn_base_percentage", self.spawn_base_percentage
+        )
+        self.min_z = dict_data.get("min_z", self.min_z)
+        self.max_z = dict_data.get("max_z", self.max_z)
+        self.boss_flag = dict_data.get("boss_flag", self.boss_flag)
+        self.magnification = dict_data.get("magnification", self.magnification)
+        self.spawn_1 = dict_data.get("spawn_1", self.spawn_1)
+        self.castle_1 = dict_data.get("castle_1", self.castle_1)
+        self.group = dict_data.get("group", self.group)
+        self.kill_count = dict_data.get("kill_count", self.kill_count)
+
+    @staticmethod
+    def create_empty(index: int) -> "EnemyRow":
+        return EnemyRow(index, 0, 0, 0, 0, 0, 0, 0, 0, False, 0)
 
 
 class StageStats:
@@ -508,6 +596,60 @@ class StageStats:
             csv.lines[i + 2] = line
         game_data.set_file(file_name, csv.to_data())
 
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.castle_type = dict_data.get("castle_type", self.castle_type)
+        self.no_continues = dict_data.get("no_continues", self.no_continues)
+        self.ex_stage_prob = dict_data.get("ex_stage_prob", self.ex_stage_prob)
+        self.ex_stage_chapter_id = dict_data.get(
+            "ex_stage_chapter_id", self.ex_stage_chapter_id
+        )
+        self.ex_stage_stage_id = dict_data.get(
+            "ex_stage_stage_id", self.ex_stage_stage_id
+        )
+        self.stage_width = dict_data.get("stage_width", self.stage_width)
+        self.base_health = dict_data.get("base_health", self.base_health)
+        self.min_production_frames = dict_data.get(
+            "min_production_frames", self.min_production_frames
+        )
+        self.max_production_frames = dict_data.get(
+            "max_production_frames", self.max_production_frames
+        )
+        self.background_type = dict_data.get("background_type", self.background_type)
+        self.max_enemy_count = dict_data.get("max_enemy_count", self.max_enemy_count)
+        self.unused = dict_data.get("unused", self.unused)
+        enemies = dict_data.get("enemies")
+        if enemies is not None:
+            current_enemies = self.enemies.copy()
+            modded_enemies = mods.bc_mod.ModEditDictHandler(
+                enemies, current_enemies
+            ).get_dict(convert_int=True)
+            for index, modded_enemy in modded_enemies.items():
+                enemy = current_enemies.get(index)
+                if enemy is None:
+                    enemy = EnemyRow.create_empty(index)
+                enemy.apply_dict(modded_enemy)
+                self.enemies[index] = enemy
+
+    @staticmethod
+    def create_empty(stage_id: int, stage_index: int) -> "StageStats":
+        return StageStats(
+            stage_id,
+            stage_index,
+            0,
+            False,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            {},
+        )
+
 
 class Stage:
     def __init__(
@@ -541,6 +683,21 @@ class Stage:
         self.stage_stats.to_game_data(game_data)
         self.name_image.to_game_data(game_data)
 
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.stage_stats.apply_dict(dict_data)
+        self.name.apply_dict(dict_data)
+        self.name_image.apply_dict(dict_data)
+
+    @staticmethod
+    def create_empty(stage_id: int, stage_index: int) -> "Stage":
+        return Stage(
+            stage_id,
+            stage_index,
+            StageStats.create_empty(stage_id, stage_index),
+            StageName.create_empty(stage_id, stage_index),
+            StageNameImage.create_empty(stage_id, stage_index),
+        )
+
 
 class ItemDrop:
     def __init__(self, probability: int, item_id: int, amount: int):
@@ -548,12 +705,30 @@ class ItemDrop:
         self.amount = amount
         self.probability = probability
 
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.item_id = dict_data.get("item_id", self.item_id)
+        self.amount = dict_data.get("amount", self.amount)
+        self.probability = dict_data.get("probability", self.probability)
+
+    @staticmethod
+    def create_empty() -> "ItemDrop":
+        return ItemDrop(0, 0, 0)
+
 
 class TimeScoreReward:
     def __init__(self, score: int, item_id: int, amount: int):
         self.score = score
         self.item_id = item_id
         self.amount = amount
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.score = dict_data.get("score", self.score)
+        self.item_id = dict_data.get("item_id", self.item_id)
+        self.amount = dict_data.get("amount", self.amount)
+
+    @staticmethod
+    def create_empty() -> "TimeScoreReward":
+        return TimeScoreReward(0, 0, 0)
 
 
 class MapStageDataStage:
@@ -585,6 +760,61 @@ class MapStageDataStage:
 
     def clear_item_drops(self):
         self.item_drops = []
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.energy_cost = dict_data.get("energy_cost", self.energy_cost)
+        self.xp_gain = dict_data.get("xp_gain", self.xp_gain)
+        self.start_music = dict_data.get("start_music", self.start_music)
+        self.base_percentage_boss_music = dict_data.get(
+            "base_percentage_boss_music", self.base_percentage_boss_music
+        )
+        self.boss_music = dict_data.get("boss_music", self.boss_music)
+        self.rand = dict_data.get("rand", self.rand)
+        self.max_reward_claims = dict_data.get(
+            "max_reward_claims", self.max_reward_claims
+        )
+        item_drops = dict_data.get("item_drops")
+        if item_drops is not None:
+            current_item_drops = {i: item for i, item in enumerate(self.item_drops)}
+            modded_item_drops = mods.bc_mod.ModEditDictHandler(
+                item_drops, current_item_drops
+            ).get_dict(convert_int=True)
+            for i, modded_item in modded_item_drops.items():
+                item = current_item_drops.get(i)
+                if item is None:
+                    item = ItemDrop.create_empty()
+                    self.item_drops.append(item)
+                item.apply_dict(modded_item)
+        time_score_rewards = dict_data.get("time_score_rewards")
+        if time_score_rewards is not None:
+            current_time_score_rewards = {
+                i: item for i, item in enumerate(self.time_score_rewards)
+            }
+            modded_time_score_rewards = mods.bc_mod.ModEditDictHandler(
+                time_score_rewards, current_time_score_rewards
+            ).get_dict(convert_int=True)
+            for i, modded_time_score_reward in modded_time_score_rewards.items():
+                time_score_reward = current_time_score_rewards.get(i)
+                if time_score_reward is None:
+                    time_score_reward = TimeScoreReward.create_empty()
+                    self.time_score_rewards.append(time_score_reward)
+                time_score_reward.apply_dict(modded_time_score_reward)
+
+    @staticmethod
+    def create_empty(stage_id: int, stage_index: int) -> "MapStageDataStage":
+        return MapStageDataStage(
+            stage_id,
+            stage_index,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            [],
+            0,
+            [],
+        )
 
 
 class StageNameImage:
@@ -639,6 +869,19 @@ class StageNameImage:
             return
         game_data.set_file(file_name, self.image.to_data())
 
+    def apply_dict(self, dict_data: dict[str, Any]):
+        image = dict_data.get("image")
+        if image is not None:
+            self.image.apply_dict(image)
+
+    @staticmethod
+    def create_empty(stage_id: int, stage_index: int) -> "StageNameImage":
+        return StageNameImage(
+            stage_id,
+            stage_index,
+            io.bc_image.BCImage.create_empty(),
+        )
+
 
 class MapNameImage:
     def __init__(
@@ -687,6 +930,18 @@ class MapNameImage:
             return
         game_data.set_file(file_name, self.image.to_data())
 
+    def apply_dict(self, dict_data: dict[str, Any]):
+        image = dict_data.get("image")
+        if image is not None:
+            self.image.apply_dict(image)
+
+    @staticmethod
+    def create_empty(stage_id: int) -> "MapNameImage":
+        return MapNameImage(
+            stage_id,
+            io.bc_image.BCImage.create_empty(),
+        )
+
 
 class StageName:
     def __init__(
@@ -698,6 +953,17 @@ class StageName:
         self.stage_id = stage_id
         self.stage_index = stage_index
         self.name = name
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.name = dict_data.get("name", self.name)
+
+    @staticmethod
+    def create_empty(stage_id: int, stage_index: int) -> "StageName":
+        return StageName(
+            stage_id,
+            stage_index,
+            "",
+        )
 
 
 class StageNames:
@@ -711,6 +977,27 @@ class StageNames:
 
     def get(self, stage_index: int) -> Optional[StageName]:
         return self.names.get(stage_index)
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        names = dict_data.get("names")
+        if names is not None:
+            current_names = self.names.copy()
+            modded_names = mods.bc_mod.ModEditDictHandler(
+                names, current_names
+            ).get_dict(convert_int=True)
+            for stage_id, modded_name in modded_names.items():
+                stage = self.names.get(stage_id)
+                if stage is None:
+                    stage = StageName.create_empty(self.stage_id, stage_id)
+                    self.names[stage_id] = stage
+                stage.apply_dict(modded_name)
+
+    @staticmethod
+    def create_empty(stage_id: int) -> "StageNames":
+        return StageNames(
+            stage_id,
+            {},
+        )
 
 
 class StageNameSet:
@@ -808,6 +1095,20 @@ class StageNameSet:
     def get(self, stage_id: int) -> Optional[StageNames]:
         return self.names.get(stage_id)
 
+    def apply_dict(self, dict_data: dict[str, Any]):
+        names = dict_data.get("names")
+        if names is not None:
+            current_names = self.names.copy()
+            modded_names = mods.bc_mod.ModEditDictHandler(
+                names, current_names
+            ).get_dict(convert_int=True)
+            for stage_id, modded_name in modded_names.items():
+                stage = self.names.get(stage_id)
+                if stage is None:
+                    stage = StageNames.create_empty(stage_id)
+                    self.names[stage_id] = stage
+                stage.apply_dict(modded_name)
+
     @staticmethod
     def create_empty(base_stage_id: int) -> "StageNameSet":
         return StageNameSet(base_stage_id, {})
@@ -856,6 +1157,26 @@ class StageNameSets:
             set = StageNameSet(stage_id, {})
             self.sets[map_index_type] = set
         set.names[stage_id] = names
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        sets = dict_data.get("sets")
+        if sets is not None:
+            current_sets = self.sets.copy()
+            current_sets = {key.value: value for key, value in current_sets.items()}
+            modded_sets = mods.bc_mod.ModEditDictHandler(sets, current_sets).get_dict(
+                convert_int=True
+            )
+            for base_stage_id, modded_set in modded_sets.items():
+                base_stage_id = MapIndexType(base_stage_id)
+                set = self.sets.get(base_stage_id)
+                if set is None:
+                    set = StageNameSet.create_empty(base_stage_id.value)
+                    self.sets[base_stage_id] = set
+                set.apply_dict(modded_set)
+
+    @staticmethod
+    def create_empty() -> "StageNameSets":
+        return StageNameSets({})
 
 
 class StageOptionSet:
@@ -910,6 +1231,30 @@ class StageOptionSet:
             self.cat_group_id,
         ]
 
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.support = dict_data.get("support", self.support)
+        self.stage_index = dict_data.get("stage_index", self.stage_index)
+        self.rarity_limit = dict_data.get("rarity_limit", self.rarity_limit)
+        self.deploy_limit = dict_data.get("deploy_limit", self.deploy_limit)
+        self.row_limit = dict_data.get("row_limit", self.row_limit)
+        self.cost_limit_lower = dict_data.get("cost_limit_lower", self.cost_limit_lower)
+        self.cost_limit_upper = dict_data.get("cost_limit_upper", self.cost_limit_upper)
+        self.cat_group_id = dict_data.get("cat_group_id", self.cat_group_id)
+
+    @staticmethod
+    def create_empty() -> "StageOptionSet":
+        return StageOptionSet(
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+        )
+
 
 class StageOption:
     def __init__(
@@ -961,6 +1306,20 @@ class StageOption:
         set.map_id = map_id
         self.sets[map_id] = set
 
+    def apply_dict(self, dict_data: dict[str, Any]):
+        sets = dict_data.get("sets")
+        if sets is not None:
+            current_sets = self.sets.copy()
+            modded_sets = mods.bc_mod.ModEditDictHandler(sets, current_sets).get_dict(
+                convert_int=True
+            )
+            for map_id, modded_set in modded_sets.items():
+                set = current_sets.get(map_id)
+                if set is None:
+                    set = StageOptionSet.create_empty()
+                set.apply_dict(modded_set)
+                self.set(map_id, set)
+
     @staticmethod
     def create_empty() -> "StageOption":
         return StageOption({})
@@ -986,6 +1345,28 @@ class MapStageData:
         self.unknown_2 = unknown_2
         self.map_pattern = map_pattern
         self.data = data
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.map_number = dict_data.get("map_number", self.map_number)
+        self.item_reward_type = dict_data.get("item_reward_type", self.item_reward_type)
+        self.score_reward_type = dict_data.get(
+            "score_reward_type", self.score_reward_type
+        )
+        self.unknown_1 = dict_data.get("unknown_1", self.unknown_1)
+        self.unknown_2 = dict_data.get("unknown_2", self.unknown_2)
+        self.map_pattern = dict_data.get("map_pattern", self.map_pattern)
+        data = dict_data.get("data")
+        if data is not None:
+            current_data = self.data.copy()
+            modded_data = mods.bc_mod.ModEditDictHandler(data, current_data).get_dict(
+                convert_int=True
+            )
+            for stage_id, modded_stage in modded_data.items():
+                stage = current_data.get(stage_id)
+                if stage is None:
+                    stage = MapStageDataStage.create_empty(self.stage_id, stage_id)
+                stage.apply_dict(modded_stage)
+                self.data[stage_id] = stage
 
     @staticmethod
     def get_file_name(stage_id: int):
@@ -1156,6 +1537,19 @@ class MapStageData:
 
         game_data.set_file(file_name, csv.to_data())
 
+    @staticmethod
+    def create_empty(stage_id: int) -> "MapStageData":
+        return MapStageData(
+            stage_id,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            {},
+        )
+
 
 class Map:
     def __init__(
@@ -1213,6 +1607,33 @@ class Map:
     def get_names(self) -> StageNames:
         return StageNames(self.stage_id, {k: v.name for k, v in self.stages.items()})
 
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.map_option.apply_dict(dict_data)
+        self.map_stage_data.apply_dict(dict_data)
+        self.map_name_image.apply_dict(dict_data)
+        stages = dict_data.get("stages")
+        if stages is not None:
+            current_stages = self.stages.copy()
+            modded_stages = mods.bc_mod.ModEditDictHandler(
+                stages, current_stages
+            ).get_dict(convert_int=True)
+            for stage_id, modded_stage in modded_stages.items():
+                stage = self.stages.get(stage_id)
+                if stage is None:
+                    stage = Stage.create_empty(self.stage_id, stage_id)
+                stage.apply_dict(modded_stage)
+                self.stages[stage_id] = stage
+
+    @staticmethod
+    def create_empty(stage_id: int) -> "Map":
+        return Map(
+            stage_id,
+            MapOption.create_empty(stage_id),
+            MapStageData.create_empty(stage_id),
+            {},
+            MapNameImage.create_empty(stage_id),
+        )
+
 
 class Maps:
     def __init__(self, maps: dict[int, Map]):
@@ -1226,6 +1647,8 @@ class Maps:
 
     @staticmethod
     def from_game_data(game_data: "pack.GamePacks"):
+        if game_data.maps is not None:
+            return game_data.maps
         map_options = MapOptions.from_game_data(game_data)
         stage_name_sets = StageNameSets.from_game_data(game_data)
         stage_options = StageOption.from_game_data(game_data)
@@ -1244,7 +1667,9 @@ class Maps:
                 continue
             maps[stage_id] = map
             stage_id += 1
-        return Maps(maps)
+        mapso = Maps(maps)
+        game_data.maps = mapso
+        return mapso
 
     def to_game_data(self, game_data: "pack.GamePacks"):
         map_options = MapOptions({})
@@ -1265,9 +1690,30 @@ class Maps:
     def get_maps_json_file_name() -> "io.path.Path":
         return io.path.Path("maps").add("maps.json")
 
+    def apply_dict(self, dict_data: dict[str, Any]):
+        maps = dict_data.get("maps")
+        if maps is not None:
+            current_maps = self.maps.copy()
+            modded_maps = mods.bc_mod.ModEditDictHandler(maps, current_maps).get_dict(
+                convert_int=True
+            )
+            for stage_id, modded_map in modded_maps.items():
+                map = self.maps.get(stage_id)
+                if map is None:
+                    map = Map.create_empty(stage_id)
+                map.apply_dict(modded_map)
+                self.maps[stage_id] = map
+
     @staticmethod
     def create_empty() -> "Maps":
         return Maps({})
 
     def set_map(self, map: Map):
         self.maps[map.map_option.stage_id] = map
+
+    @staticmethod
+    def apply_mod_to_game_data(mod: "mods.bc_mod.Mod", game_data: "pack.GamePacks"):
+        current_maps = Maps.from_game_data(game_data)
+        current_maps.apply_dict(mod.mod_edits)
+
+        current_maps.to_game_data(game_data)

@@ -1329,6 +1329,8 @@ class Castles:
 
     @staticmethod
     def from_game_data(game_data: "pack.GamePacks"):
+        if game_data.castles is not None:
+            return game_data.castles
         recipe_description_data = RecipeDescription.from_game_data(game_data)
         recipe_unlock_data = CastleRecipeUnlock.from_game_data(game_data)
         recipe_data_unlock_data = CastleRecipeUnlockData.from_game_data(game_data)
@@ -1354,7 +1356,9 @@ class Castles:
             if missing_data:
                 break
             castles[id] = castle
-        return Castles(castles, castle_effects_data)
+        castleso = Castles(castles, castle_effects_data)
+        game_data.castles = castleso
+        return castleso
 
     def to_game_data(self, game_data: "pack.GamePacks"):
         recipe_description_data = RecipeDescription.create_empty()

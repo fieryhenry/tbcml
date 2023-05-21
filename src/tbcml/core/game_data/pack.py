@@ -3,6 +3,8 @@ from tbcml.core import io, country_code, crypto, langs, mods, game_version, game
 import copy
 
 from tbcml.core.game_data.cat_base import cats, enemies, item_shop
+from tbcml.core.game_data.gamototo import cannon
+from tbcml.core.game_data.map import map
 
 
 class GameFile:
@@ -355,6 +357,8 @@ class GamePacks:
         self.enemies: Optional[enemies.Enemies] = None
         self.enemy_stats: Optional[enemies.StatsData] = None
         self.enemy_names: Optional[enemies.Names] = None
+        self.castles: Optional[cannon.Castles] = None
+        self.maps: Optional[map.Maps] = None
 
     def get_pack(self, pack_name: str) -> Optional[PackFile]:
         """Get a pack from the game packs.
@@ -519,6 +523,7 @@ class GamePacks:
         game_data.cat_base.cats.Cats.apply_mod_to_game_data(mod, self)
         game_data.cat_base.enemies.Enemies.apply_mod_to_game_data(mod, self)
         game_data.gamototo.cannon.Castles.apply_mod_to_game_data(mod, self)
+        game_data.map.map.Maps.apply_mod_to_game_data(mod, self)
         Localizable.apply_mod_to_game_data(mod, self)
 
         for file_name, data in mod.game_files.items():
