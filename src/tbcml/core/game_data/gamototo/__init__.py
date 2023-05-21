@@ -1,5 +1,4 @@
 from tbcml.core.game_data.gamototo import (
-    castle_recipe,
     engineers,
     item_pack,
     cannon,
@@ -7,7 +6,6 @@ from tbcml.core.game_data.gamototo import (
 )
 
 __all__ = [
-    "castle_recipe",
     "engineers",
     "item_pack",
     "cannon",
