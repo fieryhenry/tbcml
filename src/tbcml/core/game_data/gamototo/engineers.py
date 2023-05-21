@@ -1,4 +1,5 @@
 import enum
+from typing import Any
 from tbcml.core.game_data import pack
 from tbcml.core import io, anim
 
@@ -27,6 +28,10 @@ class Engineer:
             EngineerLimit.create_empty(),
             EngineerAnim.create_empty(),
         )
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.limit.limit = dict_data.get("limit", self.limit.limit)
+        self.anim.apply_dict(dict_data["anim"])
 
 
 class EngineerLimit:
@@ -58,6 +63,9 @@ class EngineerLimit:
     @staticmethod
     def create_empty() -> "EngineerLimit":
         return EngineerLimit(0)
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.limit = dict_data.get("limit", self.limit)
 
 
 class EngineerAnim:
@@ -120,3 +128,6 @@ class EngineerAnim:
     def create_empty() -> "EngineerAnim":
         an = anim.model.Model.create_empty()
         return EngineerAnim(an)
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.model.apply_dict(dict_data["model"])
