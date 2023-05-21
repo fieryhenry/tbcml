@@ -244,3 +244,6 @@ class Path:
 
     def get_absolute_path(self) -> "Path":
         return Path(os.path.abspath(self.path))
+
+    def remove_prefix(self, prefix: str) -> "Path":
+        return Path(self.path.removeprefix(prefix))

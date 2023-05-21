@@ -1,7 +1,7 @@
 import enum
 from typing import Any, Optional
 from tbcml.core.game_data import pack
-from tbcml.core import io
+from tbcml.core import io, mods
 
 
 class SchemeType(enum.Enum):
@@ -22,32 +22,16 @@ class Item:
         self.id = id
         self.value = value
 
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "drop_category": self.drop_category.value,
-            "id": self.id,
-            "value": self.value,
-        }
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.drop_category = DropCategory(
+            dict_data.get("drop_category", self.drop_category.value)
+        )
+        self.id = dict_data.get("id", self.id)
+        self.value = dict_data.get("value", self.value)
 
     @staticmethod
-    def deserialize(data: dict[str, Any]) -> "Item":
-        return Item(
-            DropCategory(data["drop_category"]),
-            data["id"],
-            data["value"],
-        )
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Item):
-            return False
-        return (
-            self.drop_category == other.drop_category
-            and self.id == other.id
-            and self.value == other.value
-        )
-
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
+    def create_empty() -> "Item":
+        return Item(DropCategory.ITEM, 0, 0)
 
 
 class SchemeItem:
@@ -56,48 +40,31 @@ class SchemeItem:
         self.type = type
         self.items = items
 
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "id": self.id,
-            "type": self.type.value,
-            "items": [i.serialize() for i in self.items],
-        }
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.id = dict_data.get("id", self.id)
+        self.type = SchemeType(dict_data.get("type", self.type.value))
+        items = dict_data.get("items")
+        if items is not None:
+            current_items_dict = {i: i for i in range(len(self.items))}
+            modded_items = mods.bc_mod.ModEditDictHandler(
+                items, current_items_dict
+            ).get_dict(convert_int=True)
+            for item_id, modded_item in modded_items:
+                try:
+                    item = self.items[int(item_id)]
+                except IndexError:
+                    item = Item.create_empty()
+                    self.items.append(item)
+                item.apply_dict(modded_item)
 
     @staticmethod
-    def deserialize(data: dict[str, Any]) -> "SchemeItem":
-        return SchemeItem(
-            data["id"],
-            SchemeType(data["type"]),
-            [Item.deserialize(i) for i in data["items"]],
-        )
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, SchemeItem):
-            return False
-        return (
-            self.id == other.id
-            and self.type == other.type
-            and self.items == other.items
-        )
-
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
+    def create_empty(id: int) -> "SchemeItem":
+        return SchemeItem(id, SchemeType.URL_SCHEME, [])
 
 
 class SchemeItems:
     def __init__(self, items: dict[int, SchemeItem]):
         self.items = items
-
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "items": {str(k): v.serialize() for k, v in self.items.items()},
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any]) -> "SchemeItems":
-        return SchemeItems(
-            {int(k): SchemeItem.deserialize(v) for k, v in data["items"].items()},
-        )
 
     @staticmethod
     def get_file_name():
@@ -111,13 +78,13 @@ class SchemeItems:
         items: dict[int, SchemeItem] = {}
         csv = io.bc_csv.CSV(tsv_data.dec_data, delimeter="\t")
         for line in csv.lines[1:]:
-            id = line[0].to_int()
-            type = SchemeType(line[1].to_int())
+            id = int(line[0])
+            type = SchemeType(int(line[1]))
             items[id] = SchemeItem(id, type, [])
             for i in range(2, len(line), 3):
-                category = DropCategory(line[i].to_int())
+                category = DropCategory(int(line[i]))
                 items[id].items.append(
-                    Item(category, line[i + 1].to_int(), line[i + 2].to_int())
+                    Item(category, int(line[i + 1]), int(line[i + 2]))
                 )
         return SchemeItems(items)
 
@@ -128,16 +95,16 @@ class SchemeItems:
         csv = io.bc_csv.CSV(tsv_data.dec_data, delimeter="\t")
         remaining = self.items.copy()
         for i, line in enumerate(csv.lines[1:]):
-            item = self.items.get(line[0].to_int())
+            item = self.items.get(int(line[0]))
             if item is None:
                 continue
 
-            line[1].set(item.type.value)
+            line[1] = str(item.type.value)
             for item_index, it in enumerate(item.items):
-                line_data: list[Any] = []
-                line_data.append(it.drop_category.value)
-                line_data.append(it.id)
-                line_data.append(it.value)
+                line_data: list[str] = []
+                line_data.append(str(it.drop_category.value))
+                line_data.append(str(it.id))
+                line_data.append(str(it.value))
                 try:
                     line[item_index * 3 + 2] = line_data[0]
                     line[item_index * 3 + 3] = line_data[1]
@@ -145,36 +112,34 @@ class SchemeItems:
                 except IndexError:
                     line.extend(line_data)
 
-            csv.set_line(i + 1, line)
+            csv.lines[i + 1] = line
             del remaining[item.id]
 
         for item in remaining.values():
-            line: list[Any] = []
-            line.append(item.id)
-            line.append(item.type.value)
+            line: list[str] = []
+            line.append(str(item.id))
+            line.append(str(item.type.value))
             for item_index, item in enumerate(item.items):
-                line.append(item.drop_category.value)
-                line.append(item.id)
-                line.append(item.value)
+                line.append(str(item.drop_category.value))
+                line.append(str(item.id))
+                line.append(str(item.value))
             csv.lines.append(line)
 
         game_data.set_file(SchemeItems.get_file_name(), csv.to_data())
 
-    @staticmethod
-    def get_json_file_path() -> "io.path.Path":
-        return io.path.Path("catbase").add("scheme_items.json")
-
-    def add_to_zip(self, zip_file: "io.zip.Zip"):
-        json = io.json_file.JsonFile.from_object(self.serialize())
-        zip_file.add_file(SchemeItems.get_json_file_path(), json.to_data())
-
-    @staticmethod
-    def from_zip(zip: "io.zip.Zip") -> "SchemeItems":
-        json_data = zip.get_file(SchemeItems.get_json_file_path())
-        if json_data is None:
-            return SchemeItems.create_empty()
-        json = io.json_file.JsonFile.from_data(json_data)
-        return SchemeItems.deserialize(json.get_json())
+    def apply_dict(self, dict_data: dict[str, Any]):
+        items = dict_data.get("items")
+        if items is not None:
+            current_items = self.items.copy()
+            modded_items = mods.bc_mod.ModEditDictHandler(
+                items, current_items
+            ).get_dict(convert_int=True)
+            for item_id, modded_item in modded_items:
+                item = self.items.get(int(item_id))
+                if item is None:
+                    item = SchemeItem.create_empty(int(item_id))
+                    self.items[item.id] = item
+                item.apply_dict(modded_item)
 
     @staticmethod
     def create_empty() -> "SchemeItems":
@@ -186,25 +151,3 @@ class SchemeItems:
     def set_item(self, item: SchemeItem, id: int):
         item.id = id
         self.items[item.id] = item
-
-    def import_scheme_items(self, other: "SchemeItems", game_data: "pack.GamePacks"):
-        """_summary_
-
-        Args:
-            other (SchemeItems): _description_
-            game_data (pack.GamePacks): The game data to check if the imported data is different from the game data. This is used to prevent overwriting the current data with base game data.
-        """
-        gd_items = self.from_game_data(game_data)
-        all_keys = set(gd_items.items.keys())
-        all_keys.update(other.items.keys())
-        all_keys.update(self.items.keys())
-        for id in all_keys:
-            gd_item = gd_items.get_item(id)
-            other_item = other.get_item(id)
-            if other_item is None:
-                continue
-            if gd_item is not None:
-                if gd_item != other_item:
-                    self.set_item(other_item, id)
-            else:
-                self.set_item(other_item, id)

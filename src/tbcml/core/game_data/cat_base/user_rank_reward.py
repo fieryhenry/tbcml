@@ -1,6 +1,6 @@
 from typing import Any, Optional
 from tbcml.core.game_data import pack
-from tbcml.core import io
+from tbcml.core import io, mods
 
 
 class Reward:
@@ -8,35 +8,13 @@ class Reward:
         self.reward_id = reward_id
         self.reward_amout = reward_amout
 
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "reward_id": self.reward_id,
-            "reward_amout": self.reward_amout,
-        }
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.reward_id = dict_data.get("reward_id", self.reward_id)
+        self.reward_amout = dict_data.get("reward_amout", self.reward_amout)
 
     @staticmethod
-    def deserialize(data: dict[str, Any]) -> "Reward":
-        return Reward(
-            data["reward_id"],
-            data["reward_amout"],
-        )
-
-    def __str__(self) -> str:
-        return f"Reward {self.reward_id} x{self.reward_amout}"
-
-    def __repr__(self) -> str:
-        return f"Reward({self.reward_id}, {self.reward_amout})"
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Reward):
-            return False
-        return (
-            self.reward_id == other.reward_id
-            and self.reward_amout == other.reward_amout
-        )
-
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
+    def create_empty() -> "Reward":
+        return Reward(0, 0)
 
 
 class RewardSet:
@@ -48,53 +26,31 @@ class RewardSet:
         self.rewards = rewards
         self.text = text
 
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "reward_threshold": self.reward_threshold,
-            "rewards": [v.serialize() for v in self.rewards],
-            "text": self.text,
-        }
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.index = dict_data.get("index", self.index)
+        self.reward_threshold = dict_data.get("reward_threshold", self.reward_threshold)
+        rewards = dict_data.get("rewards")
+        if rewards is not None:
+            current_rewards = {i: reward for i, reward in enumerate(self.rewards)}
+            modded_rewards = mods.bc_mod.ModEditDictHandler(
+                rewards, current_rewards
+            ).get_dict(convert_int=True)
+            for reward_id, modded_reward in modded_rewards.items():
+                reward = current_rewards.get(reward_id)
+                if reward is None:
+                    reward = Reward.create_empty()
+                    self.rewards.append(reward)
+                reward.apply_dict(modded_reward)
+        self.text = dict_data.get("text", self.text)
 
     @staticmethod
-    def deserialize(data: dict[str, Any], index: int) -> "RewardSet":
-        return RewardSet(
-            index,
-            data["reward_threshold"],
-            [Reward.deserialize(v) for v in data["rewards"]],
-            data["text"],
-        )
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, RewardSet):
-            return False
-        return (
-            self.index == other.index
-            and self.reward_threshold == other.reward_threshold
-            and self.rewards == other.rewards
-            and self.text == other.text
-        )
-
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
+    def create_empty(id: int) -> "RewardSet":
+        return RewardSet(id, 0, [], "")
 
 
 class UserRankReward:
     def __init__(self, reward_sets: dict[int, RewardSet]):
         self.reward_sets = reward_sets
-
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "reward_sets": {str(k): v.serialize() for k, v in self.reward_sets.items()},
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any]) -> "UserRankReward":
-        return UserRankReward(
-            {
-                int(k): RewardSet.deserialize(v, int(k))
-                for k, v in data["reward_sets"].items()
-            },
-        )
 
     @staticmethod
     def get_file_name() -> str:
@@ -120,17 +76,17 @@ class UserRankReward:
         reward_sets: dict[int, RewardSet] = {}
         csv = io.bc_csv.CSV(csv_data.dec_data)
         for i, line in enumerate(csv):
-            reward_threshold = line[0].to_int()
+            reward_threshold = int(line[0])
             try:
-                text = tsv.lines[i][0].to_str()
+                text = tsv.lines[i][0]
             except IndexError:
                 text = ""
             rewards: list[Reward] = []
             for i in range(1, len(line), 2):
-                reward_id = line[i].to_int()
+                reward_id = int(line[i])
                 if reward_id == -1:
                     break
-                reward_amout = line[i + 1].to_int()
+                reward_amout = int(line[i + 1])
                 rewards.append(Reward(reward_id, reward_amout))
             reward_sets[i] = RewardSet(i, reward_threshold, rewards, text)
 
@@ -150,54 +106,54 @@ class UserRankReward:
         csv = io.bc_csv.CSV(csv_data.dec_data)
         remaining_rewards = self.reward_sets.copy()
         for i, line in enumerate(csv):
-            reward_threshold = line[0].to_int()
+            reward_threshold = int(line[0])
             try:
                 rewards = self.reward_sets[i].rewards
             except KeyError:
                 continue
-            line_n: list[int] = []
-            line_n.append(reward_threshold)
+            line_n: list[str] = []
+            line_n.append(str(reward_threshold))
             for j, reward in enumerate(rewards):
-                line_n.append(reward.reward_id)
-                line_n.append(reward.reward_amout)
+                line_n.append(str(reward.reward_id))
+                line_n.append(str(reward.reward_amout))
                 if j == len(rewards) - 1:
-                    line_n.append(-1)
+                    line_n.append(str(-1))
 
-            csv.set_line(i, line_n)
+            csv.lines[i] = line_n
             del remaining_rewards[i]
 
             tsv_line_n = [self.reward_sets[i].text]
-            tsv.set_line(i, tsv_line_n)
+            tsv.lines[i] = tsv_line_n
 
         for reward_set in remaining_rewards.values():
-            line_i: list[int] = [reward_set.reward_threshold]
+            line_i: list[str] = [str(reward_set.reward_threshold)]
             for reward in reward_set.rewards:
-                line_i.append(reward.reward_id)
-                line_i.append(reward.reward_amout)
-            line_i.append(-1)
-            csv.add_line(line_i)
+                line_i.append(str(reward.reward_id))
+                line_i.append(str(reward.reward_amout))
+            line_i.append(str(-1))
+            csv.lines.append(line_i)
 
             tsv_line_i = [reward_set.text]
-            tsv.add_line(tsv_line_i)
+            tsv.lines.append(tsv_line_i)
 
         game_data.set_file(UserRankReward.get_file_name(), csv.to_data())
         game_data.set_file(UserRankReward.get_file_name_text(), tsv.to_data())
 
-    @staticmethod
-    def get_json_file_path() -> "io.path.Path":
-        return io.path.Path("catbase").add("user_rank_reward.json")
-
-    def add_to_zip(self, zip_file: "io.zip.Zip"):
-        json = io.json_file.JsonFile.from_object(self.serialize())
-        zip_file.add_file(UserRankReward.get_json_file_path(), json.to_data())
-
-    @staticmethod
-    def from_zip(zip: "io.zip.Zip") -> "UserRankReward":
-        json_data = zip.get_file(UserRankReward.get_json_file_path())
-        if json_data is None:
-            return UserRankReward.create_empty()
-        json = io.json_file.JsonFile.from_data(json_data)
-        return UserRankReward.deserialize(json.get_json())
+    def apply_dict(self, dict_data: dict[str, Any]):
+        reward_sets = dict_data.get("reward_sets")
+        if reward_sets is not None:
+            current_reward_sets = {
+                i: reward_set for i, reward_set in self.reward_sets.items()
+            }
+            modded_reward_sets = mods.bc_mod.ModEditDictHandler(
+                reward_sets, current_reward_sets
+            ).get_dict(convert_int=True)
+            for reward_set_id, modded_reward_set in modded_reward_sets.items():
+                reward_set = current_reward_sets.get(reward_set_id)
+                if reward_set is None:
+                    reward_set = RewardSet.create_empty(reward_set_id)
+                    self.reward_sets[reward_set_id] = reward_set
+                reward_set.apply_dict(modded_reward_set)
 
     @staticmethod
     def create_empty() -> "UserRankReward":
@@ -209,28 +165,3 @@ class UserRankReward:
     def set_reward(self, index: int, reward: RewardSet) -> None:
         reward.index = index
         self.reward_sets[index] = reward
-
-    def import_user_rank_rewards(
-        self, other: "UserRankReward", game_data: "pack.GamePacks"
-    ) -> None:
-        """_summary_
-
-        Args:
-            other (UserRankReward): _description_
-            game_data (pack.GamePacks): The game data to check if the imported data is different from the game data. This is used to prevent overwriting the current data with base game data.
-        """
-        gd_rewards = self.from_game_data(game_data)
-        all_keys = set(gd_rewards.reward_sets.keys())
-        all_keys.update(other.reward_sets.keys())
-        all_keys.update(self.reward_sets.keys())
-
-        for id in all_keys:
-            gd_reward = gd_rewards.get_reward(id)
-            other_reward = other.get_reward(id)
-            if other_reward is None:
-                continue
-            if gd_reward is not None:
-                if gd_reward != other_reward:
-                    self.set_reward(id, other_reward)
-            else:
-                self.set_reward(id, other_reward)

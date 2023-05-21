@@ -48,3 +48,13 @@ class Zip:
 
     def extract(self, path: "path.Path"):
         self.zip.extractall(path.to_str_forwards())
+
+    def get_paths(self) -> list["path.Path"]:
+        return [path.Path(name) for name in self.zip.namelist()]
+
+    def get_paths_in_folder(self, folder_name: str) -> list["path.Path"]:
+        return [
+            path.Path(name)
+            for name in self.zip.namelist()
+            if name.startswith(folder_name)
+        ]

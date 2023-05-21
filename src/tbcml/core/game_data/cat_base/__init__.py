@@ -1,5 +1,4 @@
 from tbcml.core.game_data.cat_base import (
-    cat_base,
     cats,
     enemies,
     gatya,
@@ -11,7 +10,6 @@ from tbcml.core.game_data.cat_base import (
 )
 
 __all__ = [
-    "cat_base",
     "cats",
     "enemies",
     "gatya",

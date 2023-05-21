@@ -1,7 +1,7 @@
 import enum
 from typing import Any
 from tbcml.core.game_data import pack
-from tbcml.core import io
+from tbcml.core import io, mods
 
 
 class DropType(enum.Enum):
@@ -17,23 +17,16 @@ class DropItem:
     def get_percentage(self) -> float:
         return self.probability / 100
 
-    def serialize(self) -> dict[str, int]:
-        return {
-            "item_id": self.item_id,
-            "probability": self.probability,
-        }
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.item_id = dict_data.get("item_id", self.item_id)
+        self.probability = dict_data.get("probability", self.probability)
 
     @staticmethod
-    def deserialize(data: dict[str, int]) -> "DropItem":
-        return DropItem(data["item_id"], data["probability"])
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, DropItem):
-            return False
-        return self.item_id == other.item_id and self.probability == other.probability
-
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
+    def create_empty(item_id: int) -> "DropItem":
+        return DropItem(
+            item_id,
+            0,
+        )
 
 
 class ItemPack:
@@ -45,35 +38,31 @@ class ItemPack:
         self.unknown = unknown
         self.items = items
 
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "type": self.type.value,
-            "user_rank": self.user_rank,
-            "unknown": self.unknown,
-            "items": {k: v.serialize() for k, v in self.items.items()},
-        }
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.type = DropType(dict_data.get("type", self.type.value))
+        self.user_rank = dict_data.get("user_rank", self.user_rank)
+        self.unknown = dict_data.get("unknown", self.unknown)
+        items = dict_data.get("items")
+        if items is not None:
+            current_items = self.items.copy()
+            modded_items = mods.bc_mod.ModEditDictHandler(
+                items, current_items
+            ).get_dict(convert_int=True)
+            for item_id, modded_item in modded_items:
+                item = self.items.get(item_id)
+                if item is None:
+                    item = DropItem.create_empty(item_id)
+                    self.items[item_id] = item
+                item.apply_dict(modded_item)
 
     @staticmethod
-    def deserialize(data: dict[str, Any]) -> "ItemPack":
+    def create_empty() -> "ItemPack":
         return ItemPack(
-            DropType(data["type"]),
-            data["user_rank"],
-            data["unknown"],
-            {k: DropItem.deserialize(v) for k, v in data["items"].items()},
+            DropType.ITEM_PACK,
+            0,
+            0,
+            {},
         )
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, ItemPack):
-            return False
-        return (
-            self.type == other.type
-            and self.user_rank == other.user_rank
-            and self.unknown == other.unknown
-            and self.items == other.items
-        )
-
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
 
 
 class ItemPacks:
@@ -92,12 +81,12 @@ class ItemPacks:
         csv = io.bc_csv.CSV(file.dec_data)
         packs: dict[int, ItemPack] = {}
         for i, line in enumerate(csv.lines[1:]):
-            type = DropType(line[0].to_int())
-            user_rank = line[1].to_int()
-            unknown = line[2].to_int()
+            type = DropType(int(line[0]))
+            user_rank = int(line[1])
+            unknown = int(line[2])
             items: dict[int, DropItem] = {}
             for j in range(3, len(line)):
-                item_id = line[j].to_int()
+                item_id = int(line[j])
                 items[j - 3] = DropItem(item_id, 0)
             packs[i] = ItemPack(type, user_rank, unknown, items)
         return ItemPacks(packs)
@@ -113,57 +102,46 @@ class ItemPacks:
                 pack = self.packs[i]
             except KeyError:
                 continue
-            line[0].set(pack.type.value)
-            line[1].set(pack.user_rank)
-            line[2].set(pack.unknown)
+            line[0] = str(pack.type.value)
+            line[1] = str(pack.user_rank)
+            line[2] = str(pack.unknown)
             for j in range(3, len(line)):
                 try:
                     item = pack.items[j - 3]
                 except KeyError:
                     continue
-                line[j].set(item.item_id)
-            csv.set_line(i + 1, line)
+                line[j] = str(item.item_id)
+            csv.lines[i + 1] = line
             del remaining_item_packs[i]
 
         for i, pack in remaining_item_packs.items():
-            line = [pack.type.value, pack.user_rank, pack.unknown]
+            line = [
+                str(pack.type.value),
+                str(pack.user_rank),
+                str(pack.unknown),
+            ]
             for j in range(3, len(line)):
                 try:
                     item = pack.items[j - 3]
                 except KeyError:
                     continue
-                line.append(item.item_id)
-            csv.add_line(line)
+                line.append(str(item.item_id))
+            csv.lines.append(line)
         game_data.set_file(self.get_file_name(), csv.to_data())
 
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "packs": {k: v.serialize() for k, v in self.packs.items()},
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any]) -> "ItemPacks":
-        return ItemPacks({k: ItemPack.deserialize(v) for k, v in data["packs"].items()})
-
-    @staticmethod
-    def get_zip_folder() -> "io.path.Path":
-        return io.path.Path("gamototo").add("ototo")
-
-    @staticmethod
-    def get_zip_json_file_path() -> "io.path.Path":
-        return ItemPacks.get_zip_folder().add("item_packs.json")
-
-    def add_to_zip(self, zip: "io.zip.Zip"):
-        json = io.json_file.JsonFile.from_object(self.serialize())
-        zip.add_file(self.get_zip_json_file_path(), json.to_data())
-
-    @staticmethod
-    def from_zip(zip: "io.zip.Zip") -> "ItemPacks":
-        file = zip.get_file(ItemPacks.get_zip_json_file_path())
-        if file is None:
-            return ItemPacks.create_empty()
-        json = io.json_file.JsonFile.from_data(file)
-        return ItemPacks.deserialize(json.json)
+    def apply_dict(self, dict_data: dict[str, Any]):
+        packs = dict_data.get("packs")
+        if packs is not None:
+            current_packs = self.packs.copy()
+            modded_packs = mods.bc_mod.ModEditDictHandler(
+                packs, current_packs
+            ).get_dict(convert_int=True)
+            for pack_id, modded_pack in modded_packs:
+                pack = self.packs.get(pack_id)
+                if pack is None:
+                    pack = ItemPack.create_empty()
+                    self.packs[pack_id] = pack
+                pack.apply_dict(modded_pack)
 
     @staticmethod
     def create_empty() -> "ItemPacks":
@@ -171,25 +149,3 @@ class ItemPacks:
 
     def set_item_pack(self, pack: ItemPack):
         self.packs[pack.user_rank] = pack
-
-    def import_item_packs(self, item_packs: "ItemPacks", game_data: "pack.GamePacks"):
-        """_summary_
-
-        Args:
-            item_packs (ItemPacks): _description_
-            game_data (pack.GamePacks): The game data to check if the imported data is different from the game data. This is used to prevent overwriting the current data with base game data.
-        """
-        gd_item_packs = ItemPacks.from_game_data(game_data)
-        all_keys = set(self.packs.keys())
-        all_keys.update(item_packs.packs.keys())
-        all_keys.update(gd_item_packs.packs.keys())
-        for rank in all_keys:
-            other_pack = item_packs.packs.get(rank)
-            gd_pack = gd_item_packs.packs.get(rank)
-            if other_pack is None:
-                continue
-            if gd_pack is not None:
-                if other_pack != gd_pack:
-                    self.packs[rank] = other_pack
-            else:
-                self.packs[rank] = other_pack

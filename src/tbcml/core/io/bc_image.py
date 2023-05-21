@@ -14,6 +14,7 @@ class BCImage:
         self.__image: Optional[Image.Image] = None
         self._qimg: Optional[QImage] = None
         self.__original_data = self.data.copy()
+        self.__original_img: Optional[Image.Image] = None
 
     @property
     def image(self) -> Image.Image:
@@ -23,10 +24,13 @@ class BCImage:
             else:
                 self.__image = Image.open(self.data.to_bytes_io())
             self.__original_img = self.__image.copy()
+        if self.__original_img is None:
+            self.__original_img = self.__image.copy()
         return self.__image
 
     def copy(self):
-        return BCImage(self.data.copy())
+        data = self.to_data()
+        return BCImage(data)
 
     @staticmethod
     def create_empty():
@@ -95,30 +99,37 @@ class BCImage:
         self.image.save(path.to_str(), format="PNG")
 
     def to_data(self):
+        if self.image.tobytes() == self.__original_img.tobytes():  # type: ignore
+            return self.__original_data
         bytes_io = data.Data().to_bytes_io()
-        self.image.save(bytes_io, format="PNG", compress_level=0)
+        self.image.save(bytes_io, format="PNG")
         return data.Data(bytes_io.getvalue())
 
-    def serialize(self) -> dict[str, Any]:
-        return {"data": self.to_data().to_base_64()}
-
     @staticmethod
-    def deserialize(dt: dict[str, Any]) -> "BCImage":
-        return BCImage(data.Data.from_base_64(dt["data"]))
+    def from_base_64(base_64: str) -> "BCImage":
+        return BCImage(data.Data.from_base_64(base_64))
+
+    def to_base_64(self) -> str:
+        return self.to_data().to_base_64()
+
+    def apply_dict(self, dt: dict[str, Any]):
+        self.data = data.Data.from_base_64(dt["__image__"])
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"__image__": self.to_base_64()}
 
     def paste(self, image: "BCImage", x: int, y: int):
         self.image.paste(image.image, (x, y), image.image)
 
+    def paste_rect(self, image: "BCImage", rect: "anim.rect.Rect"):
+        self.image.paste(
+            image.image,
+            (rect.x, rect.y, rect.x + rect.width, rect.y + rect.height),
+            image.image,
+        )
+
     def putpixel(self, x: int, y: int, color: tuple[int, int, int, int]):
         self.image.putpixel((x, y), color)
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, BCImage):
-            return False
-        return self.to_data() == other.to_data()
-
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
 
     def fix_libpng_warning(self):
         """Fixes the libpng warning: iCCP: known incorrect sRGB profile"""

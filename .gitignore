@@ -5,9 +5,12 @@ __pycache__
 .vscode
 .mypy_cache
 /test.py
+/test_profile.py
 /decrypted
 /dec
 /test_mod.zip
 /.frida
 /row.py
 /script.js
+*.pack.bcuzip
+/out

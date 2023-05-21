@@ -177,61 +177,6 @@ class Prob:
         return random.randint(0, 100) <= self.percent
 
 
-class Range:
-    def __init__(self, range: int):
-        self.range = range
-
-    @staticmethod
-    def from_raw(raw: int) -> "Range":
-        return Range(raw * 4)
-
-    @property
-    def raw(self) -> int:
-        return self.range // 4
-
-    @raw.setter
-    def raw(self, raw: int) -> None:
-        self.range = raw * 4
-
-    def __str__(self) -> str:
-        return f"{self.range} units"
-
-    def __repr__(self) -> str:
-        return str(self)
-
-    def __add__(self, other: "Range") -> "Range":
-        return Range(self.range + other.range)
-
-    def copy(self) -> "Range":
-        return Range(self.range)
-
-
-class Speed:
-    def __init__(self, speed: int):
-        self.speed = speed
-
-    @staticmethod
-    def from_raw(raw: int) -> "Speed":
-        return Speed(raw * 2)
-
-    @property
-    def raw(self) -> int:
-        return self.speed // 2
-
-    @raw.setter
-    def raw(self, raw: int) -> None:
-        self.speed = raw * 2
-
-    def __str__(self) -> str:
-        return f"{self.speed} units per frame"
-
-    def __repr__(self) -> str:
-        return str(self)
-
-    def copy(self) -> "Speed":
-        return Speed(self.speed)
-
-
 class Knockback:
     """Represents a knockback probability."""
 
@@ -1002,8 +947,8 @@ class Attack:
         foreswing: Frames,
         use_ability: bool,
         long_distance_flag: bool,
-        long_distance_start: Range,
-        long_distance_range: Range,
+        long_distance_start: int,
+        long_distance_range: int,
     ):
         """Initializes a new Attack object.
 
@@ -1049,18 +994,18 @@ class Attack:
             Frames(foreswing),
             use_ability,
             long_distance_flag,
-            Range.from_raw(long_distance_start),
-            Range.from_raw(long_distance_range),
+            long_distance_start,
+            long_distance_range,
         )
 
-    def set_ld(self, long_distance_start: Range, long_distance_range: Range):
+    def set_ld(self, long_distance_start: int, long_distance_range: int):
         """Sets the long distance values of the attack.
 
         Args:
             long_distance_start (int): Start range of the long distance attack.
             long_distance_range (int): Range of the long distance attack. The end range is long_distance_start + long_distance_range.
         """
-        if long_distance_start.raw == 0 and long_distance_range.raw == 0:
+        if long_distance_start == 0 and long_distance_range == 0:
             self.long_distance_flag = False
         else:
             self.long_distance_flag = True
@@ -1378,8 +1323,8 @@ class Surge:
     def __init__(
         self,
         prob: Prob,
-        start: Range,
-        range: Range,
+        start: int,
+        range: int,
         level: int,
     ):
         """Initializes a new Surge object.
@@ -1413,7 +1358,7 @@ class Surge:
         Returns:
             Surge: The new Surge object.
         """
-        return Surge(Prob(prob), Range.from_raw(start), Range.from_raw(range), level)
+        return Surge(Prob(prob), start, range, level)
 
     def __str__(self) -> str:
         """Gets a string representation of the Surge object.
@@ -1421,7 +1366,7 @@ class Surge:
         Returns:
             str: The string representation of the Surge object.
         """
-        return f"{self.prob} chance to surge at level {self.level} by {self.range}-{(self.range + self.start)}"
+        return f"{self.prob} chance to surge at level {self.level} by {self.start//4}-{(self.range//4 + self.start//4)}"
 
     def __repr__(self) -> str:
         """Gets a string representation of the Surge object.

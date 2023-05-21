@@ -1,7 +1,7 @@
 from typing import Any, Optional
 from tbcml.core.game_data.cat_base import unit
 from tbcml.core.game_data import pack
-from tbcml.core import io, anim
+from tbcml.core import io, anim, mods
 
 
 class Stats:
@@ -9,11 +9,6 @@ class Stats:
         self.enemy_id = enemy_id
         raw_data = self.extend(raw_data)
         self.assign(raw_data)
-
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "raw_data": self.to_raw_data(),
-        }
 
     def extend(self, raw_data: list[int]):
         length = 102
@@ -32,22 +27,15 @@ class Stats:
         ]
         return any(to_check)
 
-    @staticmethod
-    def deserialize(data: dict[str, Any], enemy_id: int) -> "Stats":
-        return Stats(
-            enemy_id,
-            data["raw_data"],
-        )
-
     def assign(self, raw_data: list[int]):
         self.hp = raw_data[0]
         self.kbs = raw_data[1]
-        self.speed = unit.Speed.from_raw(raw_data[2])
+        self.speed = raw_data[2]
         self.attack_interval = unit.Frames.from_pair_frames(raw_data[4])
-        self.range = unit.Range.from_raw(raw_data[5])
+        self.range = raw_data[5]
         self.money_drop = raw_data[6]
         self.collision_start = raw_data[7]
-        self.collision_width = unit.Range.from_raw(raw_data[8])
+        self.collision_width = raw_data[8]
         self.unused = raw_data[9]
         self.red = bool(raw_data[10])
         self.area_attack = bool(raw_data[11])
@@ -136,13 +124,13 @@ class Stats:
         return [
             self.hp,  # 0
             self.kbs,  # 1
-            self.speed.raw,  # 2
+            self.speed,  # 2
             self.attack_1.damage,  # 3
             self.attack_interval.pair_frames,  # 4
-            self.range.raw,  # 5
+            self.range,  # 5
             self.money_drop,  # 6
             self.collision_start,  # 7
-            self.collision_width.raw,  # 8
+            self.collision_width,  # 8
             self.unused,  # 9
             int(self.red),  # 10
             int(self.area_attack),  # 11
@@ -169,8 +157,8 @@ class Stats:
             self.strengthen.hp_percent,  # 32
             self.strengthen.multiplier_percent,  # 33
             self.survive_lethal_strike.prob.percent,  # 34
-            self.attack_1.long_distance_start.raw,  # 35
-            self.attack_1.long_distance_range.raw,  # 36
+            self.attack_1.long_distance_start,  # 35
+            self.attack_1.long_distance_range,  # 36
             int(self.wave_immunity),  # 37
             int(self.wave_blocker),  # 38
             int(self.knockback_immunity),  # 39
@@ -216,57 +204,49 @@ class Stats:
             self.toxic.prob.percent,  # 79
             self.toxic.hp_percent,  # 80
             self.surge.prob.percent,  # 81
-            self.surge.start.raw,  # 82
-            self.surge.range.raw,  # 83
+            self.surge.start,  # 82
+            self.surge.range,  # 83
             self.surge.level,  # 84
             int(self.surge_immunity),  # 85
             int(self.wave.is_mini),  # 86
             self.shield.hp,  # 87
             self.shield.percent_heal_kb,  # 88
             self.death_surge.prob.percent,  # 89
-            self.death_surge.start.raw,  # 90
-            self.death_surge.range.raw,  # 91
+            self.death_surge.start,  # 90
+            self.death_surge.range,  # 91
             self.death_surge.level,  # 92
             int(self.aku),  # 93
             int(self.baron),  # 94
             int(self.attack_2.long_distance_flag),  # 95
-            self.attack_2.long_distance_start.raw,  # 96
-            self.attack_2.long_distance_range.raw,  # 97
+            self.attack_2.long_distance_start,  # 96
+            self.attack_2.long_distance_range,  # 97
             int(self.attack_3.long_distance_flag),  # 98
-            self.attack_3.long_distance_start.raw,  # 99
-            self.attack_3.long_distance_range.raw,  # 100
+            self.attack_3.long_distance_start,  # 99
+            self.attack_3.long_distance_range,  # 100
             int(self.behemoth),  # 101
         ]
 
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Stats):
-            return False
-        return self.to_raw_data() == other.to_raw_data()
+    def apply_dict(self, dict_data: dict[str, Any]):
+        raw_stats = dict_data.get("raw_stats")
+        if raw_stats is not None:
+            current_raw_stats = self.to_raw_data()
+            mod_stats = mods.bc_mod.ModEditDictHandler(
+                raw_stats, current_raw_stats
+            ).get_dict(True)
+            for stat_id, stat_value in mod_stats.items():
+                current_raw_stats[stat_id] = mods.bc_mod.ModEditValueHandler(
+                    stat_value, current_raw_stats[stat_id]
+                ).get_value()
+            self.assign(current_raw_stats)
 
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
+    @staticmethod
+    def create_empty(enemy_id: int) -> "Stats":
+        return Stats(enemy_id, [])
 
 
 class StatsData:
     def __init__(self, stats: dict[int, Stats]):
         self.stats = stats
-
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "stats": {
-                str(enemy_id): stats.serialize()
-                for enemy_id, stats in self.stats.items()
-            },
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any]) -> "StatsData":
-        return StatsData(
-            {
-                int(enemy_id): Stats.deserialize(stats_data, int(enemy_id))
-                for enemy_id, stats_data in data["stats"].items()
-            },
-        )
 
     @staticmethod
     def get_file_name() -> str:
@@ -274,6 +254,8 @@ class StatsData:
 
     @staticmethod
     def from_game_data(game_data: "pack.GamePacks") -> "StatsData":
+        if game_data.enemy_stats is not None:
+            return game_data.enemy_stats
         stats_data = game_data.find_file(StatsData.get_file_name())
         if stats_data is None:
             return StatsData.create_empty()
@@ -281,8 +263,10 @@ class StatsData:
         csv = io.bc_csv.CSV(stats_data.dec_data)
         for enemy_id, line in enumerate(csv.lines):
             enemy_id -= 2
-            stats[enemy_id] = Stats(enemy_id, io.data.Data.data_list_int_list(line))
-        return StatsData(stats)
+            stats[enemy_id] = Stats(enemy_id, [int(x) for x in line])
+        enemy_stats = StatsData(stats)
+        game_data.enemy_stats = enemy_stats
+        return enemy_stats
 
     def to_game_data(self, game_data: "pack.GamePacks"):
         stats_data = game_data.find_file(StatsData.get_file_name())
@@ -290,7 +274,7 @@ class StatsData:
             return None
         csv = io.bc_csv.CSV(stats_data.dec_data)
         for enemy in self.stats.values():
-            csv.set_line(enemy.enemy_id + 2, enemy.to_raw_data())
+            csv.lines[enemy.enemy_id + 2] = [str(x) for x in enemy.to_raw_data()]
 
         game_data.set_file(StatsData.get_file_name(), csv.to_data())
 
@@ -301,31 +285,11 @@ class StatsData:
     def create_empty() -> "StatsData":
         return StatsData({})
 
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, StatsData):
-            return False
-        return self.stats == other.stats
-
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
-
 
 class Model:
     def __init__(self, enemy_id: int, model: "anim.model.Model"):
         self.enemy_id = enemy_id
         self.model = model
-
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "model": self.model.serialize(),
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any], enemy_id: int) -> "Model":
-        return Model(
-            enemy_id,
-            anim.model.Model.deserialize(data["model"]),
-        )
 
     @staticmethod
     def get_enemy_id_str(enemy_id: int) -> str:
@@ -382,27 +346,19 @@ class Model:
         self.model.set_unit_id(enemy_id)
         self.model.set_unit_form("e")
 
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Model):
-            return False
-        return self.enemy_id == other.enemy_id and self.model == other.model
+    def apply_dict(self, dict_data: dict[str, Any]):
+        model = dict_data.get("model")
+        if model is not None:
+            self.model.apply_dict(model)
 
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
+    @staticmethod
+    def create_empty(enemy_id: int) -> "Model":
+        return Model(enemy_id, anim.model.Model.create_empty())
 
 
 class Names:
     def __init__(self, names: dict[int, str]):
         self.names = names
-
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "names": self.names,
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any]) -> "Names":
-        return Names(data["names"])
 
     @staticmethod
     def get_file_name() -> str:
@@ -410,6 +366,8 @@ class Names:
 
     @staticmethod
     def from_game_data(game_data: "pack.GamePacks") -> "Names":
+        if game_data.enemy_names is not None:
+            return game_data.enemy_names
         names_data = game_data.find_file(Names.get_file_name())
         if names_data is None:
             return Names.create_empty()
@@ -417,10 +375,12 @@ class Names:
         csv = io.bc_csv.CSV(names_data.dec_data, delimeter="\t", remove_empty=False)
         for enemy_id, line in enumerate(csv.lines):
             try:
-                names[enemy_id] = line[0].to_str()
+                names[enemy_id] = line[0]
             except IndexError:
                 pass
-        return Names(names)
+        enemy_names = Names(names)
+        game_data.enemy_names = enemy_names
+        return enemy_names
 
     def to_game_data(self, game_data: "pack.GamePacks"):
         names_data = game_data.find_file(Names.get_file_name())
@@ -428,7 +388,7 @@ class Names:
             return None
         csv = io.bc_csv.CSV(names_data.dec_data, delimeter="\t", remove_empty=False)
         for enemy_id, name in self.names.items():
-            csv.set_line(enemy_id, [name])
+            csv.lines[enemy_id] = [name]
 
         game_data.set_file(Names.get_file_name(), csv.to_data())
 
@@ -442,27 +402,10 @@ class Names:
     def create_empty() -> "Names":
         return Names({})
 
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Names):
-            return False
-        return self.names == other.names
-
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
-
 
 class Descriptions:
     def __init__(self, descriptions: dict[int, list[str]]):
         self.descriptions = descriptions
-
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "descriptions": self.descriptions,
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any]) -> "Descriptions":
-        return Descriptions(data["descriptions"])
 
     @staticmethod
     def get_file_name(lang: str) -> str:
@@ -483,7 +426,7 @@ class Descriptions:
             remove_empty=False,
         )
         for enemy_id, line in enumerate(csv.lines):
-            descriptions[enemy_id] = io.data.Data.data_list_string_list(line)
+            descriptions[enemy_id] = line
         return Descriptions(descriptions)
 
     def to_game_data(self, game_data: "pack.GamePacks", names: dict[int, str]):
@@ -503,7 +446,7 @@ class Descriptions:
             if names[enemy_id] and "%s" not in description[0]:
                 line.append("%s")
             line.extend(description)
-            csv.set_line(enemy_id, line)
+            csv.lines[enemy_id] = line
 
         game_data.set_file(
             Descriptions.get_file_name(game_data.localizable.get_lang()), csv.to_data()
@@ -518,14 +461,6 @@ class Descriptions:
     @staticmethod
     def create_empty() -> "Descriptions":
         return Descriptions({})
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Descriptions):
-            return False
-        return self.descriptions == other.descriptions
-
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
 
 
 class Enemy:
@@ -550,26 +485,6 @@ class Enemy:
         self.description = description
         self.anim = anim
         self.enemy_icon = enemy_icon
-
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "stats": self.stats.serialize(),
-            "name": self.name,
-            "description": self.description,
-            "anim": self.anim.serialize(),
-            "enemy_icon": self.enemy_icon.serialize(),
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any], enemy_id: int) -> "Enemy":
-        return Enemy(
-            enemy_id,
-            Stats.deserialize(data["stats"], enemy_id),
-            data["name"],
-            data["description"],
-            Model.deserialize(data["anim"], enemy_id),
-            io.bc_image.BCImage.deserialize(data["enemy_icon"]),
-        )
 
     @staticmethod
     def get_enemy_icon_name(enemy_id: int) -> str:
@@ -616,45 +531,48 @@ class Enemy:
         self.stats.enemy_id = enemy_id
         self.anim.set_enemy_id(enemy_id)
 
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Enemy):
-            return False
-        return (
-            self.enemy_id == other.enemy_id
-            and self.stats == other.stats
-            and self.name == other.name
-            and self.description == other.description
-            and self.anim == other.anim
-            and self.enemy_icon == other.enemy_icon
-        )
+    def apply_dict(self, dict_data: dict[str, Any]):
+        stats = dict_data.get("stats")
+        if stats is not None:
+            self.stats.apply_dict(stats)
 
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
+        name = dict_data.get("name")
+        if name is not None:
+            self.name = name
+
+        description = dict_data.get("description")
+        if description is not None:
+            self.description = description
+
+        anim = dict_data.get("anim")
+        if anim is not None:
+            self.anim.apply_dict(anim)
+
+        enemy_icon = dict_data.get("enemy_icon")
+        if enemy_icon is not None:
+            self.enemy_icon = enemy_icon
+
+    @staticmethod
+    def create_empty(enemy_id: int) -> "Enemy":
+        return Enemy(
+            enemy_id,
+            Stats.create_empty(enemy_id),
+            "",
+            [],
+            Model.create_empty(enemy_id),
+            io.bc_image.BCImage.create_empty(),
+            None,
+        )
 
 
 class Enemies:
     def __init__(self, enemies: dict[int, Enemy]):
         self.enemies = enemies
 
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "enemies": {
-                str(enemy_id): enemy.serialize()
-                for enemy_id, enemy in self.enemies.items()
-            }
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any]) -> "Enemies":
-        return Enemies(
-            {
-                int(enemy_id): Enemy.deserialize(enemy_data, int(enemy_id))
-                for enemy_id, enemy_data in data["enemies"].items()
-            }
-        )
-
     @staticmethod
     def from_game_data(game_data: "pack.GamePacks") -> "Enemies":
+        if game_data.enemies is not None:
+            return game_data.enemies
         stats = StatsData.from_game_data(game_data)
         names = Names.from_game_data(game_data)
         descriptions = Descriptions.from_game_data(game_data)
@@ -665,7 +583,9 @@ class Enemies:
             )
             if enemy is not None:
                 enemies[enemy_id] = enemy
-        return Enemies(enemies)
+        enemies_o = Enemies(enemies)
+        game_data.enemies = enemies_o
+        return enemies_o
 
     def to_game_data(self, game_data: "pack.GamePacks"):
         stats = StatsData(
@@ -682,22 +602,6 @@ class Enemies:
             enemy.to_game_data(game_data)
 
     @staticmethod
-    def get_enemies_json_file_name() -> "io.path.Path":
-        return io.path.Path("catbase").add("enemies.json")
-
-    def add_to_zip(self, zip: "io.zip.Zip"):
-        enemies_json = io.json_file.JsonFile.from_object(self.serialize())
-        zip.add_file(Enemies.get_enemies_json_file_name(), enemies_json.to_data())
-
-    @staticmethod
-    def from_zip(zip: "io.zip.Zip") -> "Enemies":
-        enemies_json_file = zip.get_file(Enemies.get_enemies_json_file_name())
-        if enemies_json_file is None:
-            return Enemies.create_empty()
-        enemies_json = io.json_file.JsonFile.from_data(enemies_json_file)
-        return Enemies.deserialize(enemies_json.json)
-
-    @staticmethod
     def create_empty() -> "Enemies":
         return Enemies({})
 
@@ -707,24 +611,25 @@ class Enemies:
     def set_enemy(self, enemy: Enemy):
         self.enemies[enemy.enemy_id] = enemy
 
-    def import_enemies(self, other: "Enemies", game_data: "pack.GamePacks"):
-        """_summary_
+    @staticmethod
+    def apply_mod_to_game_data(mod: "mods.bc_mod.Mod", game_data: "pack.GamePacks"):
+        enemies_data = mod.mod_edits.get("enemies")
+        if enemies_data is None:
+            return
 
-        Args:
-            other (Enemies): _description_
-            game_data (pack.GamePacks): The game data to check if the imported data is different from the game data. This is used to prevent overwriting the current data with base game data.
-        """
-        gd_enemies = Enemies.from_game_data(game_data)
-        all_keys = set(self.enemies.keys())
-        all_keys.update(other.enemies.keys())
-        all_keys.update(gd_enemies.enemies.keys())
-        for enemy_id in all_keys:
-            other_enemy = other.get_enemy(enemy_id)
-            gd_enemy = gd_enemies.get_enemy(enemy_id)
-            if other_enemy is None:
-                continue
-            if gd_enemy is not None:
-                if other_enemy != gd_enemy:
-                    self.set_enemy(other_enemy)
-            else:
-                self.set_enemy(other_enemy)
+        enemies_dict: dict[int, Enemy] = {}
+
+        current_enemies = Enemies.from_game_data(game_data)
+        mod_enemies = mods.bc_mod.ModEditDictHandler(
+            enemies_data, current_enemies.enemies
+        ).get_dict(convert_int=True)
+
+        for enemy_id, enemy_data in mod_enemies.items():
+            game_enemy = current_enemies.get_enemy(enemy_id)
+            if game_enemy is None:
+                game_enemy = Enemy.create_empty(enemy_id)
+            game_enemy.apply_dict(enemy_data)
+            enemies_dict[enemy_id] = game_enemy
+
+        enemies = Enemies(enemies_dict)
+        enemies.to_game_data(game_data)

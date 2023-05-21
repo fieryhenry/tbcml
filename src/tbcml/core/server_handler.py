@@ -146,14 +146,14 @@ class ServerFileHandler:
             found = True
             hashes_equal = False
             for row in tsv:
-                name = row[0].to_str().strip()
+                name = row[0].strip()
                 if not name or ord(name[0]) == 65279 or name.isdigit():
                     continue
                 path = io.apk.Apk.get_server_path(self.apk.country_code).add(name)
                 if not path.exists():
                     found = False
                     break
-                md5_hash = row[2].to_str().strip()
+                md5_hash = row[2].strip()
                 file_hash = (
                     crypto.Hash(crypto.HashAlgorithm.MD5).get_hash(path.read()).to_hex()
                 )
@@ -310,7 +310,7 @@ oPSxLzYw2sBjmwVooXMVr6GxEw==
         private_key = serialization.load_pem_private_key(
             self.cf_private_key.encode(), password=None, backend=default_backend()
         )
-        return private_key.sign(message.encode(), padding.PKCS1v15(), hashes.SHA1())
+        return private_key.sign(message.encode(), padding.PKCS1v15(), hashes.SHA1())  # type: ignore
 
     @staticmethod
     def aws_base64_encode(data: bytes) -> bytes:

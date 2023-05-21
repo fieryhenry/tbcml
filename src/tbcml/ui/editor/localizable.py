@@ -455,7 +455,6 @@ class TextEditor(QtWidgets.QWidget):
 
     def setup_data(self):
         self.localizable = game_data.pack.Localizable.from_game_data(self.game_packs)
-        self.localizable.import_localizable(self.mod.localizable, self.game_packs)
 
     def fill_table(self):
         self.localizable.sort()

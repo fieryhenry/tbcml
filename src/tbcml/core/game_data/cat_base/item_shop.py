@@ -1,6 +1,6 @@
 from typing import Any, Optional
 from tbcml.core.game_data import pack
-from tbcml.core import io, anim
+from tbcml.core import io, anim, mods
 
 
 class Item:
@@ -35,91 +35,33 @@ class Item:
         self.category_name = category_name
         self.rect_id = rect_id
 
-    def serialize(self) -> dict[str, Any]:
-        """Serialize the Item to a dict.
-
-        Returns:
-            dict[str, Any]: The serialized Item.
-        """
-        return {
-            "shop_id": self.shop_id,
-            "gatya_item_id": self.gatya_item_id,
-            "count": self.count,
-            "price": self.price,
-            "draw_item_value": self.draw_item_value,
-            "category_name": self.category_name,
-            "rect_id": self.rect_id,
-        }
+    def apply_dict(self, dict_data: dict[str, Any]):
+        gatya_item_id = dict_data.get("gatya_item_id")
+        if gatya_item_id is not None:
+            self.gatya_item_id = mods.bc_mod.ModEditValueHandler(
+                gatya_item_id, self.gatya_item_id
+            ).get_value()
+        count = dict_data.get("count")
+        if count is not None:
+            self.count = mods.bc_mod.ModEditValueHandler(count, self.count).get_value()
+        price = dict_data.get("price")
+        if price is not None:
+            self.price = mods.bc_mod.ModEditValueHandler(price, self.price).get_value()
+        draw_item_value = dict_data.get("draw_item_value")
+        if draw_item_value is not None:
+            self.draw_item_value = bool(draw_item_value)
+        category_name = dict_data.get("category_name")
+        if category_name is not None:
+            self.category_name = str(category_name)
+        rect_id = dict_data.get("rect_id")
+        if rect_id is not None:
+            self.rect_id = mods.bc_mod.ModEditValueHandler(
+                rect_id, self.rect_id
+            ).get_value()
 
     @staticmethod
-    def deserialize(data: dict[str, Any]) -> "Item":
-        """Deserialize an Item from a dict.
-
-        Args:
-            data (dict[str, Any]): The serialized Item.
-
-        Returns:
-            Item: The deserialized Item.
-        """
-        item = Item(
-            data["shop_id"],
-            data["gatya_item_id"],
-            data["count"],
-            data["price"],
-            data["draw_item_value"],
-            data["category_name"],
-            data["rect_id"],
-        )
-        return item
-
-    def __str__(self) -> str:
-        """Get a string representation of the Item.
-
-        Returns:
-            str: The string representation of the Item.
-        """
-        return f"Item(shop_id={self.shop_id}, gatya_item_id={self.gatya_item_id}, count={self.count}, price={self.price}, draw_item_value={self.draw_item_value}, category_name={self.category_name}, rect_id={self.rect_id})"
-
-    def __repr__(self) -> str:
-        """Get a string representation of the Item.
-
-        Returns:
-            str: The string representation of the Item.
-        """
-        return str(self)
-
-    def __eq__(self, other: object) -> bool:
-        """Check if two Items are equal.
-
-        Args:
-            other (object): The other Item.
-
-        Returns:
-            bool: Whether the two Items are equal.
-        """
-
-        if not isinstance(other, Item):
-            return False
-        return (
-            self.shop_id == other.shop_id
-            and self.gatya_item_id == other.gatya_item_id
-            and self.count == other.count
-            and self.price == other.price
-            and self.draw_item_value == other.draw_item_value
-            and self.category_name == other.category_name
-            and self.rect_id == other.rect_id
-        )
-
-    def __ne__(self, other: object) -> bool:
-        """Check if two Items are not equal.
-
-        Args:
-            other (object): The other Item.
-
-        Returns:
-            bool: Whether the two Items are not equal.
-        """
-        return not self.__eq__(other)
+    def create_empty() -> "Item":
+        return Item(0, 0, 0, 0, False, "", 0)
 
 
 class ItemShop:
@@ -135,31 +77,6 @@ class ItemShop:
         self.items = items
         self.tex = tex
 
-    def serialize(self) -> dict[str, Any]:
-        """Serialize the ItemShop to a dict.
-
-        Returns:
-            dict[str, Any]: The serialized ItemShop.
-        """
-        return {
-            "items": {str(k): v.serialize() for k, v in self.items.items()},
-            "tex": self.tex.serialize(),
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any]) -> "ItemShop":
-        """Deserialize an ItemShop from a dict.
-
-        Args:
-            data (dict[str, Any]): The serialized ItemShop.
-
-        Returns:
-            ItemShop: The deserialized ItemShop.
-        """
-        items = {int(k): Item.deserialize(v) for k, v in data["items"].items()}
-        tex = anim.texture.Texture.deserialize(data["tex"])
-        return ItemShop(items, tex)
-
     @staticmethod
     def get_file_name() -> str:
         """Get the name of the file containing the ItemShop data.
@@ -174,7 +91,7 @@ class ItemShop:
         """Get the name of the file containing the ItemShop icons.
 
         Args:
-            cc (country_code.CountryCode): The country code of the game.
+            lang (str): The language of the icons.
 
         Returns:
             str: The name of the file containing the ItemShop icons.
@@ -191,6 +108,8 @@ class ItemShop:
         Returns:
             ItemShop: The ItemShop.
         """
+        if game_data.item_shop is not None:
+            return game_data.item_shop
         tsv_data = game_data.find_file(ItemShop.get_file_name())
         png_name = f"item000_{game_data.localizable.get_lang()}.png"
         imgcut_name = f"item000_{game_data.localizable.get_lang()}.imgcut"
@@ -200,16 +119,18 @@ class ItemShop:
         tsv = io.bc_csv.CSV(tsv_data.dec_data, delimeter="\t")
         items = {}
         for line in tsv.lines[1:]:
-            items[line[0].to_int()] = Item(
-                line[0].to_int(),
-                line[1].to_int(),
-                line[2].to_int(),
-                line[3].to_int(),
-                line[4].to_bool(),
-                line[5].to_str(),
-                line[6].to_int(),
+            items[int(line[0])] = Item(
+                int(line[0]),
+                int(line[1]),
+                int(line[2]),
+                int(line[3]),
+                bool(line[4]),
+                line[5],
+                int(line[6]),
             )
-        return ItemShop(items, tex)
+        item_shop = ItemShop(items, tex)
+        game_data.item_shop = item_shop
+        return item_shop
 
     def get_texture(self) -> "anim.texture.Texture":
         """Get the Imgcut of the ItemShop.
@@ -232,67 +153,33 @@ class ItemShop:
         remaning_items = self.items.copy()
         for i, line in enumerate(tsv.lines[1:]):
             try:
-                item = self.items[line[0].to_int()]
+                item = self.items[int(line[0])]
             except KeyError:
                 continue
-            line[1].set(item.gatya_item_id)
-            line[2].set(item.count)
-            line[3].set(item.price)
-            line[4].set(item.draw_item_value)
-            line[5].set(item.category_name)
-            line[6].set(item.rect_id)
-            del remaning_items[line[0].to_int()]
-            tsv.set_line(i + 1, line)
+            line[1] = str(item.gatya_item_id)
+            line[2] = str(item.count)
+            line[3] = str(item.price)
+            line[4] = "1" if item.draw_item_value else "0"
+            line[5] = str(item.category_name)
+            line[6] = str(item.rect_id)
+            del remaning_items[int(line[0])]
+            tsv.lines[i + 1] = line
 
         for item in remaning_items.values():
-            line: list[Any] = []
-            line.append(item.shop_id)
-            line.append(item.gatya_item_id)
-            line.append(item.count)
-            line.append(item.price)
-            line.append(item.draw_item_value)
-            line.append(item.category_name)
-            line.append(item.rect_id)
-            tsv.add_line(line)
+            line: list[str] = []
+            line.append(str(item.shop_id))
+            line.append(str(item.gatya_item_id))
+            line.append(str(item.count))
+            line.append(str(item.price))
+            line.append("1" if item.draw_item_value else "0")
+            line.append(str(item.category_name))
+            line.append(str(item.rect_id))
+            tsv.lines.append(line)
 
         game_data.set_file(ItemShop.get_file_name(), tsv.to_data())
         tex = self.get_texture()
         if not tex.is_empty():
             tex.save(game_data)
-
-    @staticmethod
-    def get_json_file_path() -> "io.path.Path":
-        """Get the path of the json file containing the ItemShop data.
-
-        Returns:
-            io.path.Path: The path of the json file containing the ItemShop data.
-        """
-        return io.path.Path("catbase").add("item_shop.json")
-
-    def add_to_zip(self, zip_file: "io.zip.Zip"):
-        """Add the ItemShop to a zip file.
-
-        Args:
-            zip_file (io.zip.Zip): The zip file.
-        """
-        json = io.json_file.JsonFile.from_object(self.serialize())
-        zip_file.add_file(ItemShop.get_json_file_path(), json.to_data())
-
-    @staticmethod
-    def from_zip(zip: "io.zip.Zip") -> "ItemShop":
-        """Create an ItemShop from a zip file.
-
-        Args:
-            zip (io.zip.Zip): The zip file.
-
-        Returns:
-            ItemShop: The ItemShop.
-        """
-        json_data = zip.get_file(ItemShop.get_json_file_path())
-        if json_data is None:
-            return ItemShop.create_empty()
-        json = io.json_file.JsonFile.from_data(json_data)
-        return ItemShop.deserialize(json.get_json())
 
     @staticmethod
     def create_empty() -> "ItemShop":
@@ -323,43 +210,6 @@ class ItemShop:
         """
         item.shop_id = shop_index
         self.items[shop_index] = item
-
-    def import_item_shop(self, other: "ItemShop", game_data: "pack.GamePacks"):
-        """Import an ItemShop into this ItemShop.
-
-        Args:
-            other (ItemShop): The ItemShop to import.
-            game_data (pack.GamePacks): The game data to check if the imported data is different from the game data. This is used to prevent overwriting the current data with base game data.
-        """
-        gd_item_shop = self.from_game_data(game_data)
-        all_keys = set(self.items.keys())
-        all_keys.update(other.items.keys())
-        all_keys.update(gd_item_shop.items.keys())
-
-        attrs = [
-            "gatya_item_id",
-            "count",
-            "price",
-            "draw_item_value",
-            "category_name",
-            "imgcut_id",
-            "cut",
-        ]
-
-        for id in all_keys:
-            other_item = other.get_item(id)
-            if other_item is None:
-                continue
-            gd_item = gd_item_shop.get_item(id)
-            current_item = self.get_item(id)
-            if gd_item is not None:
-                for attr in attrs:
-                    other_value = getattr(other_item, attr)
-                    gd_value = getattr(gd_item, attr)
-                    if other_value != gd_value:
-                        setattr(current_item, attr, other_value)
-            else:
-                self.set_item(id, other_item)
 
     def add_item(self, item: Item):
         """Add an item to the ItemShop.
@@ -399,3 +249,36 @@ class ItemShop:
         """
         self.shift_items(shop_index, 1)
         self.set_item(shop_index, item)
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        """Apply a dictionary to the ItemShop.
+
+        Args:
+            dict_data (dict[str, Any]): The dictionary to apply.
+        """
+
+        items = dict_data.get("items")
+        tex = dict_data.get("tex")
+        if items is not None:
+            current_items = self.items.copy()
+            mod_items = mods.bc_mod.ModEditDictHandler(items, current_items).get_dict(
+                convert_int=True
+            )
+            for shop_id, data_item in mod_items.items():
+                shop_id = int(shop_id)
+                item = self.get_item(shop_id)
+                if item is None:
+                    item = Item.create_empty()
+                item.apply_dict(data_item)
+                self.set_item(shop_id, item)
+
+        if tex is not None:
+            self.tex.apply_dict(tex)
+
+    @staticmethod
+    def apply_mod_to_game_data(mod: "mods.bc_mod.Mod", game_data: "pack.GamePacks"):
+        item_shop = ItemShop.from_game_data(game_data)
+        item_shop_data = mod.mod_edits.get("item_shop")
+        if item_shop_data is not None:
+            item_shop.apply_dict(item_shop_data)
+            item_shop.to_game_data(game_data)

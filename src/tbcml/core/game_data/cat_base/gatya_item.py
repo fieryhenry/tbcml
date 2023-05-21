@@ -1,6 +1,6 @@
 from typing import Any, Optional
 from tbcml.core.game_data import pack
-from tbcml.core import io
+from tbcml.core import io, mods
 import enum
 
 
@@ -50,63 +50,47 @@ class GatyaItemBuyItem:
         self.gatya_ticket_id = gatya_ticket_id
         self.comment = comment
 
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "rarity": self.rarity,
-            "storage": self.storage,
-            "sell_price": self.sell_price,
-            "stage_drop_item_id": self.stage_drop_item_id,
-            "quantity": self.quantity,
-            "server_id": self.server_id,
-            "category": self.category.value,
-            "index_in_category": self.index_in_category,
-            "src_item_id": self.src_item_id,
-            "main_menu_type": self.main_menu_type,
-            "gatya_ticket_id": self.gatya_ticket_id,
-            "comment": self.comment,
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any], item_id: int) -> "GatyaItemBuyItem":
-        return GatyaItemBuyItem(
-            item_id,
-            data["rarity"],
-            data["storage"],
-            data["sell_price"],
-            data["stage_drop_item_id"],
-            data["quantity"],
-            data["server_id"],
-            ItemBuyCategory(data["category"]),
-            data["index_in_category"],
-            data["src_item_id"],
-            data["main_menu_type"],
-            data["gatya_ticket_id"],
-            data["comment"],
-        )
-
     def set_id(self, item_id: int) -> None:
         self.item_id = item_id
 
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, GatyaItemBuyItem):
-            return False
-        return (
-            self.rarity == other.rarity
-            and self.storage == other.storage
-            and self.sell_price == other.sell_price
-            and self.stage_drop_item_id == other.stage_drop_item_id
-            and self.quantity == other.quantity
-            and self.server_id == other.server_id
-            and self.category == other.category
-            and self.index_in_category == other.index_in_category
-            and self.src_item_id == other.src_item_id
-            and self.main_menu_type == other.main_menu_type
-            and self.gatya_ticket_id == other.gatya_ticket_id
-            and self.comment == other.comment
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.item_id = dict_data.get("item_id", self.item_id)
+        self.rarity = dict_data.get("rarity", self.rarity)
+        self.storage = dict_data.get("storage", self.storage)
+        self.sell_price = dict_data.get("sell_price", self.sell_price)
+        self.stage_drop_item_id = dict_data.get(
+            "stage_drop_item_id", self.stage_drop_item_id
         )
+        self.quantity = dict_data.get("quantity", self.quantity)
+        self.server_id = dict_data.get("server_id", self.server_id)
+        category = dict_data.get("category")
+        if category is not None:
+            self.category = ItemBuyCategory(category)
+        self.index_in_category = dict_data.get(
+            "index_in_category", self.index_in_category
+        )
+        self.src_item_id = dict_data.get("src_item_id", self.src_item_id)
+        self.main_menu_type = dict_data.get("main_menu_type", self.main_menu_type)
+        self.gatya_ticket_id = dict_data.get("gatya_ticket_id", self.gatya_ticket_id)
+        self.comment = dict_data.get("comment", self.comment)
 
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
+    @staticmethod
+    def create_empty(item_id: int) -> "GatyaItemBuyItem":
+        return GatyaItemBuyItem(
+            item_id,
+            0,
+            False,
+            0,
+            0,
+            0,
+            0,
+            ItemBuyCategory.NONE,
+            0,
+            0,
+            0,
+            0,
+            "",
+        )
 
 
 class GatyaItemBuy:
@@ -115,22 +99,6 @@ class GatyaItemBuy:
         gatya_item_buys: dict[int, GatyaItemBuyItem],
     ):
         self.gatya_item_buys = gatya_item_buys
-
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "gatya_item_buys": {
-                k: v.serialize() for k, v in self.gatya_item_buys.items()
-            },
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any]) -> "GatyaItemBuy":
-        return GatyaItemBuy(
-            {
-                k: GatyaItemBuyItem.deserialize(v, k)
-                for k, v in data["gatya_item_buys"].items()
-            }
-        )
 
     @staticmethod
     def get_file_name() -> str:
@@ -147,20 +115,20 @@ class GatyaItemBuy:
         for i, line in enumerate(csv.lines[1:]):
             comment = ""
             if len(line) > 11:
-                comment = line[11].to_str()
+                comment = line[11]
             gatya_item_buys[i] = GatyaItemBuyItem(
                 i,
-                line[0].to_int(),
-                line[1].to_bool(),
-                line[2].to_int(),
-                line[3].to_int(),
-                line[4].to_int(),
-                line[5].to_int(),
-                ItemBuyCategory(line[6].to_int()),
-                line[7].to_int(),
-                line[8].to_int(),
-                line[9].to_int(),
-                line[10].to_int(),
+                int(line[0]),
+                bool(line[1]),
+                int(line[2]),
+                int(line[3]),
+                int(line[4]),
+                int(line[5]),
+                ItemBuyCategory(int(line[6])),
+                int(line[7]),
+                int(line[8]),
+                int(line[9]),
+                int(line[10]),
                 comment,
             )
 
@@ -173,20 +141,20 @@ class GatyaItemBuy:
 
         csv = io.bc_csv.CSV(csv_data.dec_data)
         for item in self.gatya_item_buys.values():
-            line: list[Any] = []
-            line.append(item.rarity)
-            line.append(item.storage)
-            line.append(item.sell_price)
-            line.append(item.stage_drop_item_id)
-            line.append(item.quantity)
-            line.append(item.server_id)
-            line.append(item.category.value)
-            line.append(item.index_in_category)
-            line.append(item.src_item_id)
-            line.append(item.main_menu_type)
-            line.append(item.gatya_ticket_id)
+            line: list[str] = []
+            line.append(str(item.rarity))
+            line.append("1" if item.storage else "0")
+            line.append(str(item.sell_price))
+            line.append(str(item.stage_drop_item_id))
+            line.append(str(item.quantity))
+            line.append(str(item.server_id))
+            line.append(str(item.category.value))
+            line.append(str(item.index_in_category))
+            line.append(str(item.src_item_id))
+            line.append(str(item.main_menu_type))
+            line.append(str(item.gatya_ticket_id))
             line.append(item.comment)
-            csv.set_line(item.item_id + 1, line)
+            csv.lines[item.item_id + 1] = line
 
         game_data.set_file(GatyaItemBuy.get_file_name(), csv.to_data())
 
@@ -201,13 +169,19 @@ class GatyaItemBuy:
     def create_empty() -> "GatyaItemBuy":
         return GatyaItemBuy({})
 
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, GatyaItemBuy):
-            return False
-        return self.gatya_item_buys == other.gatya_item_buys
-
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
+    def apply_dict(self, dict_data: dict[str, Any]):
+        gatya_item_buys = dict_data.get("gatya_item_buys")
+        if gatya_item_buys is not None:
+            current_gatya_item_buys = self.gatya_item_buys
+            modded_gatya_item_buys = mods.bc_mod.ModEditDictHandler(
+                gatya_item_buys, current_gatya_item_buys
+            ).get_dict(convert_int=True)
+            for item_id, modded_item in modded_gatya_item_buys.items():
+                item = current_gatya_item_buys.get(item_id)
+                if item is None:
+                    item = GatyaItemBuyItem.create_empty(item_id)
+                item.apply_dict(modded_item)
+                self.set_item(item_id, item)
 
 
 class GatyaItemNameItem:
@@ -224,55 +198,21 @@ class GatyaItemNameItem:
             desc += f"{line}\n"
         return desc.strip()
 
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "name": self.name,
-            "description": self.description,
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any], id: int) -> "GatyaItemNameItem":
-        return GatyaItemNameItem(
-            id,
-            data["name"],
-            data["description"],
-        )
-
     def set_id(self, id: int) -> None:
         self.id = id
 
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, GatyaItemNameItem):
-            return False
-        return (
-            self.id == other.id
-            and self.name == other.name
-            and self.description == other.description
-        )
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.name = dict_data.get("name", self.name)
+        self.description = dict_data.get("description", self.description)
 
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
+    @staticmethod
+    def create_empty(id: int) -> "GatyaItemNameItem":
+        return GatyaItemNameItem(id, "", [])
 
 
 class GatyaItemName:
     def __init__(self, gatya_item_names: dict[int, GatyaItemNameItem]):
         self.gatya_item_names = gatya_item_names
-
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "gatya_item_names": {
-                k: v.serialize() for k, v in self.gatya_item_names.items()
-            },
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any]) -> "GatyaItemName":
-        return GatyaItemName(
-            {
-                k: GatyaItemNameItem.deserialize(v, k)
-                for k, v in data["gatya_item_names"].items()
-            }
-        )
 
     @staticmethod
     def get_file_name() -> str:
@@ -290,8 +230,8 @@ class GatyaItemName:
         )
         gatya_item_names: dict[int, GatyaItemNameItem] = {}
         for i, line in enumerate(csv.lines):
-            name = line[0].to_str()
-            description = io.data.Data.data_list_string_list(line[1:])
+            name = line[0]
+            description = line[1:]
             gatya_item_names[i] = GatyaItemNameItem(i, name, description)
 
         return GatyaItemName(gatya_item_names)
@@ -306,10 +246,10 @@ class GatyaItemName:
             delimeter=io.bc_csv.Delimeter.from_country_code_res(game_data.country_code),
         )
         for item in self.gatya_item_names.values():
-            line: list[Any] = []
+            line: list[str] = []
             line.append(item.name)
             line.extend(item.description)
-            csv.set_line(item.id, line)
+            csv.lines[item.id] = line
 
         game_data.set_file(GatyaItemName.get_file_name(), csv.to_data())
 
@@ -324,13 +264,19 @@ class GatyaItemName:
     def create_empty() -> "GatyaItemName":
         return GatyaItemName({})
 
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, GatyaItemName):
-            return False
-        return self.gatya_item_names == other.gatya_item_names
-
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
+    def apply_dict(self, dict_data: dict[str, Any]):
+        gatya_item_names = dict_data.get("gatya_item_names")
+        if gatya_item_names is not None:
+            current_gatya_item_names = self.gatya_item_names
+            modded_gatya_item_names = mods.bc_mod.ModEditDictHandler(
+                gatya_item_names, current_gatya_item_names
+            ).get_dict(convert_int=True)
+            for item_id, modded_item in modded_gatya_item_names.items():
+                item = current_gatya_item_names.get(item_id)
+                if item is None:
+                    item = GatyaItemNameItem.create_empty(item_id)
+                item.apply_dict(modded_item)
+                self.set_item(item_id, item)
 
 
 class GatyaItem:
@@ -347,24 +293,6 @@ class GatyaItem:
         self.gatya_item_name_item = gatya_item_name_item
         self.image = image
         self.silhouette = silhouette
-
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "gatya_item_buy_item": self.gatya_item_buy_item.serialize(),
-            "gatya_item_name_item": self.gatya_item_name_item.serialize(),
-            "image": self.image.serialize(),
-            "silhouette": self.silhouette.serialize(),
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any], id: int) -> "GatyaItem":
-        return GatyaItem(
-            id,
-            GatyaItemBuyItem.deserialize(data["gatya_item_buy_item"], id),
-            GatyaItemNameItem.deserialize(data["gatya_item_name_item"], id),
-            io.bc_image.BCImage.deserialize(data["image"]),
-            io.bc_image.BCImage.deserialize(data["silhouette"]),
-        )
 
     @staticmethod
     def get_image_name(id: int, silhouette: bool) -> str:
@@ -407,35 +335,28 @@ class GatyaItem:
         self.gatya_item_buy_item.set_id(id)
         self.gatya_item_name_item.set_id(id)
 
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, GatyaItem):
-            return False
-        return (
-            self.id == other.id
-            and self.gatya_item_buy_item == other.gatya_item_buy_item
-            and self.gatya_item_name_item == other.gatya_item_name_item
-            and self.image == other.image
-            and self.silhouette == other.silhouette
+    @staticmethod
+    def create_empty(id: int) -> "GatyaItem":
+        return GatyaItem(
+            id,
+            GatyaItemBuyItem.create_empty(id),
+            GatyaItemNameItem.create_empty(id),
+            io.bc_image.BCImage.create_empty(),
+            io.bc_image.BCImage.create_empty(),
         )
 
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
+    def apply_dict(self, dict_data: dict[str, Any]):
+        gatya_item_buy_item = dict_data.get("gatya_item_buy_item")
+        if gatya_item_buy_item is not None:
+            self.gatya_item_buy_item.apply_dict(gatya_item_buy_item)
+        gatya_item_name_item = dict_data.get("gatya_item_name_item")
+        if gatya_item_name_item is not None:
+            self.gatya_item_name_item.apply_dict(gatya_item_name_item)
 
 
 class GatyaItems:
     def __init__(self, items: dict[int, GatyaItem]):
         self.items = items
-
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "items": {k: v.serialize() for k, v in self.items.items()},
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any]) -> "GatyaItems":
-        return GatyaItems(
-            {k: GatyaItem.deserialize(v, k) for k, v in data["items"].items()}
-        )
 
     @staticmethod
     def from_game_data(game_data: "pack.GamePacks") -> "GatyaItems":
@@ -480,45 +401,22 @@ class GatyaItems:
         self.items[id] = item
 
     @staticmethod
-    def get_items_json_file_name() -> "io.path.Path":
-        return io.path.Path("catbase").add("gatya_items.json")
-
-    def add_to_zip(self, zip: "io.zip.Zip"):
-        items_json = io.json_file.JsonFile.from_object(self.serialize())
-        zip.add_file(GatyaItems.get_items_json_file_name(), items_json.to_data())
-
-    @staticmethod
-    def from_zip(zip: "io.zip.Zip") -> "GatyaItems":
-        items_json = zip.get_file(GatyaItems.get_items_json_file_name())
-        if items_json is None:
-            return GatyaItems.create_empty()
-        return GatyaItems.deserialize(io.json_file.JsonFile(items_json).get_json())
-
-    @staticmethod
     def create_empty() -> "GatyaItems":
         return GatyaItems({})
 
-    def import_items(self, other: "GatyaItems", game_data: "pack.GamePacks"):
-        """_summary_
-
-        Args:
-            other (GatyaItems): _description_
-            game_data (pack.GamePacks): The game data to check if the imported data is different from the game data. This is used to prevent overwriting the current data with base game data.
-        """
-        gd_items = GatyaItems.from_game_data(game_data)
-        all_keys = set(gd_items.items.keys())
-        all_keys.update(other.items.keys())
-        all_keys.update(self.items.keys())
-        for id in all_keys:
-            gd_item = gd_items.get_item(id)
-            other_item = other.get_item(id)
-            if other_item is None:
-                continue
-            if gd_item is not None:
-                if other_item != gd_item:
-                    self.set_item(id, other_item)
-            else:
-                self.set_item(id, other_item)
+    def apply_dict(self, dict_data: dict[str, Any]):
+        items = dict_data.get("items")
+        if items is not None:
+            current_items = self.items.copy()
+            modded_items = mods.bc_mod.ModEditDictHandler(
+                items, current_items
+            ).get_dict(convert_int=True)
+            for id, modded_item in modded_items.items():
+                item = current_items.get(id)
+                if item is None:
+                    item = GatyaItem.create_empty(id)
+                item.apply_dict(modded_item)
+                self.set_item(id, item)
 
     def get_item_stage_drop_id(self, id: int) -> Optional[int]:
         item = self.get_item(id)

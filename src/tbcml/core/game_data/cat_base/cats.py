@@ -1,7 +1,7 @@
 import enum
 from typing import Any, Optional, Union
 
-from tbcml.core import anim, io
+from tbcml.core import anim, io, mods
 from tbcml.core.game_data import pack
 from tbcml.core.game_data.cat_base import enemies, unit
 
@@ -62,6 +62,14 @@ class FormType(enum.Enum):
         else:
             raise ValueError("Invalid form index")
 
+    def __int__(self) -> int:
+        """Get the index of the form type.
+
+        Returns:
+            int: The index of the form type.
+        """
+        return self.get_index()
+
 
 class Stats:
     """Represents the stats of a cat."""
@@ -70,11 +78,11 @@ class Stats:
     """The HP of the cat.Index 0."""
     kbs: int
     """The number of knockbacks the cat has. Index 1."""
-    speed: unit.Speed
+    speed: int
     """The movement speed of the cat, real value is 2x what is stored. Index 2."""
     attack_interval: unit.Frames
     """The interval between attacks of the cat, real value is 2x what is stored. Index 4."""
-    range: unit.Range
+    range: int
     """The attack range of the cat. real value is 4x what is stored. Index 5."""
     cost: int
     """The cost of the cat to deploy. Index 6."""
@@ -82,7 +90,7 @@ class Stats:
     """The time it takes for the cat to recharge after being used, real value is 2x what is stored. Index 7."""
     collision_start: int
     """The X coordinate of the start of the collision box of the cat. Index 8."""
-    collision_width: unit.Range
+    collision_width: int
     """The width of the collision box, real value is 4x what is stored. Seemingly unused? Index 9."""
     target_red: bool
     """Whether the cat has the target red trait. Index 10."""
@@ -316,13 +324,13 @@ class Stats:
     def assign(self, raw_data: list[int]):
         self.hp = raw_data[0]
         self.kbs = raw_data[1]
-        self.speed = unit.Speed.from_raw(raw_data[2])
+        self.speed = raw_data[2]
         self.attack_interval = unit.Frames.from_pair_frames(raw_data[4])
-        self.range = unit.Range.from_raw(raw_data[5])
+        self.range = raw_data[5]
         self.cost = raw_data[6]
         self.recharge_time = unit.Frames.from_pair_frames(raw_data[7])
         self.collision_start = raw_data[8]
-        self.collision_width = unit.Range.from_raw(raw_data[9])
+        self.collision_width = raw_data[9]
         self.target_red = bool(raw_data[10])
         self.unused = raw_data[11]
         self.area_attack = bool(raw_data[12])
@@ -422,14 +430,14 @@ class Stats:
         return [
             self.hp,  # 0
             self.kbs,  # 1
-            self.speed.raw,  # 2
+            self.speed,  # 2
             self.attack_1.damage,  # 3
             self.attack_interval.pair_frames,  # 4
-            self.range.raw,  # 5
+            self.range,  # 5
             self.cost,  # 6
             self.recharge_time.pair_frames,  # 7
             self.collision_start,  # 8
-            self.collision_width.raw,  # 9
+            self.collision_width,  # 9
             int(self.target_red),  # 10
             self.unused,  # 11
             int(self.area_attack),  # 12
@@ -464,8 +472,8 @@ class Stats:
             self.strengthen.multiplier_percent,  # 41
             self.lethal_strike.prob.percent,  # 42
             int(self.is_metal),  # 43
-            self.attack_1.long_distance_start.raw,  # 44
-            self.attack_1.long_distance_range.raw,  # 45
+            self.attack_1.long_distance_start,  # 44
+            self.attack_1.long_distance_range,  # 45
             int(self.wave_immunity),  # 46
             int(self.wave_blocker),  # 47
             int(self.knockback_immunity),  # 48
@@ -507,8 +515,8 @@ class Stats:
             self.dodge.prob.percent,  # 84
             self.dodge.time.frames,  # 85
             self.surge.prob.percent,  # 86
-            self.surge.start.raw,  # 87
-            self.surge.range.raw,  # 88
+            self.surge.start,  # 87
+            self.surge.range,  # 88
             self.surge.level,  # 89
             int(self.toxic_immunity),  # 90
             int(self.surge_immunity),  # 91
@@ -520,29 +528,16 @@ class Stats:
             int(self.collossus_slayer),  # 97
             int(self.soul_strike),  # 98
             int(self.attack_2.long_distance_flag),  # 99
-            self.attack_2.long_distance_start.raw,  # 100
-            self.attack_2.long_distance_range.raw,  # 101
+            self.attack_2.long_distance_start,  # 100
+            self.attack_2.long_distance_range,  # 101
             int(self.attack_3.long_distance_flag),  # 102
-            self.attack_3.long_distance_start.raw,  # 103
-            self.attack_3.long_distance_range.raw,  # 104
+            self.attack_3.long_distance_start,  # 103
+            self.attack_3.long_distance_range,  # 104
             int(self.behemoth_slayer),  # 105
             self.behemoth_dodge.prob.percent,  # 106
             self.behemoth_dodge.time.frames,  # 107
             self.unknown_108,  # 108
         ]
-
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "raw_data": self.to_raw_data(),
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any], cat_id: int, form: FormType) -> "Stats":
-        return Stats(
-            cat_id,
-            form,
-            data["raw_data"],
-        )
 
     def wipe(self):
         raw_data = []
@@ -568,26 +563,18 @@ class Stats:
             self.to_raw_data(),
         )
 
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Stats):
-            return False
-        return self.to_raw_data() == other.to_raw_data()
-
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
-
     def import_enemy_stats(self, enemy_stats: "enemies.Stats"):
         has_targeted_effect = enemy_stats.has_targeted_effect()
         self.wipe()
         self.hp = enemy_stats.hp
         self.kbs = enemy_stats.kbs
-        self.speed = enemy_stats.speed.copy()
+        self.speed = enemy_stats.speed
         self.attack_1 = enemy_stats.attack_1.copy()
-        self.range = enemy_stats.range.copy()
+        self.range = enemy_stats.range
         self.cost = enemy_stats.money_drop // 2
         self.recharge_time.frames = 0
         self.collision_start = enemy_stats.collision_start
-        self.collision_width = enemy_stats.collision_width.copy()
+        self.collision_width = enemy_stats.collision_width
         self.target_red = has_targeted_effect
         self.unused = enemy_stats.unused
         self.area_attack = enemy_stats.area_attack
@@ -631,25 +618,36 @@ class Stats:
         self.curse = enemy_stats.curse.copy()
         self.target_aku = has_targeted_effect
 
+    def apply_dict(self, dict_data: dict[str, Any]):
+        raw_stats = dict_data.get("raw_stats")
+        if raw_stats is not None:
+            current_raw_stats = self.to_raw_data()
+            mod_stats = mods.bc_mod.ModEditDictHandler(
+                raw_stats, current_raw_stats
+            ).get_dict(True)
+            for stat_id, stat_value in mod_stats.items():
+                current_raw_stats[stat_id] = mods.bc_mod.ModEditValueHandler(
+                    stat_value, current_raw_stats[stat_id]
+                ).get_value()
+            self.assign(current_raw_stats)
+
+    def to_dict(self) -> dict[int, Any]:
+        raw_stats = self.to_raw_data()
+        data: dict[int, Any] = {}
+        for stat_id, stat_value in enumerate(raw_stats):
+            data[stat_id] = stat_value
+        return data
+
+    @staticmethod
+    def create_empty(cat_id: int, form: FormType) -> "Stats":
+        return Stats(cat_id, form, [])
+
 
 class Model:
     def __init__(self, cat_id: int, form: FormType, model: "anim.model.Model"):
         self.cat_id = cat_id
         self.form = form
         self.model = model
-
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "model": self.model.serialize(),
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any], cat_id: int, form: FormType) -> "Model":
-        return Model(
-            cat_id,
-            form,
-            anim.model.Model.deserialize(data["model"]),
-        )
 
     @staticmethod
     def get_cat_id_str(cat_id: int) -> str:
@@ -720,13 +718,19 @@ class Model:
             self.model.copy(),
         )
 
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Model):
-            return False
-        return self.model == other.model
+    def apply_dict(self, dict_data: dict[str, Any]):
+        model = dict_data.get("model")
+        if model is not None:
+            self.model.apply_dict(model)
 
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "model": self.model.to_dict(),
+        }
+
+    @staticmethod
+    def create_empty(cat_id: int, form: FormType) -> "Model":
+        return Model(cat_id, form, anim.model.Model.create_empty())
 
 
 class Form:
@@ -749,16 +753,6 @@ class Form:
         self.anim = anim
         self.upgrade_icon = upgrade_icon
         self.deploy_icon = deploy_icon
-
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "stats": self.stats.serialize(),
-            "name": self.name,
-            "description": self.description,
-            "anim": self.anim.serialize(),
-            "upgrade_icon": self.upgrade_icon.serialize(),
-            "deploy_icon": self.deploy_icon.serialize(),
-        }
 
     def format_deploy_icon(self):
         if self.deploy_icon.width == 128 and self.deploy_icon.height == 128:
@@ -791,23 +785,6 @@ class Form:
     def format_icons(self):
         self.format_deploy_icon()
         self.format_upgrade_icon()
-
-    @staticmethod
-    def deserialize(
-        data: dict[str, Any],
-        cat_id: int,
-        form: FormType,
-    ) -> "Form":
-        return Form(
-            cat_id,
-            form,
-            Stats.deserialize(data["stats"], cat_id, form),
-            data["name"],
-            data["description"],
-            Model.deserialize(data["anim"], cat_id, form),
-            io.bc_image.BCImage.deserialize(data["upgrade_icon"]),
-            io.bc_image.BCImage.deserialize(data["deploy_icon"]),
-        )
 
     @staticmethod
     def get_icons_game_data(
@@ -863,22 +840,48 @@ class Form:
             self.deploy_icon.copy(),
         )
 
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, Form):
-            return False
-        return (
-            self.cat_id == other.cat_id
-            and self.form == other.form
-            and self.stats == other.stats
-            and self.name == other.name
-            and self.description == other.description
-            and self.anim == other.anim
-            and self.upgrade_icon == other.upgrade_icon
-            and self.deploy_icon == other.deploy_icon
-        )
+    def apply_dict(self, dict_data: dict[str, Any]):
+        name = dict_data.get("name")
+        if name is not None:
+            self.name = name
+        description = dict_data.get("description")
+        if description is not None:
+            self.description = description
+        stats = dict_data.get("stats")
+        if stats is not None:
+            self.stats.apply_dict(stats)
+        anim = dict_data.get("anim")
+        if anim is not None:
+            self.anim.apply_dict(anim)
+        upgrade_icon = dict_data.get("upgrade_icon")
+        if upgrade_icon is not None:
+            self.upgrade_icon.apply_dict(upgrade_icon)
+        deploy_icon = dict_data.get("deploy_icon")
+        if deploy_icon is not None:
+            self.deploy_icon.apply_dict(deploy_icon)
 
-    def __ne__(self, other: Any) -> bool:
-        return not self.__eq__(other)
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "name": self.name,
+            "description": self.description,
+            "stats": self.stats.to_dict(),
+            "anim": self.anim.to_dict(),
+            "upgrade_icon": self.upgrade_icon.to_dict(),
+            "deploy_icon": self.deploy_icon.to_dict(),
+        }
+
+    @staticmethod
+    def create_empty(cat_id: int, form: FormType) -> "Form":
+        return Form(
+            cat_id,
+            form,
+            Stats.create_empty(cat_id, form),
+            "",
+            [""],
+            Model.create_empty(cat_id, form),
+            io.bc_image.BCImage.from_size(128, 128),
+            io.bc_image.BCImage.from_size(512, 128),
+        )
 
 
 class UnlockSourceType(enum.Enum):
@@ -992,23 +995,6 @@ class UnitBuyData:
             self.egg_id,
         ]
 
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "raw_data": self.to_raw_data(),
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any], cat_id: int) -> "UnitBuyData":
-        return UnitBuyData(cat_id, data["raw_data"])
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, UnitBuyData):
-            return False
-        return self.to_raw_data() == other.to_raw_data()
-
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
-
     def set_obtainable(self, obtainable: bool):
         if not obtainable:
             self.game_version = -1
@@ -1039,27 +1025,27 @@ class UnitBuyData:
         for i in range(len(self.upgrade_costs)):
             self.upgrade_costs[i] = 0
 
+    def apply_dict(self, dict_data: dict[str, Any]):
+        raw_data = dict_data.get("raw_data")
+        if raw_data is not None:
+            current_raw_data = self.to_raw_data()
+            mod_raw_data = mods.bc_mod.ModEditDictHandler(
+                raw_data, current_raw_data
+            ).get_dict(convert_int=True)
+            for stat_id, value in mod_raw_data.items():
+                current_raw_data[stat_id] = mods.bc_mod.ModEditValueHandler(
+                    value, current_raw_data[stat_id]
+                ).get_value()
+            self.assign(current_raw_data)
+
+    @staticmethod
+    def create_empty(cat_id: int) -> "UnitBuyData":
+        return UnitBuyData(cat_id, [0] * 63)
+
 
 class UnitBuy:
     def __init__(self, unit_buy_data: dict[int, UnitBuyData]):
         self.unit_buy_data = unit_buy_data
-
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "unit_buy_data": {
-                cat_id: unit_buy_data.serialize()
-                for cat_id, unit_buy_data in self.unit_buy_data.items()
-            },
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any]) -> "UnitBuy":
-        return UnitBuy(
-            {
-                cat_id: UnitBuyData.deserialize(unit_buy_data, cat_id)
-                for cat_id, unit_buy_data in data["unit_buy_data"].items()
-            }
-        )
 
     @staticmethod
     def get_file_name() -> str:
@@ -1067,15 +1053,19 @@ class UnitBuy:
 
     @staticmethod
     def from_game_data(game_data: "pack.GamePacks") -> "UnitBuy":
+        if game_data.unit_buy is not None:
+            return game_data.unit_buy
         file = game_data.find_file(UnitBuy.get_file_name())
         if file is None:
             return UnitBuy.create_empty()
 
         csv = io.bc_csv.CSV(file.dec_data)
         unit_buy_data: dict[int, UnitBuyData] = {}
-        for i, line in enumerate(csv.lines):
-            unit_buy_data[i] = UnitBuyData(i, io.data.Data.data_list_int_list(line))
-        return UnitBuy(unit_buy_data)
+        for i, line in enumerate(csv):
+            unit_buy_data[i] = UnitBuyData(i, [int(x) for x in line])
+        unit_buy = UnitBuy(unit_buy_data)
+        game_data.unit_buy = unit_buy
+        return unit_buy
 
     def to_game_data(self, game_data: "pack.GamePacks"):
         file = game_data.find_file(UnitBuy.get_file_name())
@@ -1086,7 +1076,7 @@ class UnitBuy:
         for i in range(len(csv.lines)):
             if i not in self.unit_buy_data:
                 continue
-            csv.set_line(i, self.unit_buy_data[i].to_raw_data())
+            csv.lines[i] = [str(x) for x in self.unit_buy_data[i].to_raw_data()]
 
         game_data.set_file(UnitBuy.get_file_name(), csv.to_data())
 
@@ -1096,14 +1086,6 @@ class UnitBuy:
     @staticmethod
     def create_empty() -> "UnitBuy":
         return UnitBuy({})
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, UnitBuy):
-            return False
-        return self.unit_buy_data == other.unit_buy_data
-
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
 
     def get_rarities(
         self,
@@ -1129,43 +1111,15 @@ class Talent:
         self.cat_id = cat_id
         self.raw_data = raw_data
 
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "raw_data": self.raw_data,
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any], cat_id: int) -> "Talent":
-        return Talent(cat_id, data["raw_data"])
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Talent):
-            return False
-        return self.raw_data == other.raw_data
-
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
+    def apply_dict(self, dict_data: dict[str, Any]):
+        raw_data = dict_data.get("raw_data")
+        if raw_data is not None:
+            self.raw_data = raw_data
 
 
 class Talents:
     def __init__(self, talents: dict[int, Talent]):
         self.talents = talents
-
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "talents": {
-                cat_id: talent.serialize() for cat_id, talent in self.talents.items()
-            },
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any]) -> "Talents":
-        return Talents(
-            {
-                cat_id: Talent.deserialize(talent_data, cat_id)
-                for cat_id, talent_data in data["talents"].items()
-            }
-        )
 
     @staticmethod
     def get_file_name() -> str:
@@ -1173,6 +1127,8 @@ class Talents:
 
     @staticmethod
     def from_game_data(game_data: "pack.GamePacks") -> "Talents":
+        if game_data.talents is not None:
+            return game_data.talents
         file = game_data.find_file(Talents.get_file_name())
         if file is None:
             return Talents.create_empty()
@@ -1180,10 +1136,12 @@ class Talents:
         csv = io.bc_csv.CSV(file.dec_data)
         talents: dict[int, Talent] = {}
         for line in csv.lines[1:]:
-            cat_id = line[0].to_int()
-            talents[cat_id] = Talent(cat_id, io.data.Data.data_list_int_list(line[1:]))
+            cat_id = int(line[0])
+            talents[cat_id] = Talent(cat_id, [int(x) for x in line[1:]])
 
-        return Talents(talents)
+        talent = Talents(talents)
+        game_data.talents = talent
+        return talent
 
     def to_game_data(self, game_data: "pack.GamePacks"):
         file = game_data.find_file(Talents.get_file_name())
@@ -1193,18 +1151,18 @@ class Talents:
         remanining_cats = self.talents.copy()
         csv = io.bc_csv.CSV(file.dec_data)
         for i, line in enumerate(csv.lines[1:]):
-            cat_id = line[0].to_int()
+            cat_id = int(line[0])
             if cat_id not in self.talents:
                 continue
-            d_line = [cat_id]
-            d_line.extend(self.talents[cat_id].raw_data)
-            csv.set_line(i + 1, d_line)
+            d_line = [str(cat_id)]
+            d_line.extend([str(x) for x in self.talents[cat_id].raw_data])
+            csv.lines[i + 1] = d_line
             del remanining_cats[cat_id]
 
         for cat_id, talent in remanining_cats.items():
-            a_line = [cat_id]
-            a_line.extend(talent.raw_data)
-            csv.add_line(a_line)
+            a_line = [str(cat_id)]
+            a_line.extend([str(x) for x in talent.raw_data])
+            csv.lines.append(a_line)
 
         game_data.set_file(Talents.get_file_name(), csv.to_data())
 
@@ -1217,106 +1175,76 @@ class Talents:
     def create_empty() -> "Talents":
         return Talents({})
 
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Talents):
-            return False
-        return self.talents == other.talents
-
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
-
 
 class NyankoPictureBookData:
     def __init__(
         self,
         cat_id: int,
-        obtainable: bool,
+        is_displayed_in_catguide: bool,
         limited: bool,
         total_forms: int,
-        unknown: int,
+        hint_display_type: int,
         scale_0: int,
         scale_1: int,
         scale_2: int,
         scale_3: int,
-        other: list[int],
     ):
         self.cat_id = cat_id
-        self.obtainable = obtainable
+        self.is_displayed_in_catguide = is_displayed_in_catguide
         self.limited = limited
         self.total_forms = total_forms
-        self.unknown = unknown
+        self.hint_display_type = hint_display_type
         self.scale_0 = scale_0
         self.scale_1 = scale_1
         self.scale_2 = scale_2
         self.scale_3 = scale_3
-        self.other = other
 
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "obtainable": self.obtainable,
-            "limited": self.limited,
-            "total_forms": self.total_forms,
-            "unknown": self.unknown,
-            "scale_0": self.scale_0,
-            "scale_1": self.scale_1,
-            "scale_2": self.scale_2,
-            "scale_3": self.scale_3,
-            "other": self.other,
-        }
+    def set_is_displayed_in_catguide(self, is_displayed_in_catguide: bool):
+        self.is_displayed_in_catguide = is_displayed_in_catguide
+
+    def is_displayed_in_cat_guide(self) -> bool:
+        return self.is_displayed_in_catguide
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        is_displayed_in_catguide = dict_data.get("is_displayed_in_catguide")
+        if is_displayed_in_catguide is not None:
+            self.is_displayed_in_catguide = is_displayed_in_catguide
+        limited = dict_data.get("limited")
+        if limited is not None:
+            self.limited = limited
+
+        total_forms = dict_data.get("total_forms")
+        if total_forms is not None:
+            self.total_forms = total_forms
+
+        hint_display_type = dict_data.get("hint_display_type")
+        if hint_display_type is not None:
+            self.hint_display_type = hint_display_type
+
+        scale_0 = dict_data.get("scale_0")
+        if scale_0 is not None:
+            self.scale_0 = scale_0
+
+        scale_1 = dict_data.get("scale_1")
+        if scale_1 is not None:
+            self.scale_1 = scale_1
+
+        scale_2 = dict_data.get("scale_2")
+        if scale_2 is not None:
+            self.scale_2 = scale_2
+
+        scale_3 = dict_data.get("scale_3")
+        if scale_3 is not None:
+            self.scale_3 = scale_3
 
     @staticmethod
-    def deserialize(data: dict[str, Any], cat_id: int) -> "NyankoPictureBookData":
-        return NyankoPictureBookData(
-            cat_id,
-            data["obtainable"],
-            data["limited"],
-            data["total_forms"],
-            data["unknown"],
-            data["scale_0"],
-            data["scale_1"],
-            data["scale_2"],
-            data["scale_3"],
-            data["other"],
-        )
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, NyankoPictureBookData):
-            return False
-        return self.serialize() == other.serialize()
-
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
-
-    def __str__(self):
-        return f"obtainable: {self.obtainable}, limited: {self.limited}, total_forms: {self.total_forms}, unknown: {self.unknown}, scale_0: {self.scale_0}, scale_1: {self.scale_1}, scale_2: {self.scale_2}, scale_3: {self.scale_3}, other: {self.other}"
-
-    def __repr__(self):
-        return self.__str__()
-
-    def set_obtainable(self, obtainable: bool):
-        self.obtainable = obtainable
-
-    def is_obtainable(self) -> bool:
-        return self.obtainable
+    def create_empty(cat_id: int) -> "NyankoPictureBookData":
+        return NyankoPictureBookData(cat_id, False, False, 0, 0, 0, 0, 0, 0)
 
 
 class NyankoPictureBook:
     def __init__(self, data: dict[int, NyankoPictureBookData]):
         self.data = data
-
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "data": {cat_id: data.serialize() for cat_id, data in self.data.items()}
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any]) -> "NyankoPictureBook":
-        return NyankoPictureBook(
-            {
-                cat_id: NyankoPictureBookData.deserialize(data, cat_id)
-                for cat_id, data in data["data"].items()
-            }
-        )
 
     @staticmethod
     def get_file_name() -> str:
@@ -1324,26 +1252,29 @@ class NyankoPictureBook:
 
     @staticmethod
     def from_game_data(game_data: "pack.GamePacks") -> "NyankoPictureBook":
+        if game_data.nyanko_picture_book is not None:
+            return game_data.nyanko_picture_book
         file = game_data.find_file(NyankoPictureBook.get_file_name())
         if file is None:
             return NyankoPictureBook.create_empty()
 
         csv = io.bc_csv.CSV(file.dec_data)
         data: dict[int, NyankoPictureBookData] = {}
-        for cat_id, line in enumerate(csv.lines):
+        for cat_id, line in enumerate(csv):
             data[cat_id] = NyankoPictureBookData(
                 cat_id,
-                line[0].to_bool(),
-                line[1].to_bool(),
-                line[2].to_int(),
-                line[3].to_int(),
-                line[4].to_int(),
-                line[5].to_int(),
-                line[6].to_int(),
-                line[7].to_int(),
-                io.data.Data.data_list_int_list(line[8:]),
+                bool(line[0]),
+                bool(line[1]),
+                int(line[2]),
+                int(line[3]),
+                int(line[4]),
+                int(line[5]),
+                int(line[6]),
+                int(line[7]),
             )
-        return NyankoPictureBook(data)
+        nypb = NyankoPictureBook(data)
+        game_data.nyanko_picture_book = nypb
+        return nypb
 
     def to_game_data(self, game_data: "pack.GamePacks"):
         file = game_data.find_file(NyankoPictureBook.get_file_name())
@@ -1352,17 +1283,16 @@ class NyankoPictureBook:
 
         csv = io.bc_csv.CSV(file.dec_data)
         for data in self.data.values():
-            line: list[Any] = []
-            line.append(data.obtainable)
-            line.append(data.limited)
-            line.append(data.total_forms)
-            line.append(data.unknown)
-            line.append(data.scale_0)
-            line.append(data.scale_1)
-            line.append(data.scale_2)
-            line.append(data.scale_3)
-            line.extend(data.other)
-            csv.set_line(data.cat_id, line)
+            line: list[str] = []
+            line.append("1" if data.is_displayed_in_catguide else "0")
+            line.append("1" if data.limited else "0")
+            line.append(str(data.total_forms))
+            line.append(str(data.hint_display_type))
+            line.append(str(data.scale_0))
+            line.append(str(data.scale_1))
+            line.append(str(data.scale_2))
+            line.append(str(data.scale_3))
+            csv.lines[data.cat_id] = line
 
         game_data.set_file(NyankoPictureBook.get_file_name(), csv.to_data())
 
@@ -1373,57 +1303,38 @@ class NyankoPictureBook:
     def create_empty() -> "NyankoPictureBook":
         return NyankoPictureBook({})
 
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, NyankoPictureBook):
-            return False
-        return self.data == other.data
-
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
-
 
 class EvolveTextText:
     def __init__(self, evolve: int, text: list[str]):
         self.text = text
         self.evolve = evolve
 
-    def serialize(self) -> dict[str, Any]:
-        return {"text": self.text}
+
+class EvolveTextCat:
+    def __init__(self, cat_id: int, text: dict[int, EvolveTextText]):
+        self.cat_id = cat_id
+        self.text = text
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        current_texts = self.text.copy()
+        mod_texts = mods.bc_mod.ModEditDictHandler(dict_data, current_texts).get_dict(
+            convert_int=True
+        )
+        for evolve, text in mod_texts.items():
+            current_text = self.text.get(evolve)
+            if current_text is None:
+                current_text = EvolveTextText(evolve, [])
+            current_text.text = text
+            self.text[evolve] = current_text
 
     @staticmethod
-    def deserialize(evolve: int, data: dict[str, Any]) -> "EvolveTextText":
-        return EvolveTextText(evolve, data["text"])
-
-    def __str__(self):
-        return f"evolve: {self.evolve}, text: {self.text}"
-
-    def __repr__(self):
-        return self.__str__()
+    def create_empty(cat_id: int) -> "EvolveTextCat":
+        return EvolveTextCat(cat_id, {})
 
 
 class EvolveText:
-    def __init__(self, text: dict[int, dict[int, EvolveTextText]]):
+    def __init__(self, text: dict[int, EvolveTextCat]):
         self.text = text
-
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "text": {
-                cat_id: {evolve: text.serialize() for evolve, text in evolves.items()}
-                for cat_id, evolves in self.text.items()
-            }
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any]) -> "EvolveText":
-        return EvolveText(
-            {
-                cat_id: {
-                    evolve: EvolveTextText.deserialize(evolve, text)
-                    for evolve, text in evolves.items()
-                }
-                for cat_id, evolves in data["text"].items()
-            }
-        )
 
     @staticmethod
     def get_file_name(lang: str) -> str:
@@ -1431,6 +1342,8 @@ class EvolveText:
 
     @staticmethod
     def from_game_data(game_data: "pack.GamePacks") -> "EvolveText":
+        if game_data.evolve_text is not None:
+            return game_data.evolve_text
         file = game_data.find_file(
             EvolveText.get_file_name(game_data.localizable.get_lang())
         )
@@ -1440,18 +1353,15 @@ class EvolveText:
         csv = io.bc_csv.CSV(
             file.dec_data,
             delimeter=io.bc_csv.Delimeter.from_country_code_res(game_data.country_code),
-            remove_empty=False,
         )
-        text: dict[int, dict[int, EvolveTextText]] = {}
-        for cat_id, line in enumerate(csv.lines):
-            text[cat_id] = {}
-            text[cat_id][0] = EvolveTextText(
-                0, io.data.Data.data_list_string_list(line[:3])
-            )
-            text[cat_id][1] = EvolveTextText(
-                1, io.data.Data.data_list_string_list(line[4:7])
-            )
-        return EvolveText(text)
+        text: dict[int, EvolveTextCat] = {}
+        for cat_id, line in enumerate(csv):
+            text[cat_id] = EvolveTextCat(cat_id, {})
+            text[cat_id].text[0] = EvolveTextText(0, line[:3])
+            text[cat_id].text[1] = EvolveTextText(1, line[4:7])
+        evolve_text = EvolveText(text)
+        game_data.evolve_text = evolve_text
+        return evolve_text
 
     def to_game_data(self, game_data: "pack.GamePacks"):
         file = game_data.find_file(
@@ -1463,14 +1373,17 @@ class EvolveText:
         csv = io.bc_csv.CSV(
             file.dec_data,
             delimeter=io.bc_csv.Delimeter.from_country_code_res(game_data.country_code),
-            remove_empty=False,
         )
         for cat_id, line in self.text.items():
-            first_evolve = line[0].text
-            second_evolve = line[1].text
-            csv.set_line(
-                cat_id,
-                first_evolve + ["＠"] + second_evolve,
+            first_evolve = line.text[0].text
+            second_evolve = line.text[1].text
+            padd_len_1 = max(0, 4 - len(first_evolve))
+            padd_len_2 = max(0, 4 - len(second_evolve))
+            csv.lines[cat_id] = (
+                first_evolve
+                + (["＠"] * padd_len_1)
+                + second_evolve
+                + (["＠"] * padd_len_2)
             )
 
         game_data.set_file(
@@ -1478,19 +1391,13 @@ class EvolveText:
         )
 
     def set(self, cat: "Cat"):
-        self.text[cat.cat_id] = cat.evolve_text or {}
+        self.text[cat.cat_id] = cat.evolve_text or EvolveTextCat.create_empty(
+            cat.cat_id
+        )
 
     @staticmethod
     def create_empty() -> "EvolveText":
         return EvolveText({})
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, EvolveText):
-            return False
-        return self.text == other.text
-
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
 
     @staticmethod
     def create_text_line(text: list[str]) -> dict[int, EvolveTextText]:
@@ -1510,7 +1417,7 @@ class Cat:
         unit_buy_data: UnitBuyData,
         talent: Optional["Talent"],
         nyanko_picture_book_data: NyankoPictureBookData,
-        evolve_text: Optional[dict[int, EvolveTextText]],
+        evolve_text: Optional[EvolveTextCat],
     ):
         if isinstance(cat_id, str):
             raise ValueError("cat_id must be an int")
@@ -1520,43 +1427,6 @@ class Cat:
         self.talent = talent
         self.nyanko_picture_book_data = nyanko_picture_book_data
         self.evolve_text = evolve_text
-
-    def serialize(self) -> dict[str, Any]:
-        evolve_text = {}
-        if self.evolve_text is not None:
-            for evolve, text in self.evolve_text.items():
-                evolve_text[evolve] = text.serialize()
-        return {
-            "forms": {
-                form.form.value: form.serialize() for form in self.forms.values()
-            },
-            "unit_buy_data": self.unit_buy_data.serialize(),
-            "talent": self.talent.serialize() if self.talent is not None else None,
-            "nyanko_picture_book_data": self.nyanko_picture_book_data.serialize(),
-            "evolve_text": evolve_text,
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any], cat_id: int) -> "Cat":
-        evolve_text: Optional[dict[int, EvolveTextText]] = None
-        if data["evolve_text"] is not None:
-            evolve_text = {
-                int(evolve): EvolveTextText.deserialize(int(evolve), text)
-                for evolve, text in data["evolve_text"].items()
-            }
-        return Cat(
-            cat_id,
-            {
-                FormType(form): Form.deserialize(form_data, cat_id, FormType(form))
-                for form, form_data in data["forms"].items()
-            },
-            UnitBuyData.deserialize(data["unit_buy_data"], cat_id),
-            Talent.deserialize(data["talent"], cat_id)
-            if data["talent"] is not None
-            else None,
-            NyankoPictureBookData.deserialize(data["nyanko_picture_book_data"], cat_id),
-            evolve_text,
-        )
 
     @staticmethod
     def get_stat_file_name(cat_id: int):
@@ -1610,18 +1480,16 @@ class Cat:
                 break
             try:
                 stats = Stats(
-                    cat_id,
-                    form,
-                    io.data.Data.data_list_int_list(stat_csv.get_row(form.get_index())),
+                    cat_id, form, [int(x) for x in stat_csv.lines[form.get_index()]]
                 )
             except IndexError:
                 continue
             try:
-                row = name_csv.get_row(form.get_index())
+                row = name_csv.lines[(form.get_index())]
             except IndexError:
                 continue
-            name = row[0].to_str()
-            description = io.data.Data.data_list_string_list(row[1:])
+            name = row[0]
+            description = row[1:]
             anim = Model.from_game_data(game_data, cat_id, form)
             if anim is None:
                 continue
@@ -1644,16 +1512,17 @@ class Cat:
             return None
         stat_csv = stat_file.dec_data.to_csv()
         name_csv = name_file.dec_data.to_csv(
-            delimeter=io.bc_csv.Delimeter.from_country_code_res(game_data.country_code)
+            delimeter=io.bc_csv.Delimeter.from_country_code_res(game_data.country_code),
+            remove_empty=False,
         )
         for form_type, form in self.forms.items():
-            stat_csv.set_line(
-                form_type.get_index(),
-                io.data.Data.int_list_data_list(form.stats.to_raw_data()),
-            )
-            row = [io.data.Data(form.name)]
-            row.extend(io.data.Data.string_list_data_list(form.description))
-            name_csv.set_line(form_type.get_index(), row)
+            stat_csv.lines[form_type.get_index()] = [
+                str(x) for x in form.stats.to_raw_data()
+            ]
+
+            row = [form.name]
+            row.extend(form.description)
+            name_csv.lines[form_type.get_index()] = row
             form.anim.to_game_data(game_data)
             form.icons_to_game_data(game_data)
 
@@ -1687,29 +1556,64 @@ class Cat:
             self.talent.cat_id = cat_id
         self.nyanko_picture_book_data.cat_id = cat_id
 
-    def __eq__(self, other: object):
-        if not isinstance(other, Cat):
-            return False
-        return (
-            self.cat_id == other.cat_id
-            and self.forms == other.forms
-            and self.unit_buy_data == other.unit_buy_data
-            and self.talent == other.talent
-            and self.nyanko_picture_book_data == other.nyanko_picture_book_data
-            and self.evolve_text == other.evolve_text
+    def set_is_displayed_in_catguide(self, is_displayed_in_catguide: bool):
+        self.unit_buy_data.set_obtainable(is_displayed_in_catguide)
+        self.nyanko_picture_book_data.set_is_displayed_in_catguide(
+            is_displayed_in_catguide
         )
 
-    def __ne__(self, other: object):
-        return not self == other
-
-    def set_obtainable(self, obtainable: bool):
-        self.unit_buy_data.set_obtainable(obtainable)
-        self.nyanko_picture_book_data.set_obtainable(obtainable)
-
-    def is_obtainable(self) -> bool:
+    def is_displayed_in_catguide(self) -> bool:
         return (
             self.unit_buy_data.is_obtainable()
-            and self.nyanko_picture_book_data.is_obtainable()
+            and self.nyanko_picture_book_data.is_displayed_in_cat_guide()
+        )
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        forms = dict_data.get("forms")
+        if forms is not None:
+            current_forms = self.forms.copy()
+            mod_forms = mods.bc_mod.ModEditDictHandler(forms, current_forms).get_dict(
+                convert_int=True
+            )
+            for form_type, form in mod_forms.items():
+                form_type = FormType.from_index(int(form_type))
+                current_form = self.get_form(form_type)
+                if current_form is None:
+                    current_form = Form.create_empty(self.cat_id, form_type)
+                    self.set_form(form_type, current_form)
+                current_form.apply_dict(form)
+
+        unit_buy = dict_data.get("unit_buy")
+        if unit_buy is not None:
+            self.unit_buy_data.apply_dict(unit_buy)
+        talent = dict_data.get("talent")
+        if talent is not None:
+            if self.talent is None:
+                self.talent = Talent(self.cat_id, [])
+            self.talent.apply_dict(talent)
+
+        nyanko_picture_book = dict_data.get("nyanko_picture_book")
+        if nyanko_picture_book is not None:
+            self.nyanko_picture_book_data.apply_dict(nyanko_picture_book)
+
+        evt = dict_data.get("evolve_text")
+        if evt is not None:
+            if self.evolve_text is None:
+                self.evolve_text = EvolveTextCat.create_empty(self.cat_id)
+            self.evolve_text.apply_dict(evt)
+
+    @staticmethod
+    def create_empty(cat_id: int) -> "Cat":
+        forms = {}
+        for form_type in FormType:
+            forms[form_type] = Form.create_empty(cat_id, form_type)
+        return Cat(
+            cat_id,
+            forms,
+            UnitBuyData.create_empty(cat_id),
+            None,
+            NyankoPictureBookData.create_empty(cat_id),
+            None,
         )
 
 
@@ -1720,23 +1624,12 @@ class Cats:
     ):
         self.cats = cats
 
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "cats": {cat.cat_id: cat.serialize() for cat in self.cats.values()},
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any]) -> "Cats":
-        cats = {
-            cat_id: Cat.deserialize(cat_data, int(cat_id))
-            for cat_id, cat_data in data["cats"].items()
-        }
-        return Cats(cats)
-
     @staticmethod
     def from_game_data(
         game_data: "pack.GamePacks", cat_ids: Optional[list[int]] = None
     ) -> "Cats":
+        if game_data.cats is not None:
+            return game_data.cats
         cats: dict[int, Cat] = {}
         unit_buy = UnitBuy.from_game_data(game_data)
         talents = Talents.from_game_data(game_data)
@@ -1753,7 +1646,9 @@ class Cats:
                 continue
             cats[cat_id] = cat
 
-        return Cats(cats)
+        cats_o = Cats(cats)
+        game_data.cats = cats_o
+        return cats_o
 
     def to_game_data(self, game_data: "pack.GamePacks"):
         unit_buy = UnitBuy({})
@@ -1778,46 +1673,32 @@ class Cats:
         self.cats[cat.cat_id] = cat
 
     @staticmethod
-    def get_cats_json_file_name() -> "io.path.Path":
-        return io.path.Path("catbase").add("cats.json")
-
-    def add_to_zip(self, zip: "io.zip.Zip"):
-        cats_json = io.json_file.JsonFile.from_object(self.serialize())
-        zip.add_file(Cats.get_cats_json_file_name(), cats_json.to_data())
-
-    @staticmethod
-    def from_zip(zip: "io.zip.Zip") -> "Cats":
-        cats_json = zip.get_file(Cats.get_cats_json_file_name())
-        if cats_json is None:
-            return Cats.create_empty()
-        return Cats.deserialize(io.json_file.JsonFile.from_data(cats_json).get_json())
-
-    @staticmethod
     def create_empty() -> "Cats":
         return Cats({})
-
-    def import_cats(self, other: "Cats", game_data: "pack.GamePacks"):
-        """_summary_
-
-        Args:
-            other (Cats): _description_
-            game_data (pack.GamePacks): The game data to check if the imported data is different from the game data. This is used to prevent overwriting the current data with base game data.
-        """
-        gd_cats = Cats.from_game_data(game_data)
-        all_keys = set(self.cats.keys())
-        all_keys.update(other.cats.keys())
-        all_keys.update(gd_cats.cats.keys())
-        for cat_id in all_keys:
-            other_cat = other.get_cat(cat_id)
-            gd_cat = gd_cats.get_cat(cat_id)
-            if other_cat is None:
-                continue
-            if gd_cat is not None:
-                if gd_cat != other_cat:
-                    self.cats[cat_id] = other_cat
-            else:
-                self.cats[cat_id] = other_cat
 
     @staticmethod
     def get_total_cats(game_data: "pack.GamePacks") -> int:
         return len(NyankoPictureBook.from_game_data(game_data).data)
+
+    @staticmethod
+    def apply_mod_to_game_data(mod: "mods.bc_mod.Mod", game_data: "pack.GamePacks"):
+        cats_data = mod.mod_edits.get("cats")
+        if cats_data is None:
+            return
+
+        cats_dict: dict[int, Cat] = {}
+
+        current_cats = Cats.from_game_data(game_data)
+        mod_cats = mods.bc_mod.ModEditDictHandler(
+            cats_data, current_cats.cats
+        ).get_dict(convert_int=True)
+
+        for cat_id, cat_data in mod_cats.items():
+            game_cat = current_cats.get_cat(int(cat_id))
+            if game_cat is None:
+                game_cat = Cat.create_empty(int(cat_id))
+            game_cat.apply_dict(cat_data)
+            cats_dict[int(cat_id)] = game_cat
+
+        cats = Cats(cats_dict)
+        cats.to_game_data(game_data)

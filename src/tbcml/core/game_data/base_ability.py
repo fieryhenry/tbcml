@@ -1,6 +1,7 @@
 import enum
+from typing import Any
 from tbcml.core.game_data import pack
-from tbcml.core import io
+from tbcml.core import io, mods
 
 
 class Probability(enum.Enum):
@@ -25,11 +26,45 @@ class BaseAbilityData:
         self.max_plus_level = max_plus_level
         self.chapter_1_to_2_max_level = chapter_1_to_2_max_level
 
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.sell_price = dict_data.get("sell_price", self.sell_price)
+        probability = dict_data.get("probability")
+        if probability is not None:
+            self.probability = Probability(probability)
+        self.max_base_level = dict_data.get("max_base_level", self.max_base_level)
+        self.max_plus_level = dict_data.get("max_plus_level", self.max_plus_level)
+        self.chapter_1_to_2_max_level = dict_data.get(
+            "chapter_1_to_2_max_level", self.chapter_1_to_2_max_level
+        )
+
+    @staticmethod
+    def create_empty() -> "BaseAbilityData":
+        return BaseAbilityData(
+            0,
+            Probability.NORMAL,
+            0,
+            0,
+            0,
+        )
+
 
 class BaseAbility:
     def __init__(self, ability_id: int, data: BaseAbilityData):
         self.ability_id = ability_id
         self.data = data
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.ability_id = dict_data.get("ability_id", self.ability_id)
+        data = dict_data.get("data")
+        if data is not None:
+            self.data.apply_dict(data)
+
+    @staticmethod
+    def create_empty(ability_id: int) -> "BaseAbility":
+        return BaseAbility(
+            ability_id,
+            BaseAbilityData.create_empty(),
+        )
 
 
 class BaseAbilities:
@@ -47,11 +82,11 @@ class BaseAbilities:
             line = csv.read_line()
             if line is None:
                 continue
-            xp = line[0].to_int()
-            probability = line[1].to_int()
-            max_base_level = line[2].to_int()
-            max_plus_level = line[3].to_int()
-            chapter_1_to_2_max_level = line[4].to_int()
+            xp = int(line[0])
+            probability = int(line[1])
+            max_base_level = int(line[2])
+            max_plus_level = int(line[3])
+            chapter_1_to_2_max_level = int(line[4])
             data = BaseAbilityData(
                 xp,
                 Probability(probability),
@@ -77,29 +112,44 @@ class BaseAbilities:
                 ability = self.abilities[i]
             except KeyError:
                 continue
-            line[0].set(ability.data.sell_price)
-            line[1].set(ability.data.probability.value)
-            line[2].set(ability.data.max_base_level)
-            line[3].set(ability.data.max_plus_level)
-            line[4].set(ability.data.chapter_1_to_2_max_level)
-            csv.set_line(i, line)
+            line[0] = str(ability.data.sell_price)
+            line[1] = str(ability.data.probability.value)
+            line[2] = str(ability.data.max_base_level)
+            line[3] = str(ability.data.max_plus_level)
+            line[4] = str(ability.data.chapter_1_to_2_max_level)
+            csv.lines[i] = line
             del remaining_abilities[i]
 
         for ability in remaining_abilities.values():
             line = [
-                ability.data.sell_price,
-                ability.data.probability.value,
-                ability.data.max_base_level,
-                ability.data.max_plus_level,
-                ability.data.chapter_1_to_2_max_level,
+                str(ability.data.sell_price),
+                str(ability.data.probability.value),
+                str(ability.data.max_base_level),
+                str(ability.data.max_plus_level),
+                str(ability.data.chapter_1_to_2_max_level),
             ]
-            csv.add_line(line)
+            csv.lines.append(line)
 
         game_data.set_file(self.get_file_name(), csv.to_data())
 
     @staticmethod
     def get_file_name() -> str:
         return "AbilityData.csv"
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        abilities = dict_data.get("abilities")
+        if abilities is not None:
+            current_abilities = self.abilities.copy()
+            modded_abilities = mods.bc_mod.ModEditDictHandler(
+                abilities, current_abilities
+            ).get_dict(convert_int=True)
+            for ability_id, modded_ability in modded_abilities.items():
+                ability = current_abilities.get(ability_id)
+                if ability is None:
+                    ability = BaseAbility.create_empty(ability_id)
+                    current_abilities[ability_id] = ability
+                ability.apply_dict(modded_ability)
+            self.abilities = current_abilities
 
     @staticmethod
     def create_empty() -> "BaseAbilities":

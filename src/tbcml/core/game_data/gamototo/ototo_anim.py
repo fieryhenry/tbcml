@@ -1,7 +1,7 @@
-from typing import Any
 import enum
+from typing import Any
 from tbcml.core.game_data import pack
-from tbcml.core import io, anim
+from tbcml.core import anim
 
 
 class MainChara:
@@ -47,33 +47,6 @@ class MainChara:
     def __init__(self, model: "anim.model.Model"):
         self.model = model
 
-    def serialize(self) -> dict[str, Any]:
-        return {
-            "model": self.model.serialize(),
-        }
-
-    @staticmethod
-    def deserialize(data: dict[str, Any]) -> "MainChara":
-        return MainChara(anim.model.Model.deserialize(data["model"]))
-
-    def to_zip(self, zip: "io.zip.Zip"):
-        path = MainChara.get_zip_path()
-        json_data = io.json_file.JsonFile.from_object(self.serialize()).to_data()
-        zip.add_file(path.add("main_chara.json"), json_data)
-
-    @staticmethod
-    def get_zip_path() -> io.path.Path:
-        return io.path.Path("gamototo").add("ototo")
-
-    @staticmethod
-    def from_zip(zip: "io.zip.Zip") -> "MainChara":
-        path = MainChara.get_zip_path()
-        json_data = zip.get_file(path.add("main_chara.json"))
-        if json_data is None:
-            return MainChara.create_empty()
-        json_file = io.json_file.JsonFile.from_data(json_data)
-        return MainChara.deserialize(json_file.get_json())
-
     @staticmethod
     def from_game_data(game_data: "pack.GamePacks") -> "MainChara":
         an = anim.model.Model.load(
@@ -88,17 +61,11 @@ class MainChara:
     def to_game_data(self, game_data: "pack.GamePacks"):
         self.model.save(game_data)
 
+    def apply_dict(self, dict_data: dict[str, Any]):
+        model = dict_data.get("model")
+        if model is not None:
+            self.model.apply_dict(model)
+
     @staticmethod
     def create_empty() -> "MainChara":
         return MainChara(anim.model.Model.create_empty())
-
-    def import_main_chara(self, other: "MainChara", game_data: "pack.GamePacks"):
-        """_summary_
-
-        Args:
-            other (MainChara): _description_
-            game_data (pack.GamePacks): The game data to check if the imported data is different from the game data. This is used to prevent overwriting the current data with base game data.
-        """
-        gd_chara = self.from_game_data(game_data)
-        if gd_chara != other:
-            self.model = other.model
