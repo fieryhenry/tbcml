@@ -1,6 +1,7 @@
 import enum
+from typing import Any
 from tbcml.core.game_data import pack
-from tbcml.core import io
+from tbcml.core import io, mods
 
 
 class DropType(enum.Enum):
@@ -16,6 +17,17 @@ class DropItem:
     def get_percentage(self) -> float:
         return self.probability / 100
 
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.item_id = dict_data.get("item_id", self.item_id)
+        self.probability = dict_data.get("probability", self.probability)
+
+    @staticmethod
+    def create_empty(item_id: int) -> "DropItem":
+        return DropItem(
+            item_id,
+            0,
+        )
+
 
 class ItemPack:
     def __init__(
@@ -25,6 +37,32 @@ class ItemPack:
         self.user_rank = user_rank
         self.unknown = unknown
         self.items = items
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.type = DropType(dict_data.get("type", self.type.value))
+        self.user_rank = dict_data.get("user_rank", self.user_rank)
+        self.unknown = dict_data.get("unknown", self.unknown)
+        items = dict_data.get("items")
+        if items is not None:
+            current_items = self.items.copy()
+            modded_items = mods.bc_mod.ModEditDictHandler(
+                items, current_items
+            ).get_dict(convert_int=True)
+            for item_id, modded_item in modded_items:
+                item = self.items.get(item_id)
+                if item is None:
+                    item = DropItem.create_empty(item_id)
+                    self.items[item_id] = item
+                item.apply_dict(modded_item)
+
+    @staticmethod
+    def create_empty() -> "ItemPack":
+        return ItemPack(
+            DropType.ITEM_PACK,
+            0,
+            0,
+            {},
+        )
 
 
 class ItemPacks:
@@ -90,6 +128,20 @@ class ItemPacks:
                 line.append(str(item.item_id))
             csv.lines.append(line)
         game_data.set_file(self.get_file_name(), csv.to_data())
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        packs = dict_data.get("packs")
+        if packs is not None:
+            current_packs = self.packs.copy()
+            modded_packs = mods.bc_mod.ModEditDictHandler(
+                packs, current_packs
+            ).get_dict(convert_int=True)
+            for pack_id, modded_pack in modded_packs:
+                pack = self.packs.get(pack_id)
+                if pack is None:
+                    pack = ItemPack.create_empty()
+                    self.packs[pack_id] = pack
+                pack.apply_dict(modded_pack)
 
     @staticmethod
     def create_empty() -> "ItemPacks":
