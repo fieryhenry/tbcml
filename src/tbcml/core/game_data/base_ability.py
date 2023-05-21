@@ -1,6 +1,7 @@
 import enum
+from typing import Any
 from tbcml.core.game_data import pack
-from tbcml.core import io
+from tbcml.core import io, mods
 
 
 class Probability(enum.Enum):
@@ -25,11 +26,45 @@ class BaseAbilityData:
         self.max_plus_level = max_plus_level
         self.chapter_1_to_2_max_level = chapter_1_to_2_max_level
 
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.sell_price = dict_data.get("sell_price", self.sell_price)
+        probability = dict_data.get("probability")
+        if probability is not None:
+            self.probability = Probability(probability)
+        self.max_base_level = dict_data.get("max_base_level", self.max_base_level)
+        self.max_plus_level = dict_data.get("max_plus_level", self.max_plus_level)
+        self.chapter_1_to_2_max_level = dict_data.get(
+            "chapter_1_to_2_max_level", self.chapter_1_to_2_max_level
+        )
+
+    @staticmethod
+    def create_empty() -> "BaseAbilityData":
+        return BaseAbilityData(
+            0,
+            Probability.NORMAL,
+            0,
+            0,
+            0,
+        )
+
 
 class BaseAbility:
     def __init__(self, ability_id: int, data: BaseAbilityData):
         self.ability_id = ability_id
         self.data = data
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.ability_id = dict_data.get("ability_id", self.ability_id)
+        data = dict_data.get("data")
+        if data is not None:
+            self.data.apply_dict(data)
+
+    @staticmethod
+    def create_empty(ability_id: int) -> "BaseAbility":
+        return BaseAbility(
+            ability_id,
+            BaseAbilityData.create_empty(),
+        )
 
 
 class BaseAbilities:
@@ -100,6 +135,21 @@ class BaseAbilities:
     @staticmethod
     def get_file_name() -> str:
         return "AbilityData.csv"
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        abilities = dict_data.get("abilities")
+        if abilities is not None:
+            current_abilities = self.abilities.copy()
+            modded_abilities = mods.bc_mod.ModEditDictHandler(
+                abilities, current_abilities
+            ).get_dict(convert_int=True)
+            for ability_id, modded_ability in modded_abilities.items():
+                ability = current_abilities.get(ability_id)
+                if ability is None:
+                    ability = BaseAbility.create_empty(ability_id)
+                    current_abilities[ability_id] = ability
+                ability.apply_dict(modded_ability)
+            self.abilities = current_abilities
 
     @staticmethod
     def create_empty() -> "BaseAbilities":
