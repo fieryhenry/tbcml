@@ -763,14 +763,14 @@ class Apk:
     def add_script_mods(self, bc_mods: list["mods.bc_mod.Mod"]):
         if not bc_mods:
             return
-        first_mod = bc_mods[0]
-        cc = first_mod.country_code
-        gv = first_mod.game_version
-
-        scripts = mods.frida_script.Scripts([], cc, gv)
+        scripts = mods.frida_script.Scripts([])
+        added_script = False
         for mod in bc_mods:
-            scripts.add_scripts(mod.scripts)
-        self.add_frida_scripts(scripts)
+            script_added = scripts.add_scripts(mod.scripts)
+            if script_added:
+                added_script = True
+        if added_script:
+            self.add_frida_scripts(scripts)
 
     def get_libs(self) -> dict[str, "lib.Lib"]:
         libs: dict[str, "lib.Lib"] = {}

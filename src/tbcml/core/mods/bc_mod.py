@@ -1,6 +1,6 @@
 from typing import Any, Optional, Union
 import zipfile
-from tbcml.core import io, game_version, country_code, crypto, mods
+from tbcml.core import io, crypto, mods
 import copy
 
 
@@ -121,8 +121,6 @@ class Mod:
         name: str,
         authors: list[str],
         description: str,
-        country_code: "country_code.CountryCode",
-        game_version: "game_version.GameVersion",
         mod_id: str,
         mod_version: str,
         credits: Optional[list[str]] = None,
@@ -131,8 +129,6 @@ class Mod:
         self.name = name
         self.authors = authors
         self.description = description
-        self.country_code = country_code
-        self.game_version = game_version
         self.mod_id = mod_id
         self.mod_version = mod_version
         self.credits = credits if credits is not None else []
@@ -158,7 +154,7 @@ class Mod:
 
     def init_scripts(self):
         self.scripts: mods.frida_script.Scripts = mods.frida_script.Scripts(
-            [], self.country_code, self.game_version
+            [],
         )
 
     def init_audio(self):
@@ -172,8 +168,6 @@ class Mod:
             "name": self.name,
             "authors": self.authors,
             "description": self.description,
-            "country_code": self.country_code.get_code(),
-            "game_version": self.game_version.to_string(),
             "mod_id": self.mod_id,
             "mod_version": self.mod_version,
             "credits": self.credits,
@@ -307,9 +301,7 @@ class Mod:
         mod = Mod.from_mod_json(json.get_json())
 
         mod.audio = io.audio.Audio.from_zip(zip_file)
-        mod.scripts = mods.frida_script.Scripts.from_zip(
-            zip_file, mod.country_code, mod.game_version, mod
-        )
+        mod.scripts = mods.frida_script.Scripts.from_zip(zip_file, mod)
         mod.smali = mods.smali.SmaliSet.from_zip(zip_file)
 
         mod.mod_edits = {}
@@ -336,14 +328,12 @@ class Mod:
     def from_mod_json(data: dict[str, Any]) -> "Mod":
         return Mod(
             data["name"],
-            data["authors"],
+            data.get("authors", []),
             data["description"],
-            country_code.CountryCode.from_code(data["country_code"]),
-            game_version.GameVersion.from_string(data["game_version"]),
             data["mod_id"],
             data["mod_version"],
-            data["credits"],
-            [Dependency.from_dict(x) for x in data["dependencies"]],
+            data.get("credits", []),
+            [Dependency.from_dict(x) for x in data.get("dependencies", [])],
         )
 
     @staticmethod
