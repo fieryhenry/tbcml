@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
@@ -258,7 +258,7 @@ class ModInfoView(QtWidgets.QWidget):
                     return False
         return True
 
-    def get_attrs_dict(self) -> dict[str, str]:
+    def get_attrs_dict(self) -> dict[str, Any]:
         attrs = self.get_all_attrs()
         return {
             "name": attrs[0].text(),  # type: ignore
@@ -295,23 +295,21 @@ class ModInfoView(QtWidgets.QWidget):
         md = mods.mod_manager.ModManager().get_mod(attrs["id"])
         if md is not None:
             md.name = attrs["name"]
-            md.author = attrs["author"]
+            md.authors = attrs["authors"]
             md.description = attrs["desc"]
             md.country_code = cc
             md.game_version = gv
             md.mod_version = attrs["version"]
-            md.mod_url = attrs["url"]
 
             return md
         md = mods.bc_mod.Mod(
             attrs["name"],
-            attrs["author"],
+            attrs["authors"],
             attrs["desc"],
             cc,
             gv,
             attrs["id"],
             attrs["version"],
-            attrs["url"],
         )
         return md
 
@@ -337,11 +335,10 @@ class ModInfoView(QtWidgets.QWidget):
         self.mod = mod
         self.mod_name.setText(mod.name)
         self.mod_desc.setText(mod.description)
-        self.mod_author.setText(mod.author)
+        self.mod_author.setText(mod.authors[0])
         self.mod_game_version.setText(mod.game_version.to_string())
         self.mod_country_code_dropdown.setCurrentText(mod.country_code.get_code())
         self.mod_version.setText(mod.mod_version)
-        self.mod_url.setText(mod.mod_url if mod.mod_url else "")
         self.mod_id.setText(mod.mod_id)
 
     def save_mod(self):
