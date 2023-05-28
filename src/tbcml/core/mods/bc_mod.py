@@ -133,7 +133,7 @@ class Mod:
         contributors: Optional[list[str]] = None,
         dependencies: Optional[list[Dependency]] = None,
         long_description: str = "",
-        icon: Optional[io.bc_image.BCImage] = None,
+        icon: Optional["io.bc_image.BCImage"] = None,
     ):
         self.name = name
         self.author = author
@@ -347,7 +347,9 @@ class Mod:
         return mod
 
     @staticmethod
-    def from_mod_json(data: dict[str, Any], icon: Optional["io.bc_image.BCImage"] = None) -> "Mod":
+    def from_mod_json(
+        data: dict[str, Any], icon: Optional["io.bc_image.BCImage"] = None
+    ) -> "Mod":
         return Mod(
             data["name"],
             data.get("authors", []),
