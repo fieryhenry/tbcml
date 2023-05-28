@@ -132,6 +132,8 @@ class Mod:
         mod_version: str,
         contributors: Optional[list[str]] = None,
         dependencies: Optional[list[Dependency]] = None,
+        long_description: str = "",
+        icon: Optional[io.bc_image.BCImage] = None,
     ):
         self.name = name
         self.author = author
@@ -140,6 +142,8 @@ class Mod:
         self.mod_version = mod_version
         self.contributors = contributors if contributors is not None else []
         self.dependencies = dependencies if dependencies is not None else []
+        self.long_description = long_description
+        self.icon = icon
 
         self.mod_edits: dict[str, Any] = {}
         self.game_files: dict[str, io.data.Data] = {}
@@ -179,6 +183,7 @@ class Mod:
             "mod_version": self.mod_version,
             "contributors": self.contributors,
             "dependencies": [dependency.to_dict() for dependency in self.dependencies],
+            "long_description": self.long_description,
         }
 
     def save(self, path: "io.path.Path"):
@@ -206,6 +211,11 @@ class Mod:
 
         for file_name, data in self.apk_files.items():
             zip_file.add_file(io.path.Path("apk_files/" + file_name), data)
+
+        icon = self.icon
+        if icon is None:
+            icon = io.bc_image.BCImage.create_empty()
+        zip_file.add_file(io.path.Path("icon.png"), icon.to_data())
 
         json = io.json_file.JsonFile.from_object(self.create_mod_json())
         zip_file.add_file(io.path.Path("mod.json"), json.to_data())
@@ -305,7 +315,12 @@ class Mod:
         if json_file is None:
             return None
         json = io.json_file.JsonFile.from_data(json_file)
-        mod = Mod.from_mod_json(json.get_json())
+
+        icon = zip_file.get_file(io.path.Path("icon.png"))
+        if icon is not None:
+            icon = io.bc_image.BCImage(icon)
+
+        mod = Mod.from_mod_json(json.get_json(), icon)
 
         mod.audio = io.audio.Audio.from_zip(zip_file)
         mod.scripts = mods.frida_script.Scripts.from_zip(zip_file, mod)
@@ -332,7 +347,7 @@ class Mod:
         return mod
 
     @staticmethod
-    def from_mod_json(data: dict[str, Any]) -> "Mod":
+    def from_mod_json(data: dict[str, Any], icon: Optional["io.bc_image.BCImage"] = None) -> "Mod":
         return Mod(
             data["name"],
             data.get("authors", []),
@@ -341,6 +356,8 @@ class Mod:
             data["mod_version"],
             data.get("credits", []),
             [Dependency.from_dict(x) for x in data.get("dependencies", [])],
+            data.get("long_description", ""),
+            icon,
         )
 
     @staticmethod
