@@ -99,7 +99,7 @@ class BCImage:
         self.image.save(path.to_str(), format="PNG")
 
     def to_data(self):
-        if self.image.tobytes() == self.__original_img.tobytes():  # type: ignore
+        if self.image.tobytes() == self.__original_img.tobytes() and len(self.data) > 0:  # type: ignore
             return self.__original_data
         bytes_io = data.Data().to_bytes_io()
         self.image.save(bytes_io, format="PNG")

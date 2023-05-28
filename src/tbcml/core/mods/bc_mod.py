@@ -143,7 +143,9 @@ class Mod:
         self.contributors = contributors if contributors is not None else []
         self.dependencies = dependencies if dependencies is not None else []
         self.long_description = long_description
-        self.icon = icon
+        self.icon = (
+            icon if icon is not None else io.bc_image.BCImage.from_size(512, 512)
+        )
 
         self.mod_edits: dict[str, Any] = {}
         self.game_files: dict[str, io.data.Data] = {}
@@ -213,8 +215,6 @@ class Mod:
             zip_file.add_file(io.path.Path("apk_files/" + file_name), data)
 
         icon = self.icon
-        if icon is None:
-            icon = io.bc_image.BCImage.create_empty()
         zip_file.add_file(io.path.Path("icon.png"), icon.to_data())
 
         json = io.json_file.JsonFile.from_object(self.create_mod_json())
@@ -311,14 +311,17 @@ class Mod:
             zip_file = io.zip.Zip.from_file(path)
         except zipfile.BadZipFile:
             return None
+        return Mod.load_from_zip(zip_file)
+
+    @staticmethod
+    def load_from_zip(zip_file: "io.zip.Zip") -> Optional["Mod"]:
         json_file = zip_file.get_file(io.path.Path("mod.json"))
         if json_file is None:
             return None
         json = io.json_file.JsonFile.from_data(json_file)
 
         icon = zip_file.get_file(io.path.Path("icon.png"))
-        if icon is not None:
-            icon = io.bc_image.BCImage(icon)
+        icon = io.bc_image.BCImage(icon)
 
         mod = Mod.from_mod_json(json.get_json(), icon)
 
@@ -343,7 +346,6 @@ class Mod:
                 file_zip = zip_file.get_file(file)
                 if file_zip is not None:
                     mod.apk_files[file.get_file_name()] = file_zip
-
         return mod
 
     @staticmethod
