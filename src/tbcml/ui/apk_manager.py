@@ -161,7 +161,11 @@ class ApkManager(QtWidgets.QDialog):
         self.progress_bar.show()
 
         self.decrypt_thread = ui_thread.ThreadWorker.run_in_thread_progress(
-            self.decrypt_apk_thread, ui_thread.ProgressMode.NONE, apk, path, with_mods
+            self.decrypt_apk_thread,
+            ui_thread.ProgressMode.PRIMARY,
+            apk,
+            path,
+            with_mods,
         )
         self.decrypt_thread.progress.connect(self.progress_bar.set_progress)
 
