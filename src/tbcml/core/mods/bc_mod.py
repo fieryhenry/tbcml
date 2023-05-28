@@ -114,24 +114,31 @@ class Dependency:
     def to_html(self):
         return f"<a href='https://tbcml.net/mods/{self.mod_id}'>{self.mod_id}</a> v{self.mod_version}"
 
+    @staticmethod
+    def from_str_str_list(data: list[tuple[str, str]]):
+        dependencies: list[Dependency] = []
+        for mod_id, mod_version in data:
+            dependencies.append(Dependency(mod_id, mod_version))
+        return dependencies
+
 
 class Mod:
     def __init__(
         self,
         name: str,
-        authors: list[str],
+        author: str,
         description: str,
         mod_id: str,
         mod_version: str,
-        credits: Optional[list[str]] = None,
+        contributors: Optional[list[str]] = None,
         dependencies: Optional[list[Dependency]] = None,
     ):
         self.name = name
-        self.authors = authors
+        self.author = author
         self.description = description
         self.mod_id = mod_id
         self.mod_version = mod_version
-        self.credits = credits if credits is not None else []
+        self.contributors = contributors if contributors is not None else []
         self.dependencies = dependencies if dependencies is not None else []
 
         self.mod_edits: dict[str, Any] = {}
@@ -166,11 +173,11 @@ class Mod:
     def create_mod_json(self) -> dict[str, Any]:
         return {
             "name": self.name,
-            "authors": self.authors,
+            "author": self.author,
             "description": self.description,
             "mod_id": self.mod_id,
             "mod_version": self.mod_version,
-            "credits": self.credits,
+            "contributors": self.contributors,
             "dependencies": [dependency.to_dict() for dependency in self.dependencies],
         }
 

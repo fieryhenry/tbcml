@@ -770,6 +770,7 @@ class Apk:
             if script_added:
                 added_script = True
         if added_script:
+            scripts.validate_scripts(self.country_code, self.game_version)
             self.add_frida_scripts(scripts)
 
     def get_libs(self) -> dict[str, "lib.Lib"]:

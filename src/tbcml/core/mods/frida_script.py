@@ -69,35 +69,28 @@ class Scripts:
     def __init__(
         self,
         scripts: list["FridaScript"],
-        cc: Optional["country_code.CountryCode"] = None,
-        gv: Optional["game_version.GameVersion"] = None,
     ):
         self.scripts = scripts
-        if len(scripts) > 0:
-            self.cc = scripts[0].cc
-            self.gv = scripts[0].gv
-        else:
-            if cc is None or gv is None:
-                raise ValueError(
-                    "Country code and game version must be specified if no scripts are provided."
-                )
-            self.cc = cc
-            self.gv = gv
-        self.validate_scripts()
 
-    def is_valid_script(self, script: "FridaScript") -> bool:
-        return script.cc == self.cc and script.gv == self.gv
+    def is_valid_script(
+        self,
+        script: "FridaScript",
+        cc: "country_code.CountryCode",
+        gv: "game_version.GameVersion",
+    ) -> bool:
+        return script.cc == cc and script.gv == gv
 
-    def validate_scripts(self):
+    def validate_scripts(
+        self, cc: "country_code.CountryCode", gv: "game_version.GameVersion"
+    ):
         new_scripts: list["FridaScript"] = []
         for script in self.scripts:
-            if self.is_valid_script(script):
+            if self.is_valid_script(script, cc, gv):
                 new_scripts.append(script)
         self.scripts = new_scripts
 
     def add_script(self, script: "FridaScript"):
-        if self.is_valid_script(script):
-            self.scripts.append(script)
+        self.scripts.append(script)
 
     def remove_script(self, script: "FridaScript"):
         if script in self.scripts:
@@ -203,7 +196,7 @@ function readStdString(address) {
         script_text = self.get_base_script() + "\r\n"
         for script in self.scripts:
             if script.arc == arc:
-                script_text += f"// {'-'*50}\r\n// {script.name} from mod {script.mod.name} by {script.mod.authors}\r\n// {'-'*50}\r\n\r\n"
+                script_text += f"// {'-'*50}\r\n// {script.name} from mod {script.mod.name} by {script.mod.author}\r\n// {'-'*50}\r\n\r\n"
                 script_text += script.script
         return io.data.Data(script_text)
 
@@ -239,8 +232,7 @@ function readStdString(address) {
 
     def import_scripts(self, other: "Scripts"):
         for script in other.scripts:
-            if self.is_valid_script(script):
-                self.add_script(script)
+            self.add_script(script)
 
     def get_used_arcs(self) -> list[str]:
         arcs: set[str] = set()
