@@ -923,7 +923,7 @@ class Apk:
         )
         mod_html = ""
         for mod in mods:
-            mod_url = f"https://tbcml.net/mods/{mod.name}"
+            mod_url = f"https://tbcml.net/mod/{mod.name}"
             mod_html += f'<a class="Buttonbig" href="{mod_url}">{mod.name}</a><br><br>'
         template_file = template_file.replace("{{modlist}}", mod_html)
         self.extracted_path.add("assets", template_file_name).write(

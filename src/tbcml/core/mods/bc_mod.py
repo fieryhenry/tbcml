@@ -112,7 +112,7 @@ class Dependency:
         return Dependency(data["mod_id"], data["mod_version"])
 
     def to_html(self):
-        return f"<a href='https://tbcml.net/mods/{self.mod_id}'>{self.mod_id}</a> v{self.mod_version}"
+        return f"<a href='https://tbcml.net/mod/{self.mod_id}'>{self.mod_id}</a> v{self.mod_version}"
 
     @staticmethod
     def from_str_str_list(data: list[tuple[str, str]]):
