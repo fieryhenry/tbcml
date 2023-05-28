@@ -1713,6 +1713,8 @@ class Maps:
 
     @staticmethod
     def apply_mod_to_game_data(mod: "mods.bc_mod.Mod", game_data: "pack.GamePacks"):
+        if not mod.mod_edits.get("maps"):
+            return
         current_maps = Maps.from_game_data(game_data)
         current_maps.apply_dict(mod.mod_edits)
 

@@ -446,7 +446,7 @@ class Apk:
             end="",
         )
 
-    def download_apk(self, progress_signal: QtCore.pyqtSignal) -> bool:
+    def download_apk(self, progress_signal: Optional[QtCore.pyqtSignal] = None) -> bool:
         if self.apk_path.exists():
             return True
         if (
@@ -483,7 +483,7 @@ class Apk:
 
     def download_apk_en(
         self,
-        progress_signal: QtCore.pyqtSignal,
+        progress_signal: Optional[QtCore.pyqtSignal] = None,
         is_en: bool = True,
     ) -> bool:
         urls = Apk.get_en_apk_urls("the-battle-cats" if is_en else "the-battle-cats-jp")
@@ -604,8 +604,8 @@ class Apk:
 
     def download_server_files(
         self,
-        progress_signal: QtCore.pyqtSignal,
-        progress_mode: QtCore.pyqtSignal,
+        progress_signal: Optional[QtCore.pyqtSignal] = None,
+        progress_mode: Optional[QtCore.pyqtSignal] = None,
         copy: bool = True,
     ):
         sfh = server_handler.ServerFileHandler(self)

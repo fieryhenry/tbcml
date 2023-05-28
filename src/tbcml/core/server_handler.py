@@ -170,8 +170,8 @@ class ServerFileHandler:
 
     def extract_all(
         self,
-        progress_primary: Optional[QtCore.pyqtSignal],
-        progress_secondary: Optional[QtCore.pyqtSignal],
+        progress_primary: Optional[QtCore.pyqtSignal] = None,
+        progress_secondary: Optional[QtCore.pyqtSignal] = None,
         force: bool = False,
     ):
         """Extracts all game versions

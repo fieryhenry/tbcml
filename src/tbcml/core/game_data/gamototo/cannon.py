@@ -1405,6 +1405,8 @@ class Castles:
 
     @staticmethod
     def apply_mod_to_game_data(mod: "mods.bc_mod.Mod", game_data: "pack.GamePacks"):
+        if mod.mod_edits.get("castles") is None:
+            return
         current_castles = Castles.from_game_data(game_data)
         current_castles.apply_dict(mod.mod_edits)
 

@@ -38,7 +38,7 @@ class RequestHandler:
 
     def get_stream(
         self,
-        progress_signal: QtCore.pyqtSignal,
+        progress_signal: Optional[QtCore.pyqtSignal] = None,
     ) -> requests.Response:
         """Sends a GET request and streams the response.
 
@@ -57,7 +57,7 @@ class RequestHandler:
 
     def __progress_hook(
         self,
-        progress_signal: QtCore.pyqtSignal,
+        progress_signal: Optional[QtCore.pyqtSignal] = None,
     ) -> Callable[[requests.Response], None]:
         """Creates a progress hook for a GET request.
 
@@ -82,7 +82,8 @@ class RequestHandler:
             all_data: list[io.data.Data] = []
             for data in response.iter_content(chunk_size=4096):
                 downloaded += len(data)
-                progress_signal.emit(downloaded, total_length)  # type: ignore
+                if progress_signal is not None:
+                    progress_signal.emit(downloaded, total_length)  # type: ignore
                 all_data.append(io.data.Data(data))
             response._content = io.data.Data.from_many(all_data).data
 

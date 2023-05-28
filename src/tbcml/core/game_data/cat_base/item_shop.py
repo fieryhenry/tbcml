@@ -277,8 +277,10 @@ class ItemShop:
 
     @staticmethod
     def apply_mod_to_game_data(mod: "mods.bc_mod.Mod", game_data: "pack.GamePacks"):
-        item_shop = ItemShop.from_game_data(game_data)
         item_shop_data = mod.mod_edits.get("item_shop")
+        if item_shop_data is None:
+            return
+        item_shop = ItemShop.from_game_data(game_data)
         if item_shop_data is not None:
             item_shop.apply_dict(item_shop_data)
             item_shop.to_game_data(game_data)
