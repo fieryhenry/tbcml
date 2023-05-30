@@ -278,7 +278,7 @@ class Data:
         return int.from_bytes(self.data, "little")
 
     def to_str(self) -> str:
-        return self.data.decode()
+        return self.data.decode(encoding="utf-8-sig")
 
     def to_bool(self) -> bool:
         return bool(self.to_int())
