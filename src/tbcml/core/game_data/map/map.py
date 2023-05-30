@@ -1672,7 +1672,7 @@ class Maps:
             if map is None:
                 continue
             maps[stage_id] = map
-            stage_id += 1
+
         mapso = Maps(maps)
         game_data.maps = mapso
         return mapso
