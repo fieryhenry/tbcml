@@ -2,12 +2,10 @@ import base64
 import datetime
 import json
 import time
-from typing import Optional
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
-from PyQt5 import QtCore
 
 from tbcml.core import country_code, crypto, io, request
 
@@ -87,7 +85,6 @@ class ServerFileHandler:
     def download(
         self,
         index: int,
-        progress_signal: Optional[QtCore.pyqtSignal],
     ) -> "io.zip.Zip":
         """Downloads game files from the server for a given game version
 
@@ -114,10 +111,7 @@ class ServerFileHandler:
             "user-agent": "Dalvik/2.1.0 (Linux; U; Android 9; Pixel 2 Build/PQ3A.190801.002)",
         }
         req = request.RequestHandler(url, headers=headers)
-        if progress_signal is None:
-            resp = req.get()
-        else:
-            resp = req.get_stream(progress_signal)
+        resp = req.get()
         data = resp.content
         try:
             zipf = io.zip.Zip(io.data.Data(data))
@@ -128,7 +122,6 @@ class ServerFileHandler:
     def extract(
         self,
         index: int,
-        progress_signal: Optional[QtCore.pyqtSignal],
         force: bool = False,
     ) -> bool:
         """Extracts game files to the server files path for a given game version
@@ -163,15 +156,13 @@ class ServerFileHandler:
 
             if found and hashes_equal:
                 return False
-        zipf = self.download(index, progress_signal)
+        zipf = self.download(index)
         path = io.apk.Apk.get_server_path(self.apk.country_code)
         zipf.extract(path)
         return True
 
     def extract_all(
         self,
-        progress_primary: Optional[QtCore.pyqtSignal] = None,
-        progress_secondary: Optional[QtCore.pyqtSignal] = None,
         force: bool = False,
     ):
         """Extracts all game versions
@@ -181,14 +172,8 @@ class ServerFileHandler:
             progress_secondary (Optional[QtCore.pyqtSignal]): The signal to emit progress on for each file
             force (bool, optional): Whether to force extraction even if the files already exist. Defaults to False.
         """
-        if progress_secondary is not None:
-            progress_secondary.emit(0, len(self.tsv_paths))  # type: ignore
         for i in range(len(self.tsv_paths)):
-            if progress_primary is not None:
-                progress_primary.emit(0, 0)  # type: ignore
-            self.extract(i, progress_primary, force)
-            if progress_secondary is not None:
-                progress_secondary.emit(i + 1, len(self.tsv_paths))  # type: ignore
+            self.extract(i, force)
 
     def find_game_versions(self) -> list[int]:
         """Finds all game versions in the libnative.so file
