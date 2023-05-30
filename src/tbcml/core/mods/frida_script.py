@@ -89,6 +89,9 @@ class Scripts:
                 new_scripts.append(script)
         self.scripts = new_scripts
 
+    def is_empty(self) -> bool:
+        return len(self.scripts) == 0
+
     def add_script(self, script: "FridaScript"):
         self.scripts.append(script)
 
@@ -103,11 +106,8 @@ class Scripts:
         return None
 
     def add_scripts(self, scripts: "Scripts"):
-        added_script = False
         for script in scripts.scripts:
             self.add_script(script)
-            added_script = True
-        return added_script
 
     def get_base_script(self):
         return """'use strict';

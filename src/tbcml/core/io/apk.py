@@ -764,13 +764,11 @@ class Apk:
         if not bc_mods:
             return
         scripts = mods.frida_script.Scripts([])
-        added_script = False
         for mod in bc_mods:
-            script_added = scripts.add_scripts(mod.scripts)
-            if script_added:
-                added_script = True
-        if added_script:
-            scripts.validate_scripts(self.country_code, self.game_version)
+            scripts.add_scripts(mod.scripts)
+
+        scripts.validate_scripts(self.country_code, self.game_version)
+        if not scripts.is_empty():
             self.add_frida_scripts(scripts)
 
     def get_libs(self) -> dict[str, "lib.Lib"]:
@@ -929,3 +927,20 @@ class Apk:
         self.extracted_path.add("assets", template_file_name).write(
             data.Data(template_file)
         )
+
+    def load_mods(
+        self,
+        mods: list["mods.bc_mod.Mod"],
+        game_packs: Optional["game_data.pack.GamePacks"] = None,
+    ):
+        for mod in mods:
+            self.apply_mod_smali(mod)
+        if game_packs is None:
+            game_packs = game_data.pack.GamePacks.from_apk(self)
+        game_packs.apply_mods(mods)
+        self.set_allow_backup(True)
+        self.set_debuggable(True)
+        self.set_modded_html(mods)
+        self.add_audio_mods(mods)
+        self.add_script_mods(mods)
+        self.load_packs_into_game(game_packs)
