@@ -354,7 +354,7 @@ class Mod:
     ) -> "Mod":
         return Mod(
             data["name"],
-            data.get("authors", []),
+            data["author"],
             data["description"],
             data["mod_id"],
             data["mod_version"],
@@ -392,6 +392,10 @@ class Mod:
             self.mod_edits = self.merge_dicts(self.mod_edits, mod_edit.tree_to_dict())
 
         self.mod_edits_key_int_to_str(self.mod_edits)
+
+    def add_mod_edits(self, mod_edits: Union[list[dict[str, Any]], list["ModEdit"]]):
+        for mod_edit in mod_edits:
+            self.add_mod_edit(mod_edit)
 
     def mod_edits_key_int_to_str(self, mod_edits: dict[str, Any]):
         new_mod_edits: dict[str, Any] = {}

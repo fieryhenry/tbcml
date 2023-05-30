@@ -164,7 +164,7 @@ class AnimViewer(QtWidgets.QOpenGLWidget):
         for part in self.sorted_parts:
             part.draw_part(painter, base_x, base_y)
         if overlay_part_id is not None:
-            overlay_part = self.model.get_part(overlay_part_id)
+            overlay_part = self.model.get_part_create(overlay_part_id)
             overlay_part.draw_part(
                 painter, base_x, base_y, draw_overlay=True, just_overlay=True
             )
@@ -300,7 +300,7 @@ class PartViewer(QtWidgets.QOpenGLWidget):
         valid_parts: list[anim.model_part.ModelPart] = []
         for part_id in self.part_ids:
             try:
-                part = self.model.get_part(part_id)
+                part = self.model.get_part_create(part_id)
             except ValueError:
                 continue
             for keyframes in part.keyframes_sets:
@@ -322,7 +322,7 @@ class PartViewer(QtWidgets.QOpenGLWidget):
         self.valid_parts: list[anim.model_part.ModelPart] = []
         for part_id in self.part_ids:
             try:
-                part = self.model.get_part(part_id)
+                part = self.model.get_part_create(part_id)
             except ValueError:
                 continue
             for keyframes in part.keyframes_sets:

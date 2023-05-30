@@ -259,6 +259,21 @@ class Model:
             return None
         return self.mamodel.parts[index]
 
+    def get_part_create(self, index: int) -> model_part.ModelPart:
+        if index < 0 or index >= len(self.mamodel.parts):
+            part = model_part.ModelPart.create_empty(index)
+            self.set_part(index, part)
+        return self.mamodel.parts[index]
+
+    def set_part(self, index: int, part: model_part.ModelPart):
+        part.index = index
+        if index < 0:
+            return
+        if index >= len(self.mamodel.parts):
+            self.mamodel.parts.append(part)
+        else:
+            self.mamodel.parts[index] = part
+
     def get_sorted_parts(self) -> list[model_part.ModelPart]:
         return sorted(self.mamodel.parts, key=lambda part: part.z_depth)
 
@@ -497,10 +512,7 @@ class Model:
                 convert_int=True
             )
             for part_id, data_part in mod_parts.items():
-                part = self.get_part(part_id)
-                if part is None:
-                    part = model_part.ModelPart.create_empty(part_id)
-                    self.mamodel.parts.append(part)
+                part = self.get_part_create(part_id)
                 part.apply_dict(data_part)
 
         mamodel = dict_data.get("mamodel")

@@ -538,11 +538,7 @@ class ModelPart:
                 else:
                     if self.model is None:
                         return 1, 1
-                    part = self.model.get_part(part_id)
-                    if part is None:
-                        raise Exception(
-                            f"Part with id {part_id} does not exist in the model."
-                        )
+                    part = self.model.get_part_create(part_id)
                     size_x, size_y = part.get_base_size(True)
                     size_x *= self.real_scale_x
                     size_y *= self.real_scale_y
