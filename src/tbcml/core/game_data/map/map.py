@@ -1662,17 +1662,14 @@ class Maps:
         stage_name_sets = StageNameSets.from_game_data(game_data)
         stage_options = StageOption.from_game_data(game_data)
         maps: dict[int, Map] = {}
-        stage_id = 0
-        while stage_id < 100000:
+        for stage_id in map_options.options.keys():
             stage_names = stage_name_sets.get(stage_id)
             if stage_names is None:
-                stage_id += 1
                 continue
             map = Map.from_game_data(
                 game_data, stage_id, map_options, stage_names, stage_options
             )
             if map is None:
-                stage_id += 1
                 continue
             maps[stage_id] = map
             stage_id += 1
