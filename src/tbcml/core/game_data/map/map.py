@@ -353,7 +353,7 @@ class EnemyRow:
         min_z: int,
         max_z: int,
         boss_flag: bool,
-        magnification: int,
+        magnification: Optional[int] = None,
         spawn_1: Optional[int] = None,
         castle_1: Optional[int] = None,
         group: Optional[int] = None,
@@ -496,13 +496,18 @@ class StageStats:
             min_z = int(line[6])
             max_z = int(line[7])
             boss_flag = bool(line[8])
-            magnification = int(line[9])
+            magnification = None
             spawn_1 = None
             castle_1 = None
             group = None
             kill_count = None
+            if len(line) > 9:
+                magnification = int(line[9])
             if len(line) > 10:
-                spawn_1 = int(line[10])
+                try:
+                    spawn_1 = int(line[10])
+                except ValueError:
+                    pass
             if len(line) > 11:
                 castle_1 = int(line[11])
             if len(line) > 12:
@@ -582,8 +587,9 @@ class StageStats:
                 str(enemy.min_z),
                 str(enemy.max_z),
                 "1" if enemy.boss_flag else "0",
-                str(enemy.magnification),
             ]
+            if enemy.magnification is not None:
+                line.append(str(enemy.magnification))
             if enemy.spawn_1 is not None:
                 line.append(str(enemy.spawn_1))
             if enemy.castle_1 is not None:
@@ -1407,7 +1413,10 @@ class MapStageData:
         map_pattern = int(line_2[0])
 
         for stage_index, line in enumerate(csv.lines[2:]):
-            energy = int(line[0])
+            try:
+                energy = int(line[0])
+            except ValueError:
+                break
             xp = int(line[1])
             mus_id0 = int(line[2])
             mus_hp = int(line[3])
