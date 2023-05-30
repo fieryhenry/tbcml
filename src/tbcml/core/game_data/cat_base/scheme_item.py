@@ -1,7 +1,6 @@
 import enum
 from typing import Any, Optional
-from tbcml.core.game_data import pack
-from tbcml.core import io, mods
+from tbcml import core
 
 
 class SchemeType(enum.Enum):
@@ -46,9 +45,9 @@ class SchemeItem:
         items = dict_data.get("items")
         if items is not None:
             current_items_dict = {i: i for i in range(len(self.items))}
-            modded_items = mods.bc_mod.ModEditDictHandler(
-                items, current_items_dict
-            ).get_dict(convert_int=True)
+            modded_items = core.ModEditDictHandler(items, current_items_dict).get_dict(
+                convert_int=True
+            )
             for item_id, modded_item in modded_items:
                 try:
                     item = self.items[int(item_id)]
@@ -71,12 +70,12 @@ class SchemeItems:
         return "schemeItemData.tsv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> "SchemeItems":
+    def from_game_data(game_data: "core.GamePacks") -> "SchemeItems":
         tsv_data = game_data.find_file(SchemeItems.get_file_name())
         if tsv_data is None:
             return SchemeItems.create_empty()
         items: dict[int, SchemeItem] = {}
-        csv = io.bc_csv.CSV(tsv_data.dec_data, delimeter="\t")
+        csv = core.CSV(tsv_data.dec_data, delimeter="\t")
         for line in csv.lines[1:]:
             id = int(line[0])
             type = SchemeType(int(line[1]))
@@ -88,11 +87,11 @@ class SchemeItems:
                 )
         return SchemeItems(items)
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         tsv_data = game_data.find_file(SchemeItems.get_file_name())
         if tsv_data is None:
             return
-        csv = io.bc_csv.CSV(tsv_data.dec_data, delimeter="\t")
+        csv = core.CSV(tsv_data.dec_data, delimeter="\t")
         remaining = self.items.copy()
         for i, line in enumerate(csv.lines[1:]):
             item = self.items.get(int(line[0]))
@@ -131,9 +130,9 @@ class SchemeItems:
         items = dict_data.get("items")
         if items is not None:
             current_items = self.items.copy()
-            modded_items = mods.bc_mod.ModEditDictHandler(
-                items, current_items
-            ).get_dict(convert_int=True)
+            modded_items = core.ModEditDictHandler(items, current_items).get_dict(
+                convert_int=True
+            )
             for item_id, modded_item in modded_items:
                 item = self.items.get(int(item_id))
                 if item is None:

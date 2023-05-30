@@ -1,8 +1,7 @@
 import enum
 import os
 from typing import Any, Optional
-from tbcml.core.game_data import cat_base
-from tbcml.core import io, country_code, crypto, anim
+from tbcml import core
 
 
 class BCUFileGroup:
@@ -53,7 +52,7 @@ class BCUForm:
         form_data: dict[str, Any],
         anims: "BCUFileGroup",
         cat_id: int,
-        form: cat_base.cats.FormType,
+        form: "core.CatFormType",
     ):
         self.form_data = form_data
         self.cat_id = cat_id
@@ -77,12 +76,12 @@ class BCUForm:
             return None
         self.deploy_icon = deploy_icon
 
-    def get_cat_id_form(self) -> Optional[tuple[int, "cat_base.cats.FormType"]]:
+    def get_cat_id_form(self) -> Optional[tuple[int, "core.CatFormType"]]:
         img_name = self.anim.tex.img_name
         cat_id = int(img_name[:3])
         form_str = img_name[4:5]
         try:
-            form_type = cat_base.cats.FormType(form_str)
+            form_type = core.CatFormType(form_str)
         except ValueError:
             return None
         return cat_id, form_type
@@ -100,32 +99,32 @@ class BCUForm:
         maanims = self.anims.get_files_by_prefix("maanim")
         maanim_names: list[str] = []
         for maanim in maanims:
-            maanim_id = anim.unit_animation.AnimType.from_bcu_str(maanim.name)
+            maanim_id = core.AnimType.from_bcu_str(maanim.name)
             if maanim_id is None:
                 continue
-            index_str = io.data.PaddedInt(maanim_id.value, 2).to_str()
+            index_str = core.PaddedInt(maanim_id.value, 2).to_str()
             maanim_names.append(
                 f"{self.get_cat_id_str()}_{self.form.value}{index_str}.maanim"
             )
         return maanim_names
 
-    def get_maanim_data(self) -> list["io.data.Data"]:
+    def get_maanim_data(self) -> list["core.Data"]:
         maanims = self.anims.get_files_by_prefix("maanim")
-        maanim_data: list["io.data.Data"] = []
+        maanim_data: list["core.Data"] = []
         for maanim in maanims:
-            maanim_id = anim.unit_animation.AnimType.from_bcu_str(maanim.name)
+            maanim_id = core.AnimType.from_bcu_str(maanim.name)
             if maanim_id is None:
                 continue
             maanim_data.append(maanim.data)
         return maanim_data
 
-    def load_anim(self) -> Optional["anim.model.Model"]:
+    def load_anim(self) -> Optional["core.Model"]:
         sprite = self.anims.get_file_by_name("sprite.png")
         imgcut = self.anims.get_file_by_name("imgcut.txt")
         mamodel = self.anims.get_file_by_name("mamodel.txt")
         if sprite is None or imgcut is None or mamodel is None:
             return None
-        model = anim.model.Model.from_data(
+        model = core.Model.from_data(
             mamodel.data,
             self.get_mamodel_name(),
             imgcut.data,
@@ -137,15 +136,15 @@ class BCUForm:
         )
         return model
 
-    def load_display_icon(self) -> Optional["io.bc_image.BCImage"]:
+    def load_display_icon(self) -> Optional["core.BCImage"]:
         display_file = self.anims.get_file_by_name("icon_display.png")
         if display_file is None:
             return None
 
-        display_image = io.bc_image.BCImage(display_file.data)
+        display_image = core.BCImage(display_file.data)
         display_image.scale(3.5, 3.5)
 
-        base_image = io.bc_image.BCImage.from_size(512, 128)
+        base_image = core.BCImage.from_size(512, 128)
         base_image.paste(display_image, 13, 1)
 
         start_pos = (146, 112)
@@ -162,29 +161,27 @@ class BCUForm:
 
         return base_image
 
-    def load_deploy_icon(self) -> Optional["io.bc_image.BCImage"]:
+    def load_deploy_icon(self) -> Optional["core.BCImage"]:
         deploy_file = self.anims.get_file_by_name("icon_deploy.png")
         if deploy_file is None:
             return None
 
-        deploy_image = io.bc_image.BCImage(deploy_file.data)
+        deploy_image = core.BCImage(deploy_file.data)
 
-        base_image = io.bc_image.BCImage.from_size(128, 128)
+        base_image = core.BCImage.from_size(128, 128)
         base_image.paste(deploy_image, 9, 21)
         return base_image
 
     def get_cat_id_str(self):
-        return io.data.PaddedInt(self.cat_id, 3).to_str()
+        return core.PaddedInt(self.cat_id, 3).to_str()
 
-    def to_cat_form(
-        self, cat_id: int, form: cat_base.cats.FormType
-    ) -> "cat_base.cats.Form":
+    def to_cat_form(self, cat_id: int, form: "core.CatFormType") -> "core.CatForm":
         self.cat_id = cat_id
         self.form = form
         if len(self.anim.mamodel.ints) == 1:
             self.anim.mamodel.ints.append(self.anim.mamodel.ints[0])
-        an = cat_base.cats.Model(self.cat_id, self.form, self.anim)
-        frm = cat_base.cats.Form(
+        an = core.CatModel(self.cat_id, self.form, self.anim)
+        frm = core.CatForm(
             self.cat_id,
             self.form,
             self.to_stats(),
@@ -198,8 +195,8 @@ class BCUForm:
         frm.set_form(self.form)
         return frm
 
-    def to_stats(self) -> "cat_base.cats.Stats":
-        stats = cat_base.cats.Stats(self.cat_id, self.form, [])
+    def to_stats(self) -> "core.CatStats":
+        stats = core.CatStats(self.cat_id, self.form, [])
         base_stats = self.form_data["du"]
         traits = base_stats["traits"]
         procs = base_stats["rep"]["proc"]
@@ -208,10 +205,10 @@ class BCUForm:
         stats.kbs = base_stats["hb"]
         stats.speed = base_stats["speed"]
         stats.attack_1.damage = base_stats["atks"]["pool"][0]["atk"]
-        stats.attack_interval = cat_base.unit.Frames(base_stats["tba"])
+        stats.attack_interval = core.Frames(base_stats["tba"])
         stats.range = base_stats["range"]
         stats.cost = base_stats["price"]
-        stats.recharge_time = cat_base.unit.Frames(base_stats["resp"])
+        stats.recharge_time = core.Frames(base_stats["resp"])
         stats.collision_width = base_stats["width"]
         stats.target_red = self.get_trait_by_id(traits, 0)
         stats.area_attack = base_stats["atks"]["pool"][0]["range"]
@@ -270,13 +267,13 @@ class BCUForm:
         )
         stats.attack_2.damage = self.get_attack(base_stats["atks"]["pool"], 1, "atk")
         stats.attack_3.damage = self.get_attack(base_stats["atks"]["pool"], 2, "atk")
-        stats.attack_1.foreswing = cat_base.unit.Frames(
+        stats.attack_1.foreswing = core.Frames(
             self.get_attack(base_stats["atks"]["pool"], 0, "pre")
         )
-        stats.attack_2.foreswing = cat_base.unit.Frames(
+        stats.attack_2.foreswing = core.Frames(
             self.get_attack(base_stats["atks"]["pool"], 1, "pre")
         )
-        stats.attack_3.foreswing = cat_base.unit.Frames(
+        stats.attack_3.foreswing = core.Frames(
             self.get_attack(base_stats["atks"]["pool"], 2, "pre")
         )
         stats.attack_2.use_ability = True
@@ -360,11 +357,11 @@ class BCUForm:
 
     @staticmethod
     def get_proc_prob(procs: dict[str, dict[str, int]], proc_name: str):
-        return cat_base.unit.Prob(BCUForm.get_proc_value(procs, proc_name, "prob"))
+        return core.Prob(BCUForm.get_proc_value(procs, proc_name, "prob"))
 
     @staticmethod
     def get_proc_time(procs: dict[str, dict[str, int]], proc_name: str):
-        return cat_base.unit.Frames(BCUForm.get_proc_value(procs, proc_name, "time"))
+        return core.Frames(BCUForm.get_proc_value(procs, proc_name, "time"))
 
     @staticmethod
     def get_proc_level(procs: dict[str, dict[str, int]], proc_name: str):
@@ -407,35 +404,33 @@ class BCUCat:
                     form_data,
                     BCUFileGroup(form_anims),
                     cat_id,
-                    cat_base.cats.FormType.from_index(i),
+                    core.CatFormType.from_index(i),
                 )
             )
 
     def to_cat(
         self,
-        unit_buy: "cat_base.cats.UnitBuyData",
-        talent: Optional["cat_base.cats.Talent"],
-        npbd: "cat_base.cats.NyankoPictureBookData",
+        unit_buy: "core.UnitBuyData",
+        talent: Optional["core.Talent"],
+        npbd: "core.NyankoPictureBookData",
         evov_text: list[str],
         cat_id: int,
-    ) -> "cat_base.cats.Cat":
-        forms: dict[cat_base.cats.FormType, cat_base.cats.Form] = {}
+    ) -> "core.Cat":
+        forms: dict[core.CatFormType, core.CatForm] = {}
         for form in self.forms:
             forms[form.form] = form.to_cat_form(cat_id, form.form)
-        unit_buy.rarity = cat_base.cats.Rarity(self.rarity)
+        unit_buy.rarity = core.Rarity(self.rarity)
         unit_buy.max_upgrade_level_no_catseye = self.max_base_level
         unit_buy.max_plus_upgrade_level = self.max_plus_level
         unit_buy.max_upgrade_level_catseye = self.max_base_level
 
-        unit = cat_base.cats.Cat(
+        unit = core.Cat(
             cat_id,
             forms,
             unit_buy,
             talent,
             npbd,
-            cat_base.cats.EvolveTextCat(
-                cat_id, {0: cat_base.cats.EvolveTextText(0, evov_text)}
-            ),
+            core.EvolveTextCat(cat_id, {0: core.EvolveTextText(0, evov_text)}),
         )
         unit.nyanko_picture_book_data.is_displayed_in_catguide = True
         unit.unit_buy_data.game_version = (
@@ -481,30 +476,30 @@ class BCUEnemy:
         maanims = self.anims.get_files_by_prefix("maanim")
         maanim_names: list[str] = []
         for maanim in maanims:
-            maanim_id = anim.unit_animation.AnimType.from_bcu_str(maanim.name)
+            maanim_id = core.AnimType.from_bcu_str(maanim.name)
             if maanim_id is None:
                 continue
-            index_str = io.data.PaddedInt(maanim_id.value, 2).to_str()
+            index_str = core.PaddedInt(maanim_id.value, 2).to_str()
             maanim_names.append(f"{self.get_enemy_id_str()}_e{index_str}.maanim")
         return maanim_names
 
-    def get_maanim_data(self) -> list["io.data.Data"]:
+    def get_maanim_data(self) -> list["core.Data"]:
         maanims = self.anims.get_files_by_prefix("maanim")
-        maanim_data: list["io.data.Data"] = []
+        maanim_data: list["core.Data"] = []
         for maanim in maanims:
-            maanim_id = anim.unit_animation.AnimType.from_bcu_str(maanim.name)
+            maanim_id = core.AnimType.from_bcu_str(maanim.name)
             if maanim_id is None:
                 continue
             maanim_data.append(maanim.data)
         return maanim_data
 
-    def load_anim(self) -> Optional["anim.model.Model"]:
+    def load_anim(self) -> Optional["core.Model"]:
         sprite = self.anims.get_file_by_name("sprite.png")
         imgcut = self.anims.get_file_by_name("imgcut.txt")
         mamodel = self.anims.get_file_by_name("mamodel.txt")
         if sprite is None or imgcut is None or mamodel is None:
             return None
-        model = anim.model.Model.from_data(
+        model = core.Model.from_data(
             mamodel.data,
             self.get_mamodel_name(),
             imgcut.data,
@@ -525,29 +520,29 @@ class BCUEnemy:
         return enemy_id
 
     def get_enemy_id_str(self):
-        return io.data.PaddedInt(self.enemy_id, 3).to_str()
+        return core.PaddedInt(self.enemy_id, 3).to_str()
 
-    def to_enemy(self, enemy_id: int) -> "cat_base.enemies.Enemy":
+    def to_enemy(self, enemy_id: int) -> "core.Enemy":
         for maanim in self.anim.anims:
-            index = anim.unit_animation.AnimType.from_bcu_str(maanim.name)
+            index = core.AnimType.from_bcu_str(maanim.name)
             if index is None:
                 continue
-            index_str = io.data.PaddedInt(index.value, 2).to_str()
+            index_str = core.PaddedInt(index.value, 2).to_str()
             maanim.name = f"{self.get_enemy_id_str()}_e{index_str}.maanim"
-        an = cat_base.enemies.Model(self.enemy_id, self.anim)
-        enemy = cat_base.enemies.Enemy(
+        an = core.EnemyModel(self.enemy_id, self.anim)
+        enemy = core.Enemy(
             enemy_id,
             self.to_stats(),
             self.name,
             self.descritpion,
             an,
-            io.bc_image.BCImage.from_size(64, 64),
+            core.BCImage.from_size(64, 64),
         )
         enemy.set_enemy_id(enemy_id)
         return enemy
 
-    def to_stats(self) -> "cat_base.enemies.Stats":
-        stats = cat_base.enemies.Stats(self.enemy_id, [])
+    def to_stats(self) -> "core.EnemyStats":
+        stats = core.EnemyStats(self.enemy_id, [])
         base_stats = self.enemy_data["de"]
         traits = base_stats["traits"]
         procs = base_stats["rep"]["proc"]
@@ -557,7 +552,7 @@ class BCUEnemy:
         stats.kbs = base_stats["hb"]
         stats.speed = base_stats["speed"]
         stats.attack_1.damage = base_stats["atks"]["pool"][0]["atk"]
-        stats.attack_interval = cat_base.unit.Frames(base_stats["tba"])
+        stats.attack_interval = core.Frames(base_stats["tba"])
         stats.range = base_stats["range"]
         stats.money_drop = base_stats["drop"]
         stats.collision_width = base_stats["width"]
@@ -615,13 +610,13 @@ class BCUEnemy:
         )
         stats.attack_2.damage = BCUForm.get_attack(base_stats["atks"]["pool"], 1, "atk")
         stats.attack_3.damage = BCUForm.get_attack(base_stats["atks"]["pool"], 2, "atk")
-        stats.attack_1.foreswing = cat_base.unit.Frames(
+        stats.attack_1.foreswing = core.Frames(
             BCUForm.get_attack(base_stats["atks"]["pool"], 0, "pre")
         )
-        stats.attack_2.foreswing = cat_base.unit.Frames(
+        stats.attack_2.foreswing = core.Frames(
             BCUForm.get_attack(base_stats["atks"]["pool"], 1, "pre")
         )
-        stats.attack_3.foreswing = cat_base.unit.Frames(
+        stats.attack_3.foreswing = core.Frames(
             BCUForm.get_attack(base_stats["atks"]["pool"], 2, "pre")
         )
         stats.attack_2.use_ability = True
@@ -703,9 +698,9 @@ class BCUFile:
     def __init__(
         self,
         file_info: dict[str, Any],
-        enc_data: "io.data.Data",
-        key: "io.data.Data",
-        iv: "io.data.Data",
+        enc_data: "core.Data",
+        key: "core.Data",
+        iv: "core.Data",
     ):
         self.path: str = file_info["path"]
         self.size = file_info["size"]
@@ -719,8 +714,8 @@ class BCUFile:
         self.enc_data = enc_data[self.offset : self.offset + self.padded_size]
         self.data = self.decrypt()
 
-    def decrypt(self) -> "io.data.Data":
-        aes = crypto.AesCipher(self.key.to_bytes(), self.iv.to_bytes())
+    def decrypt(self) -> "core.Data":
+        aes = core.AesCipher(self.key.to_bytes(), self.iv.to_bytes())
         data = aes.decrypt(self.enc_data)
         return data[0 : self.size]
 
@@ -728,8 +723,8 @@ class BCUFile:
 class BCUZip:
     def __init__(
         self,
-        enc_data: "io.data.Data",
-        cc: "country_code.CountryCode",
+        enc_data: "core.Data",
+        cc: "core.CountryCode",
     ):
         self.enc_data = enc_data
         self.cc = cc
@@ -745,26 +740,26 @@ class BCUZip:
         self.enemies = self.load_enemies()
 
     @staticmethod
-    def from_path(path: "io.path.Path", cc: "country_code.CountryCode") -> "BCUZip":
-        return BCUZip(io.data.Data.from_file(path), cc)
+    def from_path(path: "core.Path", cc: "core.CountryCode") -> "BCUZip":
+        return BCUZip(core.Data.from_file(path), cc)
 
-    def get_iv_key(self) -> tuple["io.data.Data", "io.data.Data"]:
+    def get_iv_key(self) -> tuple["core.Data", "core.Data"]:
         iv_str = "battlecatsultimate"
-        iv = crypto.Hash(crypto.HashAlgorithm.MD5).get_hash(io.data.Data(iv_str))
+        iv = core.Hash(core.HashAlgorithm.MD5).get_hash(core.Data(iv_str))
         key = self.enc_data[0x10:0x20]
         return iv, key
 
-    def decrypt(self) -> tuple["io.json_file.JsonFile", "io.data.Data"]:
+    def decrypt(self) -> tuple["core.JsonFile", "core.Data"]:
         json_length = self.enc_data[0x20:0x24].to_int_little()
         json_length_pad = 16 * (json_length // 16 + 1)
         json_data = self.enc_data[0x24 : 0x24 + json_length_pad]
-        aes = crypto.AesCipher(self.key.to_bytes(), self.iv.to_bytes())
+        aes = core.AesCipher(self.key.to_bytes(), self.iv.to_bytes())
         json_data = aes.decrypt(json_data)
         json_data = json_data[0:json_length]
 
         enc_file_data = self.enc_data[0x24 + json_length_pad :]
 
-        json = io.json_file.JsonFile.from_data(json_data)
+        json = core.JsonFile.from_data(json_data)
 
         return json, enc_file_data
 
@@ -811,7 +806,7 @@ class BCUZip:
                 files.append(file)
         return files
 
-    def extract(self, output_dir: "io.path.Path"):
+    def extract(self, output_dir: "core.Path"):
         output_dir = output_dir.add(self.get_name())
         for file in self.files:
             file_path = output_dir.add(file.path)
@@ -822,11 +817,11 @@ class BCUZip:
     def get_name(self) -> str:
         return self.names["dat"][0]["val"]
 
-    def load_pack_json(self) -> Optional["io.json_file.JsonFile"]:
+    def load_pack_json(self) -> Optional["core.JsonFile"]:
         pack_file = self.get_file_by_name("pack.json")
         if pack_file is None:
             return None
-        return io.json_file.JsonFile.from_data(pack_file.data)
+        return core.JsonFile.from_data(pack_file.data)
 
     def load_units(self):
         units_data: list[Any] = self.pack_json["units"]["data"]

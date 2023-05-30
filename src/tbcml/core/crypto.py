@@ -4,7 +4,7 @@ import hmac
 import random
 from typing import Optional, Union
 from Cryptodome.Cipher import AES, _mode_ecb, _mode_cbc
-from tbcml.core import country_code, io, game_data, game_version
+from tbcml import core
 
 
 class HashAlgorithm(enum.Enum):
@@ -28,20 +28,20 @@ class Hash:
 
     def get_hash(
         self,
-        data: "io.data.Data",
+        data: "core.Data",
         length: Optional[int] = None,
-    ) -> "io.data.Data":
+    ) -> "core.Data":
         """Gets the hash of the given data.
 
         Args:
-            data (io.data.Data): The data to hash.
+            data (core.Data): The data to hash.
             length (Optional[int], optional): The length of the hash. Defaults to None.
 
         Raises:
             ValueError: Invalid hash algorithm.
 
         Returns:
-            io.data.Data: The hash of the data.
+            core.Data: The hash of the data.
         """
         if self.algorithm == HashAlgorithm.MD5:
             hash = hashlib.md5()
@@ -53,8 +53,8 @@ class Hash:
             raise ValueError("Invalid hash algorithm")
         hash.update(data.get_bytes())
         if length is None:
-            return io.data.Data(hash.digest())
-        return io.data.Data(hash.digest()[:length])
+            return core.Data(hash.digest())
+        return core.Data(hash.digest()[:length])
 
 
 class AesCipher:
@@ -96,39 +96,39 @@ class AesCipher:
         else:
             return AES.new(self.key, self.mode, self.iv)  # type: ignore
 
-    def encrypt(self, data: "io.data.Data") -> "io.data.Data":
+    def encrypt(self, data: "core.Data") -> "core.Data":
         """Encrypts the given data.
 
         Args:
-            data (io.data.Data): The data to encrypt.
+            data (core.Data): The data to encrypt.
 
         Returns:
-            io.data.Data: The encrypted data.
+            core.Data: The encrypted data.
         """
         if not self.enable:
             return data
         cipher = self.get_cipher()
-        return io.data.Data(cipher.encrypt(data.get_bytes()))
+        return core.Data(cipher.encrypt(data.get_bytes()))
 
-    def decrypt(self, data: "io.data.Data") -> "io.data.Data":
+    def decrypt(self, data: "core.Data") -> "core.Data":
         """Decrypts the given data.
 
         Args:
-            data (io.data.Data): The data to decrypt.
+            data (core.Data): The data to decrypt.
 
         Returns:
-            io.data.Data: The decrypted data.
+            core.Data: The decrypted data.
         """
         if not self.enable:
             return data
         cipher = self.get_cipher()
-        return io.data.Data(cipher.decrypt(data.get_bytes()))
+        return core.Data(cipher.decrypt(data.get_bytes()))
 
     @staticmethod
     def get_cipher_from_pack(
-        cc: country_code.CountryCode,
+        cc: "core.CountryCode",
         pack_name: str,
-        gv: game_version.GameVersion,
+        gv: "core.GameVersion",
     ) -> "AesCipher":
         """Gets the cipher from the pack.
 
@@ -144,28 +144,26 @@ class AesCipher:
             AesCipher: The cipher.
         """
         aes_mode = AES.MODE_CBC
-        if cc == country_code.CountryCode.JP:
+        if cc == core.CountryCode.JP:
             key = "d754868de89d717fa9e7b06da45ae9e3"
             iv = "40b2131a9f388ad4e5002a98118f6128"
-        elif cc == country_code.CountryCode.EN:
+        elif cc == core.CountryCode.EN:
             key = "0ad39e4aeaf55aa717feb1825edef521"
             iv = "d1d7e708091941d90cdf8aa5f30bb0c2"
-        elif cc == country_code.CountryCode.KR:
+        elif cc == core.CountryCode.KR:
             key = "bea585eb993216ef4dcb88b625c3df98"
             iv = "9b13c2121d39f1353a125fed98696649"
-        elif cc == country_code.CountryCode.TW:
+        elif cc == core.CountryCode.TW:
             key = "313d9858a7fb939def1d7d859629087d"
             iv = "0e3743eb53bf5944d1ae7e10c2e54bdf"
         else:
             raise Exception("Unknown country code")
-        enable = not game_data.pack.PackFile.is_image_data_local_pack(pack_name)
-        if game_data.pack.PackFile.is_server_pack(
-            pack_name
-        ) or gv < game_version.GameVersion.from_string("8.9.0"):
+        enable = not core.PackFile.is_image_data_local_pack(pack_name)
+        if core.PackFile.is_server_pack(pack_name) or gv < core.GameVersion.from_string(
+            "8.9.0"
+        ):
             aes_mode = AES.MODE_ECB
-            key = (
-                Hash(HashAlgorithm.MD5).get_hash(io.data.Data("battlecats"), 8).to_hex()
-            )
+            key = Hash(HashAlgorithm.MD5).get_hash(core.Data("battlecats"), 8).to_hex()
             return AesCipher(key.encode("utf-8"), None, aes_mode, enable)
         else:
             return AesCipher(bytes.fromhex(key), bytes.fromhex(iv), aes_mode, enable)
@@ -174,27 +172,27 @@ class AesCipher:
 class Hmac:
     """A class to do HMAC stuff."""
 
-    def __init__(self, key: "io.data.Data", algorithm: HashAlgorithm):
+    def __init__(self, key: "core.Data", algorithm: HashAlgorithm):
         """Initializes a new instance of the Hmac class.
 
         Args:
-            key (io.data.Data): Key to use.
+            key (core.Data): Key to use.
             algorithm (HashAlgorithm): Algorithm to use.
         """
         self.key = key
         self.algorithm = algorithm
 
-    def get_hmac(self, data: "io.data.Data") -> "io.data.Data":
+    def get_hmac(self, data: "core.Data") -> "core.Data":
         """Gets the HMAC of the given data.
 
         Args:
-            data (io.data.Data): The data to get the HMAC of.
+            data (core.Data): The data to get the HMAC of.
 
         Raises:
             ValueError: Invalid hash algorithm.
 
         Returns:
-            io.data.Data: The HMAC.
+            core.Data: The HMAC.
         """
         if self.algorithm == HashAlgorithm.MD5:
             hash = hashlib.md5
@@ -204,9 +202,7 @@ class Hmac:
             hash = hashlib.sha256
         else:
             raise ValueError("Invalid hash algorithm")
-        return io.data.Data(
-            hmac.new(self.key.to_bytes(), data.get_bytes(), hash).digest()
-        )
+        return core.Data(hmac.new(self.key.to_bytes(), data.get_bytes(), hash).digest())
 
 
 class Random:

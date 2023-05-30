@@ -1,9 +1,9 @@
 import enum
 from typing import Any
-from tbcml.core.io import path, yaml
+from tbcml import core
 
 
-class Key(enum.Enum):
+class ConfigKey(enum.Enum):
     MOD_FOLDER = "mod_folder"
     APK_FOLDER = "apk_folder"
     APK_COPY_PATH = "apk_copy_path"
@@ -19,42 +19,42 @@ class Key(enum.Enum):
 
 class Config:
     def __init__(self):
-        config = yaml.YamlFile(path.Path.get_appdata_folder().add("config.yaml"))
-        if config.yaml is None:
+        config = core.YamlFile(core.Path.get_appdata_folder().add("config.yaml"))
+        if config.yaml is None:  # type: ignore
             config.yaml = {}
-        self.config: dict[Key, Any] = {}
+        self.config: dict[ConfigKey, Any] = {}
         for key, value in config.yaml.items():
             try:
-                self.config[Key(key)] = value
+                self.config[ConfigKey(key)] = value
             except ValueError:
                 pass
         self.config_object = config
         self.initialize_config()
 
-    def __getitem__(self, key: Key) -> Any:
+    def __getitem__(self, key: ConfigKey) -> Any:
         return self.config[key]
 
-    def __setitem__(self, key: Key, value: Any) -> None:
+    def __setitem__(self, key: ConfigKey, value: Any) -> None:
         self.config[key] = value
 
-    def __contains__(self, key: Key) -> bool:
+    def __contains__(self, key: ConfigKey) -> bool:
         return key in self.config
 
     def initialize_config(self):
         initial_values = {
-            Key.MOD_FOLDER: path.Path.get_appdata_folder().add("Mods").path,
-            Key.APK_FOLDER: path.Path.get_appdata_folder().add("APKs").path,
-            Key.APK_COPY_PATH: "",
-            Key.KEYSTORE_PASSWORD: "TBCML_CUSTOM_APK",
-            Key.UPDATE: True,
-            Key.UPDATE_TO_BETA: False,
-            Key.DEFAULT_AUTHOR: "",
-            Key.LIB_GADGETS_FOLDER: path.Path.get_appdata_folder()
+            ConfigKey.MOD_FOLDER: core.Path.get_appdata_folder().add("Mods").path,
+            ConfigKey.APK_FOLDER: core.Path.get_appdata_folder().add("APKs").path,
+            ConfigKey.APK_COPY_PATH: "",
+            ConfigKey.KEYSTORE_PASSWORD: "TBCML_CUSTOM_APK",
+            ConfigKey.UPDATE: True,
+            ConfigKey.UPDATE_TO_BETA: False,
+            ConfigKey.DEFAULT_AUTHOR: "",
+            ConfigKey.LIB_GADGETS_FOLDER: core.Path.get_appdata_folder()
             .add("LibGadgets")
             .path,
-            Key.SELECTED_APK: "",
-            Key.LOCALE: "en",
-            Key.THEME: "default",
+            ConfigKey.SELECTED_APK: "",
+            ConfigKey.LOCALE: "en",
+            ConfigKey.THEME: "default",
         }
         for key, value in initial_values.items():
             if key not in self.config:
@@ -66,7 +66,7 @@ class Config:
             self.config_object.yaml[key.value] = value
         self.config_object.save()
 
-    def get(self, key: Key) -> Any:
+    def get(self, key: ConfigKey) -> Any:
         return self.config[key]
 
     def reset(self):
@@ -74,6 +74,6 @@ class Config:
         self.config_object.remove()
         self.initialize_config()
 
-    def set(self, key: Key, value: Any):
+    def set(self, key: ConfigKey, value: Any):
         self.config[key] = value
         self.save()

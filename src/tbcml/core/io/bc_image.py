@@ -1,14 +1,13 @@
 from typing import Any, Optional
-from tbcml.core.io import data, path
-from tbcml.core import anim
+from tbcml import core
 from PIL import Image
 from PyQt5.QtGui import QImage
 
 
 class BCImage:
-    def __init__(self, dt: Optional["data.Data"] = None):
+    def __init__(self, dt: Optional["core.Data"] = None):
         if not dt:
-            self.data = data.Data()
+            self.data = core.Data()
         else:
             self.data = dt
         self.__image: Optional[Image.Image] = None
@@ -34,7 +33,7 @@ class BCImage:
 
     @staticmethod
     def create_empty():
-        return BCImage(data.Data())
+        return BCImage(core.Data())
 
     def is_empty(self):
         return self.data.is_empty()
@@ -49,18 +48,18 @@ class BCImage:
 
     @staticmethod
     def from_size(width: int, height: int):
-        image = BCImage(data.Data())
+        image = BCImage(core.Data())
         image.__image = Image.new("RGBA", (width, height))
         return image
 
     def crop(self, x1: int, y1: int, x2: int, y2: int) -> "BCImage":
         dt = self.image.crop((x1, y1, x2, y2))
-        image_data = data.Data()
+        image_data = core.Data()
         bytes_io = image_data.to_bytes_io()
         dt.save(bytes_io, format="PNG")
-        return BCImage(data.Data(bytes_io.getvalue()))
+        return BCImage(core.Data(bytes_io.getvalue()))
 
-    def get_subimage(self, rect: "anim.rect.Rect") -> "BCImage":
+    def get_subimage(self, rect: "core.Rect") -> "BCImage":
         return self.crop(rect.x, rect.y, rect.x + rect.width, rect.y + rect.height)
 
     def __len__(self):
@@ -95,25 +94,25 @@ class BCImage:
     def add_image(self, image: "BCImage", x: int, y: int):
         self.image.paste(image.image, (x, y), image.image)
 
-    def save(self, path: "path.Path"):
+    def save(self, path: "core.Path"):
         self.image.save(path.to_str(), format="PNG")
 
     def to_data(self):
         if self.image.tobytes() == self.__original_img.tobytes() and len(self.data) > 0:  # type: ignore
             return self.__original_data
-        bytes_io = data.Data().to_bytes_io()
+        bytes_io = core.Data().to_bytes_io()
         self.image.save(bytes_io, format="PNG")
-        return data.Data(bytes_io.getvalue())
+        return core.Data(bytes_io.getvalue())
 
     @staticmethod
     def from_base_64(base_64: str) -> "BCImage":
-        return BCImage(data.Data.from_base_64(base_64))
+        return BCImage(core.Data.from_base_64(base_64))
 
     def to_base_64(self) -> str:
         return self.to_data().to_base_64()
 
     def apply_dict(self, dt: dict[str, Any]):
-        self.data = data.Data.from_base_64(dt["__image__"])
+        self.data = core.Data.from_base_64(dt["__image__"])
 
     def to_dict(self) -> dict[str, Any]:
         return {"__image__": self.to_base_64()}
@@ -121,7 +120,7 @@ class BCImage:
     def paste(self, image: "BCImage", x: int, y: int):
         self.image.paste(image.image, (x, y), image.image)
 
-    def paste_rect(self, image: "BCImage", rect: "anim.rect.Rect"):
+    def paste_rect(self, image: "BCImage", rect: "core.Rect"):
         self.image.paste(
             image.image,
             (rect.x, rect.y, rect.x + rect.width, rect.y + rect.height),

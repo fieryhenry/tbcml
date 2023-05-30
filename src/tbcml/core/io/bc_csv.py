@@ -1,7 +1,6 @@
 import enum
 from typing import Optional, Union
-from tbcml.core.io import data, path
-from tbcml.core import country_code
+from tbcml import core
 
 
 class DelimeterType(enum.Enum):
@@ -18,8 +17,8 @@ class Delimeter:
             self.delimeter = de
 
     @staticmethod
-    def from_country_code_res(cc: "country_code.CountryCode") -> "Delimeter":
-        if cc == country_code.CountryCode.JP:
+    def from_country_code_res(cc: "core.CountryCode") -> "Delimeter":
+        if cc == core.CountryCode.JP:
             return Delimeter(DelimeterType.COMMA)
         else:
             return Delimeter(DelimeterType.PIPE)
@@ -31,14 +30,14 @@ class Delimeter:
 class CSV:
     def __init__(
         self,
-        file_data: Optional["data.Data"] = None,
+        file_data: Optional["core.Data"] = None,
         delimeter: Union[Delimeter, str] = Delimeter(DelimeterType.COMMA),
         remove_padding: bool = True,
         remove_comments: bool = True,
         remove_empty: bool = True,
     ):
         if file_data is None:
-            file_data = data.Data()
+            file_data = core.Data()
         self.file_data = file_data
         if remove_padding:
             try:
@@ -67,7 +66,7 @@ class CSV:
 
     @staticmethod
     def from_file(
-        path: path.Path, delimeter: Delimeter = Delimeter(DelimeterType.COMMA)
+        path: "core.Path", delimeter: Delimeter = Delimeter(DelimeterType.COMMA)
     ) -> "CSV":
         return CSV(path.read(), delimeter)
 
@@ -90,8 +89,8 @@ class CSV:
         self.index += 1
         return line
 
-    def to_data(self) -> "data.Data":
-        return data.Data(
+    def to_data(self) -> "core.Data":
+        return core.Data(
             "\n".join([self.delimeter.join(line) for line in self.lines if line])
         )
 

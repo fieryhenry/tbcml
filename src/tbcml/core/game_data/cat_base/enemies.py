@@ -1,10 +1,8 @@
 from typing import Any, Optional
-from tbcml.core.game_data.cat_base import unit
-from tbcml.core.game_data import pack
-from tbcml.core import io, anim, mods
+from tbcml import core
 
 
-class Stats:
+class EnemyStats:
     def __init__(self, enemy_id: int, raw_data: list[int]):
         self.enemy_id = enemy_id
         raw_data = self.extend(raw_data)
@@ -31,7 +29,7 @@ class Stats:
         self.hp = raw_data[0]
         self.kbs = raw_data[1]
         self.speed = raw_data[2]
-        self.attack_interval = unit.Frames.from_pair_frames(raw_data[4])
+        self.attack_interval = core.Frames.from_pair_frames(raw_data[4])
         self.range = raw_data[5]
         self.money_drop = raw_data[6]
         self.collision_start = raw_data[7]
@@ -46,56 +44,56 @@ class Stats:
         self.angel = bool(raw_data[17])
         self.alien = bool(raw_data[18])
         self.zombie = bool(raw_data[19])
-        self.knockback = unit.Knockback.from_values(raw_data[20])
-        self.freeze = unit.Freeze.from_values(raw_data[21], raw_data[22])
-        self.slow = unit.Slow.from_values(raw_data[23], raw_data[24])
-        self.crit = unit.Crit.from_values(raw_data[25])
+        self.knockback = core.Knockback.from_values(raw_data[20])
+        self.freeze = core.Freeze.from_values(raw_data[21], raw_data[22])
+        self.slow = core.Slow.from_values(raw_data[23], raw_data[24])
+        self.crit = core.Crit.from_values(raw_data[25])
         self.base_destroyer = bool(raw_data[26])
-        self.wave = unit.Wave.from_values(
+        self.wave = core.Wave.from_values(
             raw_data[27], raw_data[28], bool(raw_data[86])
         )
-        self.weaken = unit.Weaken.from_values(raw_data[29], raw_data[30], raw_data[31])
-        self.strengthen = unit.Strengthen.from_values(raw_data[32], raw_data[33])
-        self.survive_lethal_strike = unit.SurviveLethalStrike.from_values(raw_data[34])
+        self.weaken = core.Weaken.from_values(raw_data[29], raw_data[30], raw_data[31])
+        self.strengthen = core.Strengthen.from_values(raw_data[32], raw_data[33])
+        self.survive_lethal_strike = core.SurviveLethalStrike.from_values(raw_data[34])
         self.wave_immunity = bool(raw_data[37])
         self.wave_blocker = bool(raw_data[38])
         self.knockback_immunity = bool(raw_data[39])
         self.freeze_immunity = bool(raw_data[40])
         self.slow_immunity = bool(raw_data[41])
         self.weaken_immunity = bool(raw_data[42])
-        self.burrow = unit.Burrow.from_values(raw_data[43], raw_data[44])
-        self.revive = unit.Revive.from_values(raw_data[45], raw_data[46], raw_data[47])
+        self.burrow = core.Burrow.from_values(raw_data[43], raw_data[44])
+        self.revive = core.Revive.from_values(raw_data[45], raw_data[46], raw_data[47])
         self.witch = bool(raw_data[48])
         self.base = bool(raw_data[49])
-        self.attack_state = unit.AttackState.from_values(raw_data[50], raw_data[52])
-        self.time_before_death = unit.Frames(raw_data[51])
-        self.spawn_anim = unit.SpawnAnim.from_values(raw_data[53], bool(raw_data[62]))
-        self.soul_anim = unit.SoulAnim(raw_data[54], bool(raw_data[63]))
-        self.barrier = unit.Barrier.from_values(raw_data[64])
-        self.warp = unit.Warp.from_values(
+        self.attack_state = core.AttackState.from_values(raw_data[50], raw_data[52])
+        self.time_before_death = core.Frames(raw_data[51])
+        self.spawn_anim = core.SpawnAnim.from_values(raw_data[53], bool(raw_data[62]))
+        self.soul_anim = core.SoulAnim(raw_data[54], bool(raw_data[63]))
+        self.barrier = core.Barrier.from_values(raw_data[64])
+        self.warp = core.Warp.from_values(
             raw_data[65], raw_data[66], raw_data[67], raw_data[68]
         )
         self.starred_alien = bool(raw_data[69])
         self.warp_blocker = bool(raw_data[70])
         self.eva_angel = bool(raw_data[71])
         self.relic = bool(raw_data[72])
-        self.curse = unit.Curse.from_values(raw_data[73], raw_data[74])
-        self.savage_blow = unit.SavageBlow.from_values(raw_data[75], raw_data[76])
-        self.dodge = unit.Dodge.from_values(raw_data[77], raw_data[78])
-        self.toxic = unit.Toxic.from_values(raw_data[79], raw_data[80])
-        self.surge = unit.Surge.from_values(
+        self.curse = core.Curse.from_values(raw_data[73], raw_data[74])
+        self.savage_blow = core.SavageBlow.from_values(raw_data[75], raw_data[76])
+        self.dodge = core.Dodge.from_values(raw_data[77], raw_data[78])
+        self.toxic = core.Toxic.from_values(raw_data[79], raw_data[80])
+        self.surge = core.Surge.from_values(
             raw_data[81], raw_data[82], raw_data[83], raw_data[84]
         )
         self.surge_immunity = bool(raw_data[85])
-        self.shield = unit.Shield.from_values(raw_data[87], raw_data[88])
-        self.death_surge = unit.Surge.from_values(
+        self.shield = core.Shield.from_values(raw_data[87], raw_data[88])
+        self.death_surge = core.Surge.from_values(
             raw_data[89], raw_data[90], raw_data[91], raw_data[92]
         )
         self.aku = bool(raw_data[93])
         self.baron = bool(raw_data[94])
         self.behemoth = bool(raw_data[101])
 
-        self.attack_1 = unit.Attack.from_values(
+        self.attack_1 = core.Attack.from_values(
             raw_data[3],
             raw_data[12],
             bool(raw_data[59]),
@@ -103,7 +101,7 @@ class Stats:
             raw_data[35],
             raw_data[36],
         )
-        self.attack_2 = unit.Attack.from_values(
+        self.attack_2 = core.Attack.from_values(
             raw_data[55],
             raw_data[57],
             bool(raw_data[60]),
@@ -111,7 +109,7 @@ class Stats:
             raw_data[96],
             raw_data[97],
         )
-        self.attack_3 = unit.Attack.from_values(
+        self.attack_3 = core.Attack.from_values(
             raw_data[56],
             raw_data[58],
             bool(raw_data[61]),
@@ -230,115 +228,117 @@ class Stats:
         raw_stats = dict_data.get("raw_stats")
         if raw_stats is not None:
             current_raw_stats = self.to_raw_data()
-            mod_stats = mods.bc_mod.ModEditDictHandler(
-                raw_stats, current_raw_stats
-            ).get_dict(True)
+            mod_stats = core.ModEditDictHandler(raw_stats, current_raw_stats).get_dict(
+                True
+            )
             for stat_id, stat_value in mod_stats.items():
-                current_raw_stats[stat_id] = mods.bc_mod.ModEditValueHandler(
+                current_raw_stats[stat_id] = core.ModEditValueHandler(
                     stat_value, current_raw_stats[stat_id]
                 ).get_value()
             self.assign(current_raw_stats)
 
     @staticmethod
-    def create_empty(enemy_id: int) -> "Stats":
-        return Stats(enemy_id, [])
+    def create_empty(enemy_id: int) -> "EnemyStats":
+        return EnemyStats(enemy_id, [])
 
 
-class StatsData:
-    def __init__(self, stats: dict[int, Stats]):
+class EnemyStatsData:
+    def __init__(self, stats: dict[int, EnemyStats]):
         self.stats = stats
 
     @staticmethod
     def get_file_name() -> str:
-        return "t_unit.csv"
+        return "t_core.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> "StatsData":
+    def from_game_data(game_data: "core.GamePacks") -> "EnemyStatsData":
         if game_data.enemy_stats is not None:
             return game_data.enemy_stats
-        stats_data = game_data.find_file(StatsData.get_file_name())
+        stats_data = game_data.find_file(EnemyStatsData.get_file_name())
         if stats_data is None:
-            return StatsData.create_empty()
-        stats: dict[int, Stats] = {}
-        csv = io.bc_csv.CSV(stats_data.dec_data)
+            return EnemyStatsData.create_empty()
+        stats: dict[int, EnemyStats] = {}
+        csv = core.CSV(stats_data.dec_data)
         for enemy_id, line in enumerate(csv.lines):
             enemy_id -= 2
-            stats[enemy_id] = Stats(enemy_id, [int(x) for x in line])
-        enemy_stats = StatsData(stats)
+            stats[enemy_id] = EnemyStats(enemy_id, [int(x) for x in line])
+        enemy_stats = EnemyStatsData(stats)
         game_data.enemy_stats = enemy_stats
         return enemy_stats
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
-        stats_data = game_data.find_file(StatsData.get_file_name())
+    def to_game_data(self, game_data: "core.GamePacks"):
+        stats_data = game_data.find_file(EnemyStatsData.get_file_name())
         if stats_data is None:
             return None
-        csv = io.bc_csv.CSV(stats_data.dec_data)
+        csv = core.CSV(stats_data.dec_data)
         for enemy in self.stats.values():
             csv.lines[enemy.enemy_id + 2] = [str(x) for x in enemy.to_raw_data()]
 
-        game_data.set_file(StatsData.get_file_name(), csv.to_data())
+        game_data.set_file(EnemyStatsData.get_file_name(), csv.to_data())
 
-    def get(self, enemy_id: int) -> Optional[Stats]:
+    def get(self, enemy_id: int) -> Optional[EnemyStats]:
         return self.stats.get(enemy_id)
 
     @staticmethod
-    def create_empty() -> "StatsData":
-        return StatsData({})
+    def create_empty() -> "EnemyStatsData":
+        return EnemyStatsData({})
 
 
-class Model:
-    def __init__(self, enemy_id: int, model: "anim.model.Model"):
+class EnemyModel:
+    def __init__(self, enemy_id: int, model: "core.Model"):
         self.enemy_id = enemy_id
         self.model = model
 
     @staticmethod
     def get_enemy_id_str(enemy_id: int) -> str:
-        return io.data.PaddedInt(enemy_id, 3).to_str()
+        return core.PaddedInt(enemy_id, 3).to_str()
 
     @staticmethod
     def get_img_path(enemy_id: int) -> str:
-        enemy_id_str = Model.get_enemy_id_str(enemy_id)
+        enemy_id_str = EnemyModel.get_enemy_id_str(enemy_id)
         return f"{enemy_id_str}_e.png"
 
     @staticmethod
     def get_imgcut_path(enemy_id: int) -> str:
-        return Model.get_img_path(enemy_id).replace(".png", ".imgcut")
+        return EnemyModel.get_img_path(enemy_id).replace(".png", ".imgcut")
 
     @staticmethod
     def get_mamodel_path(enemy_id: int) -> str:
-        return Model.get_img_path(enemy_id).replace(".png", ".mamodel")
+        return EnemyModel.get_img_path(enemy_id).replace(".png", ".mamodel")
 
     @staticmethod
-    def get_maanim_path(
-        enemy_id: int, anim_type: "anim.unit_animation.AnimType"
-    ) -> str:
-        anim_type_str = io.data.PaddedInt(anim_type.value, 2).to_str()
-        return Model.get_img_path(enemy_id).replace(".png", f"{anim_type_str}.maanim")
+    def get_maanim_path(enemy_id: int, anim_type: "core.AnimType") -> str:
+        anim_type_str = core.PaddedInt(anim_type.value, 2).to_str()
+        return EnemyModel.get_img_path(enemy_id).replace(
+            ".png", f"{anim_type_str}.maanim"
+        )
 
     @staticmethod
     def get_maanim_paths(enemy_id: int) -> list[str]:
         maanim_paths: list[str] = []
-        for anim_type in anim.unit_animation.AnimType:
-            maanim_paths.append(Model.get_maanim_path(enemy_id, anim_type))
+        for anim_type in core.AnimType:
+            maanim_paths.append(EnemyModel.get_maanim_path(enemy_id, anim_type))
         return maanim_paths
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks", enemy_id: int) -> Optional["Model"]:
-        img_path = Model.get_img_path(enemy_id)
-        imgcut_path = Model.get_imgcut_path(enemy_id)
-        mamodel_path = Model.get_mamodel_path(enemy_id)
-        maanim_paths = Model.get_maanim_paths(enemy_id)
+    def from_game_data(
+        game_data: "core.GamePacks", enemy_id: int
+    ) -> Optional["EnemyModel"]:
+        img_path = EnemyModel.get_img_path(enemy_id)
+        imgcut_path = EnemyModel.get_imgcut_path(enemy_id)
+        mamodel_path = EnemyModel.get_mamodel_path(enemy_id)
+        maanim_paths = EnemyModel.get_maanim_paths(enemy_id)
 
-        an = anim.model.Model.load(
+        an = core.Model.load(
             mamodel_path,
             imgcut_path,
             img_path,
             maanim_paths,
             game_data,
         )
-        return Model(enemy_id, an)
+        return EnemyModel(enemy_id, an)
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         self.model.save(game_data)
 
     def set_enemy_id(self, enemy_id: int):
@@ -352,11 +352,11 @@ class Model:
             self.model.apply_dict(model)
 
     @staticmethod
-    def create_empty(enemy_id: int) -> "Model":
-        return Model(enemy_id, anim.model.Model.create_empty())
+    def create_empty(enemy_id: int) -> "EnemyModel":
+        return EnemyModel(enemy_id, core.Model.create_empty())
 
 
-class Names:
+class EnemyNames:
     def __init__(self, names: dict[int, str]):
         self.names = names
 
@@ -365,32 +365,32 @@ class Names:
         return "Enemyname.tsv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> "Names":
+    def from_game_data(game_data: "core.GamePacks") -> "EnemyNames":
         if game_data.enemy_names is not None:
             return game_data.enemy_names
-        names_data = game_data.find_file(Names.get_file_name())
+        names_data = game_data.find_file(EnemyNames.get_file_name())
         if names_data is None:
-            return Names.create_empty()
+            return EnemyNames.create_empty()
         names: dict[int, str] = {}
-        csv = io.bc_csv.CSV(names_data.dec_data, delimeter="\t", remove_empty=False)
+        csv = core.CSV(names_data.dec_data, delimeter="\t", remove_empty=False)
         for enemy_id, line in enumerate(csv.lines):
             try:
                 names[enemy_id] = line[0]
             except IndexError:
                 pass
-        enemy_names = Names(names)
+        enemy_names = EnemyNames(names)
         game_data.enemy_names = enemy_names
         return enemy_names
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
-        names_data = game_data.find_file(Names.get_file_name())
+    def to_game_data(self, game_data: "core.GamePacks"):
+        names_data = game_data.find_file(EnemyNames.get_file_name())
         if names_data is None:
             return None
-        csv = io.bc_csv.CSV(names_data.dec_data, delimeter="\t", remove_empty=False)
+        csv = core.CSV(names_data.dec_data, delimeter="\t", remove_empty=False)
         for enemy_id, name in self.names.items():
             csv.lines[enemy_id] = [name]
 
-        game_data.set_file(Names.get_file_name(), csv.to_data())
+        game_data.set_file(EnemyNames.get_file_name(), csv.to_data())
 
     def set(self, enemy: "Enemy"):
         self.names[enemy.enemy_id] = enemy.name
@@ -399,11 +399,11 @@ class Names:
         return self.names.get(enemy_id, "???")
 
     @staticmethod
-    def create_empty() -> "Names":
-        return Names({})
+    def create_empty() -> "EnemyNames":
+        return EnemyNames({})
 
 
-class Descriptions:
+class EnemyDescriptions:
     def __init__(self, descriptions: dict[int, list[str]]):
         self.descriptions = descriptions
 
@@ -412,33 +412,33 @@ class Descriptions:
         return f"EnemyPictureBook_{lang}.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> "Descriptions":
+    def from_game_data(game_data: "core.GamePacks") -> "EnemyDescriptions":
         descriptions: dict[int, list[str]] = {}
         cc = game_data.country_code
         file = game_data.find_file(
-            Descriptions.get_file_name(game_data.localizable.get_lang())
+            EnemyDescriptions.get_file_name(game_data.localizable.get_lang())
         )
         if file is None:
-            return Descriptions.create_empty()
-        csv = io.bc_csv.CSV(
+            return EnemyDescriptions.create_empty()
+        csv = core.CSV(
             file.dec_data,
-            delimeter=io.bc_csv.Delimeter.from_country_code_res(cc),
+            delimeter=core.Delimeter.from_country_code_res(cc),
             remove_empty=False,
         )
         for enemy_id, line in enumerate(csv.lines):
             descriptions[enemy_id] = line
-        return Descriptions(descriptions)
+        return EnemyDescriptions(descriptions)
 
-    def to_game_data(self, game_data: "pack.GamePacks", names: dict[int, str]):
+    def to_game_data(self, game_data: "core.GamePacks", names: dict[int, str]):
         cc = game_data.country_code
         file = game_data.find_file(
-            Descriptions.get_file_name(game_data.localizable.get_lang())
+            EnemyDescriptions.get_file_name(game_data.localizable.get_lang())
         )
         if file is None:
             return None
-        csv = io.bc_csv.CSV(
+        csv = core.CSV(
             file.dec_data,
-            delimeter=io.bc_csv.Delimeter.from_country_code_res(cc),
+            delimeter=core.Delimeter.from_country_code_res(cc),
             remove_empty=False,
         )
         for enemy_id, description in self.descriptions.items():
@@ -449,7 +449,8 @@ class Descriptions:
             csv.lines[enemy_id] = line
 
         game_data.set_file(
-            Descriptions.get_file_name(game_data.localizable.get_lang()), csv.to_data()
+            EnemyDescriptions.get_file_name(game_data.localizable.get_lang()),
+            csv.to_data(),
         )
 
     def set(self, enemy: "Enemy"):
@@ -459,19 +460,19 @@ class Descriptions:
         return self.descriptions.get(enemy_id, ["???"])
 
     @staticmethod
-    def create_empty() -> "Descriptions":
-        return Descriptions({})
+    def create_empty() -> "EnemyDescriptions":
+        return EnemyDescriptions({})
 
 
 class Enemy:
     def __init__(
         self,
         enemy_id: Optional[int],
-        stats: Stats,
+        stats: EnemyStats,
         name: str,
         description: list[str],
-        anim: Model,
-        enemy_icon: "io.bc_image.BCImage",
+        anim: EnemyModel,
+        enemy_icon: "core.BCImage",
         release_id: Optional[int] = None,
     ):
         if release_id is not None:
@@ -488,29 +489,29 @@ class Enemy:
 
     @staticmethod
     def get_enemy_icon_name(enemy_id: int) -> str:
-        enemy_id_str = io.data.PaddedInt(enemy_id, 3).to_str()
+        enemy_id_str = core.PaddedInt(enemy_id, 3).to_str()
         return f"enemy_icon_{enemy_id_str}.png"
 
     @staticmethod
     def from_game_data(
-        game_data: "pack.GamePacks",
+        game_data: "core.GamePacks",
         enemy_id: Optional[int],
-        stat_data: StatsData,
-        names: Names,
-        descriptions: Descriptions,
+        stat_data: EnemyStatsData,
+        names: EnemyNames,
+        descriptions: EnemyDescriptions,
         release_id: Optional[int] = None,
     ) -> Optional["Enemy"]:
         if release_id is not None:
             enemy_id = release_id - 2
         if enemy_id is None:
             return None
-        anim = Model.from_game_data(game_data, enemy_id)
+        anim = EnemyModel.from_game_data(game_data, enemy_id)
         if anim is None:
             return None
         enemy_icon_file = game_data.find_file(Enemy.get_enemy_icon_name(enemy_id))
         if enemy_icon_file is None:
             return None
-        enemy_icon = io.bc_image.BCImage(enemy_icon_file.dec_data)
+        enemy_icon = core.BCImage(enemy_icon_file.dec_data)
 
         name = names.get(enemy_id)
         description = descriptions.get(enemy_id)
@@ -520,7 +521,7 @@ class Enemy:
 
         return Enemy(enemy_id, stats, name, description, anim, enemy_icon, release_id)
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         self.anim.to_game_data(game_data)
         game_data.set_file(
             Enemy.get_enemy_icon_name(self.enemy_id), self.enemy_icon.to_data()
@@ -556,11 +557,11 @@ class Enemy:
     def create_empty(enemy_id: int) -> "Enemy":
         return Enemy(
             enemy_id,
-            Stats.create_empty(enemy_id),
+            EnemyStats.create_empty(enemy_id),
             "",
             [],
-            Model.create_empty(enemy_id),
-            io.bc_image.BCImage.create_empty(),
+            EnemyModel.create_empty(enemy_id),
+            core.BCImage.create_empty(),
             None,
         )
 
@@ -570,12 +571,12 @@ class Enemies:
         self.enemies = enemies
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> "Enemies":
+    def from_game_data(game_data: "core.GamePacks") -> "Enemies":
         if game_data.enemies is not None:
             return game_data.enemies
-        stats = StatsData.from_game_data(game_data)
-        names = Names.from_game_data(game_data)
-        descriptions = Descriptions.from_game_data(game_data)
+        stats = EnemyStatsData.from_game_data(game_data)
+        names = EnemyNames.from_game_data(game_data)
+        descriptions = EnemyDescriptions.from_game_data(game_data)
         enemies = {}
         for enemy_id in names.names.keys():
             enemy = Enemy.from_game_data(
@@ -587,12 +588,14 @@ class Enemies:
         game_data.enemies = enemies_o
         return enemies_o
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
-        stats = StatsData(
+    def to_game_data(self, game_data: "core.GamePacks"):
+        stats = EnemyStatsData(
             {enemy.enemy_id: enemy.stats for enemy in self.enemies.values()}
         )
-        names = Names({enemy.enemy_id: enemy.name for enemy in self.enemies.values()})
-        descriptions = Descriptions(
+        names = EnemyNames(
+            {enemy.enemy_id: enemy.name for enemy in self.enemies.values()}
+        )
+        descriptions = EnemyDescriptions(
             {enemy.enemy_id: enemy.description for enemy in self.enemies.values()}
         )
         stats.to_game_data(game_data)
@@ -612,7 +615,7 @@ class Enemies:
         self.enemies[enemy.enemy_id] = enemy
 
     @staticmethod
-    def apply_mod_to_game_data(mod: "mods.bc_mod.Mod", game_data: "pack.GamePacks"):
+    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
         enemies_data = mod.mod_edits.get("enemies")
         if enemies_data is None:
             return
@@ -620,7 +623,7 @@ class Enemies:
         enemies_dict: dict[int, Enemy] = {}
 
         current_enemies = Enemies.from_game_data(game_data)
-        mod_enemies = mods.bc_mod.ModEditDictHandler(
+        mod_enemies = core.ModEditDictHandler(
             enemies_data, current_enemies.enemies
         ).get_dict(convert_int=True)
 

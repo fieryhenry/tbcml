@@ -1,6 +1,5 @@
 from typing import Any, Optional
-from tbcml.core.game_data import pack
-from tbcml.core import io, mods
+from tbcml import core
 
 
 class Reward:
@@ -32,9 +31,9 @@ class RewardSet:
         rewards = dict_data.get("rewards")
         if rewards is not None:
             current_rewards = {i: reward for i, reward in enumerate(self.rewards)}
-            modded_rewards = mods.bc_mod.ModEditDictHandler(
-                rewards, current_rewards
-            ).get_dict(convert_int=True)
+            modded_rewards = core.ModEditDictHandler(rewards, current_rewards).get_dict(
+                convert_int=True
+            )
             for reward_id, modded_reward in modded_rewards.items():
                 reward = current_rewards.get(reward_id)
                 if reward is None:
@@ -61,7 +60,7 @@ class UserRankReward:
         return "rankGiftMessage.tsv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> "UserRankReward":
+    def from_game_data(game_data: "core.GamePacks") -> "UserRankReward":
         csv_data = game_data.find_file(UserRankReward.get_file_name())
 
         if csv_data is None:
@@ -71,10 +70,10 @@ class UserRankReward:
         if name_text_data is None:
             return UserRankReward.create_empty()
 
-        tsv = io.bc_csv.CSV(name_text_data.dec_data, delimeter="\t")
+        tsv = core.CSV(name_text_data.dec_data, delimeter="\t")
 
         reward_sets: dict[int, RewardSet] = {}
-        csv = io.bc_csv.CSV(csv_data.dec_data)
+        csv = core.CSV(csv_data.dec_data)
         for i, line in enumerate(csv):
             reward_threshold = int(line[0])
             try:
@@ -92,7 +91,7 @@ class UserRankReward:
 
         return UserRankReward(reward_sets)
 
-    def to_game_data(self, game_data: "pack.GamePacks") -> None:
+    def to_game_data(self, game_data: "core.GamePacks") -> None:
         csv_data = game_data.find_file(UserRankReward.get_file_name())
         if csv_data is None:
             return
@@ -101,9 +100,9 @@ class UserRankReward:
         if name_text_data is None:
             return
 
-        tsv = io.bc_csv.CSV(name_text_data.dec_data, delimeter="\t")
+        tsv = core.CSV(name_text_data.dec_data, delimeter="\t")
 
-        csv = io.bc_csv.CSV(csv_data.dec_data)
+        csv = core.CSV(csv_data.dec_data)
         remaining_rewards = self.reward_sets.copy()
         for i, line in enumerate(csv):
             reward_threshold = int(line[0])
@@ -145,7 +144,7 @@ class UserRankReward:
             current_reward_sets = {
                 i: reward_set for i, reward_set in self.reward_sets.items()
             }
-            modded_reward_sets = mods.bc_mod.ModEditDictHandler(
+            modded_reward_sets = core.ModEditDictHandler(
                 reward_sets, current_reward_sets
             ).get_dict(convert_int=True)
             for reward_set_id, modded_reward_set in modded_reward_sets.items():

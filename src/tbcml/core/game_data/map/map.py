@@ -1,7 +1,6 @@
 import enum
 from typing import Any, Optional
-from tbcml.core.game_data import pack
-from tbcml.core import io, mods
+from tbcml import core
 
 
 class StageNameNameType(enum.Enum):
@@ -246,12 +245,12 @@ class MapOptions:
         return "Map_option.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> "MapOptions":
+    def from_game_data(game_data: "core.GamePacks") -> "MapOptions":
         map_options = game_data.find_file(MapOptions.get_file_name())
         if map_options is None:
             return MapOptions.create_empty()
         options: dict[int, MapOption] = {}
-        csv = io.bc_csv.CSV(map_options.dec_data)
+        csv = core.CSV(map_options.dec_data)
         for line in csv.lines[1:]:
             stage_id = int(line[0])
             options[stage_id] = MapOption(
@@ -273,11 +272,11 @@ class MapOptions:
             )
         return MapOptions(options)
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         map_options = game_data.find_file(MapOptions.get_file_name())
         if map_options is None:
             return None
-        csv = io.bc_csv.CSV(map_options.dec_data)
+        csv = core.CSV(map_options.dec_data)
         remaining = self.options.copy()
         for i, line in enumerate(csv.lines[1:]):
             stage_id = int(line[0])
@@ -325,9 +324,9 @@ class MapOptions:
         options = dict_data.get("options")
         if options is not None:
             current_options = self.options.copy()
-            modded_options = mods.bc_mod.ModEditDictHandler(
-                options, current_options
-            ).get_dict(convert_int=True)
+            modded_options = core.ModEditDictHandler(options, current_options).get_dict(
+                convert_int=True
+            )
             for id, modded_option in modded_options.items():
                 option = current_options.get(id)
                 if option is None:
@@ -452,13 +451,13 @@ class StageStats:
         if map_name_type is None:
             return None
         stage_id_index = stage_id - map_index_type.value
-        stage_id_index_str = io.data.PaddedInt(stage_id_index, 3).to_str()
-        stage_index_str = io.data.PaddedInt(stage_index, 2).to_str()
+        stage_id_index_str = core.PaddedInt(stage_id_index, 3).to_str()
+        stage_index_str = core.PaddedInt(stage_index, 2).to_str()
         return f"stage{map_name_type.value}{stage_id_index_str}_{stage_index_str}.csv"
 
     @staticmethod
     def from_game_data(
-        game_data: "pack.GamePacks", stage_id: int, stage_index: int
+        game_data: "core.GamePacks", stage_id: int, stage_index: int
     ) -> Optional["StageStats"]:
         file_name = StageStats.get_file_name(stage_id, stage_index)
         if file_name is None:
@@ -466,7 +465,7 @@ class StageStats:
         file = game_data.find_file(file_name)
         if file is None:
             return None
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         line_1 = csv.read_line()
         if line_1 is None:
             return None
@@ -550,14 +549,14 @@ class StageStats:
             enemies,
         )
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         file_name = StageStats.get_file_name(self.stage_id, self.stage_index)
         if file_name is None:
             return None
         file = game_data.find_file(file_name)
         if file is None:
             return None
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         line_1 = [
             str(self.castle_type),
             "1" if self.no_continues else "0",
@@ -626,9 +625,9 @@ class StageStats:
         enemies = dict_data.get("enemies")
         if enemies is not None:
             current_enemies = self.enemies.copy()
-            modded_enemies = mods.bc_mod.ModEditDictHandler(
-                enemies, current_enemies
-            ).get_dict(convert_int=True)
+            modded_enemies = core.ModEditDictHandler(enemies, current_enemies).get_dict(
+                convert_int=True
+            )
             for index, modded_enemy in modded_enemies.items():
                 enemy = current_enemies.get(index)
                 if enemy is None:
@@ -674,7 +673,7 @@ class Stage:
 
     @staticmethod
     def from_game_data(
-        game_data: "pack.GamePacks",
+        game_data: "core.GamePacks",
         stage_id: int,
         stage_index: int,
         name: "StageName",
@@ -685,7 +684,7 @@ class Stage:
             return None
         return Stage(stage_id, stage_index, stage_stats, name, stage_image)
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         self.stage_stats.to_game_data(game_data)
         self.name_image.to_game_data(game_data)
 
@@ -782,7 +781,7 @@ class MapStageDataStage:
         item_drops = dict_data.get("item_drops")
         if item_drops is not None:
             current_item_drops = {i: item for i, item in enumerate(self.item_drops)}
-            modded_item_drops = mods.bc_mod.ModEditDictHandler(
+            modded_item_drops = core.ModEditDictHandler(
                 item_drops, current_item_drops
             ).get_dict(convert_int=True)
             for i, modded_item in modded_item_drops.items():
@@ -796,7 +795,7 @@ class MapStageDataStage:
             current_time_score_rewards = {
                 i: item for i, item in enumerate(self.time_score_rewards)
             }
-            modded_time_score_rewards = mods.bc_mod.ModEditDictHandler(
+            modded_time_score_rewards = core.ModEditDictHandler(
                 time_score_rewards, current_time_score_rewards
             ).get_dict(convert_int=True)
             for i, modded_time_score_reward in modded_time_score_rewards.items():
@@ -828,7 +827,7 @@ class StageNameImage:
         self,
         stage_id: int,
         stage_index: int,
-        image: "io.bc_image.BCImage",
+        image: "core.BCImage",
     ):
         self.stage_id = stage_id
         self.stage_index = stage_index
@@ -843,13 +842,13 @@ class StageNameImage:
         if map_stage_data_type is None:
             return None
         relative_stage_id = stage_id - map_index_type.value
-        relative_stage_id_str = io.data.PaddedInt(relative_stage_id, 3).to_str()
-        stage_index_str = io.data.PaddedInt(stage_index, 2).to_str()
+        relative_stage_id_str = core.PaddedInt(relative_stage_id, 3).to_str()
+        stage_index_str = core.PaddedInt(stage_index, 2).to_str()
         return f"mapsn{relative_stage_id_str}_{stage_index_str}_{map_stage_data_type.value.lower()}_{lang}.png"
 
     @staticmethod
     def from_game_data(
-        game_data: "pack.GamePacks",
+        game_data: "core.GamePacks",
         stage_id: int,
         stage_index: int,
     ):
@@ -864,10 +863,10 @@ class StageNameImage:
         return StageNameImage(
             stage_id,
             stage_index,
-            io.bc_image.BCImage(file.dec_data),
+            core.BCImage(file.dec_data),
         )
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         file_name = StageNameImage.get_file_name(
             self.stage_id, self.stage_index, game_data.localizable.get_lang()
         )
@@ -885,7 +884,7 @@ class StageNameImage:
         return StageNameImage(
             stage_id,
             stage_index,
-            io.bc_image.BCImage.create_empty(),
+            core.BCImage.create_empty(),
         )
 
 
@@ -893,7 +892,7 @@ class MapNameImage:
     def __init__(
         self,
         stage_id: int,
-        image: "io.bc_image.BCImage",
+        image: "core.BCImage",
     ):
         self.stage_id = stage_id
         self.image = image
@@ -907,12 +906,12 @@ class MapNameImage:
         if map_stage_data_type is None:
             return None
         relative_stage_id = stage_id - map_index_type.value
-        relative_stage_id_str = io.data.PaddedInt(relative_stage_id, 3).to_str()
+        relative_stage_id_str = core.PaddedInt(relative_stage_id, 3).to_str()
         return f"mapname{relative_stage_id_str}_{map_stage_data_type.value.lower()}_{lang}.png"
 
     @staticmethod
     def from_game_data(
-        game_data: "pack.GamePacks",
+        game_data: "core.GamePacks",
         stage_id: int,
     ):
         file_name = MapNameImage.get_file_name(
@@ -925,10 +924,10 @@ class MapNameImage:
             return None
         return MapNameImage(
             stage_id,
-            io.bc_image.BCImage(file.dec_data),
+            core.BCImage(file.dec_data),
         )
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         file_name = MapNameImage.get_file_name(
             self.stage_id, game_data.localizable.get_lang()
         )
@@ -945,7 +944,7 @@ class MapNameImage:
     def create_empty(stage_id: int) -> "MapNameImage":
         return MapNameImage(
             stage_id,
-            io.bc_image.BCImage.create_empty(),
+            core.BCImage.create_empty(),
         )
 
 
@@ -988,9 +987,9 @@ class StageNames:
         names = dict_data.get("names")
         if names is not None:
             current_names = self.names.copy()
-            modded_names = mods.bc_mod.ModEditDictHandler(
-                names, current_names
-            ).get_dict(convert_int=True)
+            modded_names = core.ModEditDictHandler(names, current_names).get_dict(
+                convert_int=True
+            )
             for stage_id, modded_name in modded_names.items():
                 stage = self.names.get(stage_id)
                 if stage is None:
@@ -1036,7 +1035,7 @@ class StageNameSet:
     @staticmethod
     def from_game_data(
         base_stage_id: int,
-        game_data: "pack.GamePacks",
+        game_data: "core.GamePacks",
     ) -> "StageNameSet":
         map_index_type = MapIndexType.from_index(base_stage_id)
         if map_index_type is None:
@@ -1050,9 +1049,9 @@ class StageNameSet:
         file = game_data.find_file(file_name)
         if file is None:
             return StageNameSet.create_empty(base_stage_id)
-        csv = io.bc_csv.CSV(
+        csv = core.CSV(
             file.dec_data,
-            delimeter=io.bc_csv.Delimeter.from_country_code_res(game_data.country_code),
+            delimeter=core.Delimeter.from_country_code_res(game_data.country_code),
         )
         all_names: dict[int, StageNames] = {}
         for stage_index, line in enumerate(csv.lines):
@@ -1067,7 +1066,7 @@ class StageNameSet:
 
     def to_game_data(
         self,
-        game_data: "pack.GamePacks",
+        game_data: "core.GamePacks",
     ) -> None:
         file_name = StageNameSet.get_file_name(
             self.base_stage_id, game_data.localizable.get_lang()
@@ -1075,9 +1074,9 @@ class StageNameSet:
         file = game_data.find_file(file_name)
         if file is None:
             raise ValueError(f"Could not find file {file_name}")
-        csv = io.bc_csv.CSV(
+        csv = core.CSV(
             file.dec_data,
-            delimeter=io.bc_csv.Delimeter.from_country_code_res(game_data.country_code),
+            delimeter=core.Delimeter.from_country_code_res(game_data.country_code),
             remove_empty=True,
         )
         remaining = self.names.copy()
@@ -1105,9 +1104,9 @@ class StageNameSet:
         names = dict_data.get("names")
         if names is not None:
             current_names = self.names.copy()
-            modded_names = mods.bc_mod.ModEditDictHandler(
-                names, current_names
-            ).get_dict(convert_int=True)
+            modded_names = core.ModEditDictHandler(names, current_names).get_dict(
+                convert_int=True
+            )
             for stage_id, modded_name in modded_names.items():
                 stage = self.names.get(stage_id)
                 if stage is None:
@@ -1129,7 +1128,7 @@ class StageNameSets:
 
     @staticmethod
     def from_game_data(
-        game_data: "pack.GamePacks",
+        game_data: "core.GamePacks",
     ) -> "StageNameSets":
         sets: dict[MapIndexType, StageNameSet] = {}
         ids = MapIndexType.get_all()
@@ -1140,7 +1139,7 @@ class StageNameSets:
 
     def to_game_data(
         self,
-        game_data: "pack.GamePacks",
+        game_data: "core.GamePacks",
     ) -> None:
         for set in self.sets.values():
             set.to_game_data(game_data)
@@ -1169,7 +1168,7 @@ class StageNameSets:
         if sets is not None:
             current_sets = self.sets.copy()
             current_sets = {key.value: value for key, value in current_sets.items()}
-            modded_sets = mods.bc_mod.ModEditDictHandler(sets, current_sets).get_dict(
+            modded_sets = core.ModEditDictHandler(sets, current_sets).get_dict(
                 convert_int=True
             )
             for base_stage_id, modded_set in modded_sets.items():
@@ -1274,24 +1273,24 @@ class StageOption:
         return "Stage_option.csv"
 
     @staticmethod
-    def from_game_data(game_packs: "pack.GamePacks") -> "StageOption":
+    def from_game_data(game_packs: "core.GamePacks") -> "StageOption":
         file = game_packs.find_file(StageOption.get_file_name())
         if file is None:
             return StageOption.create_empty()
 
-        csv_file = io.bc_csv.CSV(file.dec_data)
+        csv_file = core.CSV(file.dec_data)
         sets: dict[int, StageOptionSet] = {}
         for line in csv_file.lines:
             set = StageOptionSet.from_row([int(x) for x in line])
             sets[set.map_id] = set
         return StageOption(sets)
 
-    def to_game_data(self, game_packs: "pack.GamePacks") -> None:
+    def to_game_data(self, game_packs: "core.GamePacks") -> None:
         file = game_packs.find_file(self.get_file_name())
         if file is None:
             return
 
-        csv_file = io.bc_csv.CSV(file.dec_data)
+        csv_file = core.CSV(file.dec_data)
         remaining = self.sets.copy()
         for i, line in enumerate(csv_file.lines):
             map_id = int(line[0])
@@ -1316,7 +1315,7 @@ class StageOption:
         sets = dict_data.get("sets")
         if sets is not None:
             current_sets = self.sets.copy()
-            modded_sets = mods.bc_mod.ModEditDictHandler(sets, current_sets).get_dict(
+            modded_sets = core.ModEditDictHandler(sets, current_sets).get_dict(
                 convert_int=True
             )
             for map_id, modded_set in modded_sets.items():
@@ -1364,7 +1363,7 @@ class MapStageData:
         data = dict_data.get("data")
         if data is not None:
             current_data = self.data.copy()
-            modded_data = mods.bc_mod.ModEditDictHandler(data, current_data).get_dict(
+            modded_data = core.ModEditDictHandler(data, current_data).get_dict(
                 convert_int=True
             )
             for stage_id, modded_stage in modded_data.items():
@@ -1383,12 +1382,12 @@ class MapStageData:
         if map_type is None:
             return None
         stage_index = stage_id - map_index_type.value
-        stage_index_str = io.data.PaddedInt(stage_index, 3).to_str()
+        stage_index_str = core.PaddedInt(stage_index, 3).to_str()
         return f"MapStageData{map_type.value}_{stage_index_str}.csv"
 
     @staticmethod
     def from_game_data(
-        game_data: "pack.GamePacks", stage_id: int
+        game_data: "core.GamePacks", stage_id: int
     ) -> Optional["MapStageData"]:
         file_name = MapStageData.get_file_name(stage_id)
         if file_name is None:
@@ -1396,7 +1395,7 @@ class MapStageData:
         file = game_data.find_file(file_name)
         if file is None:
             return None
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         data: dict[int, MapStageDataStage] = {}
         line_1 = csv.read_line()
         if line_1 is None:
@@ -1493,14 +1492,14 @@ class MapStageData:
             data,
         )
 
-    def to_game_data(self, game_data: "pack.GamePacks") -> None:
+    def to_game_data(self, game_data: "core.GamePacks") -> None:
         file_name = MapStageData.get_file_name(self.stage_id)
         if file_name is None:
             return None
         file = game_data.find_file(file_name)
         if file is None:
             return None
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         line_1: list[str] = [
             str(self.map_number),
             str(self.item_reward_type),
@@ -1579,7 +1578,7 @@ class Map:
 
     @staticmethod
     def from_game_data(
-        game_data: "pack.GamePacks",
+        game_data: "core.GamePacks",
         stage_id: int,
         map_options: MapOptions,
         stage_names: StageNames,
@@ -1607,7 +1606,7 @@ class Map:
             stage_id, map_option, map_stage_data, stages, map_name_image, restriction
         )
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         self.map_stage_data.to_game_data(game_data)
         self.map_name_image.to_game_data(game_data)
         for stage in self.stages.values():
@@ -1623,9 +1622,9 @@ class Map:
         stages = dict_data.get("stages")
         if stages is not None:
             current_stages = self.stages.copy()
-            modded_stages = mods.bc_mod.ModEditDictHandler(
-                stages, current_stages
-            ).get_dict(convert_int=True)
+            modded_stages = core.ModEditDictHandler(stages, current_stages).get_dict(
+                convert_int=True
+            )
             for stage_id, modded_stage in modded_stages.items():
                 stage = self.stages.get(stage_id)
                 if stage is None:
@@ -1655,7 +1654,7 @@ class Maps:
         self.maps[map.map_option.stage_id] = map
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks"):
+    def from_game_data(game_data: "core.GamePacks"):
         if game_data.maps is not None:
             return game_data.maps
         map_options = MapOptions.from_game_data(game_data)
@@ -1677,7 +1676,7 @@ class Maps:
         game_data.maps = mapso
         return mapso
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         map_options = MapOptions({})
         stage_name_sets = StageNameSets({})
         stage_options = StageOption({})
@@ -1693,14 +1692,14 @@ class Maps:
         stage_options.to_game_data(game_data)
 
     @staticmethod
-    def get_maps_json_file_name() -> "io.path.Path":
-        return io.path.Path("maps").add("maps.json")
+    def get_maps_json_file_name() -> "core.Path":
+        return core.Path("maps").add("maps.json")
 
     def apply_dict(self, dict_data: dict[str, Any]):
         maps = dict_data.get("maps")
         if maps is not None:
             current_maps = self.maps.copy()
-            modded_maps = mods.bc_mod.ModEditDictHandler(maps, current_maps).get_dict(
+            modded_maps = core.ModEditDictHandler(maps, current_maps).get_dict(
                 convert_int=True
             )
             for stage_id, modded_map in modded_maps.items():
@@ -1718,7 +1717,7 @@ class Maps:
         self.maps[map.map_option.stage_id] = map
 
     @staticmethod
-    def apply_mod_to_game_data(mod: "mods.bc_mod.Mod", game_data: "pack.GamePacks"):
+    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
         if not mod.mod_edits.get("maps"):
             return
         current_maps = Maps.from_game_data(game_data)

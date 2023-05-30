@@ -1,7 +1,5 @@
 from typing import Any, Optional
-from tbcml.core.anim import rect
-from tbcml.core import io
-from tbcml.core import game_data
+from tbcml import core
 
 
 class TexMetadata:
@@ -22,7 +20,7 @@ class TexMetadata:
         return TexMetadata("", 0, "", 0)
 
     @staticmethod
-    def from_csv(csv: "io.bc_csv.CSV") -> "TexMetadata":
+    def from_csv(csv: "core.CSV") -> "TexMetadata":
         head_line = csv.read_line()
         if head_line is None:
             return TexMetadata.create_empty()
@@ -45,10 +43,10 @@ class TexMetadata:
 
         return TexMetadata(head_name, version_code, img_name, total_rects)
 
-    def to_csv(self, total_rects: int) -> "io.bc_csv.CSV":
+    def to_csv(self, total_rects: int) -> "core.CSV":
         self.set_total_rects(total_rects)
 
-        csv = io.bc_csv.CSV()
+        csv = core.CSV()
 
         csv.lines.append([self.head_name])
         csv.lines.append([str(self.version_code)])
@@ -108,8 +106,8 @@ class TexMetadata:
         }
 
 
-class Cut:
-    def __init__(self, rect: rect.Rect, img: "io.bc_image.BCImage"):
+class CutTexture:
+    def __init__(self, rect: "core.Rect", img: "core.BCImage"):
         self.rect = rect
         self.img = img
 
@@ -127,9 +125,7 @@ class Cut:
 
 
 class TexLoaderInfo:
-    def __init__(
-        self, img_name: str, imgcut_name: str, game_packs: "game_data.pack.GamePacks"
-    ):
+    def __init__(self, img_name: str, imgcut_name: str, game_packs: "core.GamePacks"):
         self.img_name = img_name
         self.imgcut_name = imgcut_name
         self.game_packs = game_packs
@@ -141,9 +137,9 @@ class TexLoaderInfo:
 class Texture:
     def __init__(
         self,
-        image: "io.bc_image.BCImage",
-        rects: list[rect.Rect],
-        metadata: TexMetadata,
+        image: "core.BCImage",
+        rects: list["core.Rect"],
+        metadata: "TexMetadata",
         img_name: str,
         imgcut_name: str,
     ):
@@ -152,10 +148,10 @@ class Texture:
         self.metadata = metadata
         self.img_name = img_name
         self.imgcut_name = imgcut_name
-        self.cuts: list[Cut] = []
+        self.cuts: list[CutTexture] = []
 
     @staticmethod
-    def load(png_name: str, imgcut_name: str, game_packs: "game_data.pack.GamePacks"):
+    def load(png_name: str, imgcut_name: str, game_packs: "core.GamePacks"):
         imgcut = game_packs.find_file(imgcut_name)
         png = game_packs.find_file(png_name)
         if not imgcut or not png:
@@ -165,8 +161,8 @@ class Texture:
 
     @staticmethod
     def from_data(
-        imgcut_data: "io.data.Data",
-        png_data: "io.data.Data",
+        imgcut_data: "core.Data",
+        png_data: "core.Data",
         png_name: str,
         imgcut_name: str,
     ):
@@ -174,27 +170,25 @@ class Texture:
         meta_data = TexMetadata.from_csv(csv)
 
         total_rects = meta_data.total_rects
-        rects: list[rect.Rect] = []
+        rects: list[core.Rect] = []
         for _ in range(total_rects):
             rect_l = csv.read_line()
             if rect_l is None:
                 return Texture.create_empty()
-            rect_ = rect.Rect.from_list(rect_l)
+            rect_ = core.Rect.from_list(rect_l)
             if rect_ is None:
                 return Texture.create_empty()
             rects.append(rect_)
 
-        return Texture(
-            io.bc_image.BCImage(png_data), rects, meta_data, png_name, imgcut_name
-        )
+        return Texture(core.BCImage(png_data), rects, meta_data, png_name, imgcut_name)
 
     @staticmethod
     def create_empty():
         return Texture(
-            io.bc_image.BCImage.create_empty(), [], TexMetadata.create_empty(), "", ""
+            core.BCImage.create_empty(), [], TexMetadata.create_empty(), "", ""
         )
 
-    def save(self, game_packs: "game_data.pack.GamePacks"):
+    def save(self, game_packs: "core.GamePacks"):
         imgcut_data, png_data = self.to_data()
         game_packs.set_file(self.imgcut_name, imgcut_data)
         game_packs.set_file(self.img_name, png_data)
@@ -216,16 +210,16 @@ class Texture:
             self.imgcut_name,
         )
 
-    def get_rect(self, index: int) -> Optional[rect.Rect]:
+    def get_rect(self, index: int) -> Optional["core.Rect"]:
         try:
             return self.rects[index]
         except IndexError:
             return None
 
-    def set_rect(self, index: int, rect_: rect.Rect):
+    def set_rect(self, index: int, rect_: "core.Rect"):
         self.rects[index] = rect_
 
-    def get_image(self, index: int) -> Optional["io.bc_image.BCImage"]:
+    def get_image(self, index: int) -> Optional["core.BCImage"]:
         cut = self.get_cut(index)
         if cut is not None:
             return cut.img
@@ -249,12 +243,12 @@ class Texture:
         self.img_name = self.metadata.img_name
 
     def split_cuts(self):
-        self.cuts: list[Cut] = []
+        self.cuts: list[CutTexture] = []
 
         for r in self.rects:
-            self.cuts.append(Cut(r, self.image.get_subimage(r)))
+            self.cuts.append(CutTexture(r, self.image.get_subimage(r)))
 
-    def get_cut(self, index: int) -> Optional[Cut]:
+    def get_cut(self, index: int) -> Optional[CutTexture]:
         try:
             return self.cuts[index]
         except IndexError:
@@ -293,7 +287,7 @@ class Texture:
         }
 
     def reconstruct_image_from_cuts(self):
-        self.image = io.bc_image.BCImage.create_empty()
+        self.image = core.BCImage.create_empty()
         for cut in self.cuts:
             self.image.paste_rect(cut.img, cut.rect)
 

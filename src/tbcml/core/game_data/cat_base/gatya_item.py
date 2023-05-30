@@ -1,6 +1,5 @@
 from typing import Any, Optional
-from tbcml.core.game_data import pack
-from tbcml.core import io, mods
+from tbcml import core
 import enum
 
 
@@ -105,12 +104,12 @@ class GatyaItemBuy:
         return "Gatyaitembuy.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> "GatyaItemBuy":
+    def from_game_data(game_data: "core.GamePacks") -> "GatyaItemBuy":
         csv_data = game_data.find_file(GatyaItemBuy.get_file_name())
         if csv_data is None:
             return GatyaItemBuy.create_empty()
 
-        csv = io.bc_csv.CSV(csv_data.dec_data)
+        csv = core.CSV(csv_data.dec_data)
         gatya_item_buys: dict[int, GatyaItemBuyItem] = {}
         for i, line in enumerate(csv.lines[1:]):
             comment = ""
@@ -134,12 +133,12 @@ class GatyaItemBuy:
 
         return GatyaItemBuy(gatya_item_buys)
 
-    def to_game_data(self, game_data: "pack.GamePacks") -> None:
+    def to_game_data(self, game_data: "core.GamePacks") -> None:
         csv_data = game_data.find_file(GatyaItemBuy.get_file_name())
         if csv_data is None:
             return None
 
-        csv = io.bc_csv.CSV(csv_data.dec_data)
+        csv = core.CSV(csv_data.dec_data)
         for item in self.gatya_item_buys.values():
             line: list[str] = []
             line.append(str(item.rarity))
@@ -173,7 +172,7 @@ class GatyaItemBuy:
         gatya_item_buys = dict_data.get("gatya_item_buys")
         if gatya_item_buys is not None:
             current_gatya_item_buys = self.gatya_item_buys
-            modded_gatya_item_buys = mods.bc_mod.ModEditDictHandler(
+            modded_gatya_item_buys = core.ModEditDictHandler(
                 gatya_item_buys, current_gatya_item_buys
             ).get_dict(convert_int=True)
             for item_id, modded_item in modded_gatya_item_buys.items():
@@ -219,14 +218,14 @@ class GatyaItemName:
         return "GatyaitemName.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> "GatyaItemName":
+    def from_game_data(game_data: "core.GamePacks") -> "GatyaItemName":
         csv_data = game_data.find_file(GatyaItemName.get_file_name())
         if csv_data is None:
             return GatyaItemName.create_empty()
 
-        csv = io.bc_csv.CSV(
+        csv = core.CSV(
             csv_data.dec_data,
-            delimeter=io.bc_csv.Delimeter.from_country_code_res(game_data.country_code),
+            delimeter=core.Delimeter.from_country_code_res(game_data.country_code),
         )
         gatya_item_names: dict[int, GatyaItemNameItem] = {}
         for i, line in enumerate(csv.lines):
@@ -236,14 +235,14 @@ class GatyaItemName:
 
         return GatyaItemName(gatya_item_names)
 
-    def to_game_data(self, game_data: "pack.GamePacks") -> None:
+    def to_game_data(self, game_data: "core.GamePacks") -> None:
         csv_data = game_data.find_file(GatyaItemName.get_file_name())
         if csv_data is None:
             return None
 
-        csv = io.bc_csv.CSV(
+        csv = core.CSV(
             csv_data.dec_data,
-            delimeter=io.bc_csv.Delimeter.from_country_code_res(game_data.country_code),
+            delimeter=core.Delimeter.from_country_code_res(game_data.country_code),
         )
         for item in self.gatya_item_names.values():
             line: list[str] = []
@@ -268,7 +267,7 @@ class GatyaItemName:
         gatya_item_names = dict_data.get("gatya_item_names")
         if gatya_item_names is not None:
             current_gatya_item_names = self.gatya_item_names
-            modded_gatya_item_names = mods.bc_mod.ModEditDictHandler(
+            modded_gatya_item_names = core.ModEditDictHandler(
                 gatya_item_names, current_gatya_item_names
             ).get_dict(convert_int=True)
             for item_id, modded_item in modded_gatya_item_names.items():
@@ -285,8 +284,8 @@ class GatyaItem:
         id: int,
         gatya_item_buy_item: GatyaItemBuyItem,
         gatya_item_name_item: GatyaItemNameItem,
-        image: "io.bc_image.BCImage",
-        silhouette: "io.bc_image.BCImage",
+        image: "core.BCImage",
+        silhouette: "core.BCImage",
     ):
         self.id = id
         self.gatya_item_buy_item = gatya_item_buy_item
@@ -296,12 +295,12 @@ class GatyaItem:
 
     @staticmethod
     def get_image_name(id: int, silhouette: bool) -> str:
-        id_str = io.data.PaddedInt(id, 2).to_str()
+        id_str = core.PaddedInt(id, 2).to_str()
         return f"gatyaitemD_{id_str}_{'z' if silhouette else 'f'}.png"
 
     @staticmethod
     def from_game_data(
-        game_data: "pack.GamePacks",
+        game_data: "core.GamePacks",
         id: int,
         gatya_item_buy: GatyaItemBuyItem,
         gatya_item_name: GatyaItemNameItem,
@@ -314,13 +313,11 @@ class GatyaItem:
             id,
             gatya_item_buy,
             gatya_item_name,
-            io.bc_image.BCImage(image.dec_data if image is not None else None),
-            io.bc_image.BCImage(
-                silhouette.dec_data if silhouette is not None else None
-            ),
+            core.BCImage(image.dec_data if image is not None else None),
+            core.BCImage(silhouette.dec_data if silhouette is not None else None),
         )
 
-    def to_game_data(self, game_data: "pack.GamePacks") -> None:
+    def to_game_data(self, game_data: "core.GamePacks") -> None:
         game_data.set_file(
             GatyaItem.get_image_name(self.id, False),
             self.image.to_data(),
@@ -341,8 +338,8 @@ class GatyaItem:
             id,
             GatyaItemBuyItem.create_empty(id),
             GatyaItemNameItem.create_empty(id),
-            io.bc_image.BCImage.create_empty(),
-            io.bc_image.BCImage.create_empty(),
+            core.BCImage.create_empty(),
+            core.BCImage.create_empty(),
         )
 
     def apply_dict(self, dict_data: dict[str, Any]):
@@ -359,7 +356,7 @@ class GatyaItems:
         self.items = items
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> "GatyaItems":
+    def from_game_data(game_data: "core.GamePacks") -> "GatyaItems":
         gatya_item_buy = GatyaItemBuy.from_game_data(game_data)
         gatya_item_name = GatyaItemName.from_game_data(game_data)
 
@@ -382,7 +379,7 @@ class GatyaItems:
 
         return GatyaItems(items)
 
-    def to_game_data(self, game_data: "pack.GamePacks") -> None:
+    def to_game_data(self, game_data: "core.GamePacks") -> None:
         gatya_item_buy = GatyaItemBuy({})
         gatya_item_name = GatyaItemName({})
         for item in self.items.values():
@@ -408,9 +405,9 @@ class GatyaItems:
         items = dict_data.get("items")
         if items is not None:
             current_items = self.items.copy()
-            modded_items = mods.bc_mod.ModEditDictHandler(
-                items, current_items
-            ).get_dict(convert_int=True)
+            modded_items = core.ModEditDictHandler(items, current_items).get_dict(
+                convert_int=True
+            )
             for id, modded_item in modded_items.items():
                 item = current_items.get(id)
                 if item is None:

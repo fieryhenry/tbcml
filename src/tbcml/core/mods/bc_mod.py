@@ -1,6 +1,6 @@
 from typing import Any, Optional, Union
 import zipfile
-from tbcml.core import io, crypto, mods
+from tbcml import core
 import copy
 
 
@@ -133,7 +133,7 @@ class Mod:
         contributors: Optional[list[str]] = None,
         dependencies: Optional[list[Dependency]] = None,
         long_description: str = "",
-        icon: Optional["io.bc_image.BCImage"] = None,
+        icon: Optional["core.BCImage"] = None,
     ):
         self.name = name
         self.author = author
@@ -143,13 +143,11 @@ class Mod:
         self.contributors = contributors if contributors is not None else []
         self.dependencies = dependencies if dependencies is not None else []
         self.long_description = long_description
-        self.icon = (
-            icon if icon is not None else io.bc_image.BCImage.from_size(512, 512)
-        )
+        self.icon = icon if icon is not None else core.BCImage.from_size(512, 512)
 
         self.mod_edits: dict[str, Any] = {}
-        self.game_files: dict[str, io.data.Data] = {}
-        self.apk_files: dict[str, io.data.Data] = {}
+        self.game_files: dict[str, core.Data] = {}
+        self.apk_files: dict[str, core.Data] = {}
 
         self.init_audio()
         self.init_scripts()
@@ -166,15 +164,15 @@ class Mod:
         return f"{self.mod_id}{self.get_extension()}"
 
     def init_scripts(self):
-        self.scripts: mods.frida_script.Scripts = mods.frida_script.Scripts(
+        self.scripts: core.FridaScripts = core.FridaScripts(
             [],
         )
 
     def init_audio(self):
-        self.audio = io.audio.Audio.create_empty()
+        self.audio = core.Audio.create_empty()
 
     def init_smali(self):
-        self.smali = mods.smali.SmaliSet.create_empty()
+        self.smali = core.SmaliSet.create_empty()
 
     def create_mod_json(self) -> dict[str, Any]:
         return {
@@ -188,12 +186,12 @@ class Mod:
             "long_description": self.long_description,
         }
 
-    def save(self, path: "io.path.Path"):
+    def save(self, path: "core.Path"):
         data = self.to_data()
         path.write(data)
 
     def to_data(self):
-        zip_file = io.zip.Zip()
+        zip_file = core.Zip()
 
         self.audio.add_to_zip(zip_file)
         self.scripts.add_to_zip(zip_file)
@@ -209,20 +207,20 @@ class Mod:
         self.mod_edits = orignal_mod_edits
 
         for file_name, data in self.game_files.items():
-            zip_file.add_file(io.path.Path("game_files/" + file_name), data)
+            zip_file.add_file(core.Path("game_files/" + file_name), data)
 
         for file_name, data in self.apk_files.items():
-            zip_file.add_file(io.path.Path("apk_files/" + file_name), data)
+            zip_file.add_file(core.Path("apk_files/" + file_name), data)
 
         icon = self.icon
-        zip_file.add_file(io.path.Path("icon.png"), icon.to_data())
+        zip_file.add_file(core.Path("icon.png"), icon.to_data())
 
-        json = io.json_file.JsonFile.from_object(self.create_mod_json())
-        zip_file.add_file(io.path.Path("mod.json"), json.to_data())
+        json = core.JsonFile.from_object(self.create_mod_json())
+        zip_file.add_file(core.Path("mod.json"), json.to_data())
         return zip_file.to_data()
 
     def add_mod_edits_to_zip(
-        self, zip: "io.zip.Zip", dict_data: dict[Any, Any], parent: str = "mod_edits/"
+        self, zip: "core.Zip", dict_data: dict[Any, Any], parent: str = "mod_edits/"
     ):
         for key, value in dict_data.items():
             if key == "*":
@@ -231,12 +229,12 @@ class Mod:
                 self.add_mod_edits_to_zip(zip, value, f"{parent}{key}/")
             else:
                 zip.add_file(
-                    io.path.Path(f"{parent}{key}.json"),
-                    io.json_file.JsonFile.from_object(value).to_data(),
+                    core.Path(f"{parent}{key}.json"),
+                    core.JsonFile.from_object(value).to_data(),
                 )
 
     def add_images(
-        self, zip: "io.zip.Zip", dict_data: dict[Any, Any], parent: str = "mod_edits/"
+        self, zip: "core.Zip", dict_data: dict[Any, Any], parent: str = "mod_edits/"
     ):
         for key, value in dict_data.items():
             if key == "*":
@@ -247,8 +245,8 @@ class Mod:
                 if key != "__image__":
                     continue
                 zip.add_file(
-                    io.path.Path(f"{parent[:-1]}.png"),
-                    io.bc_image.BCImage.from_base_64(value).to_data(),
+                    core.Path(f"{parent[:-1]}.png"),
+                    core.BCImage.from_base_64(value).to_data(),
                 )
 
     def remove__image__(self, dict_data: dict[Any, Any]):
@@ -259,7 +257,7 @@ class Mod:
             elif isinstance(dict_data[key], dict):
                 self.remove__image__(dict_data[key])
 
-    def get_mod_edits_from_zip(self, zip: "io.zip.Zip", only_images: bool = False):
+    def get_mod_edits_from_zip(self, zip: "core.Zip", only_images: bool = False):
         for file in zip.get_paths():
             if file.path.startswith("mod_edits/"):
                 path = file.path.split("/")
@@ -279,8 +277,8 @@ class Mod:
     def add_mod_edit_path(
         self,
         path: list[str],
-        file: "io.data.Data",
-        file_path: "io.path.Path",
+        file: "core.Data",
+        file_path: "core.Path",
         parent: Optional[dict[Any, Any]] = None,
         only_images: bool = False,
     ):
@@ -291,9 +289,9 @@ class Mod:
             key = "*"
         if len(path) == 1:
             if file_path.get_extension() == "json" and not only_images:
-                parent[key] = io.json_file.JsonFile.from_data(file).get_json()
+                parent[key] = core.JsonFile.from_data(file).get_json()
             elif file_path.get_extension() == "png" and only_images:
-                parent[key] = {"__image__": io.bc_image.BCImage(file).to_base_64()}
+                parent[key] = {"__image__": core.BCImage(file).to_base_64()}
         else:
             if key not in parent:
                 parent[key] = {}
@@ -306,28 +304,28 @@ class Mod:
         return True
 
     @staticmethod
-    def load(path: "io.path.Path") -> Optional["Mod"]:
+    def load(path: "core.Path") -> Optional["Mod"]:
         try:
-            zip_file = io.zip.Zip.from_file(path)
+            zip_file = core.Zip.from_file(path)
         except zipfile.BadZipFile:
             return None
         return Mod.load_from_zip(zip_file)
 
     @staticmethod
-    def load_from_zip(zip_file: "io.zip.Zip") -> Optional["Mod"]:
-        json_file = zip_file.get_file(io.path.Path("mod.json"))
+    def load_from_zip(zip_file: "core.Zip") -> Optional["Mod"]:
+        json_file = zip_file.get_file(core.Path("mod.json"))
         if json_file is None:
             return None
-        json = io.json_file.JsonFile.from_data(json_file)
+        json = core.JsonFile.from_data(json_file)
 
-        icon = zip_file.get_file(io.path.Path("icon.png"))
-        icon = io.bc_image.BCImage(icon)
+        icon = zip_file.get_file(core.Path("icon.png"))
+        icon = core.BCImage(icon)
 
         mod = Mod.from_mod_json(json.get_json(), icon)
 
-        mod.audio = io.audio.Audio.from_zip(zip_file)
-        mod.scripts = mods.frida_script.Scripts.from_zip(zip_file, mod)
-        mod.smali = mods.smali.SmaliSet.from_zip(zip_file)
+        mod.audio = core.Audio.from_zip(zip_file)
+        mod.scripts = core.FridaScripts.from_zip(zip_file, mod)
+        mod.smali = core.SmaliSet.from_zip(zip_file)
 
         mod.mod_edits = {}
         mod.get_mod_edits_from_zip(zip_file, False)
@@ -350,7 +348,7 @@ class Mod:
 
     @staticmethod
     def from_mod_json(
-        data: dict[str, Any], icon: Optional["io.bc_image.BCImage"] = None
+        data: dict[str, Any], icon: Optional["core.BCImage"] = None
     ) -> "Mod":
         return Mod(
             data["name"],
@@ -366,7 +364,7 @@ class Mod:
 
     @staticmethod
     def create_mod_id() -> str:
-        return crypto.Random.get_alpha_string(16)
+        return core.Random.get_alpha_string(16)
 
     def import_mod(self, other: "Mod"):
         self.audio.import_audio(other.audio)
@@ -381,9 +379,7 @@ class Mod:
             self.import_mod(other)
 
     def get_hash(self) -> str:
-        return (
-            crypto.Hash(crypto.HashAlgorithm.SHA256).get_hash(self.to_data()).to_hex()
-        )
+        return core.Hash(core.HashAlgorithm.SHA256).get_hash(self.to_data()).to_hex()
 
     def add_mod_edit(self, mod_edit: Union[dict[str, Any], "ModEdit"]):
         if isinstance(mod_edit, dict):

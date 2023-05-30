@@ -1,7 +1,6 @@
 import enum
 from typing import Any, Optional
-from tbcml.core.game_data import pack
-from tbcml.core import io, mods
+from tbcml import core
 
 
 class GatyaType(enum.Enum):
@@ -45,13 +44,13 @@ class GatyaDataSet:
 
     @staticmethod
     def from_game_data(
-        game_data: "pack.GamePacks", type: GatyaType, index: int
+        game_data: "core.GamePacks", type: GatyaType, index: int
     ) -> Optional["GatyaDataSet"]:
         file_name = GatyaDataSet.get_file_name(type, index)
         file = game_data.find_file(file_name)
         if file is None:
             return None
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         sets: dict[int, GatyaDataSetData] = {}
         for i, line in enumerate(csv.lines):
             cats: list[int] = []
@@ -65,12 +64,12 @@ class GatyaDataSet:
             sets[i] = GatyaDataSetData(i, cats)
         return GatyaDataSet(type, index, sets)
 
-    def to_game_data(self, game_data: "pack.GamePacks") -> None:
+    def to_game_data(self, game_data: "core.GamePacks") -> None:
         file_name = GatyaDataSet.get_file_name(self.gatya_type, self.index)
         file = game_data.find_file(file_name)
         if file is None:
             return None
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         for set in self.sets.values():
             line: list[str] = []
             for cat in set.cats:
@@ -86,7 +85,7 @@ class GatyaDataSet:
         sets = dict_data.get("sets")
         if sets is not None:
             current_sets = self.sets.copy()
-            modded_sets = mods.bc_mod.ModEditDictHandler(sets, current_sets).get_dict(
+            modded_sets = core.ModEditDictHandler(sets, current_sets).get_dict(
                 convert_int=True
             )
             for id, modded_set in modded_sets.items():
@@ -112,7 +111,7 @@ class GatyaDataSets:
         self.gatya_sets = gatya_sets
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks", type: GatyaType) -> "GatyaDataSets":
+    def from_game_data(game_data: "core.GamePacks", type: GatyaType) -> "GatyaDataSets":
         gatya_sets: dict[int, GatyaDataSet] = {}
         i = 0
         while True:
@@ -123,7 +122,7 @@ class GatyaDataSets:
             i += 1
         return GatyaDataSets(type, gatya_sets)
 
-    def to_game_data(self, game_data: "pack.GamePacks") -> None:
+    def to_game_data(self, game_data: "core.GamePacks") -> None:
         for gatya_set in self.gatya_sets.values():
             gatya_set.to_game_data(game_data)
 
@@ -141,9 +140,9 @@ class GatyaDataSets:
         gatya_sets = dict_data.get("gatya_sets")
         if gatya_sets is not None:
             current_sets = self.gatya_sets.copy()
-            modded_sets = mods.bc_mod.ModEditDictHandler(
-                gatya_sets, current_sets
-            ).get_dict(convert_int=True)
+            modded_sets = core.ModEditDictHandler(gatya_sets, current_sets).get_dict(
+                convert_int=True
+            )
             for id, modded_set in modded_sets.items():
                 set = current_sets.get(id, None)
                 if set is None:
@@ -165,13 +164,13 @@ class GatyaDataSetsAll:
         self.gatya_data_sets = gatya_data_sets
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> "GatyaDataSetsAll":
+    def from_game_data(game_data: "core.GamePacks") -> "GatyaDataSetsAll":
         gatya_data_sets: dict[GatyaType, GatyaDataSets] = {}
         for type in GatyaType:
             gatya_data_sets[type] = GatyaDataSets.from_game_data(game_data, type)
         return GatyaDataSetsAll(gatya_data_sets)
 
-    def to_game_data(self, game_data: "pack.GamePacks") -> None:
+    def to_game_data(self, game_data: "core.GamePacks") -> None:
         for gatya_data_set in self.gatya_data_sets.values():
             gatya_data_set.to_game_data(game_data)
 
@@ -188,7 +187,7 @@ class GatyaDataSetsAll:
         gatya_data_sets = dict_data.get("gatya_data_sets")
         if gatya_data_sets is not None:
             current_sets = self.gatya_data_sets.copy()
-            modded_sets = mods.bc_mod.ModEditDictHandler(
+            modded_sets = core.ModEditDictHandler(
                 gatya_data_sets, current_sets
             ).get_dict(convert_int=True)
             for type, modded_set in modded_sets.items():
@@ -263,12 +262,12 @@ class GatyaOptions:
         return f"GatyaData_Option_Set{type.value}.tsv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks", type: GatyaType) -> "GatyaOptions":
+    def from_game_data(game_data: "core.GamePacks", type: GatyaType) -> "GatyaOptions":
         file_name = GatyaOptions.get_file_name(type)
         file = game_data.find_file(file_name)
         if file is None:
             return GatyaOptions.create_empty(type)
-        csv = io.bc_csv.CSV(file.dec_data, delimeter="\t")
+        csv = core.CSV(file.dec_data, delimeter="\t")
         options: dict[int, GatyaOptionSet] = {}
         for line in csv.lines[1:]:
             id = int(line[0])
@@ -294,13 +293,13 @@ class GatyaOptions:
             )
         return GatyaOptions(type, options)
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         file_name = GatyaOptions.get_file_name(self.type)
         file = game_data.find_file(file_name)
         if file is None:
             return
         remaining = self.options.copy()
-        csv = io.bc_csv.CSV(file.dec_data, delimeter="\t")
+        csv = core.CSV(file.dec_data, delimeter="\t")
         for i, line in enumerate(csv.lines[1:]):
             id = int(line[0])
             option = self.options[id]
@@ -335,9 +334,9 @@ class GatyaOptions:
         options = dict_data.get("options")
         if options is not None:
             current_options = self.options.copy()
-            modded_options = mods.bc_mod.ModEditDictHandler(
-                options, current_options
-            ).get_dict(convert_int=True)
+            modded_options = core.ModEditDictHandler(options, current_options).get_dict(
+                convert_int=True
+            )
             for id, modded_option in modded_options:
                 option = current_options.get(id)
                 if option is None:
@@ -356,14 +355,14 @@ class GatyaOptionsAll:
         self.gatya_options = gatya_options
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> "GatyaOptionsAll":
+    def from_game_data(game_data: "core.GamePacks") -> "GatyaOptionsAll":
         gatya_otpions: dict[GatyaType, GatyaOptions] = {}
         for type in GatyaType:
             options = GatyaOptions.from_game_data(game_data, type)
             gatya_otpions[type] = options
         return GatyaOptionsAll(gatya_otpions)
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         for options in self.gatya_options.values():
             options.to_game_data(game_data)
 
@@ -371,7 +370,7 @@ class GatyaOptionsAll:
         gatya_options = dict_data.get("gatya_options")
         if gatya_options is not None:
             current_gatya_options = self.gatya_options.copy()
-            modded_gatya_options = mods.bc_mod.ModEditDictHandler(
+            modded_gatya_options = core.ModEditDictHandler(
                 gatya_options, current_gatya_options
             ).get_dict()
             for type, modded_gatya_option in modded_gatya_options:
@@ -406,12 +405,12 @@ class Gatya:
         self.gatya_options.set_gatya_options(type, options)
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> "Gatya":
+    def from_game_data(game_data: "core.GamePacks") -> "Gatya":
         gatya_options = GatyaOptionsAll.from_game_data(game_data)
         gatya_data_sets = GatyaDataSetsAll.from_game_data(game_data)
         return Gatya(gatya_options, gatya_data_sets)
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         self.gatya_options.to_game_data(game_data)
         self.gatya_data_sets.to_game_data(game_data)
 

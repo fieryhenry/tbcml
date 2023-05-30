@@ -1,7 +1,6 @@
 import enum
 from typing import Any
-from tbcml.core.game_data import pack
-from tbcml.core import io, mods
+from tbcml import core
 
 
 class DropType(enum.Enum):
@@ -45,9 +44,9 @@ class ItemPack:
         items = dict_data.get("items")
         if items is not None:
             current_items = self.items.copy()
-            modded_items = mods.bc_mod.ModEditDictHandler(
-                items, current_items
-            ).get_dict(convert_int=True)
+            modded_items = core.ModEditDictHandler(items, current_items).get_dict(
+                convert_int=True
+            )
             for item_id, modded_item in modded_items:
                 item = self.items.get(item_id)
                 if item is None:
@@ -74,11 +73,11 @@ class ItemPacks:
         return "Adreward_table.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> "ItemPacks":
+    def from_game_data(game_data: "core.GamePacks") -> "ItemPacks":
         file = game_data.find_file(ItemPacks.get_file_name())
         if file is None:
             return ItemPacks.create_empty()
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         packs: dict[int, ItemPack] = {}
         for i, line in enumerate(csv.lines[1:]):
             type = DropType(int(line[0]))
@@ -91,11 +90,11 @@ class ItemPacks:
             packs[i] = ItemPack(type, user_rank, unknown, items)
         return ItemPacks(packs)
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         file = game_data.find_file(self.get_file_name())
         if file is None:
             return None
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         remaining_item_packs = self.packs.copy()
         for i, line in enumerate(csv.lines[1:]):
             try:
@@ -133,9 +132,9 @@ class ItemPacks:
         packs = dict_data.get("packs")
         if packs is not None:
             current_packs = self.packs.copy()
-            modded_packs = mods.bc_mod.ModEditDictHandler(
-                packs, current_packs
-            ).get_dict(convert_int=True)
+            modded_packs = core.ModEditDictHandler(packs, current_packs).get_dict(
+                convert_int=True
+            )
             for pack_id, modded_pack in modded_packs:
                 pack = self.packs.get(pack_id)
                 if pack is None:

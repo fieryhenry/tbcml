@@ -1,4 +1,4 @@
-from tbcml.core import io
+from tbcml import core
 
 
 class PropertySet:
@@ -12,9 +12,7 @@ class PropertySet:
             property (str): Name of the property file.
         """
         self.locale = locale
-        self.path = (
-            io.path.Path("locales", True).add(locale).add(property + ".properties")
-        )
+        self.path = core.Path("locales", True).add(locale).add(property + ".properties")
         self.properties: dict[str, str] = {}
         self.parse()
 
@@ -58,7 +56,7 @@ class PropertySet:
         Returns:
             PropertySet: PropertySet for the property file.
         """
-        return PropertySet(io.config.Config().get(io.config.Key.LOCALE), property)
+        return PropertySet(core.Config().get(core.ConfigKey.LOCALE), property)
 
 
 class LocalManager:
@@ -71,7 +69,7 @@ class LocalManager:
             locale (str): Language code of the locale.
         """
         self.locale = locale
-        self.path = io.path.Path("locales", True).add(locale)
+        self.path = core.Path("locales", True).add(locale)
         self.properties: dict[str, PropertySet] = {}
         self.all_properties: dict[str, str] = {}
         self.parse()
@@ -103,7 +101,7 @@ class LocalManager:
         Returns:
             LocalManager: LocalManager for the locale.
         """
-        return LocalManager(io.config.Config().get(io.config.Key.LOCALE))
+        return LocalManager(core.Config().get(core.ConfigKey.LOCALE))
 
     def check_duplicates(self):
         """Checks for duplicate keys in all property files.

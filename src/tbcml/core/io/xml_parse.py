@@ -1,10 +1,10 @@
 from typing import Optional
 import xml.etree.ElementTree as ET
-from tbcml.core import io
+from tbcml import core
 
 
 class XML:
-    def __init__(self, data: io.data.Data):
+    def __init__(self, data: "core.Data"):
         self.data = data
         ET.register_namespace("android", "http://schemas.android.com/apk/res/android")
         self.root = ET.fromstring(self.data.to_str())
@@ -22,9 +22,9 @@ class XML:
         element.text = value
 
     def save(self):
-        self.data = io.data.Data(ET.tostring(self.root).decode("utf-8"))
+        self.data = core.Data(ET.tostring(self.root).decode("utf-8"))
 
-    def to_file(self, path: io.path.Path):
+    def to_file(self, path: "core.Path"):
         self.save()
         path.write(self.data)
 

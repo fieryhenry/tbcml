@@ -6,24 +6,25 @@ import time
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
+import requests
 
-from tbcml.core import country_code, crypto, io, request
+from tbcml import core
 
 
 class ServerFileHandler:
     """Class for handling downloading game files from the game server"""
 
-    def __init__(self, apk: "io.apk.Apk"):
+    def __init__(self, apk: "core.Apk"):
         """Initializes the ServerFileHandler class
 
         Args:
-            apk (io.apk.Apk): The APK object to use, used for country code and game version list
+            apk (core.Apk): The APK object to use, used for country code and game version list
         """
         self.apk = apk
         self.tsv_paths = self.apk.get_download_tsvs()
         self.game_versions = self.find_game_versions()
 
-    def parse_tsv(self, index: int) -> "io.bc_csv.CSV":
+    def parse_tsv(self, index: int) -> "core.CSV":
         """Parses a TSV file from the APK
 
         Args:
@@ -33,12 +34,12 @@ class ServerFileHandler:
             ValueError: If the index is invalid
 
         Returns:
-            io.bc_csv.CSV: The parsed TSV file
+            core.CSV: The parsed TSV file
         """
         if index >= len(self.tsv_paths) or index < 0:
             raise ValueError("Invalid TSV index")
         tsv_path = self.tsv_paths[index]
-        tsv = io.bc_csv.CSV(tsv_path.read(), delimeter="\t")
+        tsv = core.CSV(tsv_path.read(), delimeter="\t")
         return tsv
 
     def get_game_version(self, index: int) -> int:
@@ -85,18 +86,17 @@ class ServerFileHandler:
     def download(
         self,
         index: int,
-    ) -> "io.zip.Zip":
+    ) -> "core.Zip":
         """Downloads game files from the server for a given game version
 
         Args:
             index (int): The index of the game version to download
-            progress_signal (Optional[QtCore.pyqtSignal]): The signal to emit progress on
 
         Raises:
             ValueError: If the zip data is invalid
 
         Returns:
-            io.zip.Zip: The downloaded game files
+            core.Zip: The downloaded game files
         """
         url = self.get_url(index)
         cloudfront = CloudFront()
@@ -110,11 +110,11 @@ class ServerFileHandler:
             "range": "bytes=0-",
             "user-agent": "Dalvik/2.1.0 (Linux; U; Android 9; Pixel 2 Build/PQ3A.190801.002)",
         }
-        req = request.RequestHandler(url, headers=headers)
+        req = core.RequestHandler(url, headers=headers)
         resp = req.get()
         data = resp.content
         try:
-            zipf = io.zip.Zip(io.data.Data(data))
+            zipf = core.Zip(core.Data(data))
         except Exception:
             raise ValueError("Invalid zip data")
         return zipf
@@ -128,7 +128,6 @@ class ServerFileHandler:
 
         Args:
             index (int): The index of the game version to extract
-            progress_signal (Optional[QtCore.pyqtSignal]): The signal to emit progress on
             force (bool, optional): Whether to force download even if the files already exist. Defaults to False.
 
         Returns:
@@ -142,13 +141,13 @@ class ServerFileHandler:
                 name = row[0].strip()
                 if not name or ord(name[0]) == 65279 or name.isdigit():
                     continue
-                path = io.apk.Apk.get_server_path(self.apk.country_code).add(name)
+                path = core.Apk.get_server_path(self.apk.country_code).add(name)
                 if not path.exists():
                     found = False
                     break
                 md5_hash = row[2].strip()
                 file_hash = (
-                    crypto.Hash(crypto.HashAlgorithm.MD5).get_hash(path.read()).to_hex()
+                    core.Hash(core.HashAlgorithm.MD5).get_hash(path.read()).to_hex()
                 )
                 if md5_hash == file_hash:
                     hashes_equal = True
@@ -157,7 +156,7 @@ class ServerFileHandler:
             if found and hashes_equal:
                 return False
         zipf = self.download(index)
-        path = io.apk.Apk.get_server_path(self.apk.country_code)
+        path = core.Apk.get_server_path(self.apk.country_code)
         zipf.extract(path)
         return True
 
@@ -168,8 +167,6 @@ class ServerFileHandler:
         """Extracts all game versions
 
         Args:
-            progress_primary (Optional[QtCore.pyqtSignal]): The signal to emit progress on for each game version
-            progress_secondary (Optional[QtCore.pyqtSignal]): The signal to emit progress on for each file
             force (bool, optional): Whether to force extraction even if the files already exist. Defaults to False.
         """
         for i in range(len(self.tsv_paths)):
@@ -200,20 +197,18 @@ class ServerFileHandler:
             raise ValueError("Could not find libnative.so")
         if arc is None:
             raise ValueError("Could not find architecture")
-        lib_file = io.lib.Lib(arc, lib)
-        if self.apk.country_code == country_code.CountryCode.JP:
+        lib_file = core.Lib(arc, lib)
+        if self.apk.country_code == core.CountryCode.JP:
             list_to_search = [5, 5, 5, 7000000]
-        elif self.apk.country_code == country_code.CountryCode.EN:
+        elif self.apk.country_code == core.CountryCode.EN:
             list_to_search = [3, 2, 2, 6100000]
-        elif self.apk.country_code == country_code.CountryCode.KR:
+        elif self.apk.country_code == core.CountryCode.KR:
             list_to_search = [3, 2, 1, 6100000]
-        elif self.apk.country_code == country_code.CountryCode.TW:
+        elif self.apk.country_code == core.CountryCode.TW:
             list_to_search = [2, 3, 1, 6100000]
         else:
             raise ValueError("Unknown country code")
-        start_index = lib_file.search(
-            io.data.Data.from_int_list(list_to_search, "little")
-        )
+        start_index = lib_file.search(core.Data.from_int_list(list_to_search, "little"))
         if start_index == -1:
             raise ValueError("Could not find game version")
         length = len(self.tsv_paths)
@@ -398,16 +393,16 @@ class EventData:
         """
         return datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
 
-    def get_signing_key(self, amz: str) -> "io.data.Data":
+    def get_signing_key(self, amz: str) -> "core.Data":
         """Gets the signing key for the given amz date
 
         Args:
             amz (str): Amz date
 
         Returns:
-            io.data.Data: Signing key
+            core.Data: Signing key
         """
-        k = io.data.Data("AWS4" + self.aws_secret_access_key)
+        k = core.Data("AWS4" + self.aws_secret_access_key)
         k_date = self.hmacsha256(k, self.get_date())
         date_region_key = self.hmacsha256(k_date, self.region)
         date_region_service_key = self.hmacsha256(date_region_key, self.service)
@@ -418,19 +413,17 @@ class EventData:
         final = self.hmacsha256(signing_key, string_to_sign)
         return final
 
-    def hmacsha256(self, key: "io.data.Data", message: str) -> "io.data.Data":
+    def hmacsha256(self, key: "core.Data", message: str) -> "core.Data":
         """Gets the hmacsha256 of the given key and message
 
         Args:
-            key (io.data.Data): Key
+            key (core.Data): Key
             message (str): Message
 
         Returns:
-            io.data.Data: Hmacsha256 of the given key and message
+            core.Data: Hmacsha256 of the given key and message
         """
-        return crypto.Hmac(key, crypto.HashAlgorithm.SHA256).get_hmac(
-            io.data.Data(message)
-        )
+        return core.Hmac(key, core.HashAlgorithm.SHA256).get_hmac(core.Data(message))
 
     def get_string_to_sign(self, amz: str) -> str:
         """Gets the string to sign for the given amz date
@@ -455,9 +448,7 @@ class EventData:
         )
         request = self.get_canonical_request(amz)
         output += (
-            crypto.Hash(crypto.HashAlgorithm.SHA256)
-            .get_hash(io.data.Data(request))
-            .to_hex()
+            core.Hash(core.HashAlgorithm.SHA256).get_hash(core.Data(request)).to_hex()
         )
         return output
 
@@ -488,7 +479,7 @@ class EventData:
         """
         return self.url.split(self.domain)[1]
 
-    def make_request(self) -> "request.requests.Response":
+    def make_request(self) -> "requests.Response":
         """Makes the request to download the event data
 
         Returns:
@@ -505,4 +496,4 @@ class EventData:
             "x-amz-date": self.get_amz_date(),
         }
 
-        return request.RequestHandler(url, headers=headers).get()
+        return core.RequestHandler(url, headers=headers).get()

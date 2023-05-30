@@ -1,10 +1,10 @@
 from typing import Any
-from tbcml.core.io import path
+from tbcml import core
 import yaml
 
 
 class YamlFile:
-    def __init__(self, path: path.Path):
+    def __init__(self, path: "core.Path"):
         self.path = path
         if self.path.exists():
             self.data = path.read()

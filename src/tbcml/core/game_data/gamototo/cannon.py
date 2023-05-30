@@ -1,7 +1,6 @@
 from typing import Any, Optional
 
-from tbcml.core import io, mods
-from tbcml.core.game_data import pack
+from tbcml import core
 
 
 class BaseDecoRecipeLevel:
@@ -84,13 +83,13 @@ class BaseDecoRecipe:
         ...
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks", id: int) -> "BaseDecoRecipe":
+    def from_game_data(game_data: "core.GamePacks", id: int) -> "BaseDecoRecipe":
         file_name = BaseDecoRecipe.get_file_name(id)
         file = game_data.find_file(file_name)
         if file is None:
             return BaseDecoRecipe.create_empty(id)
 
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         levels: dict[int, BaseDecoRecipeLevel] = {}
         for i, level in enumerate(csv.lines):
             levels[i] = BaseDecoRecipeLevel(
@@ -117,13 +116,13 @@ class BaseDecoRecipe:
 
         return BaseDecoRecipe(id, levels)
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         file_name = BaseDecoRecipe.get_file_name(self.index)
         file = game_data.find_file(file_name)
         if file is None:
             return
 
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         remaining_levels = self.levels.copy()
         for i in range(len(csv.lines)):
             level = self.levels.get(i)
@@ -181,9 +180,9 @@ class BaseDecoRecipe:
         levels = dict_data.get("levels")
         if levels is not None:
             current_levels = self.levels.copy()
-            modded_levels = mods.bc_mod.ModEditDictHandler(
-                levels, current_levels
-            ).get_dict(convert_int=True)
+            modded_levels = core.ModEditDictHandler(levels, current_levels).get_dict(
+                convert_int=True
+            )
             for id, modded_level in modded_levels.items():
                 level = self.levels.get(id)
                 if level is None:
@@ -201,11 +200,11 @@ class BaseRecipe(BaseDecoRecipe):
 
     @staticmethod
     def get_file_name(id: int) -> str:
-        id_str = io.data.PaddedInt(id, 3)
+        id_str = core.PaddedInt(id, 3)
         return f"BaseRecipe_{id_str}.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks", id: int) -> "BaseRecipe":
+    def from_game_data(game_data: "core.GamePacks", id: int) -> "BaseRecipe":
         base_decos = BaseDecoRecipe.from_game_data(game_data, id)
         return BaseRecipe(id, base_decos.levels)
 
@@ -220,11 +219,11 @@ class DecoRecipe(BaseDecoRecipe):
 
     @staticmethod
     def get_file_name(id: int) -> str:
-        id_str = io.data.PaddedInt(id, 3)
+        id_str = core.PaddedInt(id, 3)
         return f"DecoRecipe_{id_str}.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks", id: int) -> "DecoRecipe":
+    def from_game_data(game_data: "core.GamePacks", id: int) -> "DecoRecipe":
         base_decos = BaseDecoRecipe.from_game_data(game_data, id)
         return DecoRecipe(id, base_decos.levels)
 
@@ -284,17 +283,17 @@ class CannonRecipe:
 
     @staticmethod
     def get_file_name(id: int) -> str:
-        id_str = io.data.PaddedInt(id, 3)
+        id_str = core.PaddedInt(id, 3)
         return f"CastleRecipe_{id_str}.csv"
 
     @staticmethod
-    def from_game_data(id: int, game_data: "pack.GamePacks") -> "CannonRecipe":
+    def from_game_data(id: int, game_data: "core.GamePacks") -> "CannonRecipe":
         file_name = CannonRecipe.get_file_name(id)
         file = game_data.find_file(file_name)
         if file is None:
             return CannonRecipe.create_empty(id)
 
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         levels = {}
         for i in range(len(csv.lines)):
             level = CannonRecipeLevel(
@@ -314,13 +313,13 @@ class CannonRecipe:
 
         return CannonRecipe(id, levels)
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         file_name = CannonRecipe.get_file_name(self.index)
         file = game_data.find_file(file_name)
         if file is None:
             return
 
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         remaining_levels = self.levels.copy()
         for i in range(len(csv.lines)):
             level = self.levels.get(i)
@@ -362,9 +361,9 @@ class CannonRecipe:
         levels = dict_data.get("levels")
         if levels is not None:
             current_levels = self.levels.copy()
-            modded_levels = mods.bc_mod.ModEditDictHandler(
-                levels, current_levels
-            ).get_dict(convert_int=True)
+            modded_levels = core.ModEditDictHandler(levels, current_levels).get_dict(
+                convert_int=True
+            )
             for id, modded_level in modded_levels.items():
                 level = self.levels.get(id)
                 if level is None:
@@ -430,9 +429,9 @@ class CastleRecipeUnlockPart:
         levels = dict_data.get("levels")
         if levels is not None:
             current_levels = self.levels.copy()
-            modded_levels = mods.bc_mod.ModEditDictHandler(
-                levels, current_levels
-            ).get_dict(convert_int=True)
+            modded_levels = core.ModEditDictHandler(levels, current_levels).get_dict(
+                convert_int=True
+            )
             for id, modded_level in modded_levels.items():
                 level = self.levels.get(id)
                 if level is None:
@@ -466,9 +465,9 @@ class CastleRecipeUnlockCastle:
         parts = dict_data.get("parts")
         if parts is not None:
             current_parts = self.parts.copy()
-            modded_parts = mods.bc_mod.ModEditDictHandler(
-                parts, current_parts
-            ).get_dict(convert_int=True)
+            modded_parts = core.ModEditDictHandler(parts, current_parts).get_dict(
+                convert_int=True
+            )
             for id, modded_part in modded_parts.items():
                 part = self.parts.get(id)
                 if part is None:
@@ -500,24 +499,24 @@ class CastleRecipeUnlock:
         return "CastleRecipeUnlock.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks"):
+    def from_game_data(game_data: "core.GamePacks"):
         file = game_data.find_file(CastleRecipeUnlock.get_file_name())
         if file is None:
             return CastleRecipeUnlock.create_empty()
 
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         castles: dict[int, CastleRecipeUnlockCastle] = {}
         for line in csv.lines:
             castle = CastleRecipeUnlockCastle.from_lines(csv.lines, int(line[0]))
             castles[castle.castle_id] = castle
         return CastleRecipeUnlock(castles)
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         file = game_data.find_file(CastleRecipeUnlock.get_file_name())
         if file is None:
             return
 
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         remaining_castles = self.castles.copy()
         for i, line in enumerate(csv.lines):
             castle_id = int(line[0])
@@ -606,12 +605,12 @@ class CastleRecipeUnlockData:
         return "CastleRecipeUnlockData.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks"):
+    def from_game_data(game_data: "core.GamePacks"):
         file = game_data.find_file(CastleRecipeUnlockData.get_file_name())
         if file is None:
             return CastleRecipeUnlockData.create_empty()
 
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         castles: dict[int, CastleRecipeUnlockDataCastle] = {}
         for line in csv.lines[1:]:
             castle = CastleRecipeUnlockDataCastle(
@@ -626,12 +625,12 @@ class CastleRecipeUnlockData:
             castles[castle.castle_id] = castle
         return CastleRecipeUnlockData(castles)
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         file = game_data.find_file(CastleRecipeUnlockData.get_file_name())
         if file is None:
             return
 
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         remaining_castles = self.castles.copy()
         for i, line in enumerate(csv.lines[1:]):
             castle_id = int(line[0])
@@ -690,9 +689,9 @@ class CannonEffectCastle:
         levels = dict_data.get("levels")
         if levels is not None:
             current_levels = self.levels.copy()
-            modded_levels = mods.bc_mod.ModEditDictHandler(
-                levels, current_levels
-            ).get_dict(convert_int=True)
+            modded_levels = core.ModEditDictHandler(levels, current_levels).get_dict(
+                convert_int=True
+            )
             for id, modded_level in modded_levels.items():
                 level = self.levels.get(id)
                 if level is None:
@@ -731,12 +730,12 @@ class CannonEffectsData:
         return "CC_AllParts_growth.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks"):
+    def from_game_data(game_data: "core.GamePacks"):
         file = game_data.find_file(CannonEffectsData.get_file_name())
         if file is None:
             return CannonEffectsData.create_empty()
 
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         castles: dict[int, CannonEffectCastle] = {}
 
         for line in csv.lines[1:]:
@@ -745,12 +744,12 @@ class CannonEffectsData:
             castles[castle_id] = castle_effect
         return CannonEffectsData(castles)
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         file = game_data.find_file(CannonEffectsData.get_file_name())
         if file is None:
             return
 
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         remaining_castles = self.castles.copy()
         for i, line in enumerate(csv.lines[1:]):
             castle_id = int(line[0])
@@ -846,12 +845,12 @@ class CannonStatusesData:
         return "CC_AllParts_status.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks"):
+    def from_game_data(game_data: "core.GamePacks"):
         file = game_data.find_file(CannonStatusesData.get_file_name())
         if file is None:
             return CannonStatusesData.create_empty()
 
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         statuses: dict[int, CannonStatus] = {}
 
         for line in csv.lines[1:]:
@@ -860,12 +859,12 @@ class CannonStatusesData:
             statuses[castle_id] = status
         return CannonStatusesData(statuses)
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         file = game_data.find_file(CannonStatusesData.get_file_name())
         if file is None:
             return
 
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         remaining_statuses = self.statuses.copy()
         for i, line in enumerate(csv.lines[1:]):
             castle_id = int(line[0])
@@ -927,12 +926,12 @@ class CastleEffectsData:
         return "CC_Castle_growth.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks"):
+    def from_game_data(game_data: "core.GamePacks"):
         file = game_data.find_file(CastleEffectsData.get_file_name())
         if file is None:
             return CastleEffectsData.create_empty()
 
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         effects: dict[int, CastleEffect] = {}
 
         for line in csv.lines[1:]:
@@ -941,12 +940,12 @@ class CastleEffectsData:
             effects[level] = effect
         return CastleEffectsData(effects)
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         file = game_data.find_file(CastleEffectsData.get_file_name())
         if file is None:
             return
 
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         remaining_effects = self.effects.copy()
         for i, line in enumerate(csv.lines[1:]):
             level = int(line[0])
@@ -1128,15 +1127,15 @@ class RecipeDescription:
         return "CastleRecipeDescriptions.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks"):
+    def from_game_data(game_data: "core.GamePacks"):
         file_name = RecipeDescription.get_file_name()
         file = game_data.find_file(file_name)
         if file is None:
             return RecipeDescription.create_empty()
 
-        csv = io.bc_csv.CSV(
+        csv = core.CSV(
             file.dec_data,
-            io.bc_csv.Delimeter.from_country_code_res(game_data.country_code),
+            core.Delimeter.from_country_code_res(game_data.country_code),
             remove_empty=False,
         )
         recipies: dict[int, RecipeDescriptionCastle] = {}
@@ -1146,15 +1145,15 @@ class RecipeDescription:
 
         return RecipeDescription(recipies)
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         file_name = RecipeDescription.get_file_name()
         file = game_data.find_file(file_name)
         if file is None:
             return
 
-        csv = io.bc_csv.CSV(
+        csv = core.CSV(
             file.dec_data,
-            io.bc_csv.Delimeter.from_country_code_res(game_data.country_code),
+            core.Delimeter.from_country_code_res(game_data.country_code),
             remove_empty=False,
         )
         remaining_recipies = self.recipies.copy()
@@ -1236,7 +1235,7 @@ class Castle:
 
     @staticmethod
     def from_game_data(
-        game_data: "pack.GamePacks",
+        game_data: "core.GamePacks",
         id: int,
         recipe_description_data: RecipeDescription,
         recipe_unlock_data: CastleRecipeUnlock,
@@ -1296,7 +1295,7 @@ class Castle:
             missing_data,
         )
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         self.cannon_recipe.to_game_data(game_data)
         self.base_recipe.to_game_data(game_data)
         self.deco_recipe.to_game_data(game_data)
@@ -1328,7 +1327,7 @@ class Castles:
         self.castle_effects = castle_effect_data
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks"):
+    def from_game_data(game_data: "core.GamePacks"):
         if game_data.castles is not None:
             return game_data.castles
         recipe_description_data = RecipeDescription.from_game_data(game_data)
@@ -1360,7 +1359,7 @@ class Castles:
         game_data.castles = castleso
         return castleso
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         recipe_description_data = RecipeDescription.create_empty()
         recipe_unlock_data = CastleRecipeUnlock.create_empty()
         recipe_data_unlock_data = CastleRecipeUnlockData.create_empty()
@@ -1392,9 +1391,9 @@ class Castles:
         castles = data.get("castles")
         if castles is not None:
             current_castles = self.castles.copy()
-            modded_castles = mods.bc_mod.ModEditDictHandler(
-                castles, current_castles
-            ).get_dict(convert_int=True)
+            modded_castles = core.ModEditDictHandler(castles, current_castles).get_dict(
+                convert_int=True
+            )
             for id, modded_castle in modded_castles.items():
                 castle = current_castles.get(id)
                 if castle is None:
@@ -1404,7 +1403,7 @@ class Castles:
             self.castles = current_castles
 
     @staticmethod
-    def apply_mod_to_game_data(mod: "mods.bc_mod.Mod", game_data: "pack.GamePacks"):
+    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
         if mod.mod_edits.get("castles") is None:
             return
         current_castles = Castles.from_game_data(game_data)

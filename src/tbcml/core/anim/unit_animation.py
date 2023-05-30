@@ -1,6 +1,6 @@
 import math
 from typing import Any, Optional
-from tbcml.core import io, game_data
+from tbcml import core
 import enum
 
 
@@ -26,7 +26,7 @@ class AnimType(enum.Enum):
             return None
 
 
-class ModificationType(enum.Enum):
+class AnimModificationType(enum.Enum):
     PARENT = 0
     ID = 1
     SPRITE = 2
@@ -189,7 +189,7 @@ class KeyFrames:
     def __init__(
         self,
         part_id: int,
-        modification_type: ModificationType,
+        modification_type: AnimModificationType,
         loop: int,
         min_value: int,
         max_value: int,
@@ -207,7 +207,7 @@ class KeyFrames:
     @staticmethod
     def from_data(data: list[list[str]]) -> tuple[int, "KeyFrames"]:
         model_id = int(data[0][0])
-        modification_type = ModificationType(int(data[0][1]))
+        modification_type = AnimModificationType(int(data[0][1]))
         loop = int(data[0][2])
         min_value = int(data[0][3])
         max_value = int(data[0][4])
@@ -269,7 +269,7 @@ class KeyFrames:
 
     @staticmethod
     def create_empty() -> "KeyFrames":
-        return KeyFrames(0, ModificationType.PARENT, 0, 0, 0, "", [])
+        return KeyFrames(0, AnimModificationType.PARENT, 0, 0, 0, "", [])
 
     def get_end_frame(self) -> int:
         if not self.keyframes:
@@ -416,7 +416,7 @@ class KeyFrames:
 
         modification_type = dict_data.get("modification_type")
         if modification_type is not None:
-            self.modification_type = ModificationType(modification_type)
+            self.modification_type = AnimModificationType(modification_type)
 
         min_value = dict_data.get("min_value")
         if min_value is not None:
@@ -460,7 +460,7 @@ class UnitAnimMetaData:
         self.total_parts = total_parts
 
     @staticmethod
-    def from_csv(csv: "io.bc_csv.CSV") -> "UnitAnimMetaData":
+    def from_csv(csv: "core.CSV") -> "UnitAnimMetaData":
         head_line = csv.read_line()
         if head_line is None:
             raise ValueError("CSV file is empty")
@@ -478,9 +478,9 @@ class UnitAnimMetaData:
 
         return UnitAnimMetaData(head_name, version_code, total_parts)
 
-    def to_csv(self, total_parts: int) -> "io.bc_csv.CSV":
+    def to_csv(self, total_parts: int) -> "core.CSV":
         self.set_total_parts(total_parts)
-        csv = io.bc_csv.CSV()
+        csv = core.CSV()
         csv.lines.append([self.head_name])
         csv.lines.append([str(self.version_code)])
         csv.lines.append([str(self.total_parts)])
@@ -518,7 +518,7 @@ class UnitAnimMetaData:
 
 
 class UnitAnimLoaderInfo:
-    def __init__(self, name: str, game_packs: "game_data.pack.GamePacks"):
+    def __init__(self, name: str, game_packs: "core.GamePacks"):
         self.name = name
         self.game_packs = game_packs
 
@@ -533,7 +533,7 @@ class UnitAnim:
         self.name = name
 
     @staticmethod
-    def load(name: str, game_packs: "game_data.pack.GamePacks") -> Optional["UnitAnim"]:
+    def load(name: str, game_packs: "core.GamePacks") -> Optional["UnitAnim"]:
         file = game_packs.find_file(name)
         if file is None:
             return None
@@ -541,8 +541,8 @@ class UnitAnim:
         return UnitAnim.from_data(name, file.dec_data)
 
     @staticmethod
-    def from_data(name: str, data: "io.data.Data") -> "UnitAnim":
-        csv = io.bc_csv.CSV(data)
+    def from_data(name: str, data: "core.Data") -> "UnitAnim":
+        csv = core.CSV(data)
         meta_data = UnitAnimMetaData.from_csv(csv)
 
         parts: list[KeyFrames] = []
@@ -556,7 +556,7 @@ class UnitAnim:
 
         return UnitAnim(parts, meta_data, name)
 
-    def save(self, game_packs: "game_data.pack.GamePacks"):
+    def save(self, game_packs: "core.GamePacks"):
         file = game_packs.find_file(self.name)
         if file is None:
             return
@@ -565,7 +565,7 @@ class UnitAnim:
 
         game_packs.set_file(self.name, data)
 
-    def to_data(self) -> "io.data.Data":
+    def to_data(self) -> "core.Data":
         csv = self.meta_data.to_csv(self.get_total_parts())
         for part in self.parts:
             for line in part.to_data():
@@ -621,7 +621,7 @@ class UnitAnim:
 
     def set_unit_id(self, unit_id: int):
         parts = self.name.split("_")
-        parts[0] = io.data.PaddedInt(unit_id, 3).to_str()
+        parts[0] = core.PaddedInt(unit_id, 3).to_str()
         self.name = "_".join(parts)
 
     def set_unit_form(self, form: str):

@@ -1,5 +1,5 @@
 from typing import Any, Optional
-from tbcml.core import io
+from tbcml import core
 import uuid
 
 
@@ -13,7 +13,7 @@ class TempFile:
             if not extension.startswith("."):
                 extension = f".{extension}"
         self.path = (
-            io.path.Path.get_appdata_folder()
+            core.Path.get_appdata_folder()
             .add("temp")
             .add(f"{name}{extension}")
             .get_absolute_path()

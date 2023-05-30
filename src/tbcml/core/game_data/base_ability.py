@@ -1,7 +1,6 @@
 import enum
 from typing import Any
-from tbcml.core.game_data import pack
-from tbcml.core import io, mods
+from tbcml import core
 
 
 class Probability(enum.Enum):
@@ -72,11 +71,11 @@ class BaseAbilities:
         self.abilities = abilities
 
     @staticmethod
-    def from_game_data(game_data: pack.GamePacks) -> "BaseAbilities":
+    def from_game_data(game_data: "core.GamePacks") -> "BaseAbilities":
         file = game_data.find_file("AbilityData.csv")
         if file is None:
             return BaseAbilities.create_empty()
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         abilitise: dict[int, BaseAbility] = {}
         for i, line in enumerate(csv):
             line = csv.read_line()
@@ -98,11 +97,11 @@ class BaseAbilities:
 
         return BaseAbilities(abilitise)
 
-    def to_game_data(self, game_data: pack.GamePacks):
+    def to_game_data(self, game_data: "core.GamePacks"):
         file = game_data.find_file(self.get_file_name())
         if file is None:
             raise FileNotFoundError(f"{self.get_file_name()} not found")
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         remaining_abilities = self.abilities.copy()
         for i, line in enumerate(csv):
             line = csv.read_line()
@@ -140,7 +139,7 @@ class BaseAbilities:
         abilities = dict_data.get("abilities")
         if abilities is not None:
             current_abilities = self.abilities.copy()
-            modded_abilities = mods.bc_mod.ModEditDictHandler(
+            modded_abilities = core.ModEditDictHandler(
                 abilities, current_abilities
             ).get_dict(convert_int=True)
             for ability_id, modded_ability in modded_abilities.items():

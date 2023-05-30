@@ -1,8 +1,7 @@
 """Module for handling the screen shake effects in battle. This feature was added in version 11.8.0"""
 import enum
 from typing import Any
-from tbcml.core.game_data import pack
-from tbcml.core import io, mods
+from tbcml import core
 
 
 class ShakeLocation(enum.Enum):
@@ -100,11 +99,11 @@ class ShakeEffects:
         return "battleshake_setting.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> "ShakeEffects":
+    def from_game_data(game_data: "core.GamePacks") -> "ShakeEffects":
         """Loads the ShakeEffects from the game data.
 
         Args:
-            game_data (pack.GamePacks): The game data to load the ShakeEffects from.
+            game_data (core.GamePacks): The game data to load the ShakeEffects from.
 
         Returns:
             ShakeEffects: The ShakeEffects loaded from the game data.
@@ -112,7 +111,7 @@ class ShakeEffects:
         file = game_data.find_file(ShakeEffects.get_file_name())
         if file is None:
             return ShakeEffects.create_empty()
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         effects: dict[int, ShakeEffect] = {}
         for i, line in enumerate(csv.lines):
             shake_location = ShakeLocation(int(line[0]))
@@ -133,16 +132,16 @@ class ShakeEffects:
             )
         return ShakeEffects(effects)
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         """Writes the ShakeEffects to the game data.
 
         Args:
-            game_data (pack.GamePacks): The game data to write the ShakeEffects to.
+            game_data (core.GamePacks): The game data to write the ShakeEffects to.
         """
         file = game_data.find_file(self.get_file_name())
         if file is None:
             return
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         remaing_effects = self.effects.copy()
         for i, line in enumerate(csv.lines):
             try:
@@ -191,9 +190,9 @@ class ShakeEffects:
         effects = dict_data.get("effects")
         if effects is not None:
             current_effects = self.effects.copy()
-            modded_effects = mods.bc_mod.ModEditDictHandler(
-                effects, current_effects
-            ).get_dict(convert_int=True)
+            modded_effects = core.ModEditDictHandler(effects, current_effects).get_dict(
+                convert_int=True
+            )
             for effect_id, effect_data in modded_effects.items():
                 if effect_id in current_effects:
                     effect = current_effects[effect_id]

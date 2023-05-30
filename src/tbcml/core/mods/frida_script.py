@@ -1,16 +1,16 @@
 from typing import Any, Optional
-from tbcml.core import io, game_version, country_code, mods
+from tbcml import core
 
 
 class FridaScript:
     def __init__(
         self,
         arc: str,
-        cc: "country_code.CountryCode",
-        gv: "game_version.GameVersion",
+        cc: "core.CountryCode",
+        gv: "core.GameVersion",
         script: str,
         name: str,
-        mod: "mods.bc_mod.Mod",
+        mod: "core.Mod",
     ):
         self.arc = arc
         self.cc = cc
@@ -20,12 +20,12 @@ class FridaScript:
         self.mod = mod
 
     @staticmethod
-    def get_file_path(arc: str, name: str) -> "io.path.Path":
-        return io.path.Path(f"scripts/{arc}/{name}.json")
+    def get_file_path(arc: str, name: str) -> "core.Path":
+        return core.Path(f"scripts/{arc}/{name}.json")
 
-    def add_to_zip(self, zip: "io.zip.Zip"):
+    def add_to_zip(self, zip: "core.Zip"):
         json_data = self.serialize()
-        json_file = io.json_file.JsonFile.from_object(json_data)
+        json_file = core.JsonFile.from_object(json_data)
         zip.add_file(
             self.get_file_path(self.arc, self.name),
             json_file.to_data(),
@@ -41,11 +41,11 @@ class FridaScript:
         }
 
     @staticmethod
-    def deserialize(data: dict[str, Any], mod: "mods.bc_mod.Mod") -> "FridaScript":
+    def deserialize(data: dict[str, Any], mod: "core.Mod") -> "FridaScript":
         return FridaScript(
             data["arc"],
-            country_code.CountryCode.from_code(data["cc"]),
-            game_version.GameVersion.from_string(data["gv"]),
+            core.CountryCode.from_code(data["cc"]),
+            core.GameVersion.from_string(data["gv"]),
             data["script"],
             data["name"],
             mod,
@@ -53,19 +53,19 @@ class FridaScript:
 
     @staticmethod
     def from_zip(
-        zip: "io.zip.Zip",
-        mod: "mods.bc_mod.Mod",
+        zip: "core.Zip",
+        mod: "core.Mod",
         arc: str,
         name: str,
     ) -> "FridaScript":
         file = zip.get_file(FridaScript.get_file_path(arc, name))
         if file is None:
             raise ValueError("File not found in zip.")
-        json_file = io.json_file.JsonFile.from_data(file)
+        json_file = core.JsonFile.from_data(file)
         return FridaScript.deserialize(json_file.get_json(), mod)
 
 
-class Scripts:
+class FridaScripts:
     def __init__(
         self,
         scripts: list["FridaScript"],
@@ -75,14 +75,12 @@ class Scripts:
     def is_valid_script(
         self,
         script: "FridaScript",
-        cc: "country_code.CountryCode",
-        gv: "game_version.GameVersion",
+        cc: "core.CountryCode",
+        gv: "core.GameVersion",
     ) -> bool:
         return script.cc == cc and script.gv == gv
 
-    def validate_scripts(
-        self, cc: "country_code.CountryCode", gv: "game_version.GameVersion"
-    ):
+    def validate_scripts(self, cc: "core.CountryCode", gv: "core.GameVersion"):
         new_scripts: list["FridaScript"] = []
         for script in self.scripts:
             if self.is_valid_script(script, cc, gv):
@@ -105,7 +103,7 @@ class Scripts:
                 return script
         return None
 
-    def add_scripts(self, scripts: "Scripts"):
+    def add_scripts(self, scripts: "FridaScripts"):
         for script in scripts.scripts:
             self.add_script(script)
 
@@ -192,15 +190,15 @@ function readStdString(address) {
 // Mod scripts goes here.
 """
 
-    def combine_scripts(self, arc: str) -> "io.data.Data":
+    def combine_scripts(self, arc: str) -> "core.Data":
         script_text = self.get_base_script() + "\r\n"
         for script in self.scripts:
             if script.arc == arc:
                 script_text += f"// {'-'*50}\r\n// {script.name} from mod {script.mod.name} by {script.mod.author}\r\n// {'-'*50}\r\n\r\n"
                 script_text += script.script
-        return io.data.Data(script_text)
+        return core.Data(script_text)
 
-    def add_to_zip(self, zip: "io.zip.Zip"):
+    def add_to_zip(self, zip: "core.Zip"):
         arcs: dict[str, list[str]] = {}
         for script in self.scripts:
             script.add_to_zip(zip)
@@ -210,27 +208,27 @@ function readStdString(address) {
         json_data = {
             "arcs": arcs,
         }
-        json = io.json_file.JsonFile.from_object(json_data)
-        zip.add_file(io.path.Path("scripts/scripts.json"), json.to_data())
+        json = core.JsonFile.from_object(json_data)
+        zip.add_file(core.Path("scripts/scripts.json"), json.to_data())
 
     @staticmethod
     def from_zip(
-        zip: "io.zip.Zip",
-        mod: "mods.bc_mod.Mod",
-    ) -> "Scripts":
-        file = zip.get_file(io.path.Path("scripts/scripts.json"))
+        zip: "core.Zip",
+        mod: "core.Mod",
+    ) -> "FridaScripts":
+        file = zip.get_file(core.Path("scripts/scripts.json"))
         if file is None:
             raise ValueError("File not found in zip.")
-        json = io.json_file.JsonFile.from_data(file)
+        json = core.JsonFile.from_data(file)
         json_data = json.get_json()
         arcs = json_data["arcs"]
         scripts: list["FridaScript"] = []
         for arc in arcs:
             for name in arcs[arc]:
                 scripts.append(FridaScript.from_zip(zip, mod, arc, name))
-        return Scripts(scripts)
+        return FridaScripts(scripts)
 
-    def import_scripts(self, other: "Scripts"):
+    def import_scripts(self, other: "FridaScripts"):
         for script in other.scripts:
             self.add_script(script)
 

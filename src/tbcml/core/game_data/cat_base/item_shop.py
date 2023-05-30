@@ -1,6 +1,5 @@
 from typing import Any, Optional
-from tbcml.core.game_data import pack
-from tbcml.core import io, anim, mods
+from tbcml import core
 
 
 class Item:
@@ -38,15 +37,15 @@ class Item:
     def apply_dict(self, dict_data: dict[str, Any]):
         gatya_item_id = dict_data.get("gatya_item_id")
         if gatya_item_id is not None:
-            self.gatya_item_id = mods.bc_mod.ModEditValueHandler(
+            self.gatya_item_id = core.ModEditValueHandler(
                 gatya_item_id, self.gatya_item_id
             ).get_value()
         count = dict_data.get("count")
         if count is not None:
-            self.count = mods.bc_mod.ModEditValueHandler(count, self.count).get_value()
+            self.count = core.ModEditValueHandler(count, self.count).get_value()
         price = dict_data.get("price")
         if price is not None:
-            self.price = mods.bc_mod.ModEditValueHandler(price, self.price).get_value()
+            self.price = core.ModEditValueHandler(price, self.price).get_value()
         draw_item_value = dict_data.get("draw_item_value")
         if draw_item_value is not None:
             self.draw_item_value = bool(draw_item_value)
@@ -55,9 +54,7 @@ class Item:
             self.category_name = str(category_name)
         rect_id = dict_data.get("rect_id")
         if rect_id is not None:
-            self.rect_id = mods.bc_mod.ModEditValueHandler(
-                rect_id, self.rect_id
-            ).get_value()
+            self.rect_id = core.ModEditValueHandler(rect_id, self.rect_id).get_value()
 
     @staticmethod
     def create_empty() -> "Item":
@@ -67,12 +64,12 @@ class Item:
 class ItemShop:
     """Represents the Item Shop."""
 
-    def __init__(self, items: dict[int, Item], tex: "anim.texture.Texture"):
+    def __init__(self, items: dict[int, Item], tex: "core.Texture"):
         """Initialize a new ItemShop.
 
         Args:
             items (dict[int, Item]): The items in the shop.
-            tex (anim.texture.Texture): The texture containing the icons for the items.
+            tex (core.Texture): The texture containing the icons for the items.
         """
         self.items = items
         self.tex = tex
@@ -99,11 +96,11 @@ class ItemShop:
         return f"item000_{lang}.png"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> "ItemShop":
+    def from_game_data(game_data: "core.GamePacks") -> "ItemShop":
         """Get the ItemShop from the game data.
 
         Args:
-            game_data (pack.GamePacks): The game data.
+            game_data (core.GamePacks): The game data.
 
         Returns:
             ItemShop: The ItemShop.
@@ -113,10 +110,10 @@ class ItemShop:
         tsv_data = game_data.find_file(ItemShop.get_file_name())
         png_name = f"item000_{game_data.localizable.get_lang()}.png"
         imgcut_name = f"item000_{game_data.localizable.get_lang()}.imgcut"
-        tex = anim.texture.Texture.load(png_name, imgcut_name, game_data)
+        tex = core.Texture.load(png_name, imgcut_name, game_data)
         if tsv_data is None:
             return ItemShop.create_empty()
-        tsv = io.bc_csv.CSV(tsv_data.dec_data, delimeter="\t")
+        tsv = core.CSV(tsv_data.dec_data, delimeter="\t")
         items = {}
         for line in tsv.lines[1:]:
             items[int(line[0])] = Item(
@@ -132,7 +129,7 @@ class ItemShop:
         game_data.item_shop = item_shop
         return item_shop
 
-    def get_texture(self) -> "anim.texture.Texture":
+    def get_texture(self) -> "core.Texture":
         """Get the Imgcut of the ItemShop.
 
         Returns:
@@ -140,16 +137,16 @@ class ItemShop:
         """
         return self.tex
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         """Write the ItemShop to the game data.
 
         Args:
-            game_data (pack.GamePacks): The game data.
+            game_data (core.GamePacks): The game data.
         """
         tsv_data = game_data.find_file(ItemShop.get_file_name())
         if tsv_data is None:
             return
-        tsv = io.bc_csv.CSV(tsv_data.dec_data, delimeter="\t")
+        tsv = core.CSV(tsv_data.dec_data, delimeter="\t")
         remaning_items = self.items.copy()
         for i, line in enumerate(tsv.lines[1:]):
             try:
@@ -188,7 +185,7 @@ class ItemShop:
         Returns:
             ItemShop: The empty ItemShop.
         """
-        return ItemShop({}, anim.texture.Texture.create_empty())
+        return ItemShop({}, core.Texture.create_empty())
 
     def get_item(self, shop_index: int) -> Optional[Item]:
         """Get an item from the ItemShop.
@@ -261,7 +258,7 @@ class ItemShop:
         tex = dict_data.get("tex")
         if items is not None:
             current_items = self.items.copy()
-            mod_items = mods.bc_mod.ModEditDictHandler(items, current_items).get_dict(
+            mod_items = core.ModEditDictHandler(items, current_items).get_dict(
                 convert_int=True
             )
             for shop_id, data_item in mod_items.items():
@@ -276,7 +273,7 @@ class ItemShop:
             self.tex.apply_dict(tex)
 
     @staticmethod
-    def apply_mod_to_game_data(mod: "mods.bc_mod.Mod", game_data: "pack.GamePacks"):
+    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
         item_shop_data = mod.mod_edits.get("item_shop")
         if item_shop_data is None:
             return

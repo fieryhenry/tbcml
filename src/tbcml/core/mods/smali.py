@@ -1,6 +1,6 @@
 from typing import Optional
 from androguard.core.bytecodes.apk import APK  # type: ignore
-from tbcml.core import io
+from tbcml import core
 
 
 class Smali:
@@ -19,7 +19,7 @@ class Smali:
         self.function_sig_to_call = function_sig_to_call
 
     @staticmethod
-    def from_file(path: io.path.Path, class_name: str, function_sig_to_call: str):
+    def from_file(path: "core.Path", class_name: str, function_sig_to_call: str):
         data = path.read().to_str()
         return Smali(data, class_name, function_sig_to_call)
 
@@ -28,25 +28,28 @@ class SmaliSet:
     def __init__(self, smali_edits: dict[str, Smali]):
         self.smali_edits = smali_edits
 
+    def is_empty(self) -> bool:
+        return len(self.smali_edits) == 0
+
     @staticmethod
     def create_empty() -> "SmaliSet":
         return SmaliSet({})
 
-    def add_to_zip(self, zip_file: "io.zip.Zip"):
-        base_path = io.path.Path("smali")
+    def add_to_zip(self, zip_file: "core.Zip"):
+        base_path = core.Path("smali")
         for smali in self.smali_edits.values():
-            json_data = io.json_file.JsonFile.from_object(
+            json_data = core.JsonFile.from_object(
                 {"function_sig_to_call": smali.function_sig_to_call}
             )
-            file_data = io.data.Data(smali.class_code)
+            file_data = core.Data(smali.class_code)
             path = base_path.add(*smali.class_name.split(".")[:-1])
             path = path.add(smali.class_name.split(".")[-1] + ".smali")
             zip_file.add_file(path, file_data)
             zip_file.add_file(path.change_extension("json"), json_data.to_data())
 
     @staticmethod
-    def from_zip(zip_file: "io.zip.Zip") -> "SmaliSet":
-        base_path = io.path.Path("smali")
+    def from_zip(zip_file: "core.Zip") -> "SmaliSet":
+        base_path = core.Path("smali")
         smali_edits = {}
         for file in zip_file.get_paths():
             if not file.path.startswith(base_path.to_str_forwards()):
@@ -54,13 +57,13 @@ class SmaliSet:
             if not file.path.endswith(".smali"):
                 continue
 
-            path = io.path.Path(file.path)
+            path = core.Path(file.path)
             class_name = path.remove_extension().to_str_forwards()
             json_file = zip_file.get_file(path.change_extension("json"))
             if json_file is None:
                 continue
 
-            json_data = io.json_file.JsonFile.from_data(json_file)
+            json_data = core.JsonFile.from_data(json_file)
             function_sig_to_call = json_data.get("function_sig_to_call")
             if function_sig_to_call is None:
                 continue
@@ -84,11 +87,11 @@ class SmaliHandler:
     """Injects smali code into the main activity's onCreate method. Some code and inspiration from
     https://github.com/ksg97031/frida-gadget"""
 
-    def __init__(self, apk: "io.apk.Apk"):
+    def __init__(self, apk: "core.Apk"):
         """Initializes the SmaliHandler
 
         Args:
-            apk (io.apk.Apk): The apk to inject into
+            apk (core.Apk): The apk to inject into
 
         Raises:
             FileNotFoundError: If the main activity could not be found
@@ -103,11 +106,11 @@ class SmaliHandler:
         main_activity_list[-1] += ".smali"
         self.main_activity = main_activity_list
 
-    def find_main_activity_smali(self) -> Optional[io.path.Path]:
+    def find_main_activity_smali(self) -> Optional["core.Path"]:
         """Finds the main activity smali file
 
         Returns:
-            Optional[io.path.Path]: The path to the main activity smali file
+            Optional[core.Path]: The path to the main activity smali file
         """
         target_smali = None
         for smali_dir in self.apk.extracted_path.glob("smali*/"):
@@ -137,7 +140,7 @@ class SmaliHandler:
         path.generate_dirs()
         for smali_code in smali_codes:
             path = path.add(smali_code.class_name + ".smali")
-            path.write(io.data.Data(smali_code.class_code))
+            path.write(core.Data(smali_code.class_code))
 
         for i, line in enumerate(text):
             if line.startswith(".method") and "onCreate(" in line:
@@ -149,7 +152,7 @@ class SmaliHandler:
                 break
 
         text = "\n".join(text)
-        target_smali.write(io.data.Data(text))
+        target_smali.write(core.Data(text))
 
     def get_data_load_smali(self) -> Smali:
         """Gets the smali code for the DataLoad class which is used to extract data.zip into the
@@ -158,8 +161,6 @@ class SmaliHandler:
         Returns:
             Smali: The smali code for the DataLoad class
         """
-        path = io.asset_loader.AssetLoader.from_config().get_asset_file_path(
-            "DataLoad.smali"
-        )
+        path = core.AssetLoader.from_config().get_asset_file_path("DataLoad.smali")
         data = path.read().to_str()
         return Smali(data, "DataLoad", "Start(Landroid/content/Context;)V")

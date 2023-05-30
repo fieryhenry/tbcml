@@ -1,7 +1,6 @@
 import enum
 from typing import Any
-from tbcml.core.game_data import pack
-from tbcml.core import io, anim
+from tbcml import core
 
 
 class Engineer:
@@ -10,7 +9,7 @@ class Engineer:
         self.anim = anim
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> "Engineer":
+    def from_game_data(game_data: "core.GamePacks") -> "Engineer":
         limit = EngineerLimit.from_game_data(game_data)
         anim = EngineerAnim.from_game_data(game_data)
         return Engineer(
@@ -18,7 +17,7 @@ class Engineer:
             anim,
         )
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         self.limit.to_game_data(game_data)
         self.anim.to_game_data(game_data)
 
@@ -43,20 +42,20 @@ class EngineerLimit:
         return "CastleCustomLimit.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> "EngineerLimit":
+    def from_game_data(game_data: "core.GamePacks") -> "EngineerLimit":
         file = game_data.find_file(EngineerLimit.get_file_name())
         if file is None:
             return EngineerLimit.create_empty()
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         return EngineerLimit(
             int(csv.lines[0][0]),
         )
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         file = game_data.find_file(EngineerLimit.get_file_name())
         if file is None:
             return None
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         csv.lines[0][0] = str(self.limit)
         game_data.set_file(EngineerLimit.get_file_name(), csv.to_data())
 
@@ -107,12 +106,12 @@ class EngineerAnim:
                     all_maanims.append(maanim.value)
             return all_maanims
 
-    def __init__(self, model: "anim.model.Model"):
+    def __init__(self, model: "core.Model"):
         self.model = model
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> "EngineerAnim":
-        an = anim.model.Model.load(
+    def from_game_data(game_data: "core.GamePacks") -> "EngineerAnim":
+        an = core.Model.load(
             EngineerAnim.FilePath.MAMODEL.value,
             EngineerAnim.FilePath.IMGCUT.value,
             EngineerAnim.FilePath.SPRITE.value,
@@ -121,12 +120,12 @@ class EngineerAnim:
         )
         return EngineerAnim(an)
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         self.model.save(game_data)
 
     @staticmethod
     def create_empty() -> "EngineerAnim":
-        an = anim.model.Model.create_empty()
+        an = core.Model.create_empty()
         return EngineerAnim(an)
 
     def apply_dict(self, dict_data: dict[str, Any]):

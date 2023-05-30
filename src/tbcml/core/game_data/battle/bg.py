@@ -1,7 +1,6 @@
 import enum
 from typing import Any, Optional
-from tbcml.core.game_data import pack
-from tbcml.core import io, mods
+from tbcml import core
 
 
 class ColorType(enum.Enum):
@@ -134,11 +133,11 @@ class Bgs:
         return "bg.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> "Bgs":
+    def from_game_data(game_data: "core.GamePacks") -> "Bgs":
         """Creates a Bgs object from the game data.
 
         Args:
-            game_data (pack.GamePacks): The game data to create the Bgs object from.
+            game_data (core.GamePacks): The game data to create the Bgs object from.
 
         Returns:
             Bgs: A Bgs object if the file was found, None otherwise.
@@ -146,7 +145,7 @@ class Bgs:
         file = game_data.find_file(Bgs.get_file_name())
         if file is None:
             return Bgs.create_empty()
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         bgs: dict[int, Bg] = {}
         for i, line in enumerate(csv.lines[1:]):
             sky_top = Color(
@@ -191,16 +190,16 @@ class Bgs:
             )
         return Bgs(bgs)
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         """Writes the Bgs object to the game data.
 
         Args:
-            game_data (pack.GamePacks): The game data to write to.
+            game_data (core.GamePacks): The game data to write to.
         """
         file = game_data.find_file(Bgs.get_file_name())
         if file is None:
             return
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         remaining_bgs = self.bgs.copy()
         for i, line in enumerate(csv.lines[1:]):
             try:
@@ -285,7 +284,7 @@ class Bgs:
         if bgs is None:
             return
         current_bgs = self.bgs.copy()
-        modded_bgs = mods.bc_mod.ModEditDictHandler(bgs, current_bgs).get_dict(
+        modded_bgs = core.ModEditDictHandler(bgs, current_bgs).get_dict(
             convert_int=True
         )
         for id, modded_bg in modded_bgs.items():

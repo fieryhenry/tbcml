@@ -1,12 +1,10 @@
 import enum
 from typing import Any, Optional, Union
 
-from tbcml.core import anim, io, mods
-from tbcml.core.game_data import pack
-from tbcml.core.game_data.cat_base import enemies, unit
+from tbcml import core
 
 
-class FormType(enum.Enum):
+class CatFormType(enum.Enum):
     """Represents the different forms a cat has."""
 
     FIRST = "f"
@@ -27,19 +25,19 @@ class FormType(enum.Enum):
         Returns:
             int: The index of the form type.
         """
-        if self == FormType.FIRST:
+        if self == CatFormType.FIRST:
             return 0
-        elif self == FormType.SECOND:
+        elif self == CatFormType.SECOND:
             return 1
-        elif self == FormType.THIRD:
+        elif self == CatFormType.THIRD:
             return 2
-        elif self == FormType.FOURTH:
+        elif self == CatFormType.FOURTH:
             return 3
         else:
             raise ValueError("Invalid form type")
 
     @staticmethod
-    def from_index(index: int) -> "FormType":
+    def from_index(index: int) -> "CatFormType":
         """Get the form type from the index.
 
         Args:
@@ -52,13 +50,13 @@ class FormType(enum.Enum):
             FormType: The form type.
         """
         if index == 0:
-            return FormType.FIRST
+            return CatFormType.FIRST
         elif index == 1:
-            return FormType.SECOND
+            return CatFormType.SECOND
         elif index == 2:
-            return FormType.THIRD
+            return CatFormType.THIRD
         elif index == 3:
-            return FormType.FOURTH
+            return CatFormType.FOURTH
         else:
             raise ValueError("Invalid form index")
 
@@ -71,7 +69,7 @@ class FormType(enum.Enum):
         return self.get_index()
 
 
-class Stats:
+class CatStats:
     """Represents the stats of a cat."""
 
     hp: int
@@ -80,13 +78,13 @@ class Stats:
     """The number of knockbacks the cat has. Index 1."""
     speed: int
     """The movement speed of the cat, real value is 2x what is stored. Index 2."""
-    attack_interval: unit.Frames
+    attack_interval: "core.Frames"
     """The interval between attacks of the cat, real value is 2x what is stored. Index 4."""
     range: int
     """The attack range of the cat. real value is 4x what is stored. Index 5."""
     cost: int
     """The cost of the cat to deploy. Index 6."""
-    recharge_time: unit.Frames
+    recharge_time: "core.Frames"
     """The time it takes for the cat to recharge after being used, real value is 2x what is stored. Index 7."""
     collision_start: int
     """The X coordinate of the start of the collision box of the cat. Index 8."""
@@ -98,7 +96,7 @@ class Stats:
     """Unused. Index 11."""
     area_attack: bool
     """Whether the cat has the area attack ability. Index 12."""
-    z_layers: unit.ZLayers
+    z_layers: "core.ZLayers"
     """The Z layers of the cat. Index 14 min layer and index 15 max layer."""
     target_floating: bool
     """Whether the cat has the target floating trait. Index 16."""
@@ -116,17 +114,17 @@ class Stats:
     """Whether the cat has the target zombie trait. Index 22."""
     strong: bool
     """Whether the cat has the strong against ability. Index 23."""
-    knockback: unit.Knockback
+    knockback: "core.Knockback"
     """The probability of knockback. Index 24."""
-    freeze: unit.Freeze
+    freeze: "core.Freeze"
     """The probability and duration of a freeze attack. Index 25 and 26."""
-    slow: unit.Slow
+    slow: "core.Slow"
     """The probability and duration of a slow attack. Index 27 and 28."""
     resistant: bool
     """Whether the cat has the resistant against ability. Index 29."""
     massive_damage: bool
     """Whether the cat has the massive damage ability. Index 30."""
-    crit: unit.Crit
+    crit: "core.Crit"
     """The probability of a crit attack. Index 31."""
     attacks_only: bool
     """Whether the cat has the attacks only ability. Index 32."""
@@ -134,24 +132,24 @@ class Stats:
     """Whether the cat has the extra money ability. Index 33."""
     base_destroyer: bool
     """Whether the cat has the base destroyer ability. Index 34."""
-    wave: unit.Wave
+    wave: "core.Wave"
     """The wave attack of the cat.
     Probability: Index 35
     Level: Index 36
     IsMini: Index 94
     """
-    weaken: unit.Weaken
+    weaken: "core.Weaken"
     """The weaken attack of the cat.
     Probability: Index 37
     Duration: Index 38
     Percentage: Index 39
     """
-    strengthen: unit.Strengthen
+    strengthen: "core.Strengthen"
     """The strengthen ability of the cat.
     HP percentage to activate: Index 40
     HP percentage to strengthen: Index 41
     """
-    lethal_strike: unit.LethalStrike
+    lethal_strike: "core.LethalStrike"
     """The probability of a lethal strike attack. Index 42."""
     is_metal: bool
     """Whether the cat is metal. Index 43."""
@@ -173,12 +171,12 @@ class Stats:
     """Whether the cat has the witch killer ability. Index 53."""
     target_witch: bool
     """Whether the cat has the target witch trait. Index 54."""
-    attack_state: unit.AttackState
+    attack_state: "core.AttackState"
     """The attack state of the cat.
     Attacks before state change: Index 55
     State: Index 58
     """
-    attack_1: unit.Attack
+    attack_1: "core.Attack"
     """The first attack of the cat.
     Attack: Index 3
     Foreswing: Index 13
@@ -186,7 +184,7 @@ class Stats:
     LongDistanceFlag: True
     LongDistanceStartRange: Index 44
     LongDistanceRangeRange: Index 45"""
-    attack_2: unit.Attack
+    attack_2: "core.Attack"
     """The second attack of the cat.
     Attack: Index 59
     Foreswing: Index 61
@@ -194,7 +192,7 @@ class Stats:
     LogDistanceFlag: Index 99
     LongDistanceStartRange: Index 100
     LongDistanceRangeRange: Index 101"""
-    attack_3: unit.Attack
+    attack_3: "core.Attack"
     """The third attack of the cat.
     Attack: Index 60
     Foreswing: Index 62
@@ -202,21 +200,21 @@ class Stats:
     LongDistanceFlag: Index 102
     LongDistanceStartRange: Index 103
     LongDistanceRangeRange: Index 104"""
-    spawn_anim: unit.SpawnAnim
+    spawn_anim: "core.SpawnAnim"
     """The spawn animation of the cat.
     ModelID: Index 66
     HasEntryMaanim: Index 68
     """
-    soul_anim: unit.SoulAnim
+    soul_anim: "core.SoulAnim"
     """The soul animation of the cat.
     ModelID: Index 67
     HasDeathMaanim: Index 69
     """
-    barrier_breaker: unit.BarrierBreak
+    barrier_breaker: "core.BarrierBreak"
     """The barrier break ability of the cat.
     Probability: Index 70
     """
-    warp: unit.Warp
+    warp: "core.Warp"
     """The warp ability of the cat.
     Probability: Index 71
     duration: Index 72
@@ -237,17 +235,17 @@ class Stats:
     """Whether the cat has the insanely tough ability. Index 80."""
     insane_damage: bool
     """Whether the cat has the insane damage ability. Index 81."""
-    savage_blow: unit.SavageBlow
+    savage_blow: "core.SavageBlow"
     """The savage blow ability of the cat.
     Probability: Index 82
     Damage Addition: Index 83
     """
-    dodge: unit.Dodge
+    dodge: "core.Dodge"
     """The dodge ability of the cat.
     Probability: Index 84
     Duration: Index 85
     """
-    surge: unit.Surge
+    surge: "core.Surge"
     """The surge ability of the cat.
     Probability: Index 86
     start range: Index 87
@@ -258,12 +256,12 @@ class Stats:
     """Whether the cat has the toxic immunity ability. Index 90."""
     surge_immunity: bool
     """Whether the cat has the surge immunity ability. Index 91."""
-    curse: unit.Curse
+    curse: "core.Curse"
     """The curse ability of the cat.
     Probability: Index 92
     Duration: Index 93
     """
-    shield_pierce: unit.ShieldPierce
+    shield_pierce: "core.ShieldPierce"
     """The shield pierce ability of the cat.
     Probability: Index 95
     """
@@ -275,13 +273,13 @@ class Stats:
     """Whether the cat has the soul strike ability. Index 98."""
     behemoth_slayer: bool
     """Whether the cat has the behemoth slayer ability. Index 105."""
-    behemoth_dodge: unit.BehemothDodge
+    behemoth_dodge: "core.BehemothDodge"
     """The behemoth dodge ability of the cat.
     Probability: Index 106
     Duration: Index 107
     """
 
-    def __init__(self, cat_id: int, form: FormType, raw_data: list[int]):
+    def __init__(self, cat_id: int, form: CatFormType, raw_data: list[int]):
         """Initialize a new Stats object.
 
         Args:
@@ -325,16 +323,16 @@ class Stats:
         self.hp = raw_data[0]
         self.kbs = raw_data[1]
         self.speed = raw_data[2]
-        self.attack_interval = unit.Frames.from_pair_frames(raw_data[4])
+        self.attack_interval = core.Frames.from_pair_frames(raw_data[4])
         self.range = raw_data[5]
         self.cost = raw_data[6]
-        self.recharge_time = unit.Frames.from_pair_frames(raw_data[7])
+        self.recharge_time = core.Frames.from_pair_frames(raw_data[7])
         self.collision_start = raw_data[8]
         self.collision_width = raw_data[9]
         self.target_red = bool(raw_data[10])
         self.unused = raw_data[11]
         self.area_attack = bool(raw_data[12])
-        self.z_layers = unit.ZLayers.from_values(raw_data[14], raw_data[15])
+        self.z_layers = core.ZLayers.from_values(raw_data[14], raw_data[15])
         self.target_floating = bool(raw_data[16])
         self.target_black = bool(raw_data[17])
         self.target_metal = bool(raw_data[18])
@@ -343,21 +341,21 @@ class Stats:
         self.target_alien = bool(raw_data[21])
         self.target_zombie = bool(raw_data[22])
         self.strong = bool(raw_data[23])
-        self.knockback = unit.Knockback.from_values(raw_data[24])
-        self.freeze = unit.Freeze.from_values(raw_data[25], raw_data[26])
-        self.slow = unit.Slow.from_values(raw_data[27], raw_data[28])
+        self.knockback = core.Knockback.from_values(raw_data[24])
+        self.freeze = core.Freeze.from_values(raw_data[25], raw_data[26])
+        self.slow = core.Slow.from_values(raw_data[27], raw_data[28])
         self.resistant = bool(raw_data[29])
         self.massive_damage = bool(raw_data[30])
-        self.crit = unit.Crit.from_values(raw_data[31])
+        self.crit = core.Crit.from_values(raw_data[31])
         self.attacks_only = bool(raw_data[32])
         self.extra_money = bool(raw_data[33])
         self.base_destroyer = bool(raw_data[34])
-        self.wave = unit.Wave.from_values(
+        self.wave = core.Wave.from_values(
             raw_data[35], raw_data[36], bool(raw_data[94])
         )
-        self.weaken = unit.Weaken.from_values(raw_data[37], raw_data[38], raw_data[39])
-        self.strengthen = unit.Strengthen.from_values(raw_data[40], raw_data[41])
-        self.lethal_strike = unit.LethalStrike.from_values(raw_data[42])
+        self.weaken = core.Weaken.from_values(raw_data[37], raw_data[38], raw_data[39])
+        self.strengthen = core.Strengthen.from_values(raw_data[40], raw_data[41])
+        self.lethal_strike = core.LethalStrike.from_values(raw_data[42])
         self.is_metal = bool(raw_data[43])
         self.wave_immunity = bool(raw_data[46])
         self.wave_blocker = bool(raw_data[47])
@@ -369,9 +367,9 @@ class Stats:
         self.witch_killer = bool(raw_data[53])
         self.target_witch = bool(raw_data[54])
         self.shockwave_immune = bool(raw_data[56])
-        self.time_before_death = unit.Frames(raw_data[57])
-        self.attack_state = unit.AttackState.from_values(raw_data[55], raw_data[58])
-        self.attack_1 = unit.Attack.from_values(
+        self.time_before_death = core.Frames(raw_data[57])
+        self.attack_state = core.AttackState.from_values(raw_data[55], raw_data[58])
+        self.attack_1 = core.Attack.from_values(
             raw_data[3],
             raw_data[13],
             bool(raw_data[63]),
@@ -379,7 +377,7 @@ class Stats:
             raw_data[44],
             raw_data[45],
         )
-        self.attack_2 = unit.Attack.from_values(
+        self.attack_2 = core.Attack.from_values(
             raw_data[59],
             raw_data[61],
             bool(raw_data[64]),
@@ -387,7 +385,7 @@ class Stats:
             raw_data[100],
             raw_data[101],
         )
-        self.attack_3 = unit.Attack.from_values(
+        self.attack_3 = core.Attack.from_values(
             raw_data[60],
             raw_data[62],
             bool(raw_data[65]),
@@ -395,10 +393,10 @@ class Stats:
             raw_data[103],
             raw_data[104],
         )
-        self.spawn_anim = unit.SpawnAnim.from_values(raw_data[66], bool(raw_data[68]))
-        self.soul_anim = unit.SoulAnim.from_values(raw_data[67], bool(raw_data[69]))
-        self.barrier_breaker = unit.BarrierBreak.from_values(raw_data[70])
-        self.warp = unit.Warp.from_values(
+        self.spawn_anim = core.SpawnAnim.from_values(raw_data[66], bool(raw_data[68]))
+        self.soul_anim = core.SoulAnim.from_values(raw_data[67], bool(raw_data[69]))
+        self.barrier_breaker = core.BarrierBreak.from_values(raw_data[70])
+        self.warp = core.Warp.from_values(
             raw_data[71], raw_data[72], raw_data[73], raw_data[74]
         )
         self.warp_blocker = bool(raw_data[75])
@@ -408,20 +406,20 @@ class Stats:
         self.curse_immunity = bool(raw_data[79])
         self.insanely_tough = bool(raw_data[80])
         self.insane_damage = bool(raw_data[81])
-        self.savage_blow = unit.SavageBlow.from_values(raw_data[82], raw_data[83])
-        self.dodge = unit.Dodge.from_values(raw_data[84], raw_data[85])
-        self.surge = unit.Surge.from_values(
+        self.savage_blow = core.SavageBlow.from_values(raw_data[82], raw_data[83])
+        self.dodge = core.Dodge.from_values(raw_data[84], raw_data[85])
+        self.surge = core.Surge.from_values(
             raw_data[86], raw_data[87], raw_data[88], raw_data[89]
         )
         self.toxic_immunity = bool(raw_data[90])
         self.surge_immunity = bool(raw_data[91])
-        self.curse = unit.Curse.from_values(raw_data[92], raw_data[93])
-        self.shield_pierce = unit.ShieldPierce.from_values(raw_data[95])
+        self.curse = core.Curse.from_values(raw_data[92], raw_data[93])
+        self.shield_pierce = core.ShieldPierce.from_values(raw_data[95])
         self.target_aku = bool(raw_data[96])
         self.collossus_slayer = bool(raw_data[97])
         self.soul_strike = bool(raw_data[98])
         self.behemoth_slayer = bool(raw_data[105])
-        self.behemoth_dodge = unit.BehemothDodge.from_values(
+        self.behemoth_dodge = core.BehemothDodge.from_values(
             raw_data[106], raw_data[107]
         )
         self.unknown_108 = raw_data[108]
@@ -556,14 +554,14 @@ class Stats:
         ]
         return any(to_check)
 
-    def copy(self) -> "Stats":
-        return Stats(
+    def copy(self) -> "CatStats":
+        return CatStats(
             self.cat_id,
             self.form,
             self.to_raw_data(),
         )
 
-    def import_enemy_stats(self, enemy_stats: "enemies.Stats"):
+    def import_enemy_stats(self, enemy_stats: "core.EnemyStats"):
         has_targeted_effect = enemy_stats.has_targeted_effect()
         self.wipe()
         self.hp = enemy_stats.hp
@@ -622,11 +620,11 @@ class Stats:
         raw_stats = dict_data.get("raw_stats")
         if raw_stats is not None:
             current_raw_stats = self.to_raw_data()
-            mod_stats = mods.bc_mod.ModEditDictHandler(
-                raw_stats, current_raw_stats
-            ).get_dict(True)
+            mod_stats = core.ModEditDictHandler(raw_stats, current_raw_stats).get_dict(
+                True
+            )
             for stat_id, stat_value in mod_stats.items():
-                current_raw_stats[stat_id] = mods.bc_mod.ModEditValueHandler(
+                current_raw_stats[stat_id] = core.ModEditValueHandler(
                     stat_value, current_raw_stats[stat_id]
                 ).get_value()
             self.assign(current_raw_stats)
@@ -639,66 +637,66 @@ class Stats:
         return data
 
     @staticmethod
-    def create_empty(cat_id: int, form: FormType) -> "Stats":
-        return Stats(cat_id, form, [])
+    def create_empty(cat_id: int, form: CatFormType) -> "CatStats":
+        return CatStats(cat_id, form, [])
 
 
-class Model:
-    def __init__(self, cat_id: int, form: FormType, model: "anim.model.Model"):
+class CatModel:
+    def __init__(self, cat_id: int, form: CatFormType, model: "core.Model"):
         self.cat_id = cat_id
         self.form = form
         self.model = model
 
     @staticmethod
     def get_cat_id_str(cat_id: int) -> str:
-        return io.data.PaddedInt(cat_id, 3).to_str()
+        return core.PaddedInt(cat_id, 3).to_str()
 
     @staticmethod
-    def get_img_path(cat_id: int, form: FormType) -> str:
-        cat_id_str = Model.get_cat_id_str(cat_id)
+    def get_img_path(cat_id: int, form: CatFormType) -> str:
+        cat_id_str = CatModel.get_cat_id_str(cat_id)
         return f"{cat_id_str}_{form.value}.png"
 
     @staticmethod
-    def get_imgcut_path(cat_id: int, form: FormType) -> str:
-        return Model.get_img_path(cat_id, form).replace(".png", ".imgcut")
+    def get_imgcut_path(cat_id: int, form: CatFormType) -> str:
+        return CatModel.get_img_path(cat_id, form).replace(".png", ".imgcut")
 
     @staticmethod
-    def get_mamodel_path(cat_id: int, form: FormType) -> str:
-        return Model.get_img_path(cat_id, form).replace(".png", ".mamodel")
+    def get_mamodel_path(cat_id: int, form: CatFormType) -> str:
+        return CatModel.get_img_path(cat_id, form).replace(".png", ".mamodel")
 
     @staticmethod
     def get_maanim_path(
-        cat_id: int, form: FormType, anim_type: "anim.unit_animation.AnimType"
+        cat_id: int, form: CatFormType, anim_type: "core.AnimType"
     ) -> str:
-        anim_type_str = io.data.PaddedInt(anim_type.value, 2).to_str()
-        return Model.get_img_path(cat_id, form).replace(
+        anim_type_str = core.PaddedInt(anim_type.value, 2).to_str()
+        return CatModel.get_img_path(cat_id, form).replace(
             ".png", f"{anim_type_str}.maanim"
         )
 
     @staticmethod
-    def get_maanim_paths(cat_id: int, form: FormType) -> list[str]:
+    def get_maanim_paths(cat_id: int, form: CatFormType) -> list[str]:
         maanim_paths: list[str] = []
-        for anim_type in anim.unit_animation.AnimType:
-            maanim_paths.append(Model.get_maanim_path(cat_id, form, anim_type))
-        cat_id_str = Model.get_cat_id_str(cat_id)
+        for anim_type in core.AnimType:
+            maanim_paths.append(CatModel.get_maanim_path(cat_id, form, anim_type))
+        cat_id_str = CatModel.get_cat_id_str(cat_id)
         maanim_paths.append(f"{cat_id_str}_{form.value}_entry.maanim")
         maanim_paths.append(f"{cat_id_str}_{form.value}_soul.maanim")
         return maanim_paths
 
     @staticmethod
     def from_game_data(
-        game_data: "pack.GamePacks", cat_id: int, form: FormType
-    ) -> Optional["Model"]:
-        img_path = Model.get_img_path(cat_id, form)
-        imgcut_path = Model.get_imgcut_path(cat_id, form)
-        mamodel_path = Model.get_mamodel_path(cat_id, form)
-        maanim_paths = Model.get_maanim_paths(cat_id, form)
-        model = anim.model.Model.load(
+        game_data: "core.GamePacks", cat_id: int, form: CatFormType
+    ) -> Optional["CatModel"]:
+        img_path = CatModel.get_img_path(cat_id, form)
+        imgcut_path = CatModel.get_imgcut_path(cat_id, form)
+        mamodel_path = CatModel.get_mamodel_path(cat_id, form)
+        maanim_paths = CatModel.get_maanim_paths(cat_id, form)
+        model = core.Model.load(
             mamodel_path, imgcut_path, img_path, maanim_paths, game_data
         )
-        return Model(cat_id, form, model)
+        return CatModel(cat_id, form, model)
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         self.model.save(game_data)
 
     def set_cat_id(self, cat_id: int):
@@ -706,13 +704,13 @@ class Model:
         self.model.set_unit_id(cat_id)
         self.model.set_unit_form(self.form.value)
 
-    def set_form(self, form: FormType):
+    def set_form(self, form: CatFormType):
         self.form = form
         self.model.set_unit_id(self.cat_id)
         self.model.set_unit_form(form.value)
 
-    def copy(self) -> "Model":
-        return Model(
+    def copy(self) -> "CatModel":
+        return CatModel(
             self.cat_id,
             self.form,
             self.model.copy(),
@@ -729,21 +727,21 @@ class Model:
         }
 
     @staticmethod
-    def create_empty(cat_id: int, form: FormType) -> "Model":
-        return Model(cat_id, form, anim.model.Model.create_empty())
+    def create_empty(cat_id: int, form: CatFormType) -> "CatModel":
+        return CatModel(cat_id, form, core.Model.create_empty())
 
 
-class Form:
+class CatForm:
     def __init__(
         self,
         cat_id: int,
-        form: FormType,
-        stats: "Stats",
+        form: CatFormType,
+        stats: "CatStats",
         name: str,
         description: list[str],
-        anim: "Model",
-        upgrade_icon: "io.bc_image.BCImage",
-        deploy_icon: "io.bc_image.BCImage",
+        anim: "CatModel",
+        upgrade_icon: "core.BCImage",
+        deploy_icon: "core.BCImage",
     ):
         self.cat_id = cat_id
         self.form = form
@@ -757,7 +755,7 @@ class Form:
     def format_deploy_icon(self):
         if self.deploy_icon.width == 128 and self.deploy_icon.height == 128:
             return
-        base_image = io.bc_image.BCImage.from_size(128, 128)
+        base_image = core.BCImage.from_size(128, 128)
         base_image.paste(self.deploy_icon, 9, 21)
         self.deploy_icon = base_image
 
@@ -765,7 +763,7 @@ class Form:
         if self.upgrade_icon.width == 85 and self.upgrade_icon.height == 32:
             self.upgrade_icon.scale(3.5, 3.5)
 
-        base_image = io.bc_image.BCImage.from_size(512, 128)
+        base_image = core.BCImage.from_size(512, 128)
         base_image.paste(self.upgrade_icon, 13, 1)
 
         start_pos = (146, 112)
@@ -788,9 +786,9 @@ class Form:
 
     @staticmethod
     def get_icons_game_data(
-        game_data: "pack.GamePacks", cat_id: int, form: FormType
-    ) -> Optional[tuple["io.bc_image.BCImage", "io.bc_image.BCImage"]]:
-        cat_id_str = io.data.PaddedInt(cat_id, 3).to_str()
+        game_data: "core.GamePacks", cat_id: int, form: CatFormType
+    ) -> Optional[tuple["core.BCImage", "core.BCImage"]]:
+        cat_id_str = core.PaddedInt(cat_id, 3).to_str()
         upgrade_name = f"udi{cat_id_str}_{form.value}.png"
         deploy_name = f"uni{cat_id_str}_{form.value}00.png"
         upgrade_icon = game_data.find_file(upgrade_name)
@@ -798,15 +796,15 @@ class Form:
         if upgrade_icon is None or deploy_icon is None:
             return None
         return (
-            io.bc_image.BCImage(upgrade_icon.dec_data),
-            io.bc_image.BCImage(deploy_icon.dec_data),
+            core.BCImage(upgrade_icon.dec_data),
+            core.BCImage(deploy_icon.dec_data),
         )
 
     def icons_to_game_data(
         self,
-        game_data: "pack.GamePacks",
+        game_data: "core.GamePacks",
     ):
-        cat_id_str = io.data.PaddedInt(self.cat_id, 3).to_str()
+        cat_id_str = core.PaddedInt(self.cat_id, 3).to_str()
         upgrade_name = f"udi{cat_id_str}_{self.form.value}.png"
         deploy_name = f"uni{cat_id_str}_{self.form.value}00.png"
         game_data.set_file(upgrade_name, self.upgrade_icon.to_data())
@@ -817,19 +815,19 @@ class Form:
         self.stats.cat_id = cat_id
         self.anim.set_cat_id(cat_id)
 
-    def set_form(self, form: FormType):
+    def set_form(self, form: CatFormType):
         self.form = form
         self.stats.form = form
         self.anim.set_form(form)
 
-    def import_enemy(self, enemy: "enemies.Enemy"):
+    def import_enemy(self, enemy: "core.Enemy"):
         self.name = enemy.name
         self.description = enemy.description[1:]
         # self.anim.import_enemy_anim(enemy.anim)
         self.stats.import_enemy_stats(enemy.stats)
 
-    def copy(self) -> "Form":
-        return Form(
+    def copy(self) -> "CatForm":
+        return CatForm(
             self.cat_id,
             self.form,
             self.stats.copy(),
@@ -871,16 +869,16 @@ class Form:
         }
 
     @staticmethod
-    def create_empty(cat_id: int, form: FormType) -> "Form":
-        return Form(
+    def create_empty(cat_id: int, form: CatFormType) -> "CatForm":
+        return CatForm(
             cat_id,
             form,
-            Stats.create_empty(cat_id, form),
+            CatStats.create_empty(cat_id, form),
             "",
             [""],
-            Model.create_empty(cat_id, form),
-            io.bc_image.BCImage.from_size(128, 128),
-            io.bc_image.BCImage.from_size(512, 128),
+            CatModel.create_empty(cat_id, form),
+            core.BCImage.from_size(128, 128),
+            core.BCImage.from_size(512, 128),
         )
 
 
@@ -938,9 +936,9 @@ class UnitBuyData:
         self.evolve_level_tf = raw_data[25]
         self.evolve_level_ff = raw_data[26]
         self.evolve_cost_tf = raw_data[27]
-        self.evolve_items_tf = unit.EvolveItems.from_unit_buy_list(raw_data, 28)
+        self.evolve_items_tf = core.EvolveItems.from_unit_buy_list(raw_data, 28)
         self.evolve_cost_ff = raw_data[38]
-        self.evolve_items_ff = unit.EvolveItems.from_unit_buy_list(raw_data, 39)
+        self.evolve_items_ff = core.EvolveItems.from_unit_buy_list(raw_data, 39)
         self.max_upgrade_level_no_catseye = raw_data[49]
         self.max_upgrade_level_catseye = raw_data[50]
         self.max_plus_upgrade_level = raw_data[51]
@@ -1029,11 +1027,11 @@ class UnitBuyData:
         raw_data = dict_data.get("raw_data")
         if raw_data is not None:
             current_raw_data = self.to_raw_data()
-            mod_raw_data = mods.bc_mod.ModEditDictHandler(
-                raw_data, current_raw_data
-            ).get_dict(convert_int=True)
+            mod_raw_data = core.ModEditDictHandler(raw_data, current_raw_data).get_dict(
+                convert_int=True
+            )
             for stat_id, value in mod_raw_data.items():
-                current_raw_data[stat_id] = mods.bc_mod.ModEditValueHandler(
+                current_raw_data[stat_id] = core.ModEditValueHandler(
                     value, current_raw_data[stat_id]
                 ).get_value()
             self.assign(current_raw_data)
@@ -1052,14 +1050,14 @@ class UnitBuy:
         return "unitbuy.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> "UnitBuy":
+    def from_game_data(game_data: "core.GamePacks") -> "UnitBuy":
         if game_data.unit_buy is not None:
             return game_data.unit_buy
         file = game_data.find_file(UnitBuy.get_file_name())
         if file is None:
             return UnitBuy.create_empty()
 
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         unit_buy_data: dict[int, UnitBuyData] = {}
         for i, line in enumerate(csv):
             unit_buy_data[i] = UnitBuyData(i, [int(x) for x in line])
@@ -1067,12 +1065,12 @@ class UnitBuy:
         game_data.unit_buy = unit_buy
         return unit_buy
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         file = game_data.find_file(UnitBuy.get_file_name())
         if file is None:
             return None
 
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         for i in range(len(csv.lines)):
             if i not in self.unit_buy_data:
                 continue
@@ -1089,7 +1087,7 @@ class UnitBuy:
 
     def get_rarities(
         self,
-        localizable: "pack.Localizable",
+        localizable: "core.Localizable",
     ) -> dict[int, str]:
         rarity_ids: set[int] = set()
         for cat in self.unit_buy_data.values():
@@ -1126,14 +1124,14 @@ class Talents:
         return "SkillAcquisition.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> "Talents":
+    def from_game_data(game_data: "core.GamePacks") -> "Talents":
         if game_data.talents is not None:
             return game_data.talents
         file = game_data.find_file(Talents.get_file_name())
         if file is None:
             return Talents.create_empty()
 
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         talents: dict[int, Talent] = {}
         for line in csv.lines[1:]:
             cat_id = int(line[0])
@@ -1143,13 +1141,13 @@ class Talents:
         game_data.talents = talent
         return talent
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         file = game_data.find_file(Talents.get_file_name())
         if file is None:
             return None
 
         remanining_cats = self.talents.copy()
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         for i, line in enumerate(csv.lines[1:]):
             cat_id = int(line[0])
             if cat_id not in self.talents:
@@ -1251,14 +1249,14 @@ class NyankoPictureBook:
         return "nyankoPictureBookData.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> "NyankoPictureBook":
+    def from_game_data(game_data: "core.GamePacks") -> "NyankoPictureBook":
         if game_data.nyanko_picture_book is not None:
             return game_data.nyanko_picture_book
         file = game_data.find_file(NyankoPictureBook.get_file_name())
         if file is None:
             return NyankoPictureBook.create_empty()
 
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         data: dict[int, NyankoPictureBookData] = {}
         for cat_id, line in enumerate(csv):
             data[cat_id] = NyankoPictureBookData(
@@ -1276,12 +1274,12 @@ class NyankoPictureBook:
         game_data.nyanko_picture_book = nypb
         return nypb
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         file = game_data.find_file(NyankoPictureBook.get_file_name())
         if file is None:
             return None
 
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         for data in self.data.values():
             line: list[str] = []
             line.append("1" if data.is_displayed_in_catguide else "0")
@@ -1317,7 +1315,7 @@ class EvolveTextCat:
 
     def apply_dict(self, dict_data: dict[str, Any]):
         current_texts = self.text.copy()
-        mod_texts = mods.bc_mod.ModEditDictHandler(dict_data, current_texts).get_dict(
+        mod_texts = core.ModEditDictHandler(dict_data, current_texts).get_dict(
             convert_int=True
         )
         for evolve, text in mod_texts.items():
@@ -1341,7 +1339,7 @@ class EvolveText:
         return f"unitevolve_{lang}.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> "EvolveText":
+    def from_game_data(game_data: "core.GamePacks") -> "EvolveText":
         if game_data.evolve_text is not None:
             return game_data.evolve_text
         file = game_data.find_file(
@@ -1350,9 +1348,9 @@ class EvolveText:
         if file is None:
             return EvolveText.create_empty()
 
-        csv = io.bc_csv.CSV(
+        csv = core.CSV(
             file.dec_data,
-            delimeter=io.bc_csv.Delimeter.from_country_code_res(game_data.country_code),
+            delimeter=core.Delimeter.from_country_code_res(game_data.country_code),
         )
         text: dict[int, EvolveTextCat] = {}
         for cat_id, line in enumerate(csv):
@@ -1363,16 +1361,16 @@ class EvolveText:
         game_data.evolve_text = evolve_text
         return evolve_text
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         file = game_data.find_file(
             EvolveText.get_file_name(game_data.localizable.get_lang())
         )
         if file is None:
             return None
 
-        csv = io.bc_csv.CSV(
+        csv = core.CSV(
             file.dec_data,
-            delimeter=io.bc_csv.Delimeter.from_country_code_res(game_data.country_code),
+            delimeter=core.Delimeter.from_country_code_res(game_data.country_code),
         )
         for cat_id, line in self.text.items():
             first_evolve = line.text[0].text
@@ -1413,7 +1411,7 @@ class Cat:
     def __init__(
         self,
         cat_id: int,
-        forms: dict[FormType, Form],
+        forms: dict[CatFormType, CatForm],
         unit_buy_data: UnitBuyData,
         talent: Optional["Talent"],
         nyanko_picture_book_data: NyankoPictureBookData,
@@ -1430,7 +1428,7 @@ class Cat:
 
     @staticmethod
     def get_stat_file_name(cat_id: int):
-        return f"unit{io.data.PaddedInt(cat_id+1, 3)}.csv"
+        return f"unit{core.PaddedInt(cat_id+1, 3)}.csv"
 
     @staticmethod
     def get_name_file_name(cat_id: int, lang: str):
@@ -1438,7 +1436,7 @@ class Cat:
 
     @staticmethod
     def from_game_data(
-        game_data: "pack.GamePacks",
+        game_data: "core.GamePacks",
         cat_id: int,
         unit_buy: UnitBuy,
         talents: Talents,
@@ -1453,17 +1451,13 @@ class Cat:
             return None
         stat_csv = stat_file.dec_data.to_csv()
         if name_file is None:
-            name_csv = io.bc_csv.CSV(
-                delimeter=io.bc_csv.Delimeter.from_country_code_res(
-                    game_data.country_code
-                ),
+            name_csv = core.CSV(
+                delimeter=core.Delimeter.from_country_code_res(game_data.country_code),
                 remove_empty=False,
             )
         else:
             name_csv = name_file.dec_data.to_csv(
-                delimeter=io.bc_csv.Delimeter.from_country_code_res(
-                    game_data.country_code
-                ),
+                delimeter=core.Delimeter.from_country_code_res(game_data.country_code),
                 remove_empty=False,
             )
         unit_buy_data = unit_buy.unit_buy_data.get(cat_id)
@@ -1472,14 +1466,14 @@ class Cat:
         evt = evolve_text.text.get(cat_id)
         if unit_buy_data is None or nyanko_picture_book_data is None:
             return None
-        forms: dict[FormType, Form] = {}
+        forms: dict[CatFormType, CatForm] = {}
         total_forms = nyanko_picture_book_data.total_forms
         form_count = 0
-        for form in FormType:
+        for form in CatFormType:
             if form_count >= total_forms:
                 break
             try:
-                stats = Stats(
+                stats = CatStats(
                     cat_id, form, [int(x) for x in stat_csv.lines[form.get_index()]]
                 )
             except IndexError:
@@ -1490,20 +1484,20 @@ class Cat:
                 continue
             name = row[0]
             description = row[1:]
-            anim = Model.from_game_data(game_data, cat_id, form)
+            anim = CatModel.from_game_data(game_data, cat_id, form)
             if anim is None:
                 continue
-            icons = Form.get_icons_game_data(game_data, cat_id, form)
+            icons = CatForm.get_icons_game_data(game_data, cat_id, form)
             if icons is None:
                 continue
             upgrade_icon, deploy_icon = icons
-            forms[form] = Form(
+            forms[form] = CatForm(
                 cat_id, form, stats, name, description, anim, upgrade_icon, deploy_icon
             )
             form_count += 1
         return Cat(cat_id, forms, unit_buy_data, talent, nyanko_picture_book_data, evt)
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         stat_file = game_data.find_file(Cat.get_stat_file_name(self.cat_id))
         name_file = game_data.find_file(
             Cat.get_name_file_name(self.cat_id, game_data.localizable.get_lang())
@@ -1512,7 +1506,7 @@ class Cat:
             return None
         stat_csv = stat_file.dec_data.to_csv()
         name_csv = name_file.dec_data.to_csv(
-            delimeter=io.bc_csv.Delimeter.from_country_code_res(game_data.country_code),
+            delimeter=core.Delimeter.from_country_code_res(game_data.country_code),
             remove_empty=False,
         )
         for form_type, form in self.forms.items():
@@ -1532,14 +1526,14 @@ class Cat:
             name_csv.to_data(),
         )
 
-    def get_form(self, form: Union[FormType, int]) -> Optional[Form]:
+    def get_form(self, form: Union[CatFormType, int]) -> Optional[CatForm]:
         if isinstance(form, int):
-            form = FormType.from_index(form)
+            form = CatFormType.from_index(form)
         return self.forms.get(form)
 
-    def set_form(self, form: Union[FormType, int], value: Form):
+    def set_form(self, form: Union[CatFormType, int], value: CatForm):
         if isinstance(form, int):
-            form = FormType.from_index(form)
+            form = CatFormType.from_index(form)
         new_form = value.copy()
         new_form.form = form
         new_form.set_form(form)
@@ -1572,14 +1566,14 @@ class Cat:
         forms = dict_data.get("forms")
         if forms is not None:
             current_forms = self.forms.copy()
-            mod_forms = mods.bc_mod.ModEditDictHandler(forms, current_forms).get_dict(
+            mod_forms = core.ModEditDictHandler(forms, current_forms).get_dict(
                 convert_int=True
             )
             for form_type, form in mod_forms.items():
-                form_type = FormType.from_index(int(form_type))
+                form_type = CatFormType.from_index(int(form_type))
                 current_form = self.get_form(form_type)
                 if current_form is None:
-                    current_form = Form.create_empty(self.cat_id, form_type)
+                    current_form = CatForm.create_empty(self.cat_id, form_type)
                     self.set_form(form_type, current_form)
                 current_form.apply_dict(form)
 
@@ -1605,8 +1599,8 @@ class Cat:
     @staticmethod
     def create_empty(cat_id: int) -> "Cat":
         forms = {}
-        for form_type in FormType:
-            forms[form_type] = Form.create_empty(cat_id, form_type)
+        for form_type in CatFormType:
+            forms[form_type] = CatForm.create_empty(cat_id, form_type)
         return Cat(
             cat_id,
             forms,
@@ -1626,7 +1620,7 @@ class Cats:
 
     @staticmethod
     def from_game_data(
-        game_data: "pack.GamePacks", cat_ids: Optional[list[int]] = None
+        game_data: "core.GamePacks", cat_ids: Optional[list[int]] = None
     ) -> "Cats":
         if game_data.cats is not None:
             return game_data.cats
@@ -1650,7 +1644,7 @@ class Cats:
         game_data.cats = cats_o
         return cats_o
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         unit_buy = UnitBuy({})
         talents = Talents({})
         nyan = NyankoPictureBook({})
@@ -1677,11 +1671,11 @@ class Cats:
         return Cats({})
 
     @staticmethod
-    def get_total_cats(game_data: "pack.GamePacks") -> int:
+    def get_total_cats(game_data: "core.GamePacks") -> int:
         return len(NyankoPictureBook.from_game_data(game_data).data)
 
     @staticmethod
-    def apply_mod_to_game_data(mod: "mods.bc_mod.Mod", game_data: "pack.GamePacks"):
+    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
         cats_data = mod.mod_edits.get("cats")
         if cats_data is None:
             return
@@ -1689,9 +1683,9 @@ class Cats:
         cats_dict: dict[int, Cat] = {}
 
         current_cats = Cats.from_game_data(game_data)
-        mod_cats = mods.bc_mod.ModEditDictHandler(
-            cats_data, current_cats.cats
-        ).get_dict(convert_int=True)
+        mod_cats = core.ModEditDictHandler(cats_data, current_cats.cats).get_dict(
+            convert_int=True
+        )
 
         for cat_id, cat_data in mod_cats.items():
             game_cat = current_cats.get_cat(int(cat_id))

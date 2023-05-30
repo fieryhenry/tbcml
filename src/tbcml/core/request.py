@@ -2,7 +2,7 @@ from typing import Any, Callable, Optional
 
 import requests
 
-from tbcml.core import io
+from tbcml import core
 
 
 class RequestHandler:
@@ -12,17 +12,17 @@ class RequestHandler:
         self,
         url: str,
         headers: Optional[dict[str, str]] = None,
-        data: Optional["io.data.Data"] = None,
+        data: Optional["core.Data"] = None,
     ):
         """Initializes a new instance of the RequestHandler class.
 
         Args:
             url (str): URL to request.
             headers (Optional[dict[str, str]], optional): Headers to send with the request. Defaults to None.
-            data (Optional[io.data.Data], optional): Data to send with the request. Defaults to None.
+            data (Optional[core.Data], optional): Data to send with the request. Defaults to None.
         """
         if data is None:
-            data = io.data.Data()
+            data = core.Data()
         self.url = url
         self.headers = headers
         self.data = data
@@ -40,9 +40,6 @@ class RequestHandler:
     ) -> requests.Response:
         """Sends a GET request and streams the response.
 
-        Args:
-            progress_signal (QtCore.pyqtSignal): Signal to emit progress on.
-
         Returns:
             requests.Response: Response from the server.
         """
@@ -57,9 +54,6 @@ class RequestHandler:
         self,
     ) -> Callable[[requests.Response], None]:
         """Creates a progress hook for a GET request.
-
-        Args:
-            progress_signal (QtCore.pyqtSignal): Signal to emit progress on.
 
         Returns:
             Callable[[requests.Response], None]: Hook to pass to requests.
@@ -76,11 +70,11 @@ class RequestHandler:
                 return
             total_length = int(total_length)
             downloaded = 0
-            all_data: list[io.data.Data] = []
+            all_data: list[core.Data] = []
             for data in response.iter_content(chunk_size=4096):
                 downloaded += len(data)
-                all_data.append(io.data.Data(data))
-            response._content = io.data.Data.from_many(all_data).data
+                all_data.append(core.Data(data))
+            response._content = core.Data.from_many(all_data).data
 
         return hook
 

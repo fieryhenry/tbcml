@@ -1,7 +1,6 @@
 import enum
 from typing import Any
-from tbcml.core.game_data import pack
-from tbcml.core import io, mods
+from tbcml import core
 
 
 class GroupType(enum.Enum):
@@ -74,7 +73,7 @@ class CharaGroups:
         return "Charagroup.csv"
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> "CharaGroups":
+    def from_game_data(game_data: "core.GamePacks") -> "CharaGroups":
         """Loads the CharaGroups from the game data.
 
         Returns:
@@ -84,7 +83,7 @@ class CharaGroups:
         file = game_data.find_file(file_name)
         if file is None:
             return CharaGroups.create_empty()
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         groups: dict[int, CharaGroupSet] = {}
         for line in csv.lines[1:]:
             id = int(line[0])
@@ -94,17 +93,17 @@ class CharaGroups:
             groups[id] = CharaGroupSet(id, text_id, group_type, chara_ids)
         return CharaGroups(groups)
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         """Writes the CharaGroups to the game data.
 
         Args:
-            game_data (pack.GamePacks): The game data to write to.
+            game_data (core.GamePacks): The game data to write to.
         """
         file_name = CharaGroups.get_file_name()
         file = game_data.find_file(file_name)
         if file is None:
             return
-        csv = io.bc_csv.CSV(file.dec_data)
+        csv = core.CSV(file.dec_data)
         remaining_groups = set(self.groups.keys())
         for i, line in enumerate(csv.lines[1:]):
             id = int(line[0])
@@ -145,9 +144,9 @@ class CharaGroups:
         groups = dict_data.get("groups")
         if groups is not None:
             current_groups = self.groups.copy()
-            modded_groups = mods.bc_mod.ModEditDictHandler(
-                groups, current_groups
-            ).get_dict(convert_int=True)
+            modded_groups = core.ModEditDictHandler(groups, current_groups).get_dict(
+                convert_int=True
+            )
             for id, modded_group in modded_groups.items():
                 group = current_groups.get(id)
                 if group is None:

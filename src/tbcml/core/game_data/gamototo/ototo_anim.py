@@ -1,7 +1,6 @@
 import enum
 from typing import Any
-from tbcml.core.game_data import pack
-from tbcml.core import anim
+from tbcml import core
 
 
 class MainChara:
@@ -44,12 +43,12 @@ class MainChara:
                     all_maanims.append(member.value)
             return all_maanims
 
-    def __init__(self, model: "anim.model.Model"):
+    def __init__(self, model: "core.Model"):
         self.model = model
 
     @staticmethod
-    def from_game_data(game_data: "pack.GamePacks") -> "MainChara":
-        an = anim.model.Model.load(
+    def from_game_data(game_data: "core.GamePacks") -> "MainChara":
+        an = core.Model.load(
             MainChara.FilePath.MAMODEL.value,
             MainChara.FilePath.IMGCUT.value,
             MainChara.FilePath.SPRITE.value,
@@ -58,7 +57,7 @@ class MainChara:
         )
         return MainChara(an)
 
-    def to_game_data(self, game_data: "pack.GamePacks"):
+    def to_game_data(self, game_data: "core.GamePacks"):
         self.model.save(game_data)
 
     def apply_dict(self, dict_data: dict[str, Any]):
@@ -68,4 +67,4 @@ class MainChara:
 
     @staticmethod
     def create_empty() -> "MainChara":
-        return MainChara(anim.model.Model.create_empty())
+        return MainChara(core.Model.create_empty())

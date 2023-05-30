@@ -1,26 +1,26 @@
-from tbcml.core import io
-import ffmpeg
+from tbcml import core
+import ffmpeg  # type: ignore
 
 
 class AudioFile:
     """Represents an audio file."""
 
-    def __init__(self, data: "io.data.Data", file_name: str):
+    def __init__(self, data: "core.Data", file_name: str):
         """Initializes an AudioFile.
 
         Args:
-            data (io.data.Data): The data of the audio file.
+            data (core.Data): The data of the audio file.
             file_name (str): The name of the audio file.
         """
         self.data = data
         self.file_name = file_name
 
     @staticmethod
-    def from_zip(zip_file: "io.zip.Zip", file_name: str) -> "AudioFile":
+    def from_zip(zip_file: "core.Zip", file_name: str) -> "AudioFile":
         """Creates an AudioFile from a mod zip file.
 
         Args:
-            zip_file (io.zip.Zip): Mod zip file to read from.
+            zip_file (core.Zip): Mod zip file to read from.
             file_name (str): Name of the audio file.
 
         Raises:
@@ -29,19 +29,19 @@ class AudioFile:
         Returns:
             AudioFile: The audio file.
         """
-        path = io.path.Path("audio").add(file_name)
+        path = core.Path("audio").add(file_name)
         data = zip_file.get_file(path)
         if data is None:
             raise ValueError(f"File {path} not found in zip file")
         return AudioFile(data, file_name)
 
-    def to_zip(self, zip_file: "io.zip.Zip"):
+    def to_zip(self, zip_file: "core.Zip"):
         """Adds the audio file to a mod zip file.
 
         Args:
-            zip_file (io.zip.Zip): Mod zip file to add to.
+            zip_file (core.Zip): Mod zip file to add to.
         """
-        path = io.path.Path("audio").add(self.file_name)
+        path = core.Path("audio").add(self.file_name)
         zip_file.add_file(path, self.data)
 
     def get_id(self) -> int:
@@ -65,11 +65,11 @@ class AudioFile:
         return self.file_name
 
     @staticmethod
-    def from_file(path: "io.path.Path") -> "AudioFile":
+    def from_file(path: "core.Path") -> "AudioFile":
         """Creates an AudioFile from a file.
 
         Args:
-            path (io.path.Path): Path to the audio file.
+            path (core.Path): Path to the audio file.
 
         Returns:
             AudioFile: The audio file.
@@ -103,13 +103,13 @@ class AudioFile:
         extension = self.get_extension()
         if extension != "caf":
             return self
-        with io.temp_file.TempFile(extension=extension) as input_temp:
+        with core.TempFile(extension=extension) as input_temp:
             input_temp.write(self.data)
 
-            stream = ffmpeg.input(input_temp.path)
-            with io.temp_file.TempFile(extension=extension) as output_temp:
+            stream = ffmpeg.input(input_temp.path)  # type: ignore
+            with core.TempFile(extension=extension) as output_temp:
                 stream = ffmpeg.output(  # type: ignore
-                    stream, output_temp.path, acodec="pcm_s16le", loglevel="quiet"
+                    stream, output_temp.path, acodec="pcm_s16le", loglevel="quiet"  # type: ignore
                 )
                 ffmpeg.run(stream)  # type: ignore
 
@@ -128,7 +128,7 @@ class AudioFile:
     def play(self):
         """Plays the audio file by writing it to a temporary file and opening it."""
 
-        with io.temp_file.TempFile(extension=self.get_extension()) as temp_file:
+        with core.TempFile(extension=self.get_extension()) as temp_file:
             temp_file.write(self.data)
             temp_file.open_file()
 
@@ -153,37 +153,37 @@ class Audio:
         """
         return Audio({})
 
-    def add_to_zip(self, zip_file: "io.zip.Zip"):
+    def add_to_zip(self, zip_file: "core.Zip"):
         """Adds the audio files to a mod zip file.
 
         Args:
-            zip_file (io.zip.Zip): Mod zip file to add to.
+            zip_file (core.Zip): Mod zip file to add to.
         """
         json_data = {
             "audio_files": [
                 audio_file.file_name for audio_file in self.audio_files.values()
             ]
         }
-        data = io.json_file.JsonFile.from_object(json_data)
-        zip_file.add_file(io.path.Path("audio.json"), data.to_data())
+        data = core.JsonFile.from_object(json_data)
+        zip_file.add_file(core.Path("audio.json"), data.to_data())
 
         for audio_file in self.audio_files.values():
             audio_file.to_zip(zip_file)
 
     @staticmethod
-    def from_zip(zip_file: "io.zip.Zip") -> "Audio":
+    def from_zip(zip_file: "core.Zip") -> "Audio":
         """Creates an Audio object from a mod zip file.
 
         Args:
-            zip_file (io.zip.Zip): Mod zip file to read from.
+            zip_file (core.Zip): Mod zip file to read from.
 
         Returns:
             Audio: The audio object.
         """
-        data = zip_file.get_file(io.path.Path("audio.json"))
+        data = zip_file.get_file(core.Path("audio.json"))
         if data is None:
             return Audio.create_empty()
-        json_data = io.json_file.JsonFile.from_data(data).get_json()
+        json_data = core.JsonFile.from_data(data).get_json()
         audio_files = {
             file_name: AudioFile.from_zip(zip_file, file_name)
             for file_name in json_data["audio_files"]

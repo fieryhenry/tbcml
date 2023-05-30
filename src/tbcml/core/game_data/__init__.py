@@ -6,6 +6,7 @@ from tbcml.core.game_data import (
     cat_base,
     map,
     bcu,
+    localizable,
 )
 
 __all__ = [
@@ -16,4 +17,5 @@ __all__ = [
     "cat_base",
     "map",
     "bcu",
+    "localizable",
 ]

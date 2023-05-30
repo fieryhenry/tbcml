@@ -1,7 +1,6 @@
 import math
 from typing import Any, Optional
-from tbcml.core.anim import rect, unit_animation, model
-from tbcml.core import io
+from tbcml import core
 from PyQt5 import QtGui, QtCore
 
 
@@ -75,8 +74,8 @@ class ModelPart:
 
         self.parent: Optional[ModelPart] = None
         self.children: list[ModelPart] = []
-        self.keyframes_sets: list[unit_animation.KeyFrames] = []
-        self.model: Optional[model.Model] = None
+        self.keyframes_sets: list[core.KeyFrames] = []
+        self.model: Optional[core.Model] = None
         self.scale_unit: int
         self.angle_unit: int
         self.alpha_unit: int
@@ -94,13 +93,13 @@ class ModelPart:
             return
         rct = self.model.tex.get_rect(self.rect_id)
         if rct is None:
-            self.rect = rect.Rect.create_empty()
+            self.rect = core.Rect.create_empty()
         else:
             self.rect = rct
 
         img = self.model.tex.get_image(self.rect_id)
         if img is None:
-            self.image = io.bc_image.BCImage.create_empty()
+            self.image = core.BCImage.create_empty()
         else:
             self.image = img
 
@@ -124,12 +123,12 @@ class ModelPart:
             return 0
         return max([keyframes.get_end_frame() for keyframes in self.keyframes_sets])
 
-    def set_action(self, frame_counter: int, keyframes: unit_animation.KeyFrames):
+    def set_action(self, frame_counter: int, keyframes: "core.KeyFrames"):
         """Sets the action of the part. This is used for animations.
 
         Args:
             frame_counter (int): The current frame of the animation.
-            keyframes (unit_animation.PartAnim): The collection of keyframes to use for the animation.
+            keyframes (core.PartAnim): The collection of keyframes to use for the animation.
         """
         change_in_value = keyframes.set_action(frame_counter)
         if change_in_value is None:
@@ -138,51 +137,48 @@ class ModelPart:
         start_frame = keyframes.keyframes[0].frame
         if frame_counter >= start_frame:
             mod = keyframes.modification_type
-            if mod == unit_animation.ModificationType.PARENT:
+            if mod == core.AnimModificationType.PARENT:
                 self.parent_id = change_in_value
                 self.set_parent_by_id(self.parent_id)
-            elif mod == unit_animation.ModificationType.ID:
+            elif mod == core.AnimModificationType.ID:
                 self.unit_id = change_in_value
-            elif mod == unit_animation.ModificationType.SPRITE:
+            elif mod == core.AnimModificationType.SPRITE:
                 self.rect_id = change_in_value
                 self.set_rect(self.rect_id)
-            elif (
-                mod == unit_animation.ModificationType.Z_ORDER
-                and self.model is not None
-            ):
+            elif mod == core.AnimModificationType.Z_ORDER and self.model is not None:
                 self.z_depth = (
                     change_in_value * len(self.model.mamodel.parts) + self.index
                 )
-            elif mod == unit_animation.ModificationType.POS_X:
+            elif mod == core.AnimModificationType.POS_X:
                 self.x = change_in_value + self.pos_x_orig
-            elif mod == unit_animation.ModificationType.POS_Y:
+            elif mod == core.AnimModificationType.POS_Y:
                 self.y = change_in_value + self.pos_y_orig
-            elif mod == unit_animation.ModificationType.PIVOT_X:
+            elif mod == core.AnimModificationType.PIVOT_X:
                 self.pivot_x = change_in_value + self.pivot_x_orig
-            elif mod == unit_animation.ModificationType.PIVOT_Y:
+            elif mod == core.AnimModificationType.PIVOT_Y:
                 self.pivot_y = change_in_value + self.pivot_y_orig
-            elif mod == unit_animation.ModificationType.SCALE_UNIT:
+            elif mod == core.AnimModificationType.SCALE_UNIT:
                 self.gsca = change_in_value
                 self.calc_scale()
-            elif mod == unit_animation.ModificationType.SCALE_X:
+            elif mod == core.AnimModificationType.SCALE_X:
                 self.scale_x = int(
                     change_in_value * self.scale_x_orig / self.scale_unit
                 )
                 self.calc_scale()
-            elif mod == unit_animation.ModificationType.SCALE_Y:
+            elif mod == core.AnimModificationType.SCALE_Y:
                 self.scale_y = int(
                     change_in_value * self.scale_y_orig / self.scale_unit
                 )
                 self.calc_scale()
-            elif mod == unit_animation.ModificationType.ANGLE:
+            elif mod == core.AnimModificationType.ANGLE:
                 self.rotation = change_in_value + self.rotation_orig
                 self.set_rotation(self.rotation)
-            elif mod == unit_animation.ModificationType.OPACITY:
+            elif mod == core.AnimModificationType.OPACITY:
                 self.alpha = int(change_in_value * self.alpha_orig / self.alpha_unit)
                 self.set_alpha(self.alpha)
-            elif mod == unit_animation.ModificationType.H_FLIP:
+            elif mod == core.AnimModificationType.H_FLIP:
                 self.h_flip = change_in_value
-            elif mod == unit_animation.ModificationType.V_FLIP:
+            elif mod == core.AnimModificationType.V_FLIP:
                 self.v_flip = change_in_value
 
     def calc_scale(self):
@@ -215,7 +211,7 @@ class ModelPart:
         """Creates a ModelPart from a list of data.
 
         Args:
-            data (list[io.data.Data]): The data to use to create the ModelPart.
+            data (list[core.Data]): The data to use to create the ModelPart.
             index (int): The index of the part.
 
         Returns:
@@ -390,7 +386,7 @@ class ModelPart:
 
     def draw_img(
         self,
-        img: "io.bc_image.BCImage",
+        img: "core.BCImage",
         pivot: tuple[float, float],
         size: tuple[float, float],
         alpha: float,
@@ -399,7 +395,7 @@ class ModelPart:
         """Draws the part's image.
 
         Args:
-            img (io.bc_image.BCImage): The image to draw.
+            img (core.BCImage): The image to draw.
             pivot (tuple[float, float]): The pivot of the image.
             size (tuple[float, float]): The size of the image.
             alpha (float): The alpha of the image.
@@ -601,7 +597,7 @@ class ModelPart:
             self.name,
         )
 
-    def set_model(self, model: "model.Model"):
+    def set_model(self, model: "core.Model"):
         """Sets the model of the part.
 
         Args:
@@ -660,11 +656,11 @@ class ModelPart:
 
         self.units_set = True
 
-    def set_keyframes_sets(self, keyframes_sets: list["unit_animation.KeyFrames"]):
+    def set_keyframes_sets(self, keyframes_sets: list["core.KeyFrames"]):
         """Sets the keyframes sets of the part. Also resets the animation.
 
         Args:
-            keyframes_sets (list[unit_animation.KeyFrames]): The keyframes sets of the part.
+            keyframes_sets (list[core.KeyFrames]): The keyframes sets of the part.
         """
         self.keyframes_sets = keyframes_sets
         self.reset_anim()

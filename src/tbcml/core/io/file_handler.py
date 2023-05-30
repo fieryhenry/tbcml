@@ -1,4 +1,4 @@
-from tbcml.core.io import path
+from tbcml import core
 
 
 class FileSize:
@@ -24,5 +24,5 @@ class FileSize:
             return f"{self.file_size / 1024 ** 4:.2f} TB"
 
     @staticmethod
-    def from_file(path: "path.Path") -> "FileSize":
+    def from_file(path: "core.Path") -> "FileSize":
         return FileSize(path.get_file_size())

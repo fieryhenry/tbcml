@@ -1,6 +1,5 @@
 from typing import Any, Optional, Union
-from tbcml.core.anim import texture, unit_animation, model_part
-from tbcml.core import io, game_data, mods
+from tbcml import core
 
 
 class ModelMetaData:
@@ -10,7 +9,7 @@ class ModelMetaData:
         self.total_parts = total_parts
 
     @staticmethod
-    def from_csv(csv: "io.bc_csv.CSV") -> "ModelMetaData":
+    def from_csv(csv: "core.CSV") -> "ModelMetaData":
         head_line = csv.read_line()
         if head_line is None:
             raise ValueError("Invalid model file")
@@ -28,10 +27,10 @@ class ModelMetaData:
 
         return ModelMetaData(head_name, version_code, total_parts)
 
-    def to_csv(self, total_parts: int) -> "io.bc_csv.CSV":
+    def to_csv(self, total_parts: int) -> "core.CSV":
         self.set_total_parts(total_parts)
 
-        csv = io.bc_csv.CSV()
+        csv = core.CSV()
         csv.lines.append([self.head_name])
         csv.lines.append([str(self.version_code)])
         csv.lines.append([str(self.total_parts)])
@@ -74,7 +73,7 @@ class ModelMetaData:
 
 
 class MamodelLoaderInfo:
-    def __init__(self, mamodel_name: str, game_packs: "game_data.pack.GamePacks"):
+    def __init__(self, mamodel_name: str, game_packs: "core.GamePacks"):
         self.mamodel_name = mamodel_name
         self.game_packs = game_packs
 
@@ -88,12 +87,12 @@ class MamodelLoaderInfo:
 class Mamodel:
     def __init__(
         self,
-        meta_data: ModelMetaData,
+        meta_data: "ModelMetaData",
         scale_unit: int,
         angle_unit: int,
         alpha_unit: int,
         ints: list[list[int]],
-        parts: list[model_part.ModelPart],
+        parts: list["core.ModelPart"],
         comments: list[str],
     ):
         self.meta_data = meta_data
@@ -120,26 +119,24 @@ class Mamodel:
         return Mamodel(ModelMetaData.create_empty(), 0, 0, 0, [], [], [])
 
     @staticmethod
-    def load(
-        mamodel_name: str, game_packs: "game_data.pack.GamePacks"
-    ) -> Optional["Mamodel"]:
+    def load(mamodel_name: str, game_packs: "core.GamePacks") -> Optional["Mamodel"]:
         mamodel_file = game_packs.find_file(mamodel_name)
         if mamodel_file is None:
             return None
         return Mamodel.from_data(mamodel_file.dec_data)
 
     @staticmethod
-    def from_data(mamodel_data: "io.data.Data") -> Optional["Mamodel"]:
+    def from_data(mamodel_data: "core.Data") -> Optional["Mamodel"]:
         csv = mamodel_data.to_csv()
         meta_data = ModelMetaData.from_csv(csv)
         total_parts = meta_data.total_parts
 
-        parts: list[model_part.ModelPart] = []
+        parts: list[core.ModelPart] = []
         for i in range(total_parts):
             line_data = csv.read_line()
             if line_data is None:
                 continue
-            part = model_part.ModelPart.from_data(line_data, i)
+            part = core.ModelPart.from_data(line_data, i)
             parts.append(part)
 
         units_line = csv.read_line()
@@ -172,7 +169,7 @@ class Mamodel:
         )
         return mamodel
 
-    def to_data(self) -> "io.data.Data":
+    def to_data(self) -> "core.Data":
         csv = self.meta_data.to_csv(len(self.parts))
         for part in self.parts:
             csv.lines.append(part.to_data())
@@ -221,7 +218,7 @@ class Mamodel:
                 if part_id < len(self.parts):
                     self.parts[part_id].apply_dict(data_part)
                 else:
-                    part = model_part.ModelPart.create_empty(part_id)
+                    part = core.ModelPart.create_empty(part_id)
                     part.apply_dict(data_part)
                     self.parts.append(part)
 
@@ -244,8 +241,8 @@ class Mamodel:
 class Model:
     def __init__(
         self,
-        tex: Union[texture.TexLoaderInfo, texture.Texture],
-        anims: list[Union[unit_animation.UnitAnim, unit_animation.UnitAnimLoaderInfo]],
+        tex: Union["core.TexLoaderInfo", "core.Texture"],
+        anims: list[Union["core.UnitAnim", "core.UnitAnimLoaderInfo"]],
         mamodel: Union[Mamodel, MamodelLoaderInfo],
         name: str,
     ):
@@ -254,18 +251,18 @@ class Model:
         self.__mamodel = mamodel
         self.name = name
 
-    def get_part(self, index: int) -> Optional[model_part.ModelPart]:
+    def get_part(self, index: int) -> Optional["core.ModelPart"]:
         if index < 0 or index >= len(self.mamodel.parts):
             return None
         return self.mamodel.parts[index]
 
-    def get_part_create(self, index: int) -> model_part.ModelPart:
+    def get_part_create(self, index: int) -> "core.ModelPart":
         if index < 0 or index >= len(self.mamodel.parts):
-            part = model_part.ModelPart.create_empty(index)
+            part = core.ModelPart.create_empty(index)
             self.set_part(index, part)
         return self.mamodel.parts[index]
 
-    def set_part(self, index: int, part: model_part.ModelPart):
+    def set_part(self, index: int, part: "core.ModelPart"):
         part.index = index
         if index < 0:
             return
@@ -274,7 +271,7 @@ class Model:
         else:
             self.mamodel.parts[index] = part
 
-    def get_sorted_parts(self) -> list[model_part.ModelPart]:
+    def get_sorted_parts(self) -> list["core.ModelPart"]:
         return sorted(self.mamodel.parts, key=lambda part: part.z_depth)
 
     def set_models(self):
@@ -323,18 +320,18 @@ class Model:
             part.set_keyframes_sets(anim_parts)
 
     @property
-    def tex(self) -> texture.Texture:
-        if isinstance(self.__tex, texture.TexLoaderInfo):
+    def tex(self) -> "core.Texture":
+        if isinstance(self.__tex, core.TexLoaderInfo):
             self.__tex = self.__tex.load()
         return self.__tex
 
     @property
-    def anims(self) -> list[unit_animation.UnitAnim]:
+    def anims(self) -> list["core.UnitAnim"]:
         for i, anim in enumerate(self.__anims):
-            if isinstance(anim, unit_animation.UnitAnimLoaderInfo):
+            if isinstance(anim, core.UnitAnimLoaderInfo):
                 anim = anim.load()
                 if anim is None:
-                    self.__anims[i] = unit_animation.UnitAnim.create_empty()
+                    self.__anims[i] = core.UnitAnim.create_empty()
                 else:
                     self.__anims[i] = anim
         return self.__anims  # type: ignore
@@ -346,12 +343,11 @@ class Model:
         return self.__mamodel
 
     def tex_loaded(self) -> bool:
-        return not isinstance(self.__tex, texture.TexLoaderInfo)
+        return not isinstance(self.__tex, core.TexLoaderInfo)
 
     def anims_loaded(self) -> bool:
         return all(
-            not isinstance(anim, unit_animation.UnitAnimLoaderInfo)
-            for anim in self.__anims
+            not isinstance(anim, core.UnitAnimLoaderInfo) for anim in self.__anims
         )
 
     def mamodel_loaded(self) -> bool:
@@ -371,12 +367,12 @@ class Model:
         imgcut_name: str,
         img_name: str,
         maanim_names: list[str],
-        game_packs: "game_data.pack.GamePacks",
+        game_packs: "core.GamePacks",
     ):
-        tex_loader = texture.TexLoaderInfo(img_name, imgcut_name, game_packs)
-        anim_loaders: list[unit_animation.UnitAnimLoaderInfo] = []
+        tex_loader = core.TexLoaderInfo(img_name, imgcut_name, game_packs)
+        anim_loaders: list[core.UnitAnimLoaderInfo] = []
         for maanim_name in maanim_names:
-            anim = unit_animation.UnitAnimLoaderInfo(maanim_name, game_packs)
+            anim = core.UnitAnimLoaderInfo(maanim_name, game_packs)
             anim_loaders.append(anim)
 
         mamodel_loader = MamodelLoaderInfo(mamodel_name, game_packs)
@@ -391,19 +387,19 @@ class Model:
 
     @staticmethod
     def from_data(
-        mamodel_data: "io.data.Data",
+        mamodel_data: "core.Data",
         mamodel_name: str,
-        imgcut_data: "io.data.Data",
+        imgcut_data: "core.Data",
         imgcut_name: str,
-        img_data: "io.data.Data",
+        img_data: "core.Data",
         img_name: str,
-        maanim_datas: list["io.data.Data"],
+        maanim_datas: list["core.Data"],
         maanim_names: list[str],
     ):
-        tex = texture.Texture.from_data(imgcut_data, img_data, img_name, imgcut_name)
-        anims: list[unit_animation.UnitAnim] = []
+        tex = core.Texture.from_data(imgcut_data, img_data, img_name, imgcut_name)
+        anims: list[core.UnitAnim] = []
         for maanim_data, maanim_name in zip(maanim_datas, maanim_names):
-            anim = unit_animation.UnitAnim.from_data(maanim_name, maanim_data)
+            anim = core.UnitAnim.from_data(maanim_name, maanim_data)
             anims.append(anim)
 
         mamodel = Mamodel.from_data(mamodel_data)
@@ -414,7 +410,7 @@ class Model:
 
     def save(
         self,
-        game_packs: "game_data.pack.GamePacks",
+        game_packs: "core.GamePacks",
     ):
         if self.tex_loaded():
             self.tex.save(game_packs)
@@ -461,7 +457,7 @@ class Model:
         self.tex.set_unit_id(unit_id)
         name = self.name
         parts = name.split("_")
-        parts[0] = io.data.PaddedInt(unit_id, 3).to_str()
+        parts[0] = core.PaddedInt(unit_id, 3).to_str()
         name = "_".join(parts)
         self.name = name
         for part in self.mamodel.parts[1:]:
@@ -484,7 +480,7 @@ class Model:
     @staticmethod
     def create_empty() -> "Model":
         return Model(
-            texture.Texture.create_empty(),
+            core.Texture.create_empty(),
             [],
             Mamodel.create_empty(),
             "",
@@ -508,7 +504,7 @@ class Model:
         parts = dict_data.get("parts")
         if parts is not None:
             current_parts = {part.index: part for part in self.mamodel.parts}
-            mod_parts = mods.bc_mod.ModEditDictHandler(parts, current_parts).get_dict(
+            mod_parts = core.ModEditDictHandler(parts, current_parts).get_dict(
                 convert_int=True
             )
             for part_id, data_part in mod_parts.items():
@@ -526,13 +522,13 @@ class Model:
         anims = dict_data.get("anims")
         if anims is not None:
             current_anims = {i: anim for i, anim in enumerate(self.anims)}
-            mod_anims = mods.bc_mod.ModEditDictHandler(anims, current_anims).get_dict(
+            mod_anims = core.ModEditDictHandler(anims, current_anims).get_dict(
                 convert_int=True
             )
             for anim_id, data_anim in mod_anims.items():
                 anim = self.get_anim(anim_id)
                 if anim is None:
-                    anim = unit_animation.UnitAnim.create_empty()
+                    anim = core.UnitAnim.create_empty()
                     self.anims.append(anim)
                 anim.apply_dict(data_anim)
 
@@ -545,7 +541,7 @@ class Model:
         }
         return data
 
-    def get_anim(self, anim_id: int) -> Optional[unit_animation.UnitAnim]:
+    def get_anim(self, anim_id: int) -> Optional["core.UnitAnim"]:
         if anim_id < len(self.anims):
             return self.anims[anim_id]
         return None
