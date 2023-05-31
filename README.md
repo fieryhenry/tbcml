@@ -99,7 +99,3 @@ Run the script
 ```bash
 python script.py
 ```
-
-## Reasons for the rewrites
-
--
