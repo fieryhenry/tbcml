@@ -1,6 +1,10 @@
 # Battle Cats Mod Loader
 
-The Battle Cats Mod Loader (TBCML) is a package for easily creating and managing mods for the mobile game The Battle Cats. At the moment it is just a library, but I plan to make a GUI for it in the future.
+The Battle Cats Mod Loader (TBCML) is a package for easily creating and managing mods for the mobile game The Battle Cats.
+
+At the moment the tool is just a library, but I plan to make a GUI for it in the future. I have a website for it but it is still a work in progress and is not ready for public use yet. I also can't afford to host it yet.
+
+Join my [discord server](https://discord.gg/DvmMgvn5ZB) for help, getting the latest updates, reporting bugs, and suggesting features.
 
 I've spent so much time working on this project, but due to all of the re-writes and refactors, it really doesn't look like it. So I would really appricate it if you considered donating to my kofi:
 
