@@ -1,8 +1,10 @@
 # Battle Cats Mod Loader
 
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/M4M53M4MN)
+The Battle Cats Mod Loader (TBCML) is a package for easily creating and managing mods for the mobile game The Battle Cats. At the moment it is just a library, but I plan to make a GUI for it in the future.
 
-The Battle Cats Mod Loader (TBCML) is a tool for easily creating and managing mods for the mobile game The Battle Cats.
+I've spent so much time working on this project, but due to all of the re-writes and refactors, it really doesn't look like it. So I would really appricate it if you considered donating to my kofi:
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/fieryhenry)
 
 [![wakatime](https://wakatime.com/badge/user/ab1fc9e5-e285-49d1-8dc6-2f2e0198c8f6/project/0350bd63-7366-48f1-8a0d-72dab553a007.svg)](https://wakatime.com/badge/user/ab1fc9e5-e285-49d1-8dc6-2f2e0198c8f6/project/0350bd63-7366-48f1-8a0d-72dab553a007)
 
@@ -24,7 +26,7 @@ cd tbcml
 pip install -e .
 ```
 
-## Basic Usage
+### Basic Usage
 
 Create `script.py`
 
@@ -97,3 +99,7 @@ Run the script
 ```bash
 python script.py
 ```
+
+## Reasons for the rewrites
+
+-
