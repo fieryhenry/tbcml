@@ -1,6 +1,6 @@
 # Battle Cats Mod Loader
 
-The Battle Cats Mod Loader (TBCML) is a package for easily creating and managing mods for the mobile game The Battle Cats.
+The Battle Cats Mod Loader (TBCML) is a python module for easily creating and managing mods for the mobile game The Battle Cats.
 
 At the moment the tool is just a library, but I plan to make a GUI for it in the future. I have a website for it but it is still a work in progress and is not ready for public use yet. I also can't afford to host it yet.
 
@@ -88,13 +88,13 @@ mod_edit = ModEdit(["cats", 0, "forms", 0, "name"], "Test Cat")
 # Add the mod edit to the mod
 mod.add_mod_edit(mod_edit)
 
-# Add the mod to the mod manager
+# Add the mod to the mod manager (optional)
 ModManager().add_mod(mod)
 
 # Add the mod to the game packs
 apk.load_mods([mod], game_packs)
 
-# open the apk folder in the file explorer
+# open the apk folder in the file explorer (optional)
 apk_folder.open()
 ```
 
