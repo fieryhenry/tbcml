@@ -356,7 +356,7 @@ class Mod:
             data["description"],
             data["mod_id"],
             data["mod_version"],
-            data.get("credits", []),
+            data.get("contributors", []),
             [Dependency.from_dict(x) for x in data.get("dependencies", [])],
             data.get("long_description", ""),
             icon,

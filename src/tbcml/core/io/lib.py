@@ -33,6 +33,10 @@ class LibFiles:
         self.so_files = self.get_so_files()
         self.modified_packs = self.get_modified_packs()
         self.modified_packs_hashes = self.get_all_pack_list_hashes()
+        if self.apk.key is not None:
+            self.change_key(self.apk.key)
+        if self.apk.iv is not None:
+            self.change_iv(self.apk.iv)
 
     def get_so_files(self):
         files: dict[str, "core.Data"] = {}
@@ -119,3 +123,33 @@ class LibFiles:
         self.replace_hashes()
         self.overwrite_duplicate_packs()
         self.write()
+
+    def change_key(self, key: str):
+        orignal_key, original_iv = core.AesCipher.get_key_iv_from_cc(
+            self.apk.country_code
+        )
+        key1 = core.Data(key[:16])
+        key2 = core.Data(key[16:])
+
+        orig_key1 = core.Data(orignal_key[:16])
+        orig_key2 = core.Data(orignal_key[16:])
+
+        for arc, so in self.so_files.items():
+            so = so.replace(orig_key1, key1)
+            so = so.replace(orig_key2, key2)
+            self.so_files[arc] = so
+
+    def change_iv(self, iv: str):
+        orignal_key, original_iv = core.AesCipher.get_key_iv_from_cc(
+            self.apk.country_code
+        )
+        iv1 = core.Data(iv[:16])
+        iv2 = core.Data(iv[16:])
+
+        orig_iv1 = core.Data(original_iv[:16])
+        orig_iv2 = core.Data(original_iv[16:])
+
+        for arc, so in self.so_files.items():
+            so = so.replace(orig_iv1, iv1)
+            so = so.replace(orig_iv2, iv2)
+            self.so_files[arc] = so

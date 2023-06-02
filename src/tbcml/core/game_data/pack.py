@@ -64,26 +64,36 @@ class GameFile:
             pass
         return GameFile(data, file_name, pack_name, cc, gv)
 
-    def encrypt(self) -> "core.Data":
+    def encrypt(
+        self,
+        force_server: bool = False,
+        key: Optional[str] = None,
+        iv: Optional[str] = None,
+    ) -> "core.Data":
         """Encrypt the decrypted data.
 
         Returns:
             core.Data: The encrypted data.
         """
-        if PackFile.is_image_data_local_pack(self.pack_name):
+        if PackFile.is_image_data_local_pack(self.pack_name) and not force_server:
             return self.dec_data
-        cipher = PackFile.get_cipher(self.cc, self.pack_name, self.gv)
+        cipher = PackFile.get_cipher(
+            self.cc, self.pack_name, self.gv, force_server, key, iv
+        )
         data = self.dec_data.pad_pkcs7()
         return cipher.encrypt(data)
 
-    def extract(self, path: "core.Path"):
+    def extract(self, path: "core.Path", encrypt: bool = False):
         """Extract the decrypted data to a file.
 
         Args:
             path (core.Path): The path to extract the file to.
         """
         path = path.add(self.file_name)
-        path.write(self.dec_data)
+        if not encrypt:
+            path.write(self.dec_data)
+        else:
+            path.write(self.encrypt(force_server=True))
 
     @staticmethod
     def is_anim(file_name: str) -> bool:
@@ -109,6 +119,7 @@ class PackFile:
         self.country_code = country_code
         self.gv = gv
         self.files: dict[str, GameFile] = {}
+        self.modified = False
 
     def add_file(self, file: "GameFile"):
         """Add a file to the pack.
@@ -134,6 +145,26 @@ class PackFile:
             files (dict[str, GameFile]): The files to set.
         """
         self.files = files
+
+    def clear_files(self):
+        """Clear the files in the pack."""
+        self.files = {}
+
+    def remove_file(self, file_name: str):
+        """Remove a file from the pack.
+
+        Args:
+            file_name (str): The name of the file to remove.
+        """
+        self.files.pop(file_name)
+
+    def set_modified(self, modified: bool):
+        """Set the modified status of the pack.
+
+        Args:
+            modified (bool): The modified status of the pack.
+        """
+        self.modified = modified
 
     @staticmethod
     def is_server_pack(pack_name: str) -> bool:
@@ -164,6 +195,9 @@ class PackFile:
         cc: "core.CountryCode",
         pack_name: str,
         gv: "core.GameVersion",
+        force_server: bool = False,
+        key: Optional[str] = None,
+        iv: Optional[str] = None,
     ) -> "core.AesCipher":
         """Get the cipher for a pack.
 
@@ -175,7 +209,9 @@ class PackFile:
         Returns:
             crypto.AesCipher: The cipher for the pack.
         """
-        return core.AesCipher.get_cipher_from_pack(cc, pack_name, gv)
+        return core.AesCipher.get_cipher_from_pack(
+            cc, pack_name, gv, force_server, key, iv
+        )
 
     def get_files(self) -> list[GameFile]:
         """Get all the files in the pack.
@@ -281,7 +317,11 @@ class PackFile:
         pack_file.set_files(files)
         return pack_file
 
-    def to_pack_list_file(self) -> tuple[str, "core.Data", "core.Data"]:
+    def to_pack_list_file(
+        self,
+        key: Optional[str] = None,
+        iv: Optional[str] = None,
+    ) -> tuple[str, "core.Data", "core.Data"]:
         """Convert the pack object to a pack file and a list file.
 
         Returns:
@@ -292,7 +332,7 @@ class PackFile:
         offset = 0
         pack_data_ls: list[core.Data] = []
         for file in self.files.values():
-            data = file.encrypt()
+            data = file.encrypt(key=key, iv=iv)
             ls_data.lines.append([file.file_name, str(offset), str(len(data))])
             pack_data_ls.append(data)
             offset += len(data)
@@ -307,7 +347,7 @@ class PackFile:
         ).encrypt(ls_data)
         return self.pack_name, pack_data, ls_data
 
-    def extract(self, path: "core.Path"):
+    def extract(self, path: "core.Path", encrypt: bool = False):
         """Extract the pack as separate files into a directory.
 
         Args:
@@ -316,7 +356,7 @@ class PackFile:
         path = path.add(self.pack_name)
         path.generate_dirs()
         for file in self.files.values():
-            file.extract(path)
+            file.extract(path, encrypt)
 
 
 class GamePacks:
@@ -413,7 +453,11 @@ class GamePacks:
             else:
                 return None
 
-    def to_packs_lists(self) -> list[tuple[str, "core.Data", "core.Data"]]:
+    def to_packs_lists(
+        self,
+        key: Optional[str] = None,
+        iv: Optional[str] = None,
+    ) -> list[tuple[str, "core.Data", "core.Data"]]:
         """Convert the game packs to a list of pack lists.
 
         Returns:
@@ -421,8 +465,8 @@ class GamePacks:
         """
         packs_lists: list[tuple[str, "core.Data", "core.Data"]] = []
         for pack_name, pack in self.packs.items():
-            if pack_name in self.modified_packs:
-                packs_lists.append(pack.to_pack_list_file())
+            if pack_name in self.modified_packs or pack.modified:
+                packs_lists.append(pack.to_pack_list_file(key, iv))
         return packs_lists
 
     def set_file(self, file_name: str, data: "core.Data") -> Optional["GameFile"]:

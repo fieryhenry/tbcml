@@ -179,13 +179,31 @@ function getBaseAddress() {
 }
 
 function readStdString(address) {
-    const isTiny = (address.readU8() & 1) === 0;
-    if (isTiny) {
-        return address.add(1).readUtf8String();
-    }
+  const isTiny = (address.readU8() & 1) === 0;
+  if (isTiny) {
+    return address.add(1).readUtf8String();
+  }
 
-    return address.add(2 * Process.pointerSize).readUtf8String();
+  return address.add(2 * Process.pointerSize).readPointer().readUtf8String();
 }
+
+function writeStdString(address, content) {
+    const isTiny = (address.readU8() & 1) === 0;
+    if (isTiny)
+        address.add(1).writeUtf8String(content);
+    else
+        address.add(2 * Process.pointerSize).readPointer().writeUtf8String(content);
+}
+
+function allocateStdString(content) {
+    const isTiny = content.length < 16;
+    const size = isTiny ? 16 : content.length * 2 + 16;
+    const address = Memory.alloc(size);
+    address.writeU8(isTiny ? 0 : 1);
+    writeStdString(address, content);
+    return address;
+}
+
 
 // Mod scripts goes here.
 """

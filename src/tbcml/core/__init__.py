@@ -6,7 +6,7 @@ from .mods.bc_mod import (
     ModEdit,
 )
 from .mods.smali import SmaliHandler, SmaliSet
-from .mods.frida_script import FridaScripts
+from .mods.frida_script import FridaScripts, FridaScript
 from .mods.mod_manager import ModManager
 from .game_data.cat_base.unit import (
     Frames,
@@ -106,7 +106,7 @@ from .langs import Languages
 from .request import RequestHandler
 from .server_handler import ServerFileHandler
 from .locale_handler import LocalManager
-from .game_data.pack import GamePacks, PackFile
+from .game_data.pack import GamePacks, PackFile, GameFile
 from .country_code import CountryCode
 from .game_version import GameVersion
 

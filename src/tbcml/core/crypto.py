@@ -125,10 +125,31 @@ class AesCipher:
         return core.Data(cipher.decrypt(data.get_bytes()))
 
     @staticmethod
+    def get_key_iv_from_cc(cc: "core.CountryCode") -> tuple[str, str]:
+        if cc == core.CountryCode.JP:
+            key = "d754868de89d717fa9e7b06da45ae9e3"
+            iv = "40b2131a9f388ad4e5002a98118f6128"
+        elif cc == core.CountryCode.EN:
+            key = "0ad39e4aeaf55aa717feb1825edef521"
+            iv = "d1d7e708091941d90cdf8aa5f30bb0c2"
+        elif cc == core.CountryCode.KR:
+            key = "bea585eb993216ef4dcb88b625c3df98"
+            iv = "9b13c2121d39f1353a125fed98696649"
+        elif cc == core.CountryCode.TW:
+            key = "313d9858a7fb939def1d7d859629087d"
+            iv = "0e3743eb53bf5944d1ae7e10c2e54bdf"
+        else:
+            raise Exception("Unknown country code")
+        return key, iv
+
+    @staticmethod
     def get_cipher_from_pack(
         cc: "core.CountryCode",
         pack_name: str,
         gv: "core.GameVersion",
+        force_server: bool = False,
+        key: Optional[str] = None,
+        iv: Optional[str] = None,
     ) -> "AesCipher":
         """Gets the cipher from the pack.
 
@@ -144,23 +165,18 @@ class AesCipher:
             AesCipher: The cipher.
         """
         aes_mode = AES.MODE_CBC
-        if cc == core.CountryCode.JP:
-            key = "d754868de89d717fa9e7b06da45ae9e3"
-            iv = "40b2131a9f388ad4e5002a98118f6128"
-        elif cc == core.CountryCode.EN:
-            key = "0ad39e4aeaf55aa717feb1825edef521"
-            iv = "d1d7e708091941d90cdf8aa5f30bb0c2"
-        elif cc == core.CountryCode.KR:
-            key = "bea585eb993216ef4dcb88b625c3df98"
-            iv = "9b13c2121d39f1353a125fed98696649"
-        elif cc == core.CountryCode.TW:
-            key = "313d9858a7fb939def1d7d859629087d"
-            iv = "0e3743eb53bf5944d1ae7e10c2e54bdf"
-        else:
-            raise Exception("Unknown country code")
+        key_, iv_ = AesCipher.get_key_iv_from_cc(cc)
+        if key is None:
+            key = key_
+        if iv is None:
+            iv = iv_
         enable = not core.PackFile.is_image_data_local_pack(pack_name)
-        if core.PackFile.is_server_pack(pack_name) or gv < core.GameVersion.from_string(
-            "8.9.0"
+        if force_server:
+            enable = True
+        if (
+            core.PackFile.is_server_pack(pack_name)
+            or gv < core.GameVersion.from_string("8.9.0")
+            or force_server
         ):
             aes_mode = AES.MODE_ECB
             key = Hash(HashAlgorithm.MD5).get_hash(core.Data("battlecats"), 8).to_hex()

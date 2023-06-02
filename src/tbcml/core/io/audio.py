@@ -159,14 +159,6 @@ class Audio:
         Args:
             zip_file (core.Zip): Mod zip file to add to.
         """
-        json_data = {
-            "audio_files": [
-                audio_file.file_name for audio_file in self.audio_files.values()
-            ]
-        }
-        data = core.JsonFile.from_object(json_data)
-        zip_file.add_file(core.Path("audio.json"), data.to_data())
-
         for audio_file in self.audio_files.values():
             audio_file.to_zip(zip_file)
 
@@ -180,14 +172,11 @@ class Audio:
         Returns:
             Audio: The audio object.
         """
-        data = zip_file.get_file(core.Path("audio.json"))
-        if data is None:
-            return Audio.create_empty()
-        json_data = core.JsonFile.from_data(data).get_json()
-        audio_files = {
-            file_name: AudioFile.from_zip(zip_file, file_name)
-            for file_name in json_data["audio_files"]
-        }
+        audio_files = {}
+        for file in zip_file.get_paths():
+            if file.path.startswith("audio/"):
+                audio_file = AudioFile.from_zip(zip_file, file.basename())
+                audio_files[audio_file.file_name] = audio_file
         return Audio(audio_files)
 
     def import_audio(self, other: "Audio"):

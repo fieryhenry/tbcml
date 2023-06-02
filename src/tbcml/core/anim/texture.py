@@ -93,16 +93,11 @@ class TexMetadata:
         if img_name is not None:
             self.img_name = img_name
 
-        total_rects = dict_data.get("total_rects")
-        if total_rects is not None:
-            self.total_rects = total_rects
-
     def to_dict(self) -> dict[str, Any]:
         return {
             "head_name": self.head_name,
             "version_code": self.version_code,
             "img_name": self.img_name,
-            "total_rects": self.total_rects,
         }
 
 
@@ -140,13 +135,11 @@ class Texture:
         image: "core.BCImage",
         rects: list["core.Rect"],
         metadata: "TexMetadata",
-        img_name: str,
         imgcut_name: str,
     ):
         self.image = image
         self.rects = rects
         self.metadata = metadata
-        self.img_name = img_name
         self.imgcut_name = imgcut_name
         self.cuts: list[CutTexture] = []
 
@@ -180,18 +173,16 @@ class Texture:
                 return Texture.create_empty()
             rects.append(rect_)
 
-        return Texture(core.BCImage(png_data), rects, meta_data, png_name, imgcut_name)
+        return Texture(core.BCImage(png_data), rects, meta_data, imgcut_name)
 
     @staticmethod
     def create_empty():
-        return Texture(
-            core.BCImage.create_empty(), [], TexMetadata.create_empty(), "", ""
-        )
+        return Texture(core.BCImage.create_empty(), [], TexMetadata.create_empty(), "")
 
     def save(self, game_packs: "core.GamePacks"):
         imgcut_data, png_data = self.to_data()
         game_packs.set_file(self.imgcut_name, imgcut_data)
-        game_packs.set_file(self.img_name, png_data)
+        game_packs.set_file(self.metadata.img_name, png_data)
 
     def to_data(self):
         csv = self.metadata.to_csv(len(self.rects))
@@ -206,7 +197,6 @@ class Texture:
             self.image.copy(),
             [r.copy() for r in self.rects],
             self.metadata.copy(),
-            self.img_name,
             self.imgcut_name,
         )
 
@@ -235,12 +225,10 @@ class Texture:
 
     def set_unit_id(self, id: int):
         self.metadata.set_unit_id(id)
-        self.img_name = self.metadata.img_name
         self.imgcut_name = self.metadata.img_name.replace(".png", ".imgcut")
 
     def set_unit_form(self, form: str):
         self.metadata.set_unit_form(form)
-        self.img_name = self.metadata.img_name
 
     def split_cuts(self):
         self.cuts: list[CutTexture] = []
@@ -269,10 +257,6 @@ class Texture:
         if metadata is not None:
             self.metadata.apply_dict(metadata)
 
-        img_name = dict_data.get("img_name")
-        if img_name is not None:
-            self.img_name = img_name
-
         imgcut_name = dict_data.get("imgcut_name")
         if imgcut_name is not None:
             self.imgcut_name = imgcut_name
@@ -282,7 +266,6 @@ class Texture:
             "image": self.image.to_dict(),
             "rects": [r.to_dict() for r in self.rects],
             "metadata": self.metadata.to_dict(),
-            "img_name": self.img_name,
             "imgcut_name": self.imgcut_name,
         }
 

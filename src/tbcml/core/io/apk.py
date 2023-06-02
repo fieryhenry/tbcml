@@ -27,6 +27,9 @@ class Apk:
 
         self.init_paths()
 
+        self.key = None
+        self.iv = None
+
     @staticmethod
     def from_format_string(
         format_string: str,
@@ -210,8 +213,17 @@ class Apk:
             print(f"Failed to sign APK: {res.result}")
             return
 
-    def add_packs_lists(self, packs: "core.GamePacks"):
-        files = packs.to_packs_lists()
+    def set_key(self, key: str):
+        self.key = key
+
+    def set_iv(self, iv: str):
+        self.iv = iv
+
+    def add_packs_lists(
+        self,
+        packs: "core.GamePacks",
+    ):
+        files = packs.to_packs_lists(self.key, self.iv)
         for pack_name, pack_data, list_data in files:
             self.add_pack_list(pack_name, pack_data, list_data)
 
@@ -736,7 +748,40 @@ class Apk:
             self.get_lib_path(arc).remove()
 
     def add_asset(self, asset_path: "core.Path"):
-        asset_path.copy(self.extracted_path.add("assets"))
+        asset_path.copy(self.extracted_path.add("assets").add(asset_path.basename()))
+
+    def remove_asset(self, asset_path: "core.Path"):
+        self.extracted_path.add("assets").add(asset_path.basename()).remove()
+
+    def add_assets(self, asset_folder: "core.Path"):
+        for asset in asset_folder.get_files():
+            self.add_asset(asset)
+
+    def add_assets_from_pack(self, pack: "core.PackFile"):
+        if pack.is_server_pack(pack.pack_name):
+            return
+        temp_dir = self.temp_path.add("assets")
+        pack.extract(temp_dir, encrypt=True)
+        self.add_assets(temp_dir.add(pack.pack_name))
+        temp_dir.remove()
+        pack.clear_files()
+        pack.add_file(
+            core.GameFile(
+                core.Data(pack.pack_name),
+                f"empty_file_{pack.pack_name}",
+                pack.pack_name,
+                pack.country_code,
+                pack.gv,
+            )
+        )
+        pack.set_modified(True)
+
+    def add_assets_from_game_packs(self, packs: "core.GamePacks"):
+        for pack in packs.packs.values():
+            self.add_assets_from_pack(pack)
+
+    def add_file(self, file_path: "core.Path"):
+        file_path.copy(self.extracted_path)
 
     def get_pack_location(self) -> "core.Path":
         if self.is_java():
@@ -865,6 +910,14 @@ class Apk:
             core.Data(template_file)
         )
 
+    def add_mod_files(self, mod: "core.Mod"):
+        for file_name, data in mod.apk_files.items():
+            self.extracted_path.add(file_name).write(data)
+
+    def add_mods_files(self, mods: list["core.Mod"]):
+        for mod in mods:
+            self.add_mod_files(mod)
+
     def load_mods(
         self,
         mods: list["core.Mod"],
@@ -875,6 +928,7 @@ class Apk:
         if game_packs is None:
             game_packs = core.GamePacks.from_apk(self)
         game_packs.apply_mods(mods)
+        self.add_mods_files(mods)
         self.set_allow_backup(True)
         self.set_debuggable(True)
         self.set_modded_html(mods)
