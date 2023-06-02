@@ -125,9 +125,7 @@ class LibFiles:
         self.write()
 
     def change_key(self, key: str):
-        orignal_key, original_iv = core.AesCipher.get_key_iv_from_cc(
-            self.apk.country_code
-        )
+        orignal_key, _ = core.AesCipher.get_key_iv_from_cc(self.apk.country_code)
         key1 = core.Data(key[:16])
         key2 = core.Data(key[16:])
 
@@ -140,9 +138,7 @@ class LibFiles:
             self.so_files[arc] = so
 
     def change_iv(self, iv: str):
-        orignal_key, original_iv = core.AesCipher.get_key_iv_from_cc(
-            self.apk.country_code
-        )
+        _, original_iv = core.AesCipher.get_key_iv_from_cc(self.apk.country_code)
         iv1 = core.Data(iv[:16])
         iv2 = core.Data(iv[16:])
 
