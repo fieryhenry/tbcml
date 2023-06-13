@@ -103,3 +103,7 @@ Run the script
 ```bash
 python script.py
 ```
+
+## Documentation
+
+You can find the documentation [here](docs/index.md).
