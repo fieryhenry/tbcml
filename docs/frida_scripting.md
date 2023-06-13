@@ -10,6 +10,8 @@ Frida is a toolkit that allows you to inject JavaScript or your own library into
 
 If you want to inject into java code, you can use the [smali scripting](smali_scripting.md) feature.
 
+I plan to add support for [cydia substrate](http://www.cydiasubstrate.com/) in the future so that you can write hooks in c++ and more closely integrate with the game. (This is how those 0 recharge time mods work)
+
 ## Setup
 
 You will need to have downloaded the frida-gadget binaries for each architecture you want to target. You can find them [here](https://github.com/frida/frida/releases).
