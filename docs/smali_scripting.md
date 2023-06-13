@@ -32,7 +32,7 @@ The format of your script file should be:
     return-void
 .end method
 
-.method public static {method_name}{method_signature}
+.method public static {method_signature}
     .locals 0
 
     {method_body}
