@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Smali scripting allows you to inject smali code into `onCreate()` method of main activity. This allows you to write your own code that will be executed when the app starts up. This is useful to do more advanced things that are not possible with just editing the game files. On game versions 6.10.0 and older you can do lots more because the code is written in java. On newer versions, the code is written in c++ so you can't do as much. At the moment you can only inject into the `onCreate()` method of the main activity. In the future, I may add support for injecting into other methods and classes.
+Smali scripting allows you to inject smali code into the `onCreate()` method of the main activity. This allows you to write your own code that will be executed when the app starts up. This is useful to do more advanced things that are not possible with just editing the game files. On game versions 6.10.0 and older you can do lots more because the code is written in java. On newer versions, the code is written in c++ so you can't do as much. At the moment you can only inject into the `onCreate()` method of the main activity. In the future, I may add support for injecting into other methods and classes.
 
 ## Setup
 
