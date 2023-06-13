@@ -63,7 +63,9 @@ Interceptor.attach(address, { // uint * ObfuscatedString::get(uint *param_1,byte
 });
 ```
 
-Note that the above code only works for x86 running version 12.2.0en of the game. You will need to find the correct address for your version of the game.
+Note that the above code only works for x86 running version 12.2.0en of the game. You will need to find the correct address for your version of the game and architecture by using a disassembler such as Ghidra or IDA.
+
+If you are running game version 8.4 and older then you do not need to find specific addresses because some debugging symbols are included in the libnative-lib.so library. Game versions 6.10 and older are written in java and are not currently supported with Frida and the tool, however you can still inject smali code into the app. See the [smali scripting](#smali-scripting) section for more information.
 
 To add the script to your mod you can do the following:
 
