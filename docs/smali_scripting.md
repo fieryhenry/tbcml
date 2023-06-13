@@ -45,4 +45,16 @@ smali = Smali(
 mod.smali.add(smali)
 ```
 
-The smali code for the above DataLoad.smali file can be found [here](https://github.com/fieryhenry/tbcml/blob/master/src/tbcml/files/assets/DataLoad.smali).
+The smali code for the above DataLoad.smali file can be found [here](https://github.com/fieryhenry/tbcml/blob/master/src/tbcml/files/assets/DataLoad.smali)
+
+The code is taken from one of those 9999999 catfood APKs that load a zip file into the game's /data/data/jp.co.ponos.battlecats/ directory on first start up. This is useful for loading custom assets into the game that aren't in the apk. To use it, you need to create a `data.zip` file in the assets folder of the apk.
+
+Example structure:
+
+```bash
+shared_prefs
+├── save.xml (save file)
+files
+├── 09b1058188348630d98a08e0f731f6bd.dat (gatya data)
+
+```
