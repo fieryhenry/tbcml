@@ -58,9 +58,9 @@ The code is taken from one of those 9999999 catfood APKs that load a zip file in
 Example structure:
 
 ```bash
-shared_prefs
-├── save.xml (save file)
-files
-├── 09b1058188348630d98a08e0f731f6bd.dat (gatya data)
-
+data.zip
+├── shared_prefs
+│   └── save.xml (save data)
+├── files
+│   └── 09b1058188348630d98a08e0f731f6bd.dat (gatya data)
 ```
