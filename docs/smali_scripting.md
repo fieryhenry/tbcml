@@ -6,6 +6,8 @@ Smali scripting allows you to inject smali code into the `onCreate()` method of 
 
 To inject into native code, you can use the [frida scripting](frida_scripting.md) feature.
 
+## Setup
+
 There is no setup required for smali scripting.
 
 ## Usage
