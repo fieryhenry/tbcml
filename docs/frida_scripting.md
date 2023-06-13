@@ -76,7 +76,7 @@ If you are running game version 8.4 and older then you do not need to find speci
 To add the script to your mod you can do the following:
 
 ```python
-script_js = Path("script.js")
-script = FridaScript("x86", cc, gv, script_js.read().to_str(), "obfuscated_int", mod)
+script_js = Path("{script_path}")
+script = FridaScript("{architecture}", cc, gv, script_js.read().to_str(), "{script_name}", mod)
 mod.scripts.add_script(script)
 ```

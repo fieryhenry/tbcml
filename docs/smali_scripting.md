@@ -44,14 +44,14 @@ The format of your script file should be:
 To add the script to your mod you can do the following:
 
 ```python
-smali_path = Path("DataLoad.smali")
+smali_path = Path("{path_to_smali_file}")
 smali = Smali(
-    smali_path.read().to_str(), "DataLoad", "Start(Landroid/content/Context;)V"
+    smali_path.read().to_str(), "{class_name}", "{method_signature}"
 )
 mod.smali.add(smali)
 ```
 
-The smali code for the above DataLoad.smali file can be found [here](https://github.com/fieryhenry/tbcml/blob/master/src/tbcml/files/assets/DataLoad.smali)
+Example code can be found [here](https://github.com/fieryhenry/tbcml/blob/master/src/tbcml/files/assets/DataLoad.smali)
 
 The code is taken from one of those 9999999 catfood APKs that load a zip file into the game's /data/data/jp.co.ponos.battlecats/ directory on first start up. This is useful for loading custom assets into the game that aren't in the apk. To use it, you need to create a `data.zip` file in the assets folder of the apk.
 
