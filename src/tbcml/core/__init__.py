@@ -5,7 +5,7 @@ from .mods.bc_mod import (
     Dependency,
     ModEdit,
 )
-from .mods.smali import SmaliHandler, SmaliSet
+from .mods.smali import SmaliHandler, SmaliSet, Smali
 from .mods.frida_script import FridaScripts, FridaScript
 from .mods.mod_manager import ModManager
 from .game_data.cat_base.unit import (
