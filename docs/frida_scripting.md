@@ -4,6 +4,8 @@
 
 Frida is a toolkit that allows you to inject JavaScript or your own library into native apps. This allows you to hook functions and modify the behaviour of the app. This is useful to do more advanced things that are not possible with just editing the game files.
 
+If you want to inject into java code, you can use the [smali scripting](smali_scripting.md) feature.
+
 ## Setup
 
 You will need to have downloaded the frida-gadget binaries for each architecture you want to target. You can find them [here](https://github.com/frida/frida/releases).
