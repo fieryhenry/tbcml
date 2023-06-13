@@ -4,7 +4,7 @@
 
 Frida is a toolkit that allows you to inject JavaScript or your own library into native apps. This allows you to hook functions and modify the behaviour of the app. This is useful to do more advanced things that are not possible with just editing the game files.
 
-## Installation
+## Setup
 
 You will need to have downloaded the frida-gadget binaries for each architecture you want to target. You can find them [here](https://github.com/frida/frida/releases).
 
@@ -31,87 +31,23 @@ You need to create a script file that will be injected into the app. This script
 The tool provides you with some helper functions that you can access:
 
 ```javascript
-function logError(message) {
-    Java.perform(function () {
-        var Log = Java.use("android.util.Log");
-        Log.e("tbcml", message);
-        console.error(message);
-    });
-}
-function logWarning(message) {
-    Java.perform(function () {
-        var Log = Java.use("android.util.Log");
-        Log.w("tbcml", message);
-        console.warn(message);
-    });
-}
-function logInfo(message) {
-    Java.perform(function () {
-        var Log = Java.use("android.util.Log");
-        Log.i("tbcml", message);
-        console.info(message);
-    });
-}
-function logVerbose(message) {
-    Java.perform(function () {
-        var Log = Java.use("android.util.Log");
-        Log.v("tbcml", message);
-        console.log(message);
-    });
-}
-function logDebug(message) {
-    Java.perform(function () {
-        var Log = Java.use("android.util.Log");
-        Log.d("tbcml", message);
-        console.log(message);
-    });
-}
-function log(message, level = "info") {
-    switch (level) {
-        case "error":
-            logError(message);
-            break;
-        case "warning":
-            logWarning(message);
-            break;
-        case "info":
-            logInfo(message);
-            break;
-        case "verbose":
-            logVerbose(message);
-            break;
-        case "debug":
-            logDebug(message);
-            break;
-        default:
-            logInfo(message);
-            break;
-    }
-}
+function logError(message) {}
+function logWarning(message) {}
+function logInfo(message) {}
+function logVerbose(message) {}
+function logDebug(message) {}
+function log(message, level = "info" /* "error" | "warning" | "info" | "verbose" | "debug" */) {}
 
-function getBaseAddress() {
-    return Module.findBaseAddress("libnative-lib.so").add(4096); // offset due to libgadget being added
-}
-
-function readStdString(address) {
-  const isTiny = (address.readU8() & 1) === 0;
-  if (isTiny) {
-    return address.add(1).readUtf8String();
-  }
-
-  return address.add(2 * Process.pointerSize).readPointer().readUtf8String();
-}
-
-function writeStdString(address, content) {
-    const isTiny = (address.readU8() & 1) === 0;
-    if (isTiny)
-        address.add(1).writeUtf8String(content);
-    else
-        address.add(2 * Process.pointerSize).readPointer().writeUtf8String(content);
-}
+function getBaseAddress() {}
+function readStdString(address) {}
+function writeStdString(address, content) {}
 ```
 
+The code for the above functions can be found [here](https://github.com/fieryhenry/tbcml/blob/master/src/tbcml/core/mods/frida_script.py)
+
 You can read the logs with `adb logcat -s tbcml`.
+
+Note that if you do not use the `getBaseAddress()` function, then all addresses are offset by 0x1000 (4096) due to the libgadget injection into the libnative-lib.so library.
 
 Here is an example script that leaks any obfuscated strings the game uses such as decryption keys or secret keys used for signing requests:
 
