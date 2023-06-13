@@ -195,16 +195,6 @@ function writeStdString(address, content) {
         address.add(2 * Process.pointerSize).readPointer().writeUtf8String(content);
 }
 
-function allocateStdString(content) {
-    const isTiny = content.length < 16;
-    const size = isTiny ? 16 : content.length * 2 + 16;
-    const address = Memory.alloc(size);
-    address.writeU8(isTiny ? 0 : 1);
-    writeStdString(address, content);
-    return address;
-}
-
-
 // Mod scripts goes here.
 """
 
