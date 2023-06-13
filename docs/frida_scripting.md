@@ -1,5 +1,9 @@
 # Frida Scripting
 
+## WARNING
+
+You should only use frida scripts if you trust the source of the script. The scripts have full access to the app and can do anything they want.
+
 ## Introduction
 
 Frida is a toolkit that allows you to inject JavaScript or your own library into native apps. This allows you to hook functions and modify the behaviour of the app. This is useful to do more advanced things that are not possible with just editing the game files.
@@ -76,5 +80,3 @@ script_js = Path("script.js")
 script = FridaScript("x86", cc, gv, script_js.read().to_str(), "obfuscated_int", mod)
 mod.scripts.add_script(script)
 ```
-
-Note that you should only use scripts that you trust. The scripts have full access to the app and can do anything they want.
