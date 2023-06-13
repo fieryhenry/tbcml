@@ -49,7 +49,7 @@ You can read the logs with `adb logcat -s tbcml`.
 
 Note that if you do not use the `getBaseAddress()` function, then all addresses are offset by 0x1000 (4096) due to the libgadget injection into the libnative-lib.so library.
 
-Here is an example script that leaks any obfuscated strings the game uses such as decryption keys or secret keys used for signing requests:
+Here is an example script that leaks any obfuscated strings the game uses such as decryption keys or secret keys:
 
 ```javascript
 let address = getBaseAddress().add(0x7fb370)
