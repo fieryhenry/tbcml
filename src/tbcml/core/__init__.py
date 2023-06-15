@@ -98,7 +98,7 @@ from .io.audio import AudioFile, Audio
 from .io.bc_image import BCImage
 from .io.zip import Zip
 from .io.asset_loader import AssetLoader
-from .io.temp_file import TempFile
+from .io.temp_file import TempFile, TempFolder
 from .io.yaml import YamlFile
 from .log import Logger
 from .crypto import AesCipher, Hash, HashAlgorithm, Random, Hmac
