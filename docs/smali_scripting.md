@@ -60,7 +60,7 @@ Example structure:
 ```bash
 data.zip
 ├── shared_prefs
-│   └── save.xml (save data)
+│   └── save.xml (file that those 9999999 catfood APKs use to load save data, it's not actually used by the game anymore but the game is backwards compatible with it.)
 ├── files
 │   └── 09b1058188348630d98a08e0f731f6bd.dat (gatya data)
 ```
