@@ -941,13 +941,15 @@ class Apk:
         for mod in mods:
             self.add_mod_files(mod)
 
+    def add_smali_mods(self, mods: list["core.Mod"]):
+        for mod in mods:
+            self.apply_mod_smali(mod)
+
     def load_mods(
         self,
         mods: list["core.Mod"],
         game_packs: Optional["core.GamePacks"] = None,
     ):
-        for mod in mods:
-            self.apply_mod_smali(mod)
         if game_packs is None:
             game_packs = core.GamePacks.from_apk(self)
         game_packs.apply_mods(mods)
@@ -957,4 +959,5 @@ class Apk:
         self.set_modded_html(mods)
         self.add_audio_mods(mods)
         self.add_script_mods(mods)
+        self.add_smali_mods(mods)
         self.load_packs_into_game(game_packs)
