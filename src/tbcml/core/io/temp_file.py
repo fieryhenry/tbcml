@@ -29,3 +29,23 @@ class TempFile:
     @staticmethod
     def get_temp_path(name: Optional[str] = None, extension: Optional[str] = None):
         return TempFile(name, extension).path
+
+
+class TempFolder:
+    def __init__(self, name: Optional[str] = None):
+        if name is None:
+            name = str(uuid.uuid4())
+        self.path = (
+            core.Path.get_appdata_folder().add("temp").add(name).get_absolute_path()
+        )
+        self.path.generate_dirs()
+
+    def __enter__(self):
+        return self.path
+
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any):
+        self.path.remove()
+
+    @staticmethod
+    def get_temp_path(name: Optional[str] = None):
+        return TempFolder(name).path
