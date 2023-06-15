@@ -209,7 +209,7 @@ function getJavaClass(className) {
     return classFactory.use(className);
 }
 
-// Mod scripts goes here.
+// Mod scripts go here
 """
 
     def combine_scripts(self, arc: str) -> "core.Data":
