@@ -108,7 +108,7 @@ class FridaScripts:
             self.add_script(script)
 
     def get_base_script(self):
-        return core.Path("base_script.js", True).read()
+        return core.Path("base_script.js", True).read().to_str()
 
     def combine_scripts(self, arc: str) -> "core.Data":
         script_text = self.get_base_script() + "\r\n"
