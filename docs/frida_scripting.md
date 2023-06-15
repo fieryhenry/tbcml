@@ -65,8 +65,6 @@ Note that if you do not use the `getBaseAddress()` function, then all addresses 
 let address = getBaseAddress().add(0x7fb370)
 
 Interceptor.attach(address, { // uint * ObfuscatedString::get(uint *param_1,byte **param_2)
-    onEnter: function (args) {
-    },
     onLeave: function (retval) {
         log("ObfuscatedString::get: " + readStdString(retval))
     }
