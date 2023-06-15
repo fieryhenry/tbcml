@@ -717,6 +717,16 @@ class Apk:
         self.add_libgadget_scripts(scripts)
         self.add_libgadget_sos(used_arcs)
 
+    def has_script_mods(self, bc_mods: list["core.Mod"]):
+        if not bc_mods:
+            return False
+        scripts = core.FridaScripts([])
+        for mod in bc_mods:
+            scripts.add_scripts(mod.scripts)
+
+        scripts.validate_scripts(self.country_code, self.game_version)
+        return not scripts.is_empty()
+
     def add_script_mods(self, bc_mods: list["core.Mod"]):
         if not bc_mods:
             return
@@ -932,10 +942,13 @@ class Apk:
         mods: list["core.Mod"],
         game_packs: Optional["core.GamePacks"] = None,
     ):
+        if self.is_java() and self.has_script_mods(mods):
+            self.get_smali_handler()  # extracting smali kinda wipes everything so we need to do this first
         for mod in mods:
             self.apply_mod_smali(mod)
         if game_packs is None:
             game_packs = core.GamePacks.from_apk(self)
+        self.set_package_name(self.package_name)
         game_packs.apply_mods(mods)
         self.add_mods_files(mods)
         self.set_allow_backup(True)
