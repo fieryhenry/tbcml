@@ -53,7 +53,7 @@ cc = CountryCode.EN
 # Choose a game version
 gv = GameVersion.from_string("12.3.0")
 
-# Apk Path (optional - defaults to home/tbcml/APKs or appdata/tbcml/APKs directory if not specified)
+# Apk Path (optional - defaults to home/documents/tbcml/APKs or appdata/tbcml/APKs directory if not specified)
 apk_folder = Path("apks")
 
 # Get the apk

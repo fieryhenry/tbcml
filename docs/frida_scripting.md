@@ -16,7 +16,7 @@ I plan to add support for [cydia substrate](http://www.cydiasubstrate.com/) in t
 
 You will need to have downloaded the frida-gadget binaries for each architecture you want to target. You can find them [here](https://github.com/frida/frida/releases).
 
-You then need to extract the binaries and place them in the `LibGadgets` folder in the tbcml folder in appdata or home directory. The folder structure should look like this:
+You then need to extract the binaries and place them in the `LibGadgets` folder in the tbcml folder in appdata or documents directory. The folder structure should look like this:
 
 ```bash
 tbcml
