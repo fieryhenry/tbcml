@@ -30,6 +30,8 @@ class Apk:
         self.key = None
         self.iv = None
 
+        self.libs: dict[str, core.Lib] = {}
+
     @staticmethod
     def from_format_string(
         format_string: str,
@@ -623,13 +625,21 @@ class Apk:
             return None
         return core.Lib(architecture, path)
 
+    def get_smali_handler(self) -> "core.SmaliHandler":
+        if self.smali_handler is None:
+            self.smali_handler = core.SmaliHandler(self)
+        return self.smali_handler
+
     def add_library(self, architecture: str, library_path: "core.Path"):
         libnative = self.libs.get(architecture)
         if libnative is None:
             print(f"Could not find libnative for {architecture}")
             return
-        libnative.add_library(library_path)
-        libnative.write()
+        if not self.is_java():
+            libnative.add_library(library_path)
+            libnative.write()
+        else:
+            self.get_smali_handler().inject_load_library(library_path.basename())
         self.add_to_lib_folder(architecture, library_path)
 
     def get_lib_path(self, architecture: str) -> "core.Path":
@@ -667,7 +677,7 @@ class Apk:
 
     def add_libgadget_config(self, used_arcs: list[str]):
         config = self.create_libgadget_config()
-        temp_file = self.temp_path.add("libgadget.config")
+        temp_file = self.temp_path.add("libfrida-gadget.config")
         config.to_data().to_file(temp_file)
 
         for architecture in used_arcs:
@@ -678,7 +688,7 @@ class Apk:
     def add_libgadget_scripts(self, scripts: "core.FridaScripts"):
         for architecture in scripts.get_used_arcs():
             script_str = scripts.combine_scripts(architecture)
-            script_path = self.temp_path.add(f"libbc_script.js.so")
+            script_path = self.temp_path.add("libbc_script.js.so")
             script_str.to_file(script_path)
             self.add_to_lib_folder(architecture, script_path)
             script_path.remove()
@@ -842,9 +852,7 @@ class Apk:
     def apply_mod_smali(self, mod: "core.Mod"):
         if mod.smali.is_empty():
             return
-        if self.smali_handler is None:
-            self.smali_handler = core.SmaliHandler(self)
-        self.smali_handler.inject_into_on_create(mod.smali.get_list())
+        self.get_smali_handler().inject_into_on_create(mod.smali.get_list())
 
     def set_allow_backup(self, allow_backup: bool):
         manifest = self.parse_manifest()
@@ -865,6 +873,7 @@ class Apk:
         self.set_manifest(manifest)
 
     def set_package_name(self, package_name: str):
+        self.package_name = package_name
         manifest = self.parse_manifest()
         manifest.set_attribute("manifest", "package", package_name)
 

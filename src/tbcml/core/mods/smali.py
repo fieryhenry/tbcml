@@ -119,6 +119,25 @@ class SmaliHandler:
                 break
         return target_smali
 
+    def setup_injection(self) -> tuple[list[str], "core.Path"]:
+        """Sets up the injection by finding the main activity smali file and reading it
+
+        Raises:
+            FileNotFoundError: If the main activity smali could not be found
+
+        Returns:
+            tuple[list[str], core.Path]: The main activity smali code and the path to the smali file
+        """
+        target_smali = self.find_main_activity_smali()
+        if target_smali is None:
+            raise FileNotFoundError(
+                f"Could not find main activity smali: {self.main_activity}"
+            )
+        text = target_smali.read().to_str()
+        text = text.split("\n")
+
+        return text, target_smali
+
     def inject_into_on_create(self, smali_codes: list[Smali]):
         """Injects the smali code into the main activity's onCreate method
 
@@ -128,13 +147,7 @@ class SmaliHandler:
         Raises:
             FileNotFoundError: If the main activity smali could not be found
         """
-        target_smali = self.find_main_activity_smali()
-        if target_smali is None:
-            raise FileNotFoundError(
-                f"Could not find main activity smali: {self.main_activity}"
-            )
-        text = target_smali.read().to_str()
-        text = text.split("\n")
+        text, target_smali = self.setup_injection()
 
         path = self.apk.extracted_path.add("smali").add("com").add("tbcml")
         path.generate_dirs()
@@ -149,6 +162,31 @@ class SmaliHandler:
                         i + 2 + j,
                         f"    invoke-static {{p0}}, Lcom/tbcml/{smali.class_name};->{smali.function_sig_to_call}",
                     )
+                break
+
+        text = "\n".join(text)
+        target_smali.write(core.Data(text))
+
+    def inject_load_library(self, library_name: str):
+        """Injects the code to load a native library into the main activity's onCreate method
+
+        Args:
+            library_name (str): The name of the library to load
+        """
+        if library_name.startswith("lib"):
+            library_name = library_name[3:]
+        library_name = library_name.replace(".so", "")
+
+        text, target_smali = self.setup_injection()
+
+        inject_text = f"""
+        const-string v0, "{library_name}"
+        invoke-static {{v0}}, Ljava/lang/System;->loadLibrary(Ljava/lang/String;)V
+        """
+
+        for i, line in enumerate(text):
+            if line.startswith(".method") and "onCreate(" in line:
+                text.insert(i + 3, inject_text)
                 break
 
         text = "\n".join(text)
