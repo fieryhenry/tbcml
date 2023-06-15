@@ -87,7 +87,7 @@ Interceptor.attach(asave_address, {
         let gatya_set_sym = "_ZN15GatyaItemHelper3setEii" // GatyaItemHelper::set(int, int)
         let gatya_set_address = Module.findExportByName("libnative-lib.so", gatya_set_sym)
         let gatya_set_func = new NativeFunction(gatya_set_address, 'int', ["int", 'int'])
-        gatya_set_func(22, 45000)
+        gatya_set_func(22, 45000) // 22 is the id for catfood
     }
 });
 ```
@@ -99,7 +99,7 @@ var MyApplication_init = getJavaClass("jp.co.ponos.battlecats.em");
 
 MyApplication_init["save"].implementation = function () {
     let GatyaHelper = getJavaClass("jp.co.ponos.battlecats.bv");
-    GatyaHelper.a(22, 45000); // GatyaHelper.set(int, int)
+    GatyaHelper.a(22, 45000); // GatyaHelper.set(int, int) 22 is the id for catfood
     this["save"]();
 };
 ```
