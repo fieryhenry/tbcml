@@ -180,8 +180,8 @@ class SmaliHandler:
         text, target_smali = self.setup_injection()
 
         inject_text = f"""
-        const-string v0, "{library_name}"
-        invoke-static {{v0}}, Ljava/lang/System;->loadLibrary(Ljava/lang/String;)V
+    const-string v0, "{library_name}"
+    invoke-static {{v0}}, Ljava/lang/System;->loadLibrary(Ljava/lang/String;)V
         """
 
         for i, line in enumerate(text):
