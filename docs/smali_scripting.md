@@ -57,7 +57,7 @@ The code is taken from one of those 9999999 catfood APKs that load a zip file in
 
 Example structure:
 
-```bash
+```text
 data.zip
 ├── shared_prefs
 │   └── save.xml (file that those 9999999 catfood APKs use to load save data, it's not actually used by the game anymore but the game is backwards compatible with it.)
