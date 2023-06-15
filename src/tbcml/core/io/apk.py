@@ -960,4 +960,5 @@ class Apk:
         self.add_audio_mods(mods)
         self.add_script_mods(mods)
         self.add_smali_mods(mods)
+
         self.load_packs_into_game(game_packs)
