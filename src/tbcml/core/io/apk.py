@@ -169,13 +169,17 @@ class Apk:
     def extract_smali(self):
         if not self.check_display_apktool_error():
             return
-        cmd = core.Command(
-            f"apktool d -f {self.apk_path} -o {self.extracted_path}", False
-        )
-        res = cmd.run()
-        if res.exit_code != 0:
-            print(f"Failed to extract APK: {res.result}")
-            return
+
+        with core.TempFolder() as temp_folder:
+            cmd = core.Command(f"apktool d -f {self.apk_path} -o {temp_folder}", False)
+            res = cmd.run()
+            if res.exit_code != 0:
+                print(f"Failed to extract APK: {res.result}")
+                return
+            folders = temp_folder.glob("smali*")
+            for folder in folders:
+                new_folder = self.extracted_path.add(folder.basename())
+                folder.copy(new_folder)
 
     def pack(self):
         if not self.check_display_apktool_error():
@@ -942,13 +946,10 @@ class Apk:
         mods: list["core.Mod"],
         game_packs: Optional["core.GamePacks"] = None,
     ):
-        if self.is_java() and self.has_script_mods(mods):
-            self.get_smali_handler()  # extracting smali kinda wipes everything so we need to do this first
         for mod in mods:
             self.apply_mod_smali(mod)
         if game_packs is None:
             game_packs = core.GamePacks.from_apk(self)
-        self.set_package_name(self.package_name)
         game_packs.apply_mods(mods)
         self.add_mods_files(mods)
         self.set_allow_backup(True)
