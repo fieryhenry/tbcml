@@ -77,6 +77,33 @@ Note that the above code only works for x86 running version 12.2.0en of the game
 
 If you are running game version 8.4 and older then you do not need to find specific addresses because some debugging symbols are included in the libnative-lib.so library. Game versions 6.10 and older are written in java and so you can mod stuff easier.
 
+8.4.0en example that sets catfood to 45000 when the game saves the save file:
+
+```javascript
+let asave_sym = "_ZN13MyApplication5asaveERKNSt6__ndk112basic_stringIcNS0_11char_traitsIcEENS0_9allocatorIcEEEE" // MyApplication::asave(std::__ndk1::basic_string<char, std::__ndk1::char_traits<char>, std::__ndk1::allocator<char>> const&)
+let asave_address = Module.findExportByName("libnative-lib.so", asave_sym)
+Interceptor.attach(asave_address, {
+    onEnter: function (retval) {
+        let gatya_set_sym = "_ZN15GatyaItemHelper3setEii" // GatyaItemHelper::set(int, int)
+        let gatya_set_address = Module.findExportByName("libnative-lib.so", gatya_set_sym)
+        let gatya_set_func = new NativeFunction(gatya_set_address, 'int', ["int", 'int'])
+        gatya_set_func(22, 45000)
+    }
+});
+```
+
+6.10.0en example that does the same thing:
+
+```javascript
+var MyApplication_init = getJavaClass("jp.co.ponos.battlecats.em");
+
+MyApplication_init["save"].implementation = function () {
+    let GatyaHelper = getJavaClass("jp.co.ponos.battlecats.bv");
+    GatyaHelper.a(22, 45000); // GatyaHelper.set(int, int)
+    this["save"]();
+};
+```
+
 To add the script to your mod you can do the following:
 
 ```python
