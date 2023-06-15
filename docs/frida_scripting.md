@@ -81,7 +81,7 @@ If you are running game version 8.4 and older then you do not need to find speci
 let asave_sym = "_ZN13MyApplication5asaveERKNSt6__ndk112basic_stringIcNS0_11char_traitsIcEENS0_9allocatorIcEEEE" // MyApplication::asave(std::__ndk1::basic_string<char, std::__ndk1::char_traits<char>, std::__ndk1::allocator<char>> const&)
 let asave_address = Module.findExportByName("libnative-lib.so", asave_sym)
 Interceptor.attach(asave_address, {
-    onEnter: function (retval) {
+    onEnter: function (args) {
         let gatya_set_sym = "_ZN15GatyaItemHelper3setEii" // GatyaItemHelper::set(int, int)
         let gatya_set_address = Module.findExportByName("libnative-lib.so", gatya_set_sym)
         let gatya_set_func = new NativeFunction(gatya_set_address, 'int', ["int", 'int'])
