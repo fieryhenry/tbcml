@@ -195,6 +195,21 @@ function writeStdString(address, content) {
         address.add(2 * Process.pointerSize).readPointer().writeUtf8String(content);
 }
 
+function getJavaClass(className) {
+    var classFactory;
+    const classLoaders = Java.enumerateClassLoadersSync();
+    for (const classLoader in classLoaders) {
+        try {
+            classLoaders[classLoader].findClass(className);
+            classFactory = Java.ClassFactory.get(classLoaders[classLoader]);
+            break;
+        } catch (e) {
+            continue;
+        }
+    }
+    return classFactory.use(className);
+}
+
 // Mod scripts goes here.
 """
 
