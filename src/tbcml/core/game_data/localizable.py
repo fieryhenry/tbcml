@@ -1,8 +1,11 @@
+"""This module contains the Localizable class."""
 from typing import Any, Optional
 from tbcml import core
 
 
 class LocalItem:
+    """A class to represent a localizable item."""
+
     def __init__(self, key: str, value: str):
         """Initialize a LocalItem.
 
@@ -117,6 +120,14 @@ class Localizable:
             return None
 
     def get_lang(self) -> str:
+        """Get the language code of the localizable data.
+
+        Raises:
+            ValueError: If the language code is not set.
+
+        Returns:
+            str: The language code.
+        """
         lang = self.get("lang")
         if lang is None:
             raise ValueError("lang is not set")
