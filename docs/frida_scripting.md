@@ -61,6 +61,8 @@ Note that if you do not use the `getBaseAddress()` function, then all addresses 
 
 Here is an example script that leaks any obfuscated strings the game uses such as decryption keys or secret keys:
 
+12.2.0en x86 example:
+
 ```javascript
 let address = getBaseAddress().add(0x7fb370)
 
