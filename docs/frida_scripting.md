@@ -75,7 +75,7 @@ Interceptor.attach(address, { // uint * ObfuscatedString::get(uint *param_1,byte
 
 Note that the above code only works for x86 running version 12.2.0en of the game. You will need to find the correct address for your version of the game and architecture by using a disassembler such as [Ghidra](https://ghidra-sre.org/) or [IDA](https://www.hex-rays.com/products/ida/).
 
-If you are running game version 8.4 and older then you do not need to find specific addresses because some debugging symbols are included in the libnative-lib.so library. Game versions 6.10 and older are written in java and so you can mod stuff easier.
+If you are running game version 8.4 and older then you do not need to find specific addresses because some debugging symbols are included in the libnative-lib.so library. Game versions 6.10 and older are written in java and so you can do stuff with classes, methods and fields directly.
 
 8.4.0en example that sets catfood to 45000 when the game saves the save file:
 
