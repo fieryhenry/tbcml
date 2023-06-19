@@ -68,6 +68,7 @@ from .game_data.cat_base.enemies import (
     Enemy,
     EnemyModel,
 )
+from .game_data.battle.battle_shake_setting import ShakeEffects
 from .game_data.localizable import Localizable
 from .game_data.gamototo.cannon import Castles
 from .game_data.map.map import Maps

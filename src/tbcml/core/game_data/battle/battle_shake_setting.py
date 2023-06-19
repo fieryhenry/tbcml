@@ -108,6 +108,8 @@ class ShakeEffects:
         Returns:
             ShakeEffects: The ShakeEffects loaded from the game data.
         """
+        if game_data.shake_effects is not None:
+            return game_data.shake_effects
         file = game_data.find_file(ShakeEffects.get_file_name())
         if file is None:
             return ShakeEffects.create_empty()
@@ -130,7 +132,9 @@ class ShakeEffects:
                 reset_frame,
                 priority,
             )
-        return ShakeEffects(effects)
+        effects_o = ShakeEffects(effects)
+        game_data.shake_effects = effects_o
+        return effects_o
 
     def to_game_data(self, game_data: "core.GamePacks"):
         """Writes the ShakeEffects to the game data.
@@ -201,3 +205,18 @@ class ShakeEffects:
                 effect.apply_dict(effect_data)
                 current_effects[effect_id] = effect
             self.effects = current_effects
+
+    @staticmethod
+    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
+        """Apply a mod to a GamePacks object.
+
+        Args:
+            mod (core.Mod): The mod.
+            game_data (GamePacks): The GamePacks object.
+        """
+        effect_data = mod.mod_edits.get("effects")
+        if effect_data is None:
+            return
+        effects = ShakeEffects.from_game_data(game_data)
+        effects.apply_dict(effect_data)
+        effects.to_game_data(game_data)

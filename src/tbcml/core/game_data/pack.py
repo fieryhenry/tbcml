@@ -392,6 +392,7 @@ class GamePacks:
         self.enemy_names: Optional[core.EnemyNames] = None
         self.castles: Optional[core.Castles] = None
         self.maps: Optional[core.Maps] = None
+        self.shake_effects: Optional[core.ShakeEffects] = None
 
     def get_pack(self, pack_name: str) -> Optional["PackFile"]:
         """Get a pack from the game packs.
@@ -564,6 +565,7 @@ class GamePacks:
         core.Castles.apply_mod_to_game_data(mod, self)
         core.Maps.apply_mod_to_game_data(mod, self)
         core.Localizable.apply_mod_to_game_data(mod, self)
+        core.ShakeEffects.apply_mod_to_game_data(mod, self)
 
         for file_name, data in mod.game_files.items():
             self.set_file(file_name, data)
