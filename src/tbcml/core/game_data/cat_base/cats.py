@@ -629,12 +629,12 @@ class CatStats:
                 ).get_value()
             self.assign(current_raw_stats)
 
-    def to_dict(self) -> dict[int, Any]:
+    def to_dict(self) -> dict[str, Any]:
         raw_stats = self.to_raw_data()
         data: dict[int, Any] = {}
         for stat_id, stat_value in enumerate(raw_stats):
             data[stat_id] = stat_value
-        return data
+        return {"raw_stats": data}
 
     @staticmethod
     def create_empty(cat_id: int, form: CatFormType) -> "CatStats":
@@ -1040,6 +1040,13 @@ class UnitBuyData:
     def create_empty(cat_id: int) -> "UnitBuyData":
         return UnitBuyData(cat_id, [0] * 63)
 
+    def to_dict(self) -> dict[str, Any]:
+        raw_data = self.to_raw_data()
+        data: dict[int, Any] = {}
+        for stat_id, value in enumerate(raw_data):
+            data[stat_id] = value
+        return {"raw_data": data}
+
 
 class UnitBuy:
     def __init__(self, unit_buy_data: dict[int, UnitBuyData]):
@@ -1113,6 +1120,11 @@ class Talent:
         raw_data = dict_data.get("raw_data")
         if raw_data is not None:
             self.raw_data = raw_data
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "raw_data": self.raw_data,
+        }
 
 
 class Talents:
@@ -1239,6 +1251,18 @@ class NyankoPictureBookData:
     def create_empty(cat_id: int) -> "NyankoPictureBookData":
         return NyankoPictureBookData(cat_id, False, False, 0, 0, 0, 0, 0, 0)
 
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "is_displayed_in_catguide": self.is_displayed_in_catguide,
+            "limited": self.limited,
+            "total_forms": self.total_forms,
+            "hint_display_type": self.hint_display_type,
+            "scale_0": self.scale_0,
+            "scale_1": self.scale_1,
+            "scale_2": self.scale_2,
+            "scale_3": self.scale_3,
+        }
+
 
 class NyankoPictureBook:
     def __init__(self, data: dict[int, NyankoPictureBookData]):
@@ -1328,6 +1352,9 @@ class EvolveTextCat:
     @staticmethod
     def create_empty(cat_id: int) -> "EvolveTextCat":
         return EvolveTextCat(cat_id, {})
+
+    def to_dict(self) -> dict[Any, Any]:
+        return {evolve: text.text for evolve, text in self.text.items()}
 
 
 class EvolveText:
@@ -1609,6 +1636,17 @@ class Cat:
             NyankoPictureBookData.create_empty(cat_id),
             None,
         )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "forms": {k.get_index(): v.to_dict() for k, v in self.forms.items()},
+            "unit_buy": self.unit_buy_data.to_dict(),
+            "talent": self.talent.to_dict() if self.talent is not None else None,
+            "nyanko_picture_book": self.nyanko_picture_book_data.to_dict(),
+            "evolve_text": self.evolve_text.to_dict()
+            if self.evolve_text is not None
+            else None,
+        }
 
 
 class Cats:

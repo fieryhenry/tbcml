@@ -241,6 +241,13 @@ class EnemyStats:
     def create_empty(enemy_id: int) -> "EnemyStats":
         return EnemyStats(enemy_id, [])
 
+    def to_dict(self) -> dict[str, Any]:
+        raw_stats = self.to_raw_data()
+        data: dict[int, Any] = {}
+        for stat_id, stat_value in enumerate(raw_stats):
+            data[stat_id] = stat_value
+        return {"raw_stats": data}
+
 
 class EnemyStatsData:
     def __init__(self, stats: dict[int, EnemyStats]):
@@ -350,6 +357,9 @@ class EnemyModel:
         model = dict_data.get("model")
         if model is not None:
             self.model.apply_dict(model)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"model": self.model.to_dict()}
 
     @staticmethod
     def create_empty(enemy_id: int) -> "EnemyModel":
@@ -552,6 +562,15 @@ class Enemy:
         enemy_icon = dict_data.get("enemy_icon")
         if enemy_icon is not None:
             self.enemy_icon = enemy_icon
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "stats": self.stats.to_dict(),
+            "name": self.name,
+            "description": self.description,
+            "anim": self.anim.to_dict(),
+            "enemy_icon": self.enemy_icon.to_dict(),
+        }
 
     @staticmethod
     def create_empty(enemy_id: int) -> "Enemy":
