@@ -886,19 +886,33 @@ class Apk:
             manifest.set_attribute(path, "android:debuggable", "false")
         self.set_manifest(manifest)
 
+    def load_strings_xml(self) -> "core.XML":
+        strings_xml = self.extracted_path.add("res").add("values").add("strings.xml")
+        return core.XML(strings_xml.read())
+
+    def save_strings_xml(self, strings_xml: "core.XML"):
+        strings_xml.to_file(
+            self.extracted_path.add("res").add("values").add("strings.xml")
+        )
+
+    def edit_xml_string(self, name: str, value: str):
+        strings_xml = self.load_strings_xml()
+        strings = strings_xml.get_elements("string")
+        for string in strings:
+            if string.get("name") == name:
+                string.text = value
+                break
+        self.save_strings_xml(strings_xml)
+
+    def set_app_name(self, name: str):
+        self.edit_xml_string("app_name", name)
+
     def set_package_name(self, package_name: str):
         self.package_name = package_name
         manifest = self.parse_manifest()
         manifest.set_attribute("manifest", "package", package_name)
 
-        strings_xml = self.extracted_path.add("res").add("values").add("strings.xml")
-        strings_o = core.XML(strings_xml.read())
-        strings = strings_o.get_elements("string")
-        for string in strings:
-            if string.get("name") == "package_name":
-                string.text = package_name
-                break
-        strings_o.to_file(strings_xml)
+        self.edit_xml_string("package_name", package_name)
 
         path = "application/provider"
         for provider in manifest.get_elements(path):
