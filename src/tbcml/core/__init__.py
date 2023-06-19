@@ -85,6 +85,7 @@ from .game_data.gamototo.engineers import EngineerLimit, EngineerAnim
 from .game_data.gamototo.ototo_anim import OtotoAnim
 
 from .game_data.base_ability import BaseAbilities
+from .game_data.bcu import BCUZip
 
 from .game_data.map.map import Maps
 from .anim.model import Model
