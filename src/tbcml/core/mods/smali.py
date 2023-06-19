@@ -1,10 +1,13 @@
+"""A module for injecting smali code into the APK."""
 from typing import Optional
+
 from androguard.core.bytecodes.apk import APK  # type: ignore
+
 from tbcml import core
 
 
 class Smali:
-    """Represents a smali class to inject into the main activity's onCreate method"""
+    """A class to represent a smali file."""
 
     def __init__(self, class_code: str, class_name: str, function_sig_to_call: str):
         """Initializes the Smali
@@ -19,23 +22,57 @@ class Smali:
         self.function_sig_to_call = function_sig_to_call
 
     @staticmethod
-    def from_file(path: "core.Path", class_name: str, function_sig_to_call: str):
+    def from_file(
+        path: "core.Path", class_name: str, function_sig_to_call: str
+    ) -> "Smali":
+        """Creates a Smali from a smali file.
+
+        Args:
+            path (core.Path): Path to the smali file
+            class_name (str): Class name to use
+            function_sig_to_call (str): The signature of the function to call to run the class code
+
+        Returns:
+            Smali: The created Smali
+        """
         data = path.read().to_str()
         return Smali(data, class_name, function_sig_to_call)
 
 
 class SmaliSet:
+    """A class to represent a set of smali files."""
+
     def __init__(self, smali_edits: dict[str, Smali]):
+        """Initializes the SmaliSet
+
+        Args:
+            smali_edits (dict[str, Smali]): The smali edits
+        """
         self.smali_edits = smali_edits
 
     def is_empty(self) -> bool:
+        """Checks if the SmaliSet is empty.
+
+        Returns:
+            bool: Whether the SmaliSet is empty
+        """
         return len(self.smali_edits) == 0
 
     @staticmethod
     def create_empty() -> "SmaliSet":
+        """Creates an empty SmaliSet.
+
+        Returns:
+            SmaliSet: The created SmaliSet
+        """
         return SmaliSet({})
 
     def add_to_zip(self, zip_file: "core.Zip"):
+        """Adds the SmaliSet to a mod zip.
+
+        Args:
+            zip_file (core.Zip): The zip file to add the SmaliSet to
+        """
         base_path = core.Path("smali")
         for smali in self.smali_edits.values():
             json_data = core.JsonFile.from_object(
@@ -49,6 +86,14 @@ class SmaliSet:
 
     @staticmethod
     def from_zip(zip_file: "core.Zip") -> "SmaliSet":
+        """Creates a SmaliSet from a mod zip.
+
+        Args:
+            zip_file (core.Zip): The zip file to create the SmaliSet from
+
+        Returns:
+            SmaliSet: The created SmaliSet
+        """
         base_path = core.Path("smali")
         smali_edits = {}
         for file in zip_file.get_paths():
@@ -74,17 +119,32 @@ class SmaliSet:
         return SmaliSet(smali_edits)
 
     def import_smali(self, other: "SmaliSet"):
+        """Imports the smali from another SmaliSet.
+
+        Args:
+            other (SmaliSet): The SmaliSet to import from
+        """
         self.smali_edits.update(other.smali_edits)
 
     def add(self, smali: Smali):
+        """Adds a Smali to the SmaliSet.
+
+        Args:
+            smali (Smali): The Smali to add
+        """
         self.smali_edits[smali.class_name] = smali
 
     def get_list(self) -> list[Smali]:
+        """Gets the SmaliSet as a list.
+
+        Returns:
+            list[Smali]: The SmaliSet as a list
+        """
         return list(self.smali_edits.values())
 
 
 class SmaliHandler:
-    """Injects smali code into the main activity's onCreate method. Some code and inspiration from
+    """Injects smali into an apk.
     https://github.com/ksg97031/frida-gadget"""
 
     def __init__(self, apk: "core.Apk"):
