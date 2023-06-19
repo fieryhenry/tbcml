@@ -153,6 +153,14 @@ class Mod:
         self.init_scripts()
         self.init_smali()
 
+    def add_contributor(self, contributor: str):
+        if contributor not in self.contributors:
+            self.contributors.append(contributor)
+
+    def add_bcu_contributor(self, contributor: str):
+        if contributor not in self.contributors:
+            self.add_contributor(f"{contributor} (BCU)")
+
     @staticmethod
     def get_extension() -> str:
         return ".bcmod"
