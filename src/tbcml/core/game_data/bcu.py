@@ -413,7 +413,7 @@ class BCUCat:
         unit_buy: "core.UnitBuyData",
         talent: Optional["core.Talent"],
         npbd: "core.NyankoPictureBookData",
-        evov_text: list[str],
+        evov_text: "core.EvolveTextCat",
         cat_id: int,
     ) -> "core.Cat":
         forms: dict[core.CatFormType, core.CatForm] = {}
@@ -430,7 +430,7 @@ class BCUCat:
             unit_buy,
             talent,
             npbd,
-            core.EvolveTextCat(cat_id, {0: core.EvolveTextText(0, evov_text)}),
+            evov_text,
         )
         unit.nyanko_picture_book_data.is_displayed_in_catguide = True
         unit.unit_buy_data.game_version = (
@@ -724,10 +724,8 @@ class BCUZip:
     def __init__(
         self,
         enc_data: "core.Data",
-        cc: "core.CountryCode",
     ):
         self.enc_data = enc_data
-        self.cc = cc
         self.iv, self.key = self.get_iv_key()
         self.json, self.enc_file_data = self.decrypt()
         self.read_json_info()
@@ -740,8 +738,8 @@ class BCUZip:
         self.enemies = self.load_enemies()
 
     @staticmethod
-    def from_path(path: "core.Path", cc: "core.CountryCode") -> "BCUZip":
-        return BCUZip(core.Data.from_file(path), cc)
+    def from_path(path: "core.Path") -> "BCUZip":
+        return BCUZip(core.Data.from_file(path))
 
     def get_iv_key(self) -> tuple["core.Data", "core.Data"]:
         iv_str = "battlecatsultimate"
@@ -814,6 +812,9 @@ class BCUZip:
             file_dir.generate_dirs()
             file.data.to_file(file_path)
 
+        json_path = output_dir.add("info.json")
+        self.json.to_data().to_file(json_path)
+
     def get_name(self) -> str:
         return self.names["dat"][0]["val"]
 
@@ -853,3 +854,52 @@ class BCUZip:
             )
             enemies.append(enemy)
         return enemies
+
+    def apply_to_mod(
+        self,
+        mod: "core.Mod",
+        game_data: "core.GamePacks",
+        cat_ids: Optional[list[int]] = None,
+        enemy_ids: Optional[list[int]] = None,
+    ):
+        mod.add_contributor(self.author)
+        cats = self.load_units()
+        if cat_ids is None:
+            cat_ids = list(range(len(cats)))
+
+        unit_buy = core.UnitBuy.from_game_data(game_data)
+        talents = core.Talents.from_game_data(game_data)
+        nyanko_picture_book = core.NyankoPictureBook.from_game_data(game_data)
+        evolve_text = core.EvolveText.from_game_data(game_data)
+
+        for cat, id in zip(cats, cat_ids):
+            unit_buy_data = unit_buy.unit_buy_data.get(
+                id, core.UnitBuyData.create_empty(id)
+            )
+            talent = talents.talents.get(id)
+            nyanko_picture_book_data = nyanko_picture_book.data.get(
+                id, core.NyankoPictureBookData.create_empty(id)
+            )
+            evolve_text_data = evolve_text.text.get(
+                id, core.EvolveTextCat.create_empty(id)
+            )
+            cat_object = cat.to_cat(
+                unit_buy_data,
+                talent,
+                nyanko_picture_book_data,
+                evolve_text_data,
+                id,
+            )
+            mod_edit = cat_object.to_dict()
+            mod_edit = core.ModEdit(["cats", id], mod_edit)
+            mod.add_mod_edit(mod_edit)
+
+        enemies = self.load_enemies()
+        if enemy_ids is None:
+            enemy_ids = list(range(len(enemies)))
+
+        for enemy, id in zip(enemies, enemy_ids):
+            enemy_object = enemy.to_enemy(id)
+            mod_edit = enemy_object.to_dict()
+            mod_edit = core.ModEdit(["enemies", id], mod_edit)
+            mod.add_mod_edit(mod_edit)
