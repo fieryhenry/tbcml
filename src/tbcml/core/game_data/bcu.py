@@ -862,7 +862,7 @@ class BCUZip:
         cat_ids: Optional[list[int]] = None,
         enemy_ids: Optional[list[int]] = None,
     ):
-        mod.add_contributor(self.author)
+        mod.add_bcu_contributor(self.author)
         cats = self.load_units()
         if cat_ids is None:
             cat_ids = list(range(len(cats)))
