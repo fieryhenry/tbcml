@@ -1,3 +1,4 @@
+"""Handles HTTP requests."""
 from typing import Callable, Optional
 
 import requests

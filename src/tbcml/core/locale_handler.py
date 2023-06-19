@@ -1,3 +1,4 @@
+"""Handles locale files."""
 from tbcml import core
 
 

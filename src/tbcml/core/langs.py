@@ -1,3 +1,4 @@
+"""Contains the Languages enum."""
 import enum
 
 

@@ -1,12 +1,13 @@
+"""Module for handling game server stuff"""
 import base64
 import datetime
 import json
 import time
 
+import requests
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
-import requests
 
 from tbcml import core
 

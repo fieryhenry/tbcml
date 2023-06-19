@@ -1,4 +1,6 @@
+"""A module containing the GameVersion class."""
 from typing import Any, Optional
+
 from tbcml import core
 
 

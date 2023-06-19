@@ -1,9 +1,12 @@
+"""A module for cryptography."""
 import enum
 import hashlib
 import hmac
 import random
 from typing import Optional, Union
-from Cryptodome.Cipher import AES, _mode_ecb, _mode_cbc
+
+from Cryptodome.Cipher import AES, _mode_cbc, _mode_ecb
+
 from tbcml import core
 
 
@@ -126,6 +129,17 @@ class AesCipher:
 
     @staticmethod
     def get_key_iv_from_cc(cc: "core.CountryCode") -> tuple[str, str]:
+        """Gets the key and iv from the country code.
+
+        Args:
+            cc (core.CountryCode): The country code.
+
+        Raises:
+            ValueError: Unknown country code.
+
+        Returns:
+            tuple[str, str]: The key and iv.
+        """
         if cc == core.CountryCode.JP:
             key = "d754868de89d717fa9e7b06da45ae9e3"
             iv = "40b2131a9f388ad4e5002a98118f6128"
@@ -157,6 +171,9 @@ class AesCipher:
             cc (country_code.CountryCode): The country code.
             pack_name (str): The pack name.
             gv (game_version.GameVersion): The game version.
+            force_server (bool, optional): Whether to force the decryption to use the server key. Defaults to False.
+            key (Optional[str], optional): The key to use. Defaults to None.
+            iv (Optional[str], optional): The iv to use. Defaults to None.
 
         Raises:
             Exception: Unknown country code.
@@ -181,8 +198,7 @@ class AesCipher:
             aes_mode = AES.MODE_ECB
             key = Hash(HashAlgorithm.MD5).get_hash(core.Data("battlecats"), 8).to_hex()
             return AesCipher(key.encode("utf-8"), None, aes_mode, enable)
-        else:
-            return AesCipher(bytes.fromhex(key), bytes.fromhex(iv), aes_mode, enable)
+        return AesCipher(bytes.fromhex(key), bytes.fromhex(iv), aes_mode, enable)
 
 
 class Hmac:

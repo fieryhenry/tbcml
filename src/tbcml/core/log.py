@@ -5,6 +5,10 @@ from tbcml import core
 
 
 class Logger:
+    """
+    Handles logging
+    """
+
     def __init__(self):
         """
         Initializes a Logger object
