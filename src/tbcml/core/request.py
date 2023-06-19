@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional
+from typing import Callable, Optional
 
 import requests
 
