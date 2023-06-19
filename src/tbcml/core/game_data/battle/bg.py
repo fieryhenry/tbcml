@@ -142,6 +142,8 @@ class Bgs:
         Returns:
             Bgs: A Bgs object if the file was found, None otherwise.
         """
+        if game_data.bgs is not None:
+            return game_data.bgs
         file = game_data.find_file(Bgs.get_file_name())
         if file is None:
             return Bgs.create_empty()
@@ -188,7 +190,9 @@ class Bgs:
                 is_upper_side_bg_enabled,
                 extra,
             )
-        return Bgs(bgs)
+        bgs_obj = Bgs(bgs)
+        game_data.bgs = bgs_obj
+        return bgs_obj
 
     def to_game_data(self, game_data: "core.GamePacks"):
         """Writes the Bgs object to the game data.
@@ -293,3 +297,18 @@ class Bgs:
                 bg = Bg.create_empty(id)
             bg.apply_dict(modded_bg)
             self.bgs[id] = bg
+
+    @staticmethod
+    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
+        """Apply a mod to a GamePacks object.
+
+        Args:
+            mod (core.Mod): The mod.
+            game_data (GamePacks): The GamePacks object.
+        """
+        bgs_data = mod.mod_edits.get("bgs")
+        if bgs_data is None:
+            return
+        bgs = Bgs.from_game_data(game_data)
+        bgs.apply_dict(bgs_data)
+        bgs.to_game_data(game_data)

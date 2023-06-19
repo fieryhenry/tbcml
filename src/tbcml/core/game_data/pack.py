@@ -393,6 +393,7 @@ class GamePacks:
         self.castles: Optional[core.Castles] = None
         self.maps: Optional[core.Maps] = None
         self.shake_effects: Optional[core.ShakeEffects] = None
+        self.bgs: Optional[core.Bgs] = None
 
     def get_pack(self, pack_name: str) -> Optional["PackFile"]:
         """Get a pack from the game packs.
