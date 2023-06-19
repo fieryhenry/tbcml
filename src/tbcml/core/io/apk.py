@@ -427,7 +427,7 @@ class Apk:
                 }
             )
             stream = scraper.get(url, stream=True, timeout=10)
-            total_length = int(stream.headers.get("content-length"))  # type: ignore
+            _total_length = int(stream.headers.get("content-length"))  # type: ignore
             dl = 0
             chunk_size = 1024
             buffer: list[bytes] = []

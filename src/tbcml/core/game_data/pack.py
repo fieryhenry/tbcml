@@ -488,7 +488,7 @@ class GamePacks:
             data (core.Data): The data of the file.
 
         Raises:
-            Exception: If the pack could not be found.
+            FileNotFoundError: If the file is not found.
 
         Returns:
             Optional[GameFile]: The file if it exists, None otherwise.
@@ -504,17 +504,17 @@ class GamePacks:
             if pack is None:
                 pack = self.get_pack("datalocal2")
             if pack is None:
-                raise Exception("Could not find pack")
+                raise FileNotFoundError("Could not find pack")
             file = GameFile(data, file_name, pack.pack_name, self.country_code, self.gv)
         if file.dec_data == data:
             return file
         new_pack_name = PackFile.convert_pack_name_server_local(file.pack_name)
         pack = self.get_pack(new_pack_name)
         if pack is None:
-            raise Exception(f"Could not find pack {new_pack_name}")
+            raise FileNotFoundError(f"Could not find pack {new_pack_name}")
         file = pack.set_file(file_name, data)
         if file is None:
-            raise Exception(f"Could not set file {file_name}")
+            raise FileNotFoundError(f"Could not set file {file_name}")
         self.modified_packs[file.pack_name] = True
         return file
 

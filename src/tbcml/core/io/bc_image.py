@@ -1,7 +1,9 @@
 from typing import Any, Optional
-from tbcml import core
+
 from PIL import Image
 from PyQt5.QtGui import QImage
+
+from tbcml import core
 
 
 class BCImage:
@@ -48,9 +50,11 @@ class BCImage:
 
     @staticmethod
     def from_size(width: int, height: int):
-        image = BCImage(core.Data())
-        image.__image = Image.new("RGBA", (width, height))
-        return image
+        image = Image.new("RGBA", (width, height))
+        image_data = core.Data()
+        bytes_io = image_data.to_bytes_io()
+        image.save(bytes_io, format="PNG")
+        return BCImage(core.Data(bytes_io.getvalue()))
 
     def crop(self, x1: int, y1: int, x2: int, y2: int) -> "BCImage":
         dt = self.image.crop((x1, y1, x2, y2))

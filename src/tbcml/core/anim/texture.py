@@ -136,12 +136,19 @@ class Texture:
         rects: list["core.Rect"],
         metadata: "TexMetadata",
         imgcut_name: str,
+        img_name: Optional[str] = None,
     ):
         self.image = image
         self.rects = rects
         self.metadata = metadata
         self.imgcut_name = imgcut_name
         self.cuts: list[CutTexture] = []
+        if img_name is not None:
+            self.metadata.set_img_name(img_name)
+
+    @property
+    def img_name(self) -> str:
+        return self.metadata.img_name
 
     @staticmethod
     def load(png_name: str, imgcut_name: str, game_packs: "core.GamePacks"):
@@ -173,7 +180,7 @@ class Texture:
                 return Texture.create_empty()
             rects.append(rect_)
 
-        return Texture(core.BCImage(png_data), rects, meta_data, imgcut_name)
+        return Texture(core.BCImage(png_data), rects, meta_data, imgcut_name, png_name)
 
     @staticmethod
     def create_empty():

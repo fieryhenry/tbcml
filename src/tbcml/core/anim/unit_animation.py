@@ -391,7 +391,7 @@ class KeyFrames:
                 next_keyframe_start_frame,
             )
         else:
-            raise Exception("Unknown ease mode")
+            raise ValueError("Invalid ease mode")
 
     def add_keyframe(self, keyframe: "KeyFrame"):
         self.keyframes.append(keyframe)

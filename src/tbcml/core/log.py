@@ -1,6 +1,7 @@
 """Module for handling logging"""
-from tbcml import core
 import time
+
+from tbcml import core
 
 
 class Logger:

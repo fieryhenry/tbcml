@@ -33,7 +33,7 @@ class RequestHandler:
         Returns:
             requests.Response: Response from the server.
         """
-        return requests.get(self.url, headers=self.headers)
+        return requests.get(self.url, headers=self.headers, timeout=15)
 
     def get_stream(
         self,
@@ -48,6 +48,7 @@ class RequestHandler:
             headers=self.headers,
             stream=True,
             hooks=dict(response=self.__progress_hook()),
+            timeout=15,
         )
 
     def __progress_hook(
@@ -59,7 +60,7 @@ class RequestHandler:
             Callable[[requests.Response], None]: Hook to pass to requests.
         """
 
-        def hook(response: requests.Response, *args: Any, **kwargs: Any) -> None:
+        def hook(response: requests.Response) -> None:
             """Hook to pass to requests.
 
             Args:
@@ -84,4 +85,6 @@ class RequestHandler:
         Returns:
             requests.Response: Response from the server.
         """
-        return requests.post(self.url, headers=self.headers, data=self.data.data)
+        return requests.post(
+            self.url, headers=self.headers, data=self.data.data, timeout=15
+        )

@@ -76,31 +76,41 @@ class ModelPart:
         self.children: list[ModelPart] = []
         self.keyframes_sets: list[core.KeyFrames] = []
         self.model: Optional[core.Model] = None
-        self.scale_unit: int
-        self.angle_unit: int
-        self.alpha_unit: int
+
+        self.scale_unit = 0
+        self.gsca = 0
+        self.angle_unit = 0
+        self.alpha_unit = 0
+
+        self.h_flip = False
+        self.v_flip = False
+
+        self.real_scale_x = 0
+        self.real_scale_y = 0
+        self.real_alpha = 0
+        self.real_rotation = 0
 
         self.__scale_x = None
         self.__scale_y = None
         self.__sv_x = None
         self.__sv_y = None
 
+        self.ints: list[list[int]] = []
+
         self.units_set = False
+        self.rect = core.Rect.create_empty()
+        self.image = core.BCImage.create_empty()
 
     def load_texs(self):
         """Loads the texture and rect for the part."""
         if self.model is None:
             return
         rct = self.model.tex.get_rect(self.rect_id)
-        if rct is None:
-            self.rect = core.Rect.create_empty()
-        else:
+        if rct is not None:
             self.rect = rct
 
         img = self.model.tex.get_image(self.rect_id)
-        if img is None:
-            self.image = core.BCImage.create_empty()
-        else:
+        if img is not None:
             self.image = img
 
     def set_rect(self, rect_id: int):

@@ -115,8 +115,8 @@ class ServerFileHandler:
         data = resp.content
         try:
             zipf = core.Zip(core.Data(data))
-        except Exception:
-            raise ValueError("Invalid zip data")
+        except Exception as exc:
+            raise ValueError("Invalid zip data") from exc
         return zipf
 
     def extract(
@@ -371,7 +371,7 @@ class EventData:
         """
         output = self.algorithm + " "
         output += f"Credential={self.aws_access_key_id}/{self.get_date()}/{self.region}/{self.service}/{self.request}, "
-        output += f"SignedHeaders=host;x-amz-content-sha256;x-amz-date, "
+        output += "SignedHeaders=host;x-amz-content-sha256;x-amz-date, "
         signature = self.get_signing_key(self.get_amz_date())
         output += f"Signature={signature.to_hex()}"
 

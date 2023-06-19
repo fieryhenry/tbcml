@@ -139,7 +139,7 @@ class AesCipher:
             key = "313d9858a7fb939def1d7d859629087d"
             iv = "0e3743eb53bf5944d1ae7e10c2e54bdf"
         else:
-            raise Exception("Unknown country code")
+            raise ValueError("Unknown country code")
         return key, iv
 
     @staticmethod

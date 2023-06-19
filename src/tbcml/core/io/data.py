@@ -234,8 +234,8 @@ class Data:
     def unpad_pkcs7(self) -> "Data":
         try:
             pad = self.data[-1]
-        except IndexError:
-            raise ValueError("Cannot unpad empty data")
+        except IndexError as exc:
+            raise ValueError("Cannot unpad empty data") from exc
         if pad > len(self.data):
             raise ValueError("Invalid padding")
         if self.data[-pad:] != bytes([pad] * pad):
@@ -249,8 +249,8 @@ class Data:
     def unpad_zeroes(self) -> "Data":
         try:
             pad = self.data[-1]
-        except IndexError:
-            raise ValueError("Cannot unpad empty data")
+        except IndexError as exc:
+            raise ValueError("Cannot unpad empty data") from exc
         if pad > len(self.data):
             raise ValueError("Invalid padding")
         if self.data[-pad:] != bytes([0] * pad):

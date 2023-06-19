@@ -14,7 +14,7 @@ class YamlFile:
             self.save()
 
     def save(self) -> None:
-        with open(self.path.path, "w") as f:
+        with open(self.path.path, "w", encoding="utf-8") as f:
             yaml.dump(self.yaml, f)
 
     def __getitem__(self, key: str) -> Any:

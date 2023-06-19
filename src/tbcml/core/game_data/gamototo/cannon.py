@@ -195,9 +195,6 @@ class BaseDecoRecipe:
 
 
 class BaseRecipe(BaseDecoRecipe):
-    def __init__(self, index: int, levels: dict[int, BaseDecoRecipeLevel]):
-        super().__init__(index, levels)
-
     @staticmethod
     def get_file_name(id: int) -> str:
         id_str = core.PaddedInt(id, 3)
@@ -214,9 +211,6 @@ class BaseRecipe(BaseDecoRecipe):
 
 
 class DecoRecipe(BaseDecoRecipe):
-    def __init__(self, index: int, levels: dict[int, BaseDecoRecipeLevel]):
-        super().__init__(index, levels)
-
     @staticmethod
     def get_file_name(id: int) -> str:
         id_str = core.PaddedInt(id, 3)

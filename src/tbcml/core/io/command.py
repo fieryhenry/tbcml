@@ -18,6 +18,8 @@ class Command:
     def __init__(self, command: str, display_output: bool = True):
         self.command = command
         self.display_output = display_output
+        self.process = None
+        self.thread = None
 
     def run(self, inputData: str = "\n") -> Result:
         self.process = subprocess.Popen(
