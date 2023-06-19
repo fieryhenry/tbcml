@@ -43,13 +43,17 @@ class EngineerLimit:
 
     @staticmethod
     def from_game_data(game_data: "core.GamePacks") -> "EngineerLimit":
+        if game_data.engineer_limit is not None:
+            return game_data.engineer_limit
         file = game_data.find_file(EngineerLimit.get_file_name())
         if file is None:
             return EngineerLimit.create_empty()
         csv = core.CSV(file.dec_data)
-        return EngineerLimit(
+        limit = EngineerLimit(
             int(csv.lines[0][0]),
         )
+        game_data.engineer_limit = limit
+        return limit
 
     def to_game_data(self, game_data: "core.GamePacks"):
         file = game_data.find_file(EngineerLimit.get_file_name())
@@ -64,7 +68,22 @@ class EngineerLimit:
         return EngineerLimit(0)
 
     def apply_dict(self, dict_data: dict[str, Any]):
-        self.limit = dict_data.get("limit", self.limit)
+        self.limit = dict_data.get("engineer_limit", self.limit)
+
+    @staticmethod
+    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
+        """Apply a mod to a GamePacks object.
+
+        Args:
+            mod (core.Mod): The mod.
+            game_data (GamePacks): The GamePacks object.
+        """
+        engineer_limit_data = mod.mod_edits.get("engineer_limit")
+        if engineer_limit_data is None:
+            return
+        engineer_limit = EngineerLimit.from_game_data(game_data)
+        engineer_limit.apply_dict(mod.mod_edits)
+        engineer_limit.to_game_data(game_data)
 
 
 class EngineerAnim:
@@ -111,6 +130,8 @@ class EngineerAnim:
 
     @staticmethod
     def from_game_data(game_data: "core.GamePacks") -> "EngineerAnim":
+        if game_data.engineer_anim is not None:
+            return game_data.engineer_anim
         an = core.Model.load(
             EngineerAnim.FilePath.MAMODEL.value,
             EngineerAnim.FilePath.IMGCUT.value,
@@ -118,7 +139,9 @@ class EngineerAnim:
             EngineerAnim.FilePath.get_all_maanims_names(),
             game_data,
         )
-        return EngineerAnim(an)
+        anim = EngineerAnim(an)
+        game_data.engineer_anim = anim
+        return anim
 
     def to_game_data(self, game_data: "core.GamePacks"):
         self.model.save(game_data)
@@ -129,4 +152,19 @@ class EngineerAnim:
         return EngineerAnim(an)
 
     def apply_dict(self, dict_data: dict[str, Any]):
-        self.model.apply_dict(dict_data["model"])
+        self.model.apply_dict(dict_data["engineer_model"])
+
+    @staticmethod
+    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
+        """Apply a mod to a GamePacks object.
+
+        Args:
+            mod (core.Mod): The mod.
+            game_data (GamePacks): The GamePacks object.
+        """
+        engineer_model_data = mod.mod_edits.get("engineer_model")
+        if engineer_model_data is None:
+            return
+        engineer_model = EngineerAnim.from_game_data(game_data)
+        engineer_model.apply_dict(mod.mod_edits)
+        engineer_model.to_game_data(game_data)

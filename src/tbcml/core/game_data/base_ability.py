@@ -72,6 +72,8 @@ class BaseAbilities:
 
     @staticmethod
     def from_game_data(game_data: "core.GamePacks") -> "BaseAbilities":
+        if game_data.base_abilities is not None:
+            return game_data.base_abilities
         file = game_data.find_file("AbilityData.csv")
         if file is None:
             return BaseAbilities.create_empty()
@@ -95,7 +97,9 @@ class BaseAbilities:
             )
             abilitise[i] = BaseAbility(i, data)
 
-        return BaseAbilities(abilitise)
+        abilities = BaseAbilities(abilitise)
+        game_data.base_abilities = abilities
+        return abilities
 
     def to_game_data(self, game_data: "core.GamePacks"):
         file = game_data.find_file(self.get_file_name())
@@ -153,3 +157,18 @@ class BaseAbilities:
     @staticmethod
     def create_empty() -> "BaseAbilities":
         return BaseAbilities({})
+
+    @staticmethod
+    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
+        """Apply a mod to a GamePacks object.
+
+        Args:
+            mod (core.Mod): The mod.
+            game_data (GamePacks): The GamePacks object.
+        """
+        abilities_data = mod.mod_edits.get("abilities")
+        if abilities_data is None:
+            return
+        abilities = BaseAbilities.from_game_data(game_data)
+        abilities.apply_dict(mod.mod_edits)
+        abilities.to_game_data(game_data)

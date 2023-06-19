@@ -61,6 +61,8 @@ class UserRankReward:
 
     @staticmethod
     def from_game_data(game_data: "core.GamePacks") -> "UserRankReward":
+        if game_data.user_rank_reward is not None:
+            return game_data.user_rank_reward
         csv_data = game_data.find_file(UserRankReward.get_file_name())
 
         if csv_data is None:
@@ -89,7 +91,9 @@ class UserRankReward:
                 rewards.append(Reward(reward_id, reward_amout))
             reward_sets[i] = RewardSet(i, reward_threshold, rewards, text)
 
-        return UserRankReward(reward_sets)
+        urr = UserRankReward(reward_sets)
+        game_data.user_rank_reward = urr
+        return urr
 
     def to_game_data(self, game_data: "core.GamePacks") -> None:
         csv_data = game_data.find_file(UserRankReward.get_file_name())
@@ -139,7 +143,7 @@ class UserRankReward:
         game_data.set_file(UserRankReward.get_file_name_text(), tsv.to_data())
 
     def apply_dict(self, dict_data: dict[str, Any]):
-        reward_sets = dict_data.get("reward_sets")
+        reward_sets = dict_data.get("user_rank_reward_sets")
         if reward_sets is not None:
             current_reward_sets = {
                 i: reward_set for i, reward_set in self.reward_sets.items()
@@ -164,3 +168,18 @@ class UserRankReward:
     def set_reward(self, index: int, reward: RewardSet) -> None:
         reward.index = index
         self.reward_sets[index] = reward
+
+    @staticmethod
+    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
+        """Apply a mod to a GamePacks object.
+
+        Args:
+            mod (core.Mod): The mod.
+            game_data (GamePacks): The GamePacks object.
+        """
+        user_rank_reward_sets_data = mod.mod_edits.get("user_rank_reward_sets")
+        if user_rank_reward_sets_data is None:
+            return
+        user_rank_reward_sets = UserRankReward.from_game_data(game_data)
+        user_rank_reward_sets.apply_dict(mod.mod_edits)
+        user_rank_reward_sets.to_game_data(game_data)

@@ -357,6 +357,8 @@ class GatyaItems:
 
     @staticmethod
     def from_game_data(game_data: "core.GamePacks") -> "GatyaItems":
+        if game_data.gatya_items is not None:
+            return game_data.gatya_items
         gatya_item_buy = GatyaItemBuy.from_game_data(game_data)
         gatya_item_name = GatyaItemName.from_game_data(game_data)
 
@@ -377,7 +379,9 @@ class GatyaItems:
 
             items[i] = item
 
-        return GatyaItems(items)
+        gatya_items = GatyaItems(items)
+        game_data.gatya_items = gatya_items
+        return gatya_items
 
     def to_game_data(self, game_data: "core.GamePacks") -> None:
         gatya_item_buy = GatyaItemBuy({})
@@ -402,7 +406,7 @@ class GatyaItems:
         return GatyaItems({})
 
     def apply_dict(self, dict_data: dict[str, Any]):
-        items = dict_data.get("items")
+        items = dict_data.get("gatya_items")
         if items is not None:
             current_items = self.items.copy()
             modded_items = core.ModEditDictHandler(items, current_items).get_dict(
@@ -420,3 +424,18 @@ class GatyaItems:
         if item is None:
             return None
         return item.gatya_item_buy_item.stage_drop_item_id
+
+    @staticmethod
+    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
+        """Apply a mod to a GamePacks object.
+
+        Args:
+            mod (core.Mod): The mod.
+            game_data (GamePacks): The GamePacks object.
+        """
+        items_data = mod.mod_edits.get("gatya_items")
+        if items_data is None:
+            return
+        items = GatyaItems.from_game_data(game_data)
+        items.apply_dict(mod.mod_edits)
+        items.to_game_data(game_data)

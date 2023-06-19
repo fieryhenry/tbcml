@@ -68,10 +68,24 @@ from .game_data.cat_base.enemies import (
     Enemy,
     EnemyModel,
 )
+from .game_data.cat_base.gatya_item import GatyaItems
+from .game_data.cat_base.gatya import Gatya
+from .game_data.cat_base.scheme_item import SchemeItems
+from .game_data.cat_base.user_rank_reward import UserRankReward
+
+
 from .game_data.battle.battle_shake_setting import ShakeEffects
 from .game_data.battle.bg import Bgs
+from .game_data.battle.chara_group import CharaGroups
+
 from .game_data.localizable import Localizable
+
 from .game_data.gamototo.cannon import Castles
+from .game_data.gamototo.engineers import EngineerLimit, EngineerAnim
+from .game_data.gamototo.ototo_anim import OtotoAnim
+
+from .game_data.base_ability import BaseAbilities
+
 from .game_data.map.map import Maps
 from .anim.model import Model
 from .anim.model_part import ModelPart

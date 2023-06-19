@@ -79,6 +79,8 @@ class CharaGroups:
         Returns:
             CharaGroups: The CharaGroups loaded from the game data.
         """
+        if game_data.chara_groups is not None:
+            return game_data.chara_groups
         file_name = CharaGroups.get_file_name()
         file = game_data.find_file(file_name)
         if file is None:
@@ -91,7 +93,9 @@ class CharaGroups:
             group_type = GroupType(int(line[2]))
             chara_ids = [int(line[i]) for i in range(3, len(line))]
             groups[id] = CharaGroupSet(id, text_id, group_type, chara_ids)
-        return CharaGroups(groups)
+        chara_o = CharaGroups(groups)
+        game_data.chara_groups = chara_o
+        return chara_o
 
     def to_game_data(self, game_data: "core.GamePacks"):
         """Writes the CharaGroups to the game data.
@@ -141,7 +145,7 @@ class CharaGroups:
         return CharaGroups({})
 
     def apply_dict(self, dict_data: dict[str, Any]):
-        groups = dict_data.get("groups")
+        groups = dict_data.get("chara_groups")
         if groups is not None:
             current_groups = self.groups.copy()
             modded_groups = core.ModEditDictHandler(groups, current_groups).get_dict(
@@ -154,3 +158,18 @@ class CharaGroups:
                 group.apply_dict(modded_group)
                 current_groups[id] = group
             self.groups = current_groups
+
+    @staticmethod
+    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
+        """Apply a mod to a GamePacks object.
+
+        Args:
+            mod (core.Mod): The mod.
+            game_data (GamePacks): The GamePacks object.
+        """
+        chara_data = mod.mod_edits.get("chara_groups")
+        if chara_data is None:
+            return
+        groups = CharaGroups.from_game_data(game_data)
+        groups.apply_dict(mod.mod_edits)
+        groups.to_game_data(game_data)

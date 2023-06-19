@@ -406,19 +406,24 @@ class Gatya:
 
     @staticmethod
     def from_game_data(game_data: "core.GamePacks") -> "Gatya":
+        if game_data.gatya is not None:
+            return game_data.gatya
         gatya_options = GatyaOptionsAll.from_game_data(game_data)
         gatya_data_sets = GatyaDataSetsAll.from_game_data(game_data)
-        return Gatya(gatya_options, gatya_data_sets)
+        gatya_o = Gatya(gatya_options, gatya_data_sets)
+        game_data.gatya = gatya_o
+        return gatya_o
 
     def to_game_data(self, game_data: "core.GamePacks"):
         self.gatya_options.to_game_data(game_data)
         self.gatya_data_sets.to_game_data(game_data)
 
     def apply_dict(self, dict_data: dict[str, Any]):
-        gatya_options = dict_data.get("gatya_options")
+        gatya_data = dict_data.get("gatya", {})
+        gatya_options = gatya_data.get("gatya_options")
         if gatya_options is not None:
             self.gatya_options.apply_dict(gatya_options)
-        gatya_data_sets = dict_data.get("gatya_data_sets")
+        gatya_data_sets = gatya_data.get("gatya_data_sets")
         if gatya_data_sets is not None:
             self.gatya_data_sets.apply_dict(gatya_data_sets)
 
@@ -429,3 +434,18 @@ class Gatya:
     def set_gatya(self, gatya: "Gatya"):
         self.gatya_options = gatya.gatya_options
         self.gatya_data_sets = gatya.gatya_data_sets
+
+    @staticmethod
+    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
+        """Apply a mod to a GamePacks object.
+
+        Args:
+            mod (core.Mod): The mod.
+            game_data (GamePacks): The GamePacks object.
+        """
+        gatya_data = mod.mod_edits.get("gatya")
+        if gatya_data is None:
+            return
+        gatya = Gatya.from_game_data(game_data)
+        gatya.apply_dict(mod.mod_edits)
+        gatya.to_game_data(game_data)

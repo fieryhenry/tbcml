@@ -394,6 +394,15 @@ class GamePacks:
         self.maps: Optional[core.Maps] = None
         self.shake_effects: Optional[core.ShakeEffects] = None
         self.bgs: Optional[core.Bgs] = None
+        self.chara_groups: Optional[core.CharaGroups] = None
+        self.gatya_items: Optional[core.GatyaItems] = None
+        self.gatya: Optional[core.Gatya] = None
+        self.scheme_items: Optional[core.SchemeItems] = None
+        self.user_rank_reward: Optional[core.UserRankReward] = None
+        self.engineer_limit: Optional[core.EngineerLimit] = None
+        self.engineer_anim: Optional[core.EngineerAnim] = None
+        self.ototo_anim: Optional[core.OtotoAnim] = None
+        self.base_abilities: Optional[core.BaseAbilities] = None
 
     def get_pack(self, pack_name: str) -> Optional["PackFile"]:
         """Get a pack from the game packs.

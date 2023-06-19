@@ -71,6 +71,8 @@ class SchemeItems:
 
     @staticmethod
     def from_game_data(game_data: "core.GamePacks") -> "SchemeItems":
+        if game_data.scheme_items is not None:
+            return game_data.scheme_items
         tsv_data = game_data.find_file(SchemeItems.get_file_name())
         if tsv_data is None:
             return SchemeItems.create_empty()
@@ -85,7 +87,9 @@ class SchemeItems:
                 items[id].items.append(
                     Item(category, int(line[i + 1]), int(line[i + 2]))
                 )
-        return SchemeItems(items)
+        scheme_items = SchemeItems(items)
+        game_data.scheme_items = scheme_items
+        return scheme_items
 
     def to_game_data(self, game_data: "core.GamePacks"):
         tsv_data = game_data.find_file(SchemeItems.get_file_name())
@@ -127,7 +131,7 @@ class SchemeItems:
         game_data.set_file(SchemeItems.get_file_name(), csv.to_data())
 
     def apply_dict(self, dict_data: dict[str, Any]):
-        items = dict_data.get("items")
+        items = dict_data.get("scheme_items")
         if items is not None:
             current_items = self.items.copy()
             modded_items = core.ModEditDictHandler(items, current_items).get_dict(
@@ -150,3 +154,18 @@ class SchemeItems:
     def set_item(self, item: SchemeItem, id: int):
         item.id = id
         self.items[item.id] = item
+
+    @staticmethod
+    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
+        """Apply a mod to a GamePacks object.
+
+        Args:
+            mod (core.Mod): The mod.
+            game_data (GamePacks): The GamePacks object.
+        """
+        scheme_items_data = mod.mod_edits.get("scheme_items")
+        if scheme_items_data is None:
+            return
+        scheme_items = SchemeItems.from_game_data(game_data)
+        scheme_items.apply_dict(mod.mod_edits)
+        scheme_items.to_game_data(game_data)
