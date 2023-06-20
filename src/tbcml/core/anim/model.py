@@ -1,4 +1,7 @@
 from typing import Any, Optional, Union
+
+from PyQt5 import QtGui
+
 from tbcml import core
 
 
@@ -545,3 +548,29 @@ class Model:
         if anim_id < len(self.anims):
             return self.anims[anim_id]
         return None
+
+    def draw_model(
+        self,
+        painter: QtGui.QPainter,
+        base_x: float,
+        base_y: float,
+    ):
+        self.set_required()
+        parts = self.get_sorted_parts()
+        for part in parts:
+            part.draw_part(painter, base_x, base_y)
+
+    def draw_frame(
+        self,
+        painter: QtGui.QPainter,
+        base_x: float,
+        base_y: float,
+        frame: int,
+        anim_id: int,
+    ):
+        self.set_required()
+        self.set_keyframes_sets(anim_id)
+        self.set_action(frame)
+        parts = self.get_sorted_parts()
+        for part in parts:
+            part.draw_part(painter, base_x, base_y)
