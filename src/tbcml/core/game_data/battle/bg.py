@@ -1,5 +1,7 @@
+"""Module for background data."""
 import enum
 from typing import Any, Optional
+
 from tbcml import core
 
 
@@ -13,6 +15,8 @@ class ColorType(enum.Enum):
 
 
 class Color:
+    """Class for a color."""
+
     def __init__(self, c_type: ColorType, r: int, g: int, b: int):
         """Initializes a Color object.
 
@@ -28,6 +32,12 @@ class Color:
         self.b = b
 
     def apply_dict(self, dict_data: dict[str, Any]):
+        """Applies a dictionary to the Color object.
+
+        Args:
+            dict_data (dict[str, Any]): The dictionary to apply.
+        """
+
         c_type = dict_data.get("type")
         if c_type is not None:
             self.type = ColorType(c_type)
@@ -49,6 +59,8 @@ class Color:
 
 
 class Bg:
+    """Class for a background."""
+
     def __init__(
         self,
         id: int,
@@ -59,6 +71,7 @@ class Bg:
         imgcut_id: int,
         is_upper_side_bg_enabled: bool,
         extra: Optional[list[int]] = None,
+        json_data: Optional[dict[str, Any]] = None,
     ):
         """Initializes a Bg object.
 
@@ -80,8 +93,14 @@ class Bg:
         self.imgcut_id = imgcut_id
         self.is_upper_side_bg_enabled = is_upper_side_bg_enabled
         self.extra = extra
+        self.json_data = json_data
 
     def apply_dict(self, dict_data: dict[str, Any]):
+        """Applies a dictionary to the Bg object.
+
+        Args:
+            dict_data (dict[str, Any]): The dictionary to apply.
+        """
         self.id = dict_data.get("id", self.id)
         self.sky_top.apply_dict(dict_data.get("sky_top", {}))
         self.sky_bottom.apply_dict(dict_data.get("sky_bottom", {}))
@@ -92,6 +111,7 @@ class Bg:
             "is_upper_side_bg_enabled", self.is_upper_side_bg_enabled
         )
         self.extra = dict_data.get("extra", self.extra)
+        self.json_data = dict_data.get("json_data", self.json_data)
 
     @staticmethod
     def create_empty(id: int) -> "Bg":
@@ -113,8 +133,79 @@ class Bg:
             False,
         )
 
+    @staticmethod
+    def get_json_file_name(id: int) -> str:
+        """Gets the name of the JSON file for the background.
+
+        Args:
+            id (int): The ID of the background.
+
+        Returns:
+            str: The name of the JSON file for the background.
+        """
+
+        id_str = core.PaddedInt(id, 3).to_str()
+        return f"bg{id_str}.json"
+
+    @staticmethod
+    def from_game_data(
+        game_data: "core.GamePacks",
+        id: int,
+        sky_top: Color,
+        sky_bottom: Color,
+        ground_top: Color,
+        ground_bottom: Color,
+        imgcut_id: int,
+        is_upper_side_bg_enabled: bool,
+        extra: Optional[list[int]] = None,
+    ) -> "Bg":
+        """Creates a Bg from game data.
+
+        Args:
+            game_data (core.GamePacks): The game data.
+            id (int): The ID of the background.
+            sky_top (Color): Sky top color.
+            sky_bottom (Color): Sky bottom color.
+            ground_top (Color): Ground top color.
+            ground_bottom (Color): Ground bottom color.
+            imgcut_id (int): The ID of the imgcut used for the background.
+            is_upper_side_bg_enabled (bool): Whether or not the upper side of the background is enabled. ???
+            extra (Optional[list[int]], optional): Extra data. Defaults to None.
+
+        Returns:
+            Bg: The Bg created from game data.
+        """
+        file = game_data.find_file(Bg.get_json_file_name(id))
+        if file is None:
+            json_data = None
+        else:
+            json_data = core.JsonFile(file.dec_data).get_json()
+        return Bg(
+            id,
+            sky_top,
+            sky_bottom,
+            ground_top,
+            ground_bottom,
+            imgcut_id,
+            is_upper_side_bg_enabled,
+            extra,
+            json_data,
+        )
+
+    def to_game_data(self, game_data: "core.GamePacks"):
+        """Writes the Bg to game data.
+
+        Args:
+            game_data (core.GamePacks): The game data.
+        """
+        file_name = Bg.get_json_file_name(self.id)
+        data = core.JsonFile.from_object(self.json_data).to_data()
+        game_data.set_file(file_name, data)
+
 
 class Bgs:
+    """A class that represents the background data."""
+
     def __init__(self, bgs: dict[int, Bg]):
         """Initializes a Bgs object.
 
@@ -149,7 +240,8 @@ class Bgs:
             return Bgs.create_empty()
         csv = core.CSV(file.dec_data)
         bgs: dict[int, Bg] = {}
-        for i, line in enumerate(csv.lines[1:]):
+        for line in csv.lines[1:]:
+            id = int(line[0])
             sky_top = Color(
                 ColorType.SKY_TOP,
                 int(line[1]),
@@ -180,8 +272,9 @@ class Bgs:
                 extra = [int(x) for x in line[15:]]
             except ValueError:
                 extra = None
-            bgs[i] = Bg(
-                i,
+            bgs[id] = Bg.from_game_data(
+                game_data,
+                id,
                 sky_top,
                 sky_bottom,
                 ground_top,
@@ -232,7 +325,7 @@ class Bgs:
 
         for i, bg in remaining_bgs.items():
             new_line = [
-                str(i),
+                str(bg.id),
                 str(bg.sky_top.r),
                 str(bg.sky_top.g),
                 str(bg.sky_top.b),
@@ -251,6 +344,9 @@ class Bgs:
             if bg.extra is not None:
                 new_line.extend([str(x) for x in bg.extra])
             csv.lines.append(new_line)
+
+        for bg in self.bgs.values():
+            bg.to_game_data(game_data)
 
         game_data.set_file(Bgs.get_file_name(), csv.to_data())
 
@@ -284,6 +380,11 @@ class Bgs:
         return Bgs({})
 
     def apply_dict(self, dict_data: dict[str, Any]):
+        """Applies a dict to the Bgs object.
+
+        Args:
+            dict_data (dict[str, Any]): The dict to apply.
+        """
         bgs = dict_data.get("bgs")
         if bgs is None:
             return
