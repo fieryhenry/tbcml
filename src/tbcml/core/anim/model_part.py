@@ -77,10 +77,10 @@ class ModelPart:
         self.keyframes_sets: list[core.KeyFrames] = []
         self.model: Optional[core.Model] = None
 
-        self.scale_unit = 0
-        self.gsca = 0
-        self.angle_unit = 0
-        self.alpha_unit = 0
+        self.scale_unit = 1
+        self.gsca = 1
+        self.angle_unit = 1
+        self.alpha_unit = 1
 
         self.h_flip = False
         self.v_flip = False
