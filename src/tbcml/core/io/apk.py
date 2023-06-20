@@ -235,23 +235,11 @@ class Apk:
         self.set_iv(iv)
         return iv
 
-    def get_key(self) -> Optional[str]:
-        key = core.Config().get(core.ConfigKey.KEY)
-        if core.Config().get(core.ConfigKey.USE_RANDOM_KEY):
-            key = self.randomize_key()
-        return key
-
-    def get_iv(self) -> Optional[str]:
-        iv = core.Config().get(core.ConfigKey.IV)
-        if core.Config().get(core.ConfigKey.USE_RANDOM_IV):
-            iv = self.randomize_iv()
-        return iv
-
     def add_packs_lists(
         self,
         packs: "core.GamePacks",
     ):
-        files = packs.to_packs_lists(self.get_key(), self.get_iv())
+        files = packs.to_packs_lists(self.randomize_key(), self.randomize_iv())
         for pack_name, pack_data, list_data in files:
             self.add_pack_list(pack_name, pack_data, list_data)
 
