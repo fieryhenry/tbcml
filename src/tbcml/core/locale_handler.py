@@ -1,4 +1,4 @@
-"""Handles locale files."""
+from typing import Optional
 from tbcml import core
 
 
@@ -24,17 +24,42 @@ class PropertySet:
             KeyError: If a key is already defined in the property file.
         """
         lines = self.path.read().to_str().splitlines()
-        for line in lines:
-            if line.startswith("#") or line == "":
+        i = 0
+        in_multi_line = False
+        multi_line_text = ""
+        multi_line_key = ""
+        while i < len(lines):
+            line = lines[i]
+            if line.startswith("#") or not line:
+                i += 1
                 continue
+            if line.startswith(">") and in_multi_line:
+                multi_line_text += line[1:] + "\n"
+            if (in_multi_line and not line.startswith(">")) or (
+                in_multi_line and i == len(lines) - 1
+            ):
+                in_multi_line = False
+                if multi_line_key in self.properties:
+                    raise KeyError(
+                        f"Key {multi_line_key} already exists in property file"
+                    )
+                self.properties[multi_line_key] = multi_line_text[:-1]
+                multi_line_text = ""
+                multi_line_key = ""
+
             parts = line.split("=")
-            if len(parts) < 2:
-                continue
-            key = parts[0]
-            value = "=".join(parts[1:])
-            if key in self.properties:
-                raise KeyError(f"Key {key} already exists in property file")
-            self.properties[key] = value
+            if line.strip().endswith("="):
+                in_multi_line = True
+                multi_line_key = parts[0]
+
+            if not in_multi_line:
+                key = parts[0]
+                value = "=".join(parts[1:])
+                if key in self.properties:
+                    raise KeyError(f"Key {key} already exists in property file")
+                self.properties[key] = value
+
+            i += 1
 
     def get_key(self, key: str) -> str:
         """Gets a key from the property file.
@@ -45,7 +70,7 @@ class PropertySet:
         Returns:
             str: Value of the key.
         """
-        return self.properties[key].replace("\\n", "\n")
+        return self.properties.get(key, key).replace("\\n", "\n")
 
     @staticmethod
     def from_config(property: str) -> "PropertySet":
@@ -63,17 +88,26 @@ class PropertySet:
 class LocalManager:
     """Manages properties for a locale"""
 
-    def __init__(self, locale: str):
+    def __init__(self, locale: Optional[str] = None):
         """Initializes a new instance of the LocalManager class.
 
         Args:
             locale (str): Language code of the locale.
         """
-        self.locale = locale
-        self.path = core.Path("locales", True).add(locale)
+        if locale is None:
+            lc = core.Config().get(core.ConfigKey.LOCALE)
+        else:
+            lc = locale
+
+        self.locale = lc
+        self.path = core.Path("locales", True).add(lc)
         self.properties: dict[str, PropertySet] = {}
         self.all_properties: dict[str, str] = {}
+        self.en_properties: dict[str, str] = {}
+        self.en_properties_path = core.Path("locales", True).add("en")
         self.parse()
+        if self.locale == "en":
+            self.en_properties = self.all_properties
 
     def parse(self):
         """Parses all property files in the locale folder."""
@@ -83,6 +117,12 @@ class LocalManager:
                 property_set = PropertySet(self.locale, file_name[:-11])
                 self.all_properties.update(property_set.properties)
                 self.properties[file_name[:-11]] = property_set
+        if self.locale != "en":
+            for file in self.en_properties_path.get_files():
+                file_name = file.basename()
+                if file_name.endswith(".properties"):
+                    property_set = PropertySet("en", file_name[:-11])
+                    self.en_properties.update(property_set.properties)
 
     def get_key(self, key: str) -> str:
         """Gets a key from the property file.
@@ -93,7 +133,23 @@ class LocalManager:
         Returns:
             str: Value of the key.
         """
-        return self.all_properties[key]
+        value = self.all_properties.get(key)
+        if value is None:
+            value = self.en_properties.get(key, key)
+        value = value.replace("\\n", "\n")
+        # replace {{key}} with the value of the key
+        char_index = 0
+        while char_index < len(value):
+            if value[char_index] == "{" and value[char_index + 1] == "{":
+                key_name = ""
+                char_index += 2
+                while value[char_index] != "}":
+                    key_name += value[char_index]
+                    char_index += 1
+                value = value.replace("{{" + key_name + "}}", self.get_key(key_name))
+            char_index += 1
+
+        return value
 
     @staticmethod
     def from_config() -> "LocalManager":
