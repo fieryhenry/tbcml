@@ -227,7 +227,7 @@ class Mod:
             dependencies (Optional[list[Dependency]], optional): Dependencies of the mod. Defaults to None.
             long_description (str, optional): Long description of the mod. Defaults to "".
             icon (Optional[core.BCImage], optional): Icon of the mod. Defaults to None.
-            password (Optional[str], optional): Password of the mod, if given mod data is encrypted. Defaults to None.
+            password (Optional[str], optional): Password of the mod. Defaults to None.
         """
         self.name = name
         self.author = author
