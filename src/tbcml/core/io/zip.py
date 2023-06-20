@@ -4,6 +4,8 @@ from tbcml import core
 
 
 class Zip:
+    password_length = 16
+
     def __init__(
         self,
         file_data: Optional["core.Data"] = None,
@@ -24,17 +26,19 @@ class Zip:
             pepper = "tbcml"
             if password is not None:
                 password_hash = core.Hash(core.HashAlgorithm.SHA256).get_hash(
-                    core.Data(password + pepper), length=28
+                    core.Data(password + pepper), length=self.password_length
                 )
             else:
                 password_hash = core.Hash(core.HashAlgorithm.SHA256).get_hash(
-                    core.Data(pepper), length=28
+                    core.Data(pepper), length=self.password_length
                 )
 
             if not file_data.is_empty():
                 file_data.set_pos(0)
-                salt_data = core.Data(file_data.read_bytes(4))
-                actual_password_hash = core.Data(file_data.read_bytes(28))
+                salt_data = core.Data(file_data.read_bytes(32 - self.password_length))
+                actual_password_hash = core.Data(
+                    file_data.read_bytes(self.password_length)
+                )
                 if actual_password_hash != password_hash and validate_password:
                     raise ValueError("Invalid password")
                 main_data = core.Data(file_data.data[32:])
@@ -46,7 +50,7 @@ class Zip:
                 self.salt = salt_data
             else:
                 self.password = password_hash
-                self.salt = core.Data(core.Random.get_bytes(4))
+                self.salt = core.Data(core.Random.get_bytes(32 - self.password_length))
 
         self.zip = zipfile.ZipFile(
             self.file_data, mode=mode, compression=zipfile.ZIP_DEFLATED
@@ -56,7 +60,7 @@ class Zip:
         if self.password is None:
             return False
         if self.password != core.Hash(core.HashAlgorithm.SHA256).get_hash(
-            core.Data(password + "tbcml"), length=28
+            core.Data(password + "tbcml"), length=self.password_length
         ):
             return False
         return True
