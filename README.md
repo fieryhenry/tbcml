@@ -114,4 +114,4 @@ python script.py
 
 ## Documentation
 
-You can find the documentation [here](docs/index.md).
+<https://tbcml-docs.readthedocs.io/en/latest/>
