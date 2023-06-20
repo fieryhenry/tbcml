@@ -963,8 +963,12 @@ class Apk:
 
         for path in paths:
             data = path.read().to_str()
-            inject_html = """
-<span class="midashi2">Mods</span><br>
+            credit_message = core.LocalManager().get_key("html_credit_message")
+            mods_message = core.LocalManager().get_key("mods")
+            inject_html = f"""
+<span class="midashi2">{credit_message}</span>
+<hr noshade width="97%" color="#E2AF27">
+<span class="midashi2">{mods_message}</span><br>
 <span style="font-size:small">
 {{modlist}}
 </span>"""
