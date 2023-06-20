@@ -213,6 +213,7 @@ class Mod:
         dependencies: Optional[list[Dependency]] = None,
         long_description: str = "",
         icon: Optional["core.BCImage"] = None,
+        password: Optional[str] = None,
     ):
         """Initializes a new instance of the Mod class.
 
@@ -226,6 +227,7 @@ class Mod:
             dependencies (Optional[list[Dependency]], optional): Dependencies of the mod. Defaults to None.
             long_description (str, optional): Long description of the mod. Defaults to "".
             icon (Optional[core.BCImage], optional): Icon of the mod. Defaults to None.
+            password (Optional[str], optional): Password of the mod, if given mod data is encrypted. Defaults to None.
         """
         self.name = name
         self.author = author
@@ -236,6 +238,7 @@ class Mod:
         self.dependencies = dependencies if dependencies is not None else []
         self.long_description = long_description
         self.icon = icon if icon is not None else core.BCImage.from_size(512, 512)
+        self.password = password
 
         self.mod_edits: dict[str, Any] = {}
         self.game_files: dict[str, core.Data] = {}
@@ -328,13 +331,13 @@ class Mod:
         data = self.to_data()
         path.write(data)
 
-    def to_data(self) -> "core.Data":
-        """Converts the mod to data.
+    def to_zip(self) -> "core.Zip":
+        """Converts the mod to a zip file.
 
         Returns:
-            core.Data: The mod as data
+            core.Zip: The zip file
         """
-        zip_file = core.Zip()
+        zip_file = core.Zip(encrypted=True, password=self.password)
 
         self.audio.add_to_zip(zip_file)
         self.scripts.add_to_zip(zip_file)
@@ -360,6 +363,17 @@ class Mod:
 
         json = core.JsonFile.from_object(self.create_mod_json())
         zip_file.add_file(core.Path("mod.json"), json.to_data())
+
+        return zip_file
+
+    def to_data(self) -> "core.Data":
+        """Converts the mod to data.
+
+        Returns:
+            core.Data: The mod as data
+        """
+        zip_file = self.to_zip()
+
         return zip_file.to_data()
 
     def add_mod_edits_to_zip(
@@ -502,7 +516,7 @@ class Mod:
             Optional[Mod]: The loaded mod
         """
         try:
-            zip_file = core.Zip.from_file(path)
+            zip_file = core.Zip.from_file(path, encrypted=True, validate_password=False)
         except zipfile.BadZipFile:
             return None
         return Mod.load_from_zip(zip_file)
