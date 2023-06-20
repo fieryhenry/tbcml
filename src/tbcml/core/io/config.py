@@ -15,6 +15,7 @@ class ConfigKey(enum.Enum):
     SELECTED_APK = "selected_apk"
     LOCALE = "locale"
     THEME = "theme"
+    ALLOW_SCRIPT_MODS = "allow_script_mods"
 
 
 class Config:
@@ -55,6 +56,7 @@ class Config:
             ConfigKey.SELECTED_APK: "",
             ConfigKey.LOCALE: "en",
             ConfigKey.THEME: "default",
+            ConfigKey.ALLOW_SCRIPT_MODS: False,
         }
         for key, value in initial_values.items():
             if key not in self.config:

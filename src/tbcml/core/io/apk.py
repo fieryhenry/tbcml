@@ -734,6 +734,8 @@ class Apk:
     def add_script_mods(self, bc_mods: list["core.Mod"]):
         if not bc_mods:
             return
+        if not core.Config().get(core.ConfigKey.ALLOW_SCRIPT_MODS):
+            return
         scripts = core.FridaScripts([])
         for mod in bc_mods:
             scripts.add_scripts(mod.scripts)
@@ -947,15 +949,36 @@ class Apk:
             core.Data(template_file)
         )
 
-    def add_mod_files(self, mod: "core.Mod"):
+    def get_risky_extensions(self) -> list[str]:
+        """Get extensions that if modified could contain malware.
+
+        Returns:
+            list[str]: List of risky extensions.
+        """
+        return [
+            "so",
+            "dex",
+            "jar",
+        ]
+
+    def add_mod_files(self, mod: "core.Mod") -> bool:
+        skipped = False
+        risky_extensions = self.get_risky_extensions()
         for file_name, data in mod.apk_files.items():
+            if file_name.split(".")[-1] in risky_extensions:
+                if not core.Config().get(core.ConfigKey.ALLOW_SCRIPT_MODS):
+                    skipped = True
+                    continue
             self.extracted_path.add(file_name).write(data)
+        return skipped
 
     def add_mods_files(self, mods: list["core.Mod"]):
         for mod in mods:
             self.add_mod_files(mod)
 
     def add_smali_mods(self, mods: list["core.Mod"]):
+        if not core.Config().get(core.ConfigKey.ALLOW_SCRIPT_MODS):
+            return
         for mod in mods:
             self.apply_mod_smali(mod)
 

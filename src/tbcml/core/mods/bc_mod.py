@@ -673,3 +673,22 @@ class Mod:
                 dict_1[key] = value
 
         return dict_1
+
+    def is_risky(self) -> bool:
+        """Checks if the mod could contain malware.
+
+        Returns:
+            bool: True if the mod could contain malware, False otherwise
+        """
+        if not self.scripts.is_empty():
+            return True
+        if not self.smali.is_empty():
+            return True
+        for name in self.apk_files:
+            if name.endswith(".so"):
+                return True
+            if name.endswith(".dex"):
+                return True
+            if name.endswith(".jar"):
+                return True
+        return False
