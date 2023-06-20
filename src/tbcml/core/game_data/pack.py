@@ -475,8 +475,11 @@ class GamePacks:
             list[tuple[str, core.Data, core.Data]]: The pack lists. The first element is the pack name, the second is the encrypted pack data, the third is the encrypted list data.
         """
         packs_lists: list[tuple[str, "core.Data", "core.Data"]] = []
+        should_reencrypt = key is not None or iv is not None
         for pack_name, pack in self.packs.items():
-            if pack_name in self.modified_packs or pack.modified:
+            if pack_name in self.modified_packs or pack.modified or should_reencrypt:
+                if pack.is_server_pack(pack_name):
+                    continue
                 packs_lists.append(pack.to_pack_list_file(key, iv))
         return packs_lists
 
