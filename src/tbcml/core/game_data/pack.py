@@ -403,6 +403,7 @@ class GamePacks:
         self.engineer_anim: Optional[core.EngineerAnim] = None
         self.ototo_anim: Optional[core.OtotoAnim] = None
         self.base_abilities: Optional[core.BaseAbilities] = None
+        self.matatabi: Optional[core.MatatabiData] = None
 
     def get_pack(self, pack_name: str) -> Optional["PackFile"]:
         """Get a pack from the game packs.
