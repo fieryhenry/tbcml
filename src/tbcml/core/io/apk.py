@@ -226,33 +226,23 @@ class Apk:
         self.iv = iv
 
     def randomize_key(self):
-        key = core.Random().get_alpha_string(32)
+        key = core.Random().get_hex_string(32)
         self.set_key(key)
         return key
 
     def randomize_iv(self):
-        iv = core.Random().get_alpha_string(32)
+        iv = core.Random().get_hex_string(32)
         self.set_iv(iv)
         return iv
 
-    def get_key(self) -> str:
-        key = self.key
-        if not key or len(key) != 32:
-            key = self.randomize_key()
-        config_key = core.Config().get(core.ConfigKey.KEY)
-        if config_key and len(config_key) == 32:
-            key = config_key
+    def get_key(self) -> Optional[str]:
+        key = core.Config().get(core.ConfigKey.KEY)
         if core.Config().get(core.ConfigKey.USE_RANDOM_KEY):
             key = self.randomize_key()
         return key
 
-    def get_iv(self) -> str:
-        iv = self.iv
-        if not iv or len(iv) != 32:
-            iv = self.randomize_iv()
-        config_iv = core.Config().get(core.ConfigKey.IV)
-        if config_iv and len(config_iv) == 32:
-            iv = config_iv
+    def get_iv(self) -> Optional[str]:
+        iv = core.Config().get(core.ConfigKey.IV)
         if core.Config().get(core.ConfigKey.USE_RANDOM_IV):
             iv = self.randomize_iv()
         return iv
@@ -964,22 +954,39 @@ class Apk:
 
         self.set_manifest(manifest)
 
-    def set_modded_html(self, mods: list["core.Mod"]):
-        template_file_name = "kisyuhen_01_top_en.html"
-        template_file = (
-            core.Path.get_files_folder()
-            .add("assets", template_file_name)
-            .read()
-            .to_str()
+    def get_mod_html_files(self) -> list["core.Path"]:
+        files = self.extracted_path.add("assets").get_files(
+            regex=r"kisyuhen_01_top_..\.html"
         )
+        return files
+
+    def set_modded_html(self, mods: list["core.Mod"]):
+        paths = self.get_mod_html_files()
+
         mod_html = ""
         for mod in mods:
-            mod_url = f"https://tbcml.net/mod/{mod.name}"
+            mod_url = f"https://tbcml.net/mod/{mod.mod_id}"
             mod_html += f'<a class="Buttonbig" href="{mod_url}">{mod.name}</a><br><br>'
-        template_file = template_file.replace("{{modlist}}", mod_html)
-        self.extracted_path.add("assets", template_file_name).write(
-            core.Data(template_file)
-        )
+
+        for path in paths:
+            data = path.read().to_str()
+            inject_html = """
+<span class="midashi2">Mods</span><br>
+<span style="font-size:small">
+{{modlist}}
+</span>"""
+            inject_after = '<img src="img_friend03.png" width="100%"><br>'
+
+            pos = data.find(inject_after)
+            if pos == -1:
+                return
+            pos += len(inject_after)
+            new_data = data[:pos] + inject_html + data[pos:]
+
+            template_file = new_data.replace("{{modlist}}", mod_html)
+            self.extracted_path.add("assets", path.basename()).write(
+                core.Data(template_file)
+            )
 
     def get_risky_extensions(self) -> list[str]:
         """Get extensions that if modified could contain malware.
