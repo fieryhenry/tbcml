@@ -282,7 +282,7 @@ class GatyaOptions:
 
             options[id] = GatyaOptionSet(
                 id,
-                bool(line[1]),
+                bool(int(line[1])),
                 int(line[2]),
                 int(line[3]),
                 int(line[4]),

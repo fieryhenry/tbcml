@@ -1285,8 +1285,8 @@ class NyankoPictureBook:
         for cat_id, line in enumerate(csv):
             data[cat_id] = NyankoPictureBookData(
                 cat_id,
-                bool(line[0]),
-                bool(line[1]),
+                bool(int(line[0])),
+                bool(int(line[1])),
                 int(line[2]),
                 int(line[3]),
                 int(line[4]),

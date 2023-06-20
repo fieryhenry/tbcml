@@ -262,12 +262,12 @@ class MapOptions:
                 int(line[5]),
                 int(line[6]),
                 ResetType(int(line[7])),
-                bool(line[8]),
+                bool(int(line[8])),
                 int(line[9]),
                 int(line[10]),
-                bool(line[11]),
+                bool(int(line[11])),
                 int(line[12]),
-                bool(line[13]),
+                bool(int(line[13])),
                 line[14],
             )
         return MapOptions(options)
@@ -470,7 +470,7 @@ class StageStats:
         if line_1 is None:
             return None
         castle_type = int(line_1[0])
-        no_continues = bool(line_1[1])
+        no_continues = bool(int(line_1[1]))
         exstage_prob = int(line_1[2])
         exstage_chapter_id = int(line_1[3])
         ex_stage_stage_id = int(line_1[4])
@@ -494,7 +494,7 @@ class StageStats:
             spawn_base_percentage = int(line[5])
             min_z = int(line[6])
             max_z = int(line[7])
-            boss_flag = bool(line[8])
+            boss_flag = bool(int(line[8]))
             magnification = None
             spawn_1 = None
             castle_1 = None

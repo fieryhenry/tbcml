@@ -121,7 +121,7 @@ class ItemShop:
                 int(line[1]),
                 int(line[2]),
                 int(line[3]),
-                bool(line[4]),
+                bool(int(line[4])),
                 line[5],
                 int(line[6]),
             )
