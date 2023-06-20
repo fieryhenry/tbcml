@@ -16,6 +16,10 @@ class ConfigKey(enum.Enum):
     LOCALE = "locale"
     THEME = "theme"
     ALLOW_SCRIPT_MODS = "allow_script_mods"
+    KEY = "key"
+    IV = "iv"
+    USE_RANDOM_KEY = "use_random_key"
+    USE_RANDOM_IV = "use_random_iv"
 
 
 class Config:
@@ -57,6 +61,10 @@ class Config:
             ConfigKey.LOCALE: "en",
             ConfigKey.THEME: "default",
             ConfigKey.ALLOW_SCRIPT_MODS: False,
+            ConfigKey.KEY: None,
+            ConfigKey.IV: None,
+            ConfigKey.USE_RANDOM_KEY: False,
+            ConfigKey.USE_RANDOM_IV: False,
         }
         for key, value in initial_values.items():
             if key not in self.config:
