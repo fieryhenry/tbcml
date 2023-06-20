@@ -100,6 +100,14 @@ apk_folder.open()
 
 Run the script
 
+Windows
+
+```bash
+py script.py
+```
+
+Everything else
+
 ```bash
 python script.py
 ```
