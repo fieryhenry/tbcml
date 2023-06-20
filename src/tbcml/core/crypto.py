@@ -264,3 +264,16 @@ class Random:
         """
         characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
         return "".join(random.choice(characters) for _ in range(length))
+
+    @staticmethod
+    def get_hex_string(length: int) -> str:
+        """Gets a random hex string of the given length.
+
+        Args:
+            length (int): The length of the string.
+
+        Returns:
+            str: The random string.
+        """
+        characters = "0123456789abcdef"
+        return "".join(random.choice(characters) for _ in range(length))
