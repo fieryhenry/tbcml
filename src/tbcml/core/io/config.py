@@ -12,7 +12,6 @@ class ConfigKey(enum.Enum):
     UPDATE_TO_BETA = "update_to_beta"
     DEFAULT_AUTHOR = "default_author"
     LIB_GADGETS_FOLDER = "lib_gadgets_folder"
-    SELECTED_APK = "selected_apk"
     LOCALE = "locale"
     THEME = "theme"
     ALLOW_SCRIPT_MODS = "allow_script_mods"
@@ -57,7 +56,6 @@ class Config:
             ConfigKey.LIB_GADGETS_FOLDER: core.Path.get_appdata_folder()
             .add("LibGadgets")
             .path,
-            ConfigKey.SELECTED_APK: "",
             ConfigKey.LOCALE: "en",
             ConfigKey.THEME: "default",
             ConfigKey.ALLOW_SCRIPT_MODS: False,

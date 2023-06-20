@@ -775,13 +775,6 @@ class Apk:
             libs[architecture] = libnative
         return libs
 
-    @staticmethod
-    def get_selected_apk() -> Optional["Apk"]:
-        selected_apk = core.Config().get(core.ConfigKey.SELECTED_APK)
-        if not selected_apk:
-            return None
-        return Apk.from_format_string(selected_apk)
-
     def get_manifest_path(self) -> "core.Path":
         return self.extracted_path.add("AndroidManifest.xml")
 
