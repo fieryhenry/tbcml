@@ -1,7 +1,7 @@
 from typing import Any, Optional
 
-from PIL import Image
-from PyQt5.QtGui import QImage
+from PIL import Image, ImageDraw
+from PyQt5.QtGui import QImage, QIcon, QPixmap
 
 from tbcml import core
 
@@ -56,7 +56,7 @@ class BCImage:
         image.save(bytes_io, format="PNG")
         return BCImage(core.Data(bytes_io.getvalue()))
 
-    def crop(self, x1: int, y1: int, x2: int, y2: int) -> "BCImage":
+    def crop_rect(self, x1: int, y1: int, x2: int, y2: int) -> "BCImage":
         dt = self.image.crop((x1, y1, x2, y2))
         image_data = core.Data()
         bytes_io = image_data.to_bytes_io()
@@ -64,7 +64,7 @@ class BCImage:
         return BCImage(core.Data(bytes_io.getvalue()))
 
     def get_subimage(self, rect: "core.Rect") -> "BCImage":
-        return self.crop(rect.x, rect.y, rect.x + rect.width, rect.y + rect.height)
+        return self.crop_rect(rect.x, rect.y, rect.x + rect.width, rect.y + rect.height)
 
     def __len__(self):
         return len(self.data)
@@ -148,9 +148,20 @@ class BCImage:
         self._qimg = QImage.fromData(self.to_data().to_bytes())
         return self._qimg
 
+    def to_qicon(self) -> QIcon:
+        return QIcon(QPixmap.fromImage(self.to_qimage()))
+
     def force_q_refresh(self):
         self._qimg = None
 
     def force_refresh(self):
         self.__image = None
         self.force_q_refresh()
+
+    def crop_circle(self):
+        if self.width != self.height:
+            raise ValueError("Image must be square")
+        mask = Image.new("L", self.image.size, 0)
+        draw = ImageDraw.Draw(mask)
+        draw.ellipse((0, 0, self.width, self.height), fill=255)
+        self.image.putalpha(mask)
