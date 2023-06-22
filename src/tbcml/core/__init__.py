@@ -82,7 +82,7 @@ from .game_data.battle.base_ability import BaseAbilities
 
 from .game_data.localizable import Localizable
 
-from .game_data.gamototo.cannon import Castles
+from .game_data.gamototo.cannon import Castles, CastleMixRecipies
 from .game_data.gamototo.engineers import EngineerLimit, EngineerAnim
 from .game_data.gamototo.ototo_anim import OtotoAnim
 from .game_data.gamototo.item_pack import ItemPacks

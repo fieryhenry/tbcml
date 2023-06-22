@@ -404,6 +404,7 @@ class GamePacks:
         self.ototo_anim: Optional[core.OtotoAnim] = None
         self.base_abilities: Optional[core.BaseAbilities] = None
         self.matatabi: Optional[core.MatatabiData] = None
+        self.castle_mix_recipies: Optional[core.CastleMixRecipies] = None
 
     def get_pack(self, pack_name: str) -> Optional["PackFile"]:
         """Get a pack from the game packs.

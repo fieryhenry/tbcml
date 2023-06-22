@@ -3,6 +3,120 @@ from typing import Any, Optional
 from tbcml import core
 
 
+class CastleMixRecipe:
+    def __init__(
+        self,
+        index: int,
+        product_id: int,
+        unknown_1: int,
+        unknown_2: int,
+        material_id: int,
+        amount: int,
+    ):
+        self.index = index
+        self.product_id = product_id
+        self.unknown_1 = unknown_1
+        self.unknown_2 = unknown_2
+        self.material_id = material_id
+        self.amount = amount
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        self.product_id = dict_data.get("product_id", self.product_id)
+        self.unknown_1 = dict_data.get("unknown_1", self.unknown_1)
+        self.unknown_2 = dict_data.get("unknown_2", self.unknown_2)
+        self.material_id = dict_data.get("material_id", self.material_id)
+        self.amount = dict_data.get("amount", self.amount)
+
+    @staticmethod
+    def create_empty(index: int):
+        return CastleMixRecipe(index, 0, 0, 0, 0, 0)
+
+
+class CastleMixRecipies:
+    def __init__(self, recipies: dict[int, CastleMixRecipe]):
+        self.recipies = recipies
+
+    @staticmethod
+    def get_file_name() -> str:
+        return "CastleMixRecipe.csv"
+
+    @staticmethod
+    def from_game_data(game_data: "core.GamePacks") -> "CastleMixRecipies":
+        if game_data.castle_mix_recipies is not None:
+            return game_data.castle_mix_recipies
+        file = game_data.find_file(CastleMixRecipies.get_file_name())
+        if file is None:
+            return CastleMixRecipies.create_empty()
+        csv = core.CSV(file.dec_data)
+        recipies: dict[int, CastleMixRecipe] = {}
+        for i, line in enumerate(csv.lines):
+            recipies[i] = CastleMixRecipe(
+                i,
+                int(line[0]),
+                int(line[1]),
+                int(line[2]),
+                int(line[3]),
+                int(line[4]),
+            )
+
+        castle_mix_recipes = CastleMixRecipies(recipies)
+        game_data.castle_mix_recipies = castle_mix_recipes
+        return castle_mix_recipes
+
+    def to_game_data(self, game_data: "core.GamePacks"):
+        file = game_data.find_file(CastleMixRecipies.get_file_name())
+        if file is None:
+            return
+        csv = core.CSV(file.dec_data)
+        remaining_recipies = self.recipies.copy()
+        for i, line in enumerate(csv.lines):
+            recipe = self.recipies.get(i)
+            if recipe is None:
+                continue
+            line[0] = str(recipe.product_id)
+            line[1] = str(recipe.unknown_1)
+            line[2] = str(recipe.unknown_2)
+            line[3] = str(recipe.material_id)
+            line[4] = str(recipe.amount)
+            csv.lines[i] = line
+            remaining_recipies.pop(i)
+        for recipe in remaining_recipies.values():
+            new_line: list[str] = []
+            new_line.append(str(recipe.product_id))
+            new_line.append(str(recipe.unknown_1))
+            new_line.append(str(recipe.unknown_2))
+            new_line.append(str(recipe.material_id))
+            new_line.append(str(recipe.amount))
+            csv.lines.append(new_line)
+        game_data.set_file(CastleMixRecipies.get_file_name(), csv.to_data())
+
+    @staticmethod
+    def create_empty():
+        return CastleMixRecipies({})
+
+    def apply_dict(self, dict_data: dict[str, Any]):
+        recipies = dict_data.get("recipies", {})
+        for index, recipe in recipies.items():
+            if index not in self.recipies:
+                self.recipies[index] = CastleMixRecipe.create_empty(index)
+            self.recipies[index].apply_dict(recipe)
+
+    @staticmethod
+    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
+        """Apply a mod to a GamePacks object.
+
+        Args:
+            mod (core.Mod): The mod.
+            game_data (GamePacks): The GamePacks object.
+        """
+        recipies_data = mod.mod_edits.get("recipies")
+        if recipies_data is None:
+            return
+        recipies = CastleMixRecipies.from_game_data(game_data)
+        recipies.apply_dict(mod.mod_edits)
+        recipies.to_game_data(game_data)
+
+
 class BaseDecoRecipeLevel:
     def __init__(
         self,
