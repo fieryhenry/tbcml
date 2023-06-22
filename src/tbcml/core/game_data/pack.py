@@ -573,13 +573,30 @@ class GamePacks:
         Args:
             mod (core.Mod): The mod.
         """
-        core.ItemShop.apply_mod_to_game_data(mod, self)
+        core.ShakeEffects.apply_mod_to_game_data(mod, self)
+        core.Bgs.apply_mod_to_game_data(mod, self)
+        core.CharaGroups.apply_mod_to_game_data(mod, self)
+
         core.Cats.apply_mod_to_game_data(mod, self)
         core.Enemies.apply_mod_to_game_data(mod, self)
+        core.GatyaItems.apply_mod_to_game_data(mod, self)
+        core.Gatya.apply_mod_to_game_data(mod, self)
+        core.ItemShop.apply_mod_to_game_data(mod, self)
+        core.MatatabiData.apply_mod_to_game_data(mod, self)
+        core.SchemeItems.apply_mod_to_game_data(mod, self)
+        core.UserRankReward.apply_mod_to_game_data(mod, self)
+
         core.Castles.apply_mod_to_game_data(mod, self)
+        core.EngineerAnim.apply_mod_to_game_data(mod, self)
+        core.EngineerLimit.apply_mod_to_game_data(mod, self)
+        core.ItemPacks.apply_mod_to_game_data(mod, self)
+        core.OtotoAnim.apply_mod_to_game_data(mod, self)
+
         core.Maps.apply_mod_to_game_data(mod, self)
+
+        core.BaseAbilities.apply_mod_to_game_data(mod, self)
+
         core.Localizable.apply_mod_to_game_data(mod, self)
-        core.ShakeEffects.apply_mod_to_game_data(mod, self)
 
         for file_name, data in mod.game_files.items():
             self.set_file(file_name, data)
