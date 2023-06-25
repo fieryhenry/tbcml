@@ -248,6 +248,15 @@ class Mod:
         self.init_scripts()
         self.init_smali()
 
+    def add_apk_file(self, file_name: str, data: "core.Data"):
+        """Adds an APK file to the mod.
+
+        Args:
+            file_name (str): The name of the file
+            data (core.Data): The data of the file
+        """
+        self.apk_files[file_name] = data
+
     def add_contributor(self, contributor: str):
         """Adds a contributor to the mod.
 
