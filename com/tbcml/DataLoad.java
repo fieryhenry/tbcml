@@ -63,6 +63,7 @@ public class DataLoad {
                     }
 
                     if (!isUrl) {
+                        Log.d("tbcml", "Extracting " + entryName + " to " + gameFile.getAbsolutePath());
                         byte[] data = new byte[2048];
                         FileOutputStream fos = new FileOutputStream(gameFile);
                         BufferedOutputStream dest2 = new BufferedOutputStream(fos, 2048);
