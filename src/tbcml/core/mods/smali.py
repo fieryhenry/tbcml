@@ -242,6 +242,10 @@ class SmaliHandler:
         inject_text = f"""
     const-string v0, "{library_name}"
     invoke-static {{v0}}, Ljava/lang/System;->loadLibrary(Ljava/lang/String;)V
+
+    const-string v0, "Loaded {library_name}"
+    const-string v1, "TBCML"
+    invoke-static {{v0, v1}}, Landroid/util/Log;->d(Ljava/lang/String;Ljava/lang/String;)I
         """
 
         for i, line in enumerate(text):
@@ -262,3 +266,81 @@ class SmaliHandler:
         path = core.AssetLoader.from_config().get_asset_file_path("DataLoad.smali")
         data = path.read().to_str()
         return Smali(data, "DataLoad", "Start(Landroid/content/Context;)V")
+
+    @staticmethod
+    def java_to_smali(
+        java_code: str, class_name: str, func_sig: str, display_errors: bool = True
+    ) -> Optional[Smali]:
+        """Compiles java code into smali code
+
+        Args:
+            java_code (str): The java code to compile
+            class_name (str): The name of the class
+            func_sig (str): The function signature to call to start the class code
+            display_errors (bool, optional): Whether to display errors if the compilation fails. Defaults to True.
+
+        Returns:
+            Optional[Smali]: The compiled smali code. None if the compilation failed
+        """
+        with core.TempFolder() as temp_folder:
+            java_path = temp_folder.add("com").add("tbcml").add(f"{class_name}.java")
+            java_path.parent().generate_dirs()
+            java_path.write(core.Data(java_code))
+            command = core.Command(
+                f"javac --source 7 --target 7 '{java_path}' -d '{temp_folder}'"
+            )
+            result = command.run()
+            if result.exit_code != 0:
+                if display_errors:
+                    print(result.result)
+                return None
+
+            dex_path = temp_folder.add("classes.dex")
+
+            command = core.Command(
+                f"dx --dex --output='{dex_path}' 'com/tbcml/{class_name}.class'",
+                cwd=temp_folder,
+            )
+            result = command.run()
+            if result.exit_code != 0:
+                if display_errors:
+                    print(result.result)
+                return None
+
+            smali_path = temp_folder.add("smali")
+
+            baksmali_path = core.Path("lib", is_relative=True).add("baksmali.jar")
+            command = core.Command(
+                f"java -jar {baksmali_path} d '{dex_path}' -o '{smali_path}'"
+            )
+            result = command.run()
+            if result.exit_code != 0:
+                if display_errors:
+                    print(result.result)
+                return None
+
+            smali_path = smali_path.add("com").add("tbcml").add(f"{class_name}.smali")
+            smali_code = smali_path.read().to_str()
+            return Smali(smali_code, class_name, func_sig)
+
+    @staticmethod
+    def java_to_smali_from_path(
+        path: "core.Path",
+        func_sig: str,
+        display_errors: bool = True,
+    ) -> Optional[Smali]:
+        """Compiles java code into smali code
+
+        Args:
+            path (core.Path): The path to the java file
+            func_sig (str): The function signature to call to start the class code
+            display_errors (bool, optional): Whether to display errors if the compilation fails. Defaults to True.
+
+        Returns:
+            Optional[Smali]: The compiled smali code. None if the compilation failed
+        """
+        java_code = path.read().to_str()
+        class_name = path.get_file_name_without_extension()
+        return SmaliHandler.java_to_smali(
+            java_code, class_name, func_sig, display_errors
+        )
