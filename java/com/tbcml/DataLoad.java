@@ -15,8 +15,12 @@ import android.util.Log;
 import android.os.StrictMode;
 
 public class DataLoad {
-    public static void Start(Context context) {
-        Extract(context);
+    public static void Start(final Context context) {
+        new Thread(new Runnable() {
+            public void run() {
+                DataLoad.Extract(context);
+            }
+        }).start();
     }
 
     public static void Extract(Context context) {
