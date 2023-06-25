@@ -9,13 +9,18 @@ from tbcml import core
 class Smali:
     """A class to represent a smali file."""
 
-    def __init__(self, class_code: str, class_name: str, function_sig_to_call: str):
+    def __init__(
+        self,
+        class_code: str,
+        class_name: str,
+        function_sig_to_call: Optional[str],
+    ):
         """Initializes the Smali
 
         Args:
             class_code (str): The actual smali code
             class_name (str): The name of the class
-            function_sig_to_call (str): The signature of the function to call in onCreate
+            function_sig_to_call (Optional[str]): The signature of the function to call in onCreate
         """
         self.class_code = class_code
         self.class_name = class_name
@@ -110,8 +115,6 @@ class SmaliSet:
 
             json_data = core.JsonFile.from_data(json_file)
             function_sig_to_call = json_data.get("function_sig_to_call")
-            if function_sig_to_call is None:
-                continue
 
             smali_edits[class_name] = Smali(
                 file.to_str(), class_name, function_sig_to_call
@@ -213,13 +216,15 @@ class SmaliHandler:
         smali_path.generate_dirs()
         for smali_code in smali_codes:
             path = smali_path.add(*smali_code.class_name.split(".")[:-1])
-            path.generate_dirs()
             path = path.add(smali_code.class_name.split(".")[-1] + ".smali")
+            path.parent().generate_dirs()
             path.write(core.Data(smali_code.class_code))
 
         for i, line in enumerate(text):
             if line.startswith(".method") and "onCreate(" in line:
                 for j, smali in enumerate(smali_codes):
+                    if smali.function_sig_to_call is None:
+                        continue
                     text.insert(
                         i + 2 + j,
                         f"    invoke-static {{p0}}, L{smali.class_name.replace('.', '/')};->{smali.function_sig_to_call}",
@@ -275,7 +280,7 @@ class SmaliHandler:
         class_name: str,
         func_sig: str,
         display_errors: bool = True,
-    ) -> Optional[Smali]:
+    ) -> Optional[SmaliSet]:
         """Compiles java code into smali code
 
         Args:
@@ -310,8 +315,19 @@ class SmaliHandler:
 
             dex_path = temp_folder.add("classes.dex")
 
+            all_class_files = temp_folder.add(*class_name.split(".")[:-1]).get_files(
+                r".*\.class"
+            )
+            class_files: list[str] = []
+            classes_string = ""
+            for class_file in all_class_files:
+                full_class_name = class_file.path.replace(temp_folder.path, "")[1:]
+                class_files.append(full_class_name)
+                classes_string += f"'{full_class_name}' "
+            classes_string = classes_string.strip()
+
             command = core.Command(
-                f"dx --dex --output='{dex_path}' '{class_name.replace('.', '/')}.class'",
+                f"dx --dex --output='{dex_path}' {classes_string}",
                 cwd=temp_folder,
             )
             result = command.run()
@@ -333,8 +349,16 @@ class SmaliHandler:
                     print(result.result)
                 return None
 
-            smali_path = smali_path.add(*class_name.split(".")[:-1]).add(
-                class_name.split(".")[-1] + ".smali"
-            )
-            smali_code = smali_path.read().to_str()
-            return Smali(smali_code, class_name, func_sig)
+            smali_objects: dict[str, Smali] = {}
+            for class_ in class_files:
+                class_name_ = class_.replace(".class", "")
+                smali_path_ = smali_path.add(*class_name_.split(".")[:-1]).add(
+                    class_name_.split(".")[-1] + ".smali"
+                )
+                smali_code = smali_path_.read().to_str()
+                if class_name_ == class_name.replace(".", "/"):
+                    smali_object = Smali(smali_code, class_name_, func_sig)
+                else:
+                    smali_object = Smali(smali_code, class_name_, None)
+                smali_objects[class_name_] = smali_object
+            return SmaliSet(smali_objects)
