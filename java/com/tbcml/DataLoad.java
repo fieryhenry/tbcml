@@ -11,8 +11,8 @@ import java.util.zip.ZipInputStream;
 
 import android.content.Context;
 import android.content.res.AssetManager;
-import android.util.Log;
 import android.os.StrictMode;
+import android.util.Log;
 
 public class DataLoad {
     public static void Start(final Context context) {
