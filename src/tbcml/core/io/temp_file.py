@@ -24,7 +24,7 @@ class TempFile:
         return self.path
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any):
-        self.path.remove()
+        self.path.remove(in_thread=True)
 
     @staticmethod
     def get_temp_path(name: Optional[str] = None, extension: Optional[str] = None):
@@ -44,7 +44,7 @@ class TempFolder:
         return self.path
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any):
-        self.path.remove()
+        self.path.remove(in_thread=True)
 
     @staticmethod
     def get_temp_path(name: Optional[str] = None):

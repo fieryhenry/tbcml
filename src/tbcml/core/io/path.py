@@ -136,12 +136,28 @@ class Path:
             shutil.rmtree(self.path, ignore_errors=ignoreErrors)
         return self
 
-    def remove(self):
+    def remove_tree_thread(self, ignoreErrors: bool = False) -> "Path":
+        if self.exists():
+            core.Command(f"rm -rf {self.path}", display_output=False).run_in_thread()
+        return self
+
+    def remove(self, in_thread: bool = False) -> "Path":
+        if in_thread:
+            return self.remove_thread()
         if self.exists():
             if self.is_directory():
                 self.remove_tree()
             else:
                 os.remove(self.path)
+        return self
+
+    def remove_thread(self) -> "Path":
+        if self.exists():
+            if self.is_directory():
+                self.remove_tree_thread()
+            else:
+                core.Command(f"rm {self.path}", display_output=False).run_in_thread()
+        return self
 
     def has_files(self) -> bool:
         return len(os.listdir(self.path)) > 0
