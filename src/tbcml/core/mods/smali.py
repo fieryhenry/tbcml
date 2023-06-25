@@ -271,7 +271,10 @@ class SmaliHandler:
 
     @staticmethod
     def java_to_smali(
-        java_code: str, class_name: str, func_sig: str, display_errors: bool = True
+        java_code_path: "core.Path",
+        class_name: str,
+        func_sig: str,
+        display_errors: bool = True,
     ) -> Optional[Smali]:
         """Compiles java code into smali code
 
@@ -290,9 +293,14 @@ class SmaliHandler:
             )
 
             java_path.parent().generate_dirs()
-            java_path.write(core.Data(java_code))
+            parents = len(class_name.split("."))
+            top_level_path = java_code_path
+            for _ in range(parents):
+                top_level_path = top_level_path.parent()
+            top_level_path.copy(temp_folder)
             command = core.Command(
-                f"javac --source 7 --target 7 '{java_path}' -d '{temp_folder}'"
+                f"javac --source 7 --target 7 '{java_path}' -d '{temp_folder}'",
+                cwd=temp_folder,
             )
             result = command.run()
             if result.exit_code != 0:
@@ -316,7 +324,8 @@ class SmaliHandler:
 
             baksmali_path = core.Path("lib", is_relative=True).add("baksmali.jar")
             command = core.Command(
-                f"java -jar {baksmali_path} d '{dex_path}' -o '{smali_path}'"
+                f"java -jar {baksmali_path} d '{dex_path}' -o '{smali_path}'",
+                cwd=temp_folder,
             )
             result = command.run()
             if result.exit_code != 0:
@@ -329,26 +338,3 @@ class SmaliHandler:
             )
             smali_code = smali_path.read().to_str()
             return Smali(smali_code, class_name, func_sig)
-
-    @staticmethod
-    def java_to_smali_from_path(
-        path: "core.Path",
-        class_name: str,
-        func_sig: str,
-        display_errors: bool = True,
-    ) -> Optional[Smali]:
-        """Compiles java code into smali code
-
-        Args:
-            path (core.Path): The path to the java file
-            class_name (str): The name of the class
-            func_sig (str): The function signature to call to start the class code
-            display_errors (bool, optional): Whether to display errors if the compilation fails. Defaults to True.
-
-        Returns:
-            Optional[Smali]: The compiled smali code. None if the compilation failed
-        """
-        java_code = path.read().to_str()
-        return SmaliHandler.java_to_smali(
-            java_code, class_name, func_sig, display_errors
-        )
