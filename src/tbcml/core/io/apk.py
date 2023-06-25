@@ -180,6 +180,12 @@ class Apk:
             for folder in folders:
                 new_folder = self.extracted_path.add(folder.basename())
                 folder.copy(new_folder)
+            apktool_yml = temp_folder.add("apktool.yml")
+            apktool_yml.copy(self.extracted_path)
+
+            dex_files = self.extracted_path.glob("*.dex")
+            for dex_file in dex_files:
+                dex_file.remove()
 
     def pack(self):
         if not self.check_display_apktool_error():
@@ -707,9 +713,15 @@ class Apk:
             self.add_to_lib_folder(architecture, script_path)
             script_path.remove()
 
+    @staticmethod
+    def get_libgadgets_path() -> "core.Path":
+        folder = core.Path(core.Config().get(core.ConfigKey.LIB_GADGETS_FOLDER))
+        folder.generate_dirs()
+        return folder
+
     def get_libgadgets(self) -> dict[str, "core.Path"]:
-        folder = core.Config().get(core.ConfigKey.LIB_GADGETS_FOLDER)
-        arcs = core.Path(folder).generate_dirs().get_dirs()
+        folder = Apk.get_libgadgets_path()
+        arcs = folder.get_dirs()
         libgadgets: dict[str, "core.Path"] = {}
         for arc in arcs:
             so_regex = ".*\\.so"
