@@ -1,5 +1,7 @@
 import subprocess
 import threading
+from typing import Optional
+from tbcml import core
 
 
 class Result:
@@ -15,11 +17,20 @@ class Result:
 
 
 class Command:
-    def __init__(self, command: str, display_output: bool = True):
+    def __init__(
+        self,
+        command: str,
+        display_output: bool = True,
+        cwd: Optional["core.Path"] = None,
+    ):
         self.command = command
         self.display_output = display_output
         self.process = None
         self.thread = None
+        if isinstance(cwd, core.Path):
+            self.cwd = cwd.to_str()
+        else:
+            self.cwd = cwd
 
     def run(self, inputData: str = "\n") -> Result:
         self.process = subprocess.Popen(
@@ -29,6 +40,7 @@ class Command:
             stdin=subprocess.PIPE,
             shell=True,
             universal_newlines=True,
+            cwd=self.cwd,
         )
         output, _ = self.process.communicate(inputData)
         return_code = self.process.wait()
