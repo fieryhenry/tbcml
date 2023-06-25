@@ -1,4 +1,6 @@
-package com.tbcml;
+package android.content;
+
+import android.content.res.AssetManager;
 
 public class Context {
     public String getPackageName() {

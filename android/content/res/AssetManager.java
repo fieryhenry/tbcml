@@ -1,4 +1,4 @@
-package com.tbcml;
+package android.content.res;
 
 import java.io.InputStream;
 
