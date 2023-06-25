@@ -40,7 +40,6 @@ public class DataLoad {
                     }
 
                     String entryName = entry.getName();
-                    // if entryName ends with .alwayscopy
                     boolean alwaysCopy = entryName.endsWith(".alwayscopy");
                     entryName = entryName.replace(".alwayscopy", "");
 
