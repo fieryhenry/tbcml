@@ -209,10 +209,12 @@ class SmaliHandler:
         """
         text, target_smali = self.setup_injection()
 
-        path = self.apk.extracted_path.add("smali").add("com").add("tbcml")
-        path.generate_dirs()
+        smali_path = self.apk.extracted_path.add("smali")
+        smali_path.generate_dirs()
         for smali_code in smali_codes:
-            path = path.add(smali_code.class_name + ".smali")
+            path = smali_path.add(*smali_code.class_name.split(".")[:-1])
+            path.generate_dirs()
+            path = path.add(smali_code.class_name.split(".")[-1] + ".smali")
             path.write(core.Data(smali_code.class_code))
 
         for i, line in enumerate(text):
@@ -220,7 +222,7 @@ class SmaliHandler:
                 for j, smali in enumerate(smali_codes):
                     text.insert(
                         i + 2 + j,
-                        f"    invoke-static {{p0}}, Lcom/tbcml/{smali.class_name};->{smali.function_sig_to_call}",
+                        f"    invoke-static {{p0}}, L{smali.class_name.replace('.', '/')};->{smali.function_sig_to_call}",
                     )
                 break
 
@@ -265,7 +267,7 @@ class SmaliHandler:
         """
         path = core.AssetLoader.from_config().get_asset_file_path("DataLoad.smali")
         data = path.read().to_str()
-        return Smali(data, "DataLoad", "Start(Landroid/content/Context;)V")
+        return Smali(data, "com.tbcml.DataLoad", "Start(Landroid/content/Context;)V")
 
     @staticmethod
     def java_to_smali(
@@ -283,7 +285,10 @@ class SmaliHandler:
             Optional[Smali]: The compiled smali code. None if the compilation failed
         """
         with core.TempFolder() as temp_folder:
-            java_path = temp_folder.add("com").add("tbcml").add(f"{class_name}.java")
+            java_path = temp_folder.add(*class_name.split(".")[:-1]).add(
+                class_name.split(".")[-1] + ".java"
+            )
+
             java_path.parent().generate_dirs()
             java_path.write(core.Data(java_code))
             command = core.Command(
@@ -298,7 +303,7 @@ class SmaliHandler:
             dex_path = temp_folder.add("classes.dex")
 
             command = core.Command(
-                f"dx --dex --output='{dex_path}' 'com/tbcml/{class_name}.class'",
+                f"dx --dex --output='{dex_path}' '{class_name.replace('.', '/')}.class'",
                 cwd=temp_folder,
             )
             result = command.run()
@@ -319,13 +324,16 @@ class SmaliHandler:
                     print(result.result)
                 return None
 
-            smali_path = smali_path.add("com").add("tbcml").add(f"{class_name}.smali")
+            smali_path = smali_path.add(*class_name.split(".")[:-1]).add(
+                class_name.split(".")[-1] + ".smali"
+            )
             smali_code = smali_path.read().to_str()
             return Smali(smali_code, class_name, func_sig)
 
     @staticmethod
     def java_to_smali_from_path(
         path: "core.Path",
+        class_name: str,
         func_sig: str,
         display_errors: bool = True,
     ) -> Optional[Smali]:
@@ -333,6 +341,7 @@ class SmaliHandler:
 
         Args:
             path (core.Path): The path to the java file
+            class_name (str): The name of the class
             func_sig (str): The function signature to call to start the class code
             display_errors (bool, optional): Whether to display errors if the compilation fails. Defaults to True.
 
@@ -340,7 +349,6 @@ class SmaliHandler:
             Optional[Smali]: The compiled smali code. None if the compilation failed
         """
         java_code = path.read().to_str()
-        class_name = path.get_file_name_without_extension()
         return SmaliHandler.java_to_smali(
             java_code, class_name, func_sig, display_errors
         )
