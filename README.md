@@ -42,6 +42,9 @@ from tbcml.core import (
     GamePacks,
     Mod,
     ModEdit,
+    CatFormType,
+    Cat,
+    CatForm,
 )
 
 # Choose the country code
@@ -72,10 +75,27 @@ mod = Mod(
     description="Test Description",
     mod_id=mod_id,
     mod_version="1.0.0",
+    password="test",
 )
 
-# Make a mod edit to edit the basic cat's name to "Test Cat"
-mod_edit = ModEdit(["cats", 0, "forms", 0, "name"], "Test Cat")
+# Define cat information
+cat_id = 0
+cat_form_type = CatFormType.FIRST
+
+# Create a form
+form = CatForm.create_empty(cat_id, cat_form_type)
+
+# Set the form's name to "Test Cat"
+form.name = "Test Cat"
+
+# Create a cat
+cat = Cat.create_empty(cat_id)
+
+# Set the form
+cat.set_form(cat_form_type, form)
+
+# Create a mod edit
+mod_edit = ModEdit(["cats", cat_id], cat.to_dict())
 
 # Add the mod edit to the mod
 mod.add_mod_edit(mod_edit)
