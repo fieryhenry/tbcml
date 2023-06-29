@@ -210,6 +210,12 @@ class Path:
     def glob(self, pattern: str) -> list["Path"]:
         return [Path(path) for path in glob.glob(self.add(pattern).path)]
 
+    def recursive_glob(self, pattern: str) -> list["Path"]:
+        return [
+            Path(path)
+            for path in glob.glob(self.add("**", pattern).path, recursive=True)
+        ]
+
     def is_directory(self) -> bool:
         return os.path.isdir(self.path)
 
