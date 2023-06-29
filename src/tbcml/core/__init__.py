@@ -32,6 +32,7 @@ from .game_data.cat_base.unit import (
     ShieldPierce,
     BehemothDodge,
     EvolveItems,
+    EvolveItem,
     Prob,
     SurviveLethalStrike,
     Burrow,
