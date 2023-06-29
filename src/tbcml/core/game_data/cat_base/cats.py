@@ -332,47 +332,43 @@ class CatStats:
         self.recharge_time = core.Frames.from_pair_frames(raw_data[7])
         self.collision_start = raw_data[8]
         self.collision_width = raw_data[9]
-        self.target_red = bool(raw_data[10]) if raw_data[10] is not None else None
+        self.target_red = core.unit_bool(raw_data[10])
         self.unused = raw_data[11]
-        self.area_attack = bool(raw_data[12]) if raw_data[12] is not None else None
+        self.area_attack = core.unit_bool(raw_data[12])
         self.z_layers = core.ZLayers.from_values(raw_data[14], raw_data[15])
-        self.target_floating = bool(raw_data[16]) if raw_data[16] is not None else None
-        self.target_black = bool(raw_data[17]) if raw_data[17] is not None else None
-        self.target_metal = bool(raw_data[18]) if raw_data[18] is not None else None
-        self.target_traitless = bool(raw_data[19]) if raw_data[19] is not None else None
-        self.target_angel = bool(raw_data[20]) if raw_data[20] is not None else None
-        self.target_alien = bool(raw_data[21]) if raw_data[21] is not None else None
-        self.target_zombie = bool(raw_data[22]) if raw_data[22] is not None else None
-        self.strong = bool(raw_data[23]) if raw_data[23] is not None else None
+        self.target_floating = core.unit_bool(raw_data[16])
+        self.target_black = core.unit_bool(raw_data[17])
+        self.target_metal = core.unit_bool(raw_data[18])
+        self.target_traitless = core.unit_bool(raw_data[19])
+        self.target_angel = core.unit_bool(raw_data[20])
+        self.target_alien = core.unit_bool(raw_data[21])
+        self.target_zombie = core.unit_bool(raw_data[22])
+        self.strong = core.unit_bool(raw_data[23])
         self.knockback = core.Knockback.from_values(raw_data[24])
         self.freeze = core.Freeze.from_values(raw_data[25], raw_data[26])
         self.slow = core.Slow.from_values(raw_data[27], raw_data[28])
-        self.resistant = bool(raw_data[29]) if raw_data[29] is not None else None
-        self.massive_damage = bool(raw_data[30]) if raw_data[30] is not None else None
+        self.resistant = core.unit_bool(raw_data[29])
+        self.massive_damage = core.unit_bool(raw_data[30])
         self.crit = core.Crit.from_values(raw_data[31])
-        self.attacks_only = bool(raw_data[32]) if raw_data[32] is not None else None
-        self.extra_money = bool(raw_data[33]) if raw_data[33] is not None else None
-        self.base_destroyer = bool(raw_data[34]) if raw_data[34] is not None else None
+        self.attacks_only = core.unit_bool(raw_data[32])
+        self.extra_money = core.unit_bool(raw_data[33])
+        self.base_destroyer = core.unit_bool(raw_data[34])
         self.wave = core.Wave.from_values(raw_data[35], raw_data[36], raw_data[94])
         self.weaken = core.Weaken.from_values(raw_data[37], raw_data[38], raw_data[39])
         self.strengthen = core.Strengthen.from_values(raw_data[40], raw_data[41])
         self.lethal_strike = core.LethalStrike.from_values(raw_data[42])
-        self.is_metal = bool(raw_data[43]) if raw_data[43] is not None else None
-        self.wave_immunity = bool(raw_data[46]) if raw_data[46] is not None else None
-        self.wave_blocker = bool(raw_data[47]) if raw_data[47] is not None else None
-        self.knockback_immunity = (
-            bool(raw_data[48]) if raw_data[48] is not None else None
-        )
-        self.freeze_immunity = bool(raw_data[49]) if raw_data[49] is not None else None
-        self.slow_immunity = bool(raw_data[50]) if raw_data[50] is not None else None
-        self.weaken_immunity = bool(raw_data[51]) if raw_data[51] is not None else None
-        self.zombie_killer = bool(raw_data[52]) if raw_data[52] is not None else None
-        self.witch_killer = bool(raw_data[53]) if raw_data[53] is not None else None
-        self.target_witch = bool(raw_data[54]) if raw_data[54] is not None else None
-        self.shockwave_immune = bool(raw_data[56]) if raw_data[56] is not None else None
-        self.time_before_death = (
-            core.Frames(raw_data[57]) if raw_data[57] is not None else None
-        )
+        self.is_metal = core.unit_bool(raw_data[43])
+        self.wave_immunity = core.unit_bool(raw_data[46])
+        self.wave_blocker = core.unit_bool(raw_data[47])
+        self.knockback_immunity = core.unit_bool(raw_data[48])
+        self.freeze_immunity = core.unit_bool(raw_data[49])
+        self.slow_immunity = core.unit_bool(raw_data[50])
+        self.weaken_immunity = core.unit_bool(raw_data[51])
+        self.zombie_killer = core.unit_bool(raw_data[52])
+        self.witch_killer = core.unit_bool(raw_data[53])
+        self.target_witch = core.unit_bool(raw_data[54])
+        self.shockwave_immune = core.unit_bool(raw_data[56])
+        self.time_before_death = core.Frames(raw_data[57]) if raw_data[57] else None
         self.attack_state = core.AttackState.from_values(raw_data[55], raw_data[58])
         self.attack_1 = core.Attack.from_values(
             raw_data[3],
@@ -404,28 +400,26 @@ class CatStats:
         self.warp = core.Warp.from_values(
             raw_data[71], raw_data[72], raw_data[73], raw_data[74]
         )
-        self.warp_blocker = bool(raw_data[75]) if raw_data[75] is not None else None
-        self.target_eva = bool(raw_data[76]) if raw_data[76] is not None else None
-        self.eva_killer = bool(raw_data[77]) if raw_data[77] is not None else None
-        self.target_relic = bool(raw_data[78]) if raw_data[78] is not None else None
-        self.curse_immunity = bool(raw_data[79]) if raw_data[79] is not None else None
-        self.insanely_tough = bool(raw_data[80]) if raw_data[80] is not None else None
-        self.insane_damage = bool(raw_data[81]) if raw_data[81] is not None else None
+        self.warp_blocker = core.unit_bool(raw_data[75])
+        self.target_eva = core.unit_bool(raw_data[76])
+        self.eva_killer = core.unit_bool(raw_data[77])
+        self.target_relic = core.unit_bool(raw_data[78])
+        self.curse_immunity = core.unit_bool(raw_data[79])
+        self.insanely_tough = core.unit_bool(raw_data[80])
+        self.insane_damage = core.unit_bool(raw_data[81])
         self.savage_blow = core.SavageBlow.from_values(raw_data[82], raw_data[83])
         self.dodge = core.Dodge.from_values(raw_data[84], raw_data[85])
         self.surge = core.Surge.from_values(
             raw_data[86], raw_data[87], raw_data[88], raw_data[89]
         )
-        self.toxic_immunity = bool(raw_data[90]) if raw_data[90] is not None else None
-        self.surge_immunity = bool(raw_data[91]) if raw_data[91] is not None else None
+        self.toxic_immunity = core.unit_bool(raw_data[90])
+        self.surge_immunity = core.unit_bool(raw_data[91])
         self.curse = core.Curse.from_values(raw_data[92], raw_data[93])
         self.shield_pierce = core.ShieldPierce.from_values(raw_data[95])
-        self.target_aku = bool(raw_data[96]) if raw_data[96] is not None else None
-        self.collossus_slayer = bool(raw_data[97]) if raw_data[97] is not None else None
-        self.soul_strike = bool(raw_data[98]) if raw_data[98] is not None else None
-        self.behemoth_slayer = (
-            bool(raw_data[105]) if raw_data[105] is not None else None
-        )
+        self.target_aku = core.unit_bool(raw_data[96])
+        self.collossus_slayer = core.unit_bool(raw_data[97])
+        self.soul_strike = core.unit_bool(raw_data[98])
+        self.behemoth_slayer = core.unit_bool(raw_data[105])
         self.behemoth_dodge = core.BehemothDodge.from_values(
             raw_data[106], raw_data[107]
         )
@@ -447,26 +441,22 @@ class CatStats:
             else None,  # 7
             self.collision_start,  # 8
             self.collision_width,  # 9
-            int(self.target_red) if self.target_red is not None else None,  # 10
+            core.unit_int(self.target_red),  # 10
             self.unused,  # 11
-            int(self.area_attack) if self.area_attack is not None else None,  # 12
+            core.unit_int(self.area_attack),  # 12
             self.attack_1.foreswing.frames
             if self.attack_1 and self.attack_1.foreswing
             else None,  # 13
             self.z_layers.min if self.z_layers else None,  # 14
             self.z_layers.max if self.z_layers else None,  # 15
-            int(self.target_floating)
-            if self.target_floating is not None
-            else None,  # 16
-            int(self.target_black) if self.target_black is not None else None,  # 17
-            int(self.target_metal) if self.target_metal is not None else None,  # 18
-            int(self.target_traitless)
-            if self.target_traitless is not None
-            else None,  # 19
-            int(self.target_angel) if self.target_angel is not None else None,  # 20
-            int(self.target_alien) if self.target_alien is not None else None,  # 21
-            int(self.target_zombie) if self.target_zombie is not None else None,  # 22
-            int(self.strong) if self.strong is not None else None,  # 23
+            core.unit_int(self.target_floating),  # 16
+            core.unit_int(self.target_black),  # 17
+            core.unit_int(self.target_metal),  # 18
+            core.unit_int(self.target_traitless),  # 19
+            core.unit_int(self.target_angel),  # 20
+            core.unit_int(self.target_alien),  # 21
+            core.unit_int(self.target_zombie),  # 22
+            core.unit_int(self.strong),  # 23
             self.knockback.prob.percent
             if self.knockback.prob is not None
             else None,  # 24
@@ -480,12 +470,12 @@ class CatStats:
             self.slow.time.frames
             if self.slow and self.slow.time is not None
             else None,  # 28
-            int(self.resistant) if self.resistant is not None else None,  # 29
-            int(self.massive_damage) if self.massive_damage is not None else None,  # 30
+            core.unit_int(self.resistant),  # 29
+            core.unit_int(self.massive_damage),  # 30
             self.crit.prob.percent if self.crit.prob is not None else None,  # 31
-            int(self.attacks_only) if self.attacks_only is not None else None,  # 32
-            int(self.extra_money) if self.extra_money is not None else None,  # 33
-            int(self.base_destroyer) if self.base_destroyer is not None else None,  # 34
+            core.unit_int(self.attacks_only),  # 32
+            core.unit_int(self.extra_money),  # 33
+            core.unit_int(self.base_destroyer),  # 34
             self.wave.prob.percent if self.wave.prob is not None else None,  # 35
             self.wave.level,  # 36
             self.weaken.prob.percent if self.weaken.prob is not None else None,  # 37
@@ -496,28 +486,20 @@ class CatStats:
             self.lethal_strike.prob.percent
             if self.lethal_strike.prob is not None
             else None,  # 42
-            int(self.is_metal) if self.is_metal is not None else None,  # 43
+            core.unit_int(self.is_metal),  # 43
             self.attack_1.long_distance_start,  # 44
             self.attack_1.long_distance_range,  # 45
-            int(self.wave_immunity) if self.wave_immunity is not None else None,  # 46
-            int(self.wave_blocker) if self.wave_blocker is not None else None,  # 47
-            int(self.knockback_immunity)
-            if self.knockback_immunity is not None
-            else None,  # 48
-            int(self.freeze_immunity)
-            if self.freeze_immunity is not None
-            else None,  # 49
-            int(self.slow_immunity) if self.slow_immunity is not None else None,  # 50
-            int(self.weaken_immunity)
-            if self.weaken_immunity is not None
-            else None,  # 51
-            int(self.zombie_killer) if self.zombie_killer is not None else None,  # 52
-            int(self.witch_killer) if self.witch_killer is not None else None,  # 53
-            int(self.target_witch) if self.target_witch is not None else None,  # 54
+            core.unit_int(self.wave_immunity),  # 46
+            core.unit_int(self.wave_blocker),  # 47
+            core.unit_int(self.knockback_immunity),  # 48
+            core.unit_int(self.freeze_immunity),  # 49
+            core.unit_int(self.slow_immunity),  # 50
+            core.unit_int(self.weaken_immunity),  # 51
+            core.unit_int(self.zombie_killer),  # 52
+            core.unit_int(self.witch_killer),  # 53
+            core.unit_int(self.target_witch),  # 54
             self.attack_state.attacks_before,  # 55
-            int(self.shockwave_immune)
-            if self.shockwave_immune is not None
-            else None,  # 56
+            core.unit_int(self.shockwave_immune),  # 56
             self.time_before_death.frames
             if self.time_before_death is not None
             else None,  # 57
@@ -530,23 +512,13 @@ class CatStats:
             self.attack_3.foreswing.frames
             if self.attack_3.foreswing is not None
             else None,  # 62
-            int(self.attack_1.use_ability)
-            if self.attack_1.use_ability is not None
-            else None,  # 63
-            int(self.attack_2.use_ability)
-            if self.attack_2.use_ability is not None
-            else None,  # 64
-            int(self.attack_3.use_ability)
-            if self.attack_3.use_ability is not None
-            else None,  # 65
+            core.unit_int(self.attack_1.use_ability),  # 63
+            core.unit_int(self.attack_2.use_ability),  # 64
+            core.unit_int(self.attack_3.use_ability),  # 65
             self.spawn_anim.model_id,  # 66
             self.soul_anim.model_id,  # 67
-            int(self.spawn_anim.has_entry_maanim)
-            if self.spawn_anim.has_entry_maanim is not None
-            else None,  # 68
-            int(self.soul_anim.has_death_maanim)
-            if self.soul_anim.has_death_maanim is not None
-            else None,  # 69
+            core.unit_int(self.spawn_anim.has_entry_maanim),  # 68
+            core.unit_int(self.soul_anim.has_death_maanim),  # 69
             self.barrier_breaker.prob.percent
             if self.barrier_breaker.prob is not None
             else None,  # 70
@@ -554,13 +526,13 @@ class CatStats:
             self.warp.time.frames if self.warp.time is not None else None,  # 72
             self.warp.min_distance,  # 73
             self.warp.max_distance,  # 74
-            int(self.warp_blocker) if self.warp_blocker is not None else None,  # 75
-            int(self.target_eva) if self.target_eva is not None else None,  # 76
-            int(self.eva_killer) if self.eva_killer is not None else None,  # 77
-            int(self.target_relic) if self.target_relic is not None else None,  # 78
-            int(self.curse_immunity) if self.curse_immunity is not None else None,  # 79
-            int(self.insanely_tough) if self.insanely_tough is not None else None,  # 80
-            int(self.insane_damage) if self.insane_damage is not None else None,  # 81
+            core.unit_int(self.warp_blocker),  # 75
+            core.unit_int(self.target_eva),  # 76
+            core.unit_int(self.eva_killer),  # 77
+            core.unit_int(self.target_relic),  # 78
+            core.unit_int(self.curse_immunity),  # 79
+            core.unit_int(self.insanely_tough),  # 80
+            core.unit_int(self.insane_damage),  # 81
             self.savage_blow.prob.percent
             if self.savage_blow.prob is not None
             else None,  # 82
@@ -571,32 +543,24 @@ class CatStats:
             self.surge.start,  # 87
             self.surge.range,  # 88
             self.surge.level,  # 89
-            int(self.toxic_immunity) if self.toxic_immunity is not None else None,  # 90
-            int(self.surge_immunity) if self.surge_immunity is not None else None,  # 91
+            core.unit_int(self.toxic_immunity),  # 90
+            core.unit_int(self.surge_immunity),  # 91
             self.curse.prob.percent if self.curse.prob is not None else None,  # 92
             self.curse.time.frames if self.curse.time is not None else None,  # 93
-            int(self.wave.is_mini) if self.wave.is_mini is not None else None,  # 94
+            core.unit_int(self.wave.is_mini),  # 94
             self.shield_pierce.prob.percent
             if self.shield_pierce.prob is not None
             else None,  # 95
-            int(self.target_aku) if self.target_aku is not None else None,  # 96
-            int(self.collossus_slayer)
-            if self.collossus_slayer is not None
-            else None,  # 97
-            int(self.soul_strike) if self.soul_strike is not None else None,  # 98
-            int(self.attack_2.long_distance_flag)
-            if self.attack_2.long_distance_flag is not None
-            else None,  # 99
+            core.unit_int(self.target_aku),  # 96
+            core.unit_int(self.collossus_slayer),  # 97
+            core.unit_int(self.soul_strike),  # 98
+            core.unit_int(self.attack_2.long_distance_flag),  # 99
             self.attack_2.long_distance_start,  # 100
             self.attack_2.long_distance_range,  # 101
-            int(self.attack_3.long_distance_flag)
-            if self.attack_3.long_distance_flag is not None
-            else None,  # 102
+            core.unit_int(self.attack_3.long_distance_flag),  # 102
             self.attack_3.long_distance_start,  # 103
             self.attack_3.long_distance_range,  # 104
-            int(self.behemoth_slayer)
-            if self.behemoth_slayer is not None
-            else None,  # 105
+            core.unit_int(self.behemoth_slayer),  # 105
             self.behemoth_dodge.prob.percent
             if self.behemoth_dodge.prob is not None
             else None,  # 106
@@ -613,15 +577,13 @@ class CatStats:
 
     def has_targeted_effect(self) -> bool:
         to_check = [
-            self.knockback.prob.percent
-            if self.knockback and self.knockback.prob
-            else None,
-            self.freeze.prob.percent if self.freeze and self.freeze.prob else None,
-            self.slow.prob.percent if self.slow and self.slow.prob else None,
-            self.weaken.prob.percent if self.weaken and self.weaken.prob else None,
-            self.warp.prob.percent if self.warp and self.warp.prob else None,
-            self.curse.prob.percent if self.curse and self.curse.prob else None,
-            self.dodge.prob.percent if self.dodge and self.dodge.prob else None,
+            self.knockback.prob.percent if self.knockback.prob else None,
+            self.freeze.prob.percent if self.freeze.prob else None,
+            self.slow.prob.percent if self.slow.prob else None,
+            self.weaken.prob.percent if self.weaken.prob else None,
+            self.warp.prob.percent if self.warp.prob else None,
+            self.curse.prob.percent if self.curse.prob else None,
+            self.dodge.prob.percent if self.dodge.prob else None,
         ]
         return any(to_check)
 
@@ -640,7 +602,7 @@ class CatStats:
         self.speed = enemy_stats.speed
         self.attack_1 = enemy_stats.attack_1.copy()
         self.range = enemy_stats.range
-        self.cost = enemy_stats.money_drop // 2
+        self.cost = (enemy_stats.money_drop or 0) // 2
         self.recharge_time = core.Frames(0)
         self.collision_start = enemy_stats.collision_start
         self.collision_width = enemy_stats.collision_width
@@ -671,7 +633,11 @@ class CatStats:
         self.weaken_immunity = enemy_stats.weaken_immunity
         self.target_witch = has_targeted_effect
         self.attack_state = enemy_stats.attack_state.copy()
-        self.time_before_death = enemy_stats.time_before_death.copy()
+        self.time_before_death = (
+            enemy_stats.time_before_death.copy()
+            if enemy_stats.time_before_death is not None
+            else None
+        )
         self.attack_2 = enemy_stats.attack_2.copy()
         self.attack_3 = enemy_stats.attack_3.copy()
         self.spawn_anim = enemy_stats.spawn_anim.copy()
@@ -920,7 +886,7 @@ class CatForm:
         if self.stats is not None:
             self.stats.cat_id = cat_id
 
-        if original_cat_id != self.cat_id and self.anim is not None:
+        if original_cat_id != self.cat_id:
             self.get_anim().set_cat_id(cat_id)
 
     def set_form(self, form: CatFormType):
@@ -928,14 +894,17 @@ class CatForm:
         self.form = form
         if self.stats is not None:
             self.stats.form = form
-        if original_form != self.form and self.anim is not None:
+        if original_form != self.form:
             self.get_anim().set_form(form)
 
     def import_enemy(self, enemy: "core.Enemy"):
-        self.name = enemy.name
-        self.description = enemy.description[1:]
+        if enemy.name is not None:
+            self.name = enemy.name
+        if enemy.description is not None:
+            self.description = enemy.description[1:]
         # self.anim.import_enemy_anim(enemy.anim)
-        self.get_stats().import_enemy_stats(enemy.stats)
+        if enemy.stats is not None:
+            self.get_stats().import_enemy_stats(enemy.stats)
 
     def copy(self) -> "CatForm":
         return CatForm(

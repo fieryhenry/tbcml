@@ -1,6 +1,30 @@
 from typing import Optional
 
 
+def unit_bool(value: Optional[int]) -> Optional[bool]:
+    """Convert a unit bool to a bool.
+    Args:
+        value (Optional[int]): The unit bool.
+    Returns:
+        Optional[bool]: The bool.
+    """
+    if value is None:
+        return None
+    return bool(value)
+
+
+def unit_int(value: Optional[bool]) -> Optional[int]:
+    """Convert a unit int to an int.
+    Args:
+        value (Optional[bool]): The unit int.
+    Returns:
+        Optional[int]: The int.
+    """
+    if value is None:
+        return None
+    return int(value)
+
+
 class Frames:
     """Represents a number of frames, and provides methods for converting to and from seconds, and pair frames."""
 
