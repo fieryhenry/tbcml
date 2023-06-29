@@ -452,6 +452,16 @@ class KeyFrames:
             "keyframes": [keyframe.to_dict() for keyframe in self.keyframes],
         }
 
+    def flip_x(self):
+        if self.modification_type == AnimModificationType.ANGLE:
+            for keyframe in self.keyframes:
+                keyframe.change = -keyframe.change
+
+    def flip_y(self):
+        if self.modification_type == AnimModificationType.ANGLE:
+            for keyframe in self.keyframes:
+                keyframe.change = -keyframe.change
+
 
 class UnitAnimMetaData:
     def __init__(self, head_name: str, version_code: int, total_parts: int):
@@ -630,3 +640,11 @@ class UnitAnim:
         cat_id = parts[0]
         anim_id = parts[1][1:3]
         self.name = f"{cat_id}_{form}{anim_id}.maanim"
+
+    def flip_x(self):
+        for part in self.parts:
+            part.flip_x()
+
+    def flip_y(self):
+        for part in self.parts:
+            part.flip_y()

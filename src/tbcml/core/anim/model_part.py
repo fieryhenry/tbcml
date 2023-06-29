@@ -804,3 +804,19 @@ class ModelPart:
             "unit_id": self.unit_id,
             "rect_id": self.rect_id,
         }
+
+    def flip_x(self):
+        """Flips the part horizontally."""
+        if self.index == 0:
+            self.scale_x = -self.scale_x
+            self.scale_x_orig = -self.scale_x_orig
+        self.rotation = -self.rotation
+        self.rotation_orig = -self.rotation_orig
+
+    def flip_y(self):
+        """Flips the part vertically."""
+        if self.index == 0:
+            self.scale_y = -self.scale_y
+            self.scale_y_orig = -self.scale_y_orig
+        self.rotation = -self.rotation
+        self.rotation_orig = -self.rotation_orig
