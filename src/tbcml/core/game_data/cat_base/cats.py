@@ -96,7 +96,7 @@ class CatStats:
     """Unused. Index 11."""
     area_attack: Optional[bool]
     """Whether the cat has the area attack ability. Index 12."""
-    z_layers: Optional["core.ZLayers"]
+    z_layers: "core.ZLayers"
     """The Z layers of the cat. Index 14 min layer and index 15 max layer."""
     target_floating: Optional[bool]
     """Whether the cat has the target floating trait. Index 16."""
@@ -114,17 +114,17 @@ class CatStats:
     """Whether the cat has the target zombie trait. Index 22."""
     strong: Optional[bool]
     """Whether the cat has the strong against ability. Index 23."""
-    knockback: Optional["core.Knockback"]
+    knockback: "core.Knockback"
     """The probability of knockback. Index 24."""
-    freeze: Optional["core.Freeze"]
+    freeze: "core.Freeze"
     """The probability and duration of a freeze attack. Index 25 and 26."""
-    slow: Optional["core.Slow"]
+    slow: "core.Slow"
     """The probability and duration of a slow attack. Index 27 and 28."""
     resistant: Optional[bool]
     """Whether the cat has the resistant against ability. Index 29."""
     massive_damage: Optional[bool]
     """Whether the cat has the massive damage ability. Index 30."""
-    crit: Optional["core.Crit"]
+    crit: "core.Crit"
     """The probability of a crit attack. Index 31."""
     attacks_only: Optional[bool]
     """Whether the cat has the attacks only ability. Index 32."""
@@ -132,24 +132,24 @@ class CatStats:
     """Whether the cat has the extra money ability. Index 33."""
     base_destroyer: Optional[bool]
     """Whether the cat has the base destroyer ability. Index 34."""
-    wave: Optional["core.Wave"]
+    wave: "core.Wave"
     """The wave attack of the cat.
     Probability: Index 35
     Level: Index 36
     IsMini: Index 94
     """
-    weaken: Optional["core.Weaken"]
+    weaken: "core.Weaken"
     """The weaken attack of the cat.
     Probability: Index 37
     Duration: Index 38
     Percentage: Index 39
     """
-    strengthen: Optional["core.Strengthen"]
+    strengthen: "core.Strengthen"
     """The strengthen ability of the cat.
     HP percentage to activate: Index 40
     HP percentage to strengthen: Index 41
     """
-    lethal_strike: Optional["core.LethalStrike"]
+    lethal_strike: "core.LethalStrike"
     """The probability of a lethal strike attack. Index 42."""
     is_metal: Optional[bool]
     """Whether the cat is metal. Index 43."""
@@ -171,7 +171,7 @@ class CatStats:
     """Whether the cat has the witch killer ability. Index 53."""
     target_witch: Optional[bool]
     """Whether the cat has the target witch trait. Index 54."""
-    attack_state: Optional["core.AttackState"]
+    attack_state: "core.AttackState"
     """The attack state of the cat.
     Attacks before state change: Index 55
     State: Index 58
@@ -179,7 +179,7 @@ class CatStats:
     time_before_death: Optional["core.Frames"]
     """The time before the cat dies after being knocked back. Index 57."""
 
-    attack_1: Optional["core.Attack"]
+    attack_1: "core.Attack"
     """The first attack of the cat.
     Attack: Index 3
     Foreswing: Index 13
@@ -187,7 +187,7 @@ class CatStats:
     LongDistanceFlag: True
     LongDistanceStartRange: Index 44
     LongDistanceRangeRange: Index 45"""
-    attack_2: Optional["core.Attack"]
+    attack_2: "core.Attack"
     """The second attack of the cat.
     Attack: Index 59
     Foreswing: Index 61
@@ -195,7 +195,7 @@ class CatStats:
     LogDistanceFlag: Index 99
     LongDistanceStartRange: Index 100
     LongDistanceRangeRange: Index 101"""
-    attack_3: Optional["core.Attack"]
+    attack_3: "core.Attack"
     """The third attack of the cat.
     Attack: Index 60
     Foreswing: Index 62
@@ -203,21 +203,21 @@ class CatStats:
     LongDistanceFlag: Index 102
     LongDistanceStartRange: Index 103
     LongDistanceRangeRange: Index 104"""
-    spawn_anim: Optional["core.SpawnAnim"]
+    spawn_anim: "core.SpawnAnim"
     """The spawn animation of the cat.
     ModelID: Index 66
     HasEntryMaanim: Index 68
     """
-    soul_anim: Optional["core.SoulAnim"]
+    soul_anim: "core.SoulAnim"
     """The soul animation of the cat.
     ModelID: Index 67
     HasDeathMaanim: Index 69
     """
-    barrier_breaker: Optional["core.BarrierBreak"]
+    barrier_breaker: "core.BarrierBreak"
     """The barrier break ability of the cat.
     Probability: Index 70
     """
-    warp: Optional["core.Warp"]
+    warp: "core.Warp"
     """The warp ability of the cat.
     Probability: Index 71
     duration: Index 72
@@ -238,17 +238,17 @@ class CatStats:
     """Whether the cat has the insanely tough ability. Index 80."""
     insane_damage: Optional[bool]
     """Whether the cat has the insane damage ability. Index 81."""
-    savage_blow: Optional["core.SavageBlow"]
+    savage_blow: "core.SavageBlow"
     """The savage blow ability of the cat.
     Probability: Index 82
     Damage Addition: Index 83
     """
-    dodge: Optional["core.Dodge"]
+    dodge: "core.Dodge"
     """The dodge ability of the cat.
     Probability: Index 84
     Duration: Index 85
     """
-    surge: Optional["core.Surge"]
+    surge: "core.Surge"
     """The surge ability of the cat.
     Probability: Index 86
     start range: Index 87
@@ -259,12 +259,12 @@ class CatStats:
     """Whether the cat has the toxic immunity ability. Index 90."""
     surge_immunity: Optional[bool]
     """Whether the cat has the surge immunity ability. Index 91."""
-    curse: Optional["core.Curse"]
+    curse: "core.Curse"
     """The curse ability of the cat.
     Probability: Index 92
     Duration: Index 93
     """
-    shield_pierce: Optional["core.ShieldPierce"]
+    shield_pierce: "core.ShieldPierce"
     """The shield pierce ability of the cat.
     Probability: Index 95
     """
@@ -276,7 +276,7 @@ class CatStats:
     """Whether the cat has the soul strike ability. Index 98."""
     behemoth_slayer: Optional[bool]
     """Whether the cat has the behemoth slayer ability. Index 105."""
-    behemoth_dodge: Optional["core.BehemothDodge"]
+    behemoth_dodge: "core.BehemothDodge"
     """The behemoth dodge ability of the cat.
     Probability: Index 106
     Duration: Index 107
@@ -436,7 +436,7 @@ class CatStats:
             self.hp,  # 0
             self.kbs,  # 1
             self.speed,  # 2
-            self.attack_1.damage if self.attack_1 is not None else None,  # 3
+            self.attack_1.damage,  # 3
             self.attack_interval.pair_frames
             if self.attack_interval is not None
             else None,  # 4
@@ -468,11 +468,9 @@ class CatStats:
             int(self.target_zombie) if self.target_zombie is not None else None,  # 22
             int(self.strong) if self.strong is not None else None,  # 23
             self.knockback.prob.percent
-            if self.knockback is not None and self.knockback.prob is not None
+            if self.knockback.prob is not None
             else None,  # 24
-            self.freeze.prob.percent
-            if self.freeze is not None and self.freeze.prob is not None
-            else None,  # 25
+            self.freeze.prob.percent if self.freeze.prob is not None else None,  # 25
             self.freeze.time.frames
             if self.freeze and self.freeze.time is not None
             else None,  # 26
@@ -484,37 +482,23 @@ class CatStats:
             else None,  # 28
             int(self.resistant) if self.resistant is not None else None,  # 29
             int(self.massive_damage) if self.massive_damage is not None else None,  # 30
-            self.crit.prob.percent
-            if self.crit is not None and self.crit.prob is not None
-            else None,  # 31
+            self.crit.prob.percent if self.crit.prob is not None else None,  # 31
             int(self.attacks_only) if self.attacks_only is not None else None,  # 32
             int(self.extra_money) if self.extra_money is not None else None,  # 33
             int(self.base_destroyer) if self.base_destroyer is not None else None,  # 34
-            self.wave.prob.percent
-            if self.wave is not None and self.wave.prob is not None
-            else None,  # 35
-            self.wave.level if self.wave is not None else None,  # 36
-            self.weaken.prob.percent
-            if self.weaken is not None and self.weaken.prob is not None
-            else None,  # 37
-            self.weaken.time.frames
-            if self.weaken is not None and self.weaken.time is not None
-            else None,  # 38
-            self.weaken.multiplier if self.weaken is not None else None,  # 39
-            self.strengthen.hp_percent if self.strengthen is not None else None,  # 40
-            self.strengthen.multiplier_percent
-            if self.strengthen is not None
-            else None,  # 41
+            self.wave.prob.percent if self.wave.prob is not None else None,  # 35
+            self.wave.level,  # 36
+            self.weaken.prob.percent if self.weaken.prob is not None else None,  # 37
+            self.weaken.time.frames if self.weaken.time is not None else None,  # 38
+            self.weaken.multiplier,  # 39
+            self.strengthen.hp_percent,  # 40
+            self.strengthen.multiplier_percent,  # 41
             self.lethal_strike.prob.percent
-            if self.lethal_strike is not None and self.lethal_strike.prob is not None
+            if self.lethal_strike.prob is not None
             else None,  # 42
             int(self.is_metal) if self.is_metal is not None else None,  # 43
-            self.attack_1.long_distance_start
-            if self.attack_1 is not None
-            else None,  # 44
-            self.attack_1.long_distance_range
-            if self.attack_1 is not None
-            else None,  # 45
+            self.attack_1.long_distance_start,  # 44
+            self.attack_1.long_distance_range,  # 45
             int(self.wave_immunity) if self.wave_immunity is not None else None,  # 46
             int(self.wave_blocker) if self.wave_blocker is not None else None,  # 47
             int(self.knockback_immunity)
@@ -530,55 +514,46 @@ class CatStats:
             int(self.zombie_killer) if self.zombie_killer is not None else None,  # 52
             int(self.witch_killer) if self.witch_killer is not None else None,  # 53
             int(self.target_witch) if self.target_witch is not None else None,  # 54
-            self.attack_state.attacks_before
-            if self.attack_state is not None
-            else None,  # 55
+            self.attack_state.attacks_before,  # 55
             int(self.shockwave_immune)
             if self.shockwave_immune is not None
             else None,  # 56
             self.time_before_death.frames
             if self.time_before_death is not None
             else None,  # 57
-            self.attack_state.state_id if self.attack_state is not None else None,  # 58
-            self.attack_2.damage if self.attack_2 is not None else None,  # 59
-            self.attack_3.damage if self.attack_3 is not None else None,  # 60
+            self.attack_state.state_id,  # 58
+            self.attack_2.damage,  # 59
+            self.attack_3.damage,  # 60
             self.attack_2.foreswing.frames
-            if self.attack_2 is not None and self.attack_2.foreswing is not None
+            if self.attack_2.foreswing is not None
             else None,  # 61
             self.attack_3.foreswing.frames
-            if self.attack_3 is not None and self.attack_3.foreswing is not None
+            if self.attack_3.foreswing is not None
             else None,  # 62
             int(self.attack_1.use_ability)
-            if self.attack_1 is not None and self.attack_1.use_ability is not None
+            if self.attack_1.use_ability is not None
             else None,  # 63
             int(self.attack_2.use_ability)
-            if self.attack_2 is not None and self.attack_2.use_ability is not None
+            if self.attack_2.use_ability is not None
             else None,  # 64
             int(self.attack_3.use_ability)
-            if self.attack_3 is not None and self.attack_3.use_ability is not None
+            if self.attack_3.use_ability is not None
             else None,  # 65
-            self.spawn_anim.model_id if self.spawn_anim is not None else None,  # 66
-            self.soul_anim.model_id if self.soul_anim is not None else None,  # 67
+            self.spawn_anim.model_id,  # 66
+            self.soul_anim.model_id,  # 67
             int(self.spawn_anim.has_entry_maanim)
-            if self.spawn_anim is not None
-            and self.spawn_anim.has_entry_maanim is not None
+            if self.spawn_anim.has_entry_maanim is not None
             else None,  # 68
             int(self.soul_anim.has_death_maanim)
-            if self.soul_anim is not None
-            and self.soul_anim.has_death_maanim is not None
+            if self.soul_anim.has_death_maanim is not None
             else None,  # 69
             self.barrier_breaker.prob.percent
-            if self.barrier_breaker is not None
-            and self.barrier_breaker.prob is not None
+            if self.barrier_breaker.prob is not None
             else None,  # 70
-            self.warp.prob.percent
-            if self.warp is not None and self.warp.prob is not None
-            else None,  # 71
-            self.warp.time.frames
-            if self.warp is not None and self.warp.time is not None
-            else None,  # 72
-            self.warp.min_distance if self.warp is not None else None,  # 73
-            self.warp.max_distance if self.warp is not None else None,  # 74
+            self.warp.prob.percent if self.warp.prob is not None else None,  # 71
+            self.warp.time.frames if self.warp.time is not None else None,  # 72
+            self.warp.min_distance,  # 73
+            self.warp.max_distance,  # 74
             int(self.warp_blocker) if self.warp_blocker is not None else None,  # 75
             int(self.target_eva) if self.target_eva is not None else None,  # 76
             int(self.eva_killer) if self.eva_killer is not None else None,  # 77
@@ -587,34 +562,22 @@ class CatStats:
             int(self.insanely_tough) if self.insanely_tough is not None else None,  # 80
             int(self.insane_damage) if self.insane_damage is not None else None,  # 81
             self.savage_blow.prob.percent
-            if self.savage_blow is not None and self.savage_blow.prob is not None
+            if self.savage_blow.prob is not None
             else None,  # 82
-            self.savage_blow.multiplier if self.savage_blow is not None else None,  # 83
-            self.dodge.prob.percent
-            if self.dodge is not None and self.dodge.prob is not None
-            else None,  # 84
-            self.dodge.time.frames
-            if self.dodge is not None and self.dodge.time is not None
-            else None,  # 85
-            self.surge.prob.percent
-            if self.surge is not None and self.surge.prob is not None
-            else None,  # 86
-            self.surge.start if self.surge is not None else None,  # 87
-            self.surge.range if self.surge is not None else None,  # 88
-            self.surge.level if self.surge is not None else None,  # 89
+            self.savage_blow.multiplier,  # 83
+            self.dodge.prob.percent if self.dodge.prob is not None else None,  # 84
+            self.dodge.time.frames if self.dodge.time is not None else None,  # 85
+            self.surge.prob.percent if self.surge.prob is not None else None,  # 86
+            self.surge.start,  # 87
+            self.surge.range,  # 88
+            self.surge.level,  # 89
             int(self.toxic_immunity) if self.toxic_immunity is not None else None,  # 90
             int(self.surge_immunity) if self.surge_immunity is not None else None,  # 91
-            self.curse.prob.percent
-            if self.curse is not None and self.curse.prob is not None
-            else None,  # 92
-            self.curse.time.frames
-            if self.curse is not None and self.curse.time is not None
-            else None,  # 93
-            int(self.wave.is_mini)
-            if self.wave is not None and self.wave.is_mini is not None
-            else None,  # 94
+            self.curse.prob.percent if self.curse.prob is not None else None,  # 92
+            self.curse.time.frames if self.curse.time is not None else None,  # 93
+            int(self.wave.is_mini) if self.wave.is_mini is not None else None,  # 94
             self.shield_pierce.prob.percent
-            if self.shield_pierce is not None and self.shield_pierce.prob is not None
+            if self.shield_pierce.prob is not None
             else None,  # 95
             int(self.target_aku) if self.target_aku is not None else None,  # 96
             int(self.collossus_slayer)
@@ -622,33 +585,23 @@ class CatStats:
             else None,  # 97
             int(self.soul_strike) if self.soul_strike is not None else None,  # 98
             int(self.attack_2.long_distance_flag)
-            if self.attack_2 is not None
-            and self.attack_2.long_distance_flag is not None
+            if self.attack_2.long_distance_flag is not None
             else None,  # 99
-            self.attack_2.long_distance_start
-            if self.attack_2 is not None
-            else None,  # 100
-            self.attack_2.long_distance_range
-            if self.attack_2 is not None
-            else None,  # 101
+            self.attack_2.long_distance_start,  # 100
+            self.attack_2.long_distance_range,  # 101
             int(self.attack_3.long_distance_flag)
-            if self.attack_3 is not None
-            and self.attack_3.long_distance_flag is not None
+            if self.attack_3.long_distance_flag is not None
             else None,  # 102
-            self.attack_3.long_distance_start
-            if self.attack_3 is not None
-            else None,  # 103
-            self.attack_3.long_distance_range
-            if self.attack_3 is not None
-            else None,  # 104
+            self.attack_3.long_distance_start,  # 103
+            self.attack_3.long_distance_range,  # 104
             int(self.behemoth_slayer)
             if self.behemoth_slayer is not None
             else None,  # 105
             self.behemoth_dodge.prob.percent
-            if self.behemoth_dodge is not None and self.behemoth_dodge.prob is not None
+            if self.behemoth_dodge.prob is not None
             else None,  # 106
             self.behemoth_dodge.time.frames
-            if self.behemoth_dodge is not None and self.behemoth_dodge.time is not None
+            if self.behemoth_dodge.time is not None
             else None,  # 107
             self.unknown_108,  # 108
         ]
@@ -870,23 +823,51 @@ class CatForm:
         self.upgrade_icon = upgrade_icon
         self.deploy_icon = deploy_icon
 
-    def format_deploy_icon(self):
+    def get_stats(self) -> "CatStats":
+        if self.stats is None:
+            self.stats = CatStats.create_empty(self.cat_id, self.form)
+        return self.stats
+
+    def get_name(self) -> str:
+        if self.name is None:
+            self.name = ""
+        return self.name
+
+    def get_description(self) -> list[str]:
+        if self.description is None:
+            self.description = []
+        return self.description
+
+    def get_anim(self) -> "CatModel":
+        if self.anim is None:
+            self.anim = CatModel.create_empty(self.cat_id, self.form)
+        return self.anim
+
+    def get_upgrade_icon(self) -> "core.BCImage":
+        if self.upgrade_icon is None:
+            self.upgrade_icon = core.BCImage.from_size(512, 128)
+        return self.upgrade_icon
+
+    def get_deploy_icon(self) -> "core.BCImage":
         if self.deploy_icon is None:
-            return
-        if self.deploy_icon.width == 128 and self.deploy_icon.height == 128:
+            self.deploy_icon = core.BCImage.from_size(128, 128)
+        return self.deploy_icon
+
+    def format_deploy_icon(self):
+        deploy_icon = self.get_deploy_icon()
+        if deploy_icon.width == 128 and deploy_icon.height == 128:
             return
         base_image = core.BCImage.from_size(128, 128)
-        base_image.paste(self.deploy_icon, 9, 21)
+        base_image.paste(deploy_icon, 9, 21)
         self.deploy_icon = base_image
 
     def format_upgrade_icon(self):
-        if self.upgrade_icon is None:
-            return
-        if self.upgrade_icon.width == 85 and self.upgrade_icon.height == 32:
-            self.upgrade_icon.scale(3.5, 3.5)
+        upgrade_icon = self.get_upgrade_icon()
+        if upgrade_icon.width == 85 and upgrade_icon.height == 32:
+            upgrade_icon.scale(3.5, 3.5)
 
         base_image = core.BCImage.from_size(512, 128)
-        base_image.paste(self.upgrade_icon, 13, 1)
+        base_image.paste(upgrade_icon, 13, 1)
 
         start_pos = (146, 112)
         end_pos = (118, 70)
@@ -899,7 +880,6 @@ class CatForm:
                 )
             start_offset += 1
             start_width -= 1
-
         self.upgrade_icon = base_image
 
     def format_icons(self):
@@ -935,29 +915,27 @@ class CatForm:
             game_data.set_file(deploy_name, self.deploy_icon.to_data())
 
     def set_cat_id(self, cat_id: int):
+        original_cat_id = self.cat_id
         self.cat_id = cat_id
         if self.stats is not None:
             self.stats.cat_id = cat_id
-        if self.anim is None:
-            self.anim = CatModel.create_empty(cat_id, self.form)
 
-        self.anim.set_cat_id(cat_id)
+        if original_cat_id != self.cat_id and self.anim is not None:
+            self.get_anim().set_cat_id(cat_id)
 
     def set_form(self, form: CatFormType):
+        original_form = self.form
         self.form = form
         if self.stats is not None:
             self.stats.form = form
-        if self.anim is None:
-            self.anim = CatModel.create_empty(self.cat_id, form)
-        self.anim.set_form(form)
+        if original_form != self.form and self.anim is not None:
+            self.get_anim().set_form(form)
 
     def import_enemy(self, enemy: "core.Enemy"):
         self.name = enemy.name
         self.description = enemy.description[1:]
         # self.anim.import_enemy_anim(enemy.anim)
-        if self.stats is None:
-            self.stats = CatStats.create_empty(self.cat_id, self.form)
-        self.stats.import_enemy_stats(enemy.stats)
+        self.get_stats().import_enemy_stats(enemy.stats)
 
     def copy(self) -> "CatForm":
         return CatForm(
@@ -980,24 +958,16 @@ class CatForm:
             self.description = description
         stats = dict_data.get("stats")
         if stats is not None:
-            if self.stats is None:
-                self.stats = CatStats.create_empty(self.cat_id, self.form)
-            self.stats.apply_dict(stats)
+            self.get_stats().apply_dict(stats)
         anim = dict_data.get("anim")
         if anim is not None:
-            if self.anim is None:
-                self.anim = CatModel.create_empty(self.cat_id, self.form)
-            self.anim.apply_dict(anim)
+            self.get_anim().apply_dict(anim)
         upgrade_icon = dict_data.get("upgrade_icon")
         if upgrade_icon is not None:
-            if self.upgrade_icon is None:
-                self.upgrade_icon = core.BCImage.from_size(512, 128)
-            self.upgrade_icon.apply_dict(upgrade_icon)
+            self.get_upgrade_icon().apply_dict(upgrade_icon)
         deploy_icon = dict_data.get("deploy_icon")
         if deploy_icon is not None:
-            if self.deploy_icon is None:
-                self.deploy_icon = core.BCImage.from_size(128, 128)
-            self.deploy_icon.apply_dict(deploy_icon)
+            self.get_deploy_icon().apply_dict(deploy_icon)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -1018,12 +988,6 @@ class CatForm:
         return CatForm(
             cat_id,
             form,
-            CatStats.create_empty(cat_id, form),
-            "",
-            [""],
-            CatModel.create_empty(cat_id, form),
-            core.BCImage.from_size(128, 128),
-            core.BCImage.from_size(512, 128),
         )
 
 
@@ -1717,11 +1681,15 @@ class Cat:
             if form.name is not None:
                 row.append(form.name)
             else:
+                if form_type.get_index() >= len(name_csv.lines):
+                    name_csv.lines.append(["", ""])
                 row.append(name_csv.lines[form_type.get_index()][0])
 
             if form.description is not None:
                 row.extend(form.description)
             else:
+                if form_type.get_index() >= len(name_csv.lines):
+                    name_csv.lines.append(["", ""])
                 row.extend(name_csv.lines[form_type.get_index()][1:])
 
             if form_type.get_index() >= len(name_csv.lines):
@@ -1843,16 +1811,9 @@ class Cat:
 
     @staticmethod
     def create_empty(cat_id: int) -> "Cat":
-        forms = {}
-        for form_type in CatFormType:
-            forms[form_type] = CatForm.create_empty(cat_id, form_type)
         return Cat(
             cat_id,
-            forms,
-            UnitBuyData.create_empty(cat_id),
-            None,
-            NyankoPictureBookData.create_empty(cat_id),
-            None,
+            {},
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -1869,6 +1830,39 @@ class Cat:
             if self.evolve_text is not None
             else None,
         }
+
+    def add_fourth_form_cf_evolution(
+        self,
+        form: Optional[CatForm],
+        evolve_items: "core.EvolveItems",
+        evolve_id: int = 25000,
+        evolve_cost: int = 100000,
+        evolve_level: int = 40,
+    ):
+        if form is not None:
+            form = self.set_form(CatFormType.FOURTH, form)
+        unitbuy = self.unit_buy_data or UnitBuyData.create_empty(self.cat_id)
+        unitbuy.evolve_items_ff = evolve_items
+        unitbuy.ff_id = evolve_id
+        unitbuy.evolve_cost_ff = evolve_cost
+        unitbuy.evolve_level_ff = evolve_level
+        self.unit_buy_data = unitbuy
+
+        nypbd = self.nyanko_picture_book_data or NyankoPictureBookData.create_empty(
+            self.cat_id
+        )
+        nypbd.total_forms = 4
+        self.nyanko_picture_book_data = nypbd
+
+    def copy_form_to_form(
+        self, from_form_type: CatFormType, to_form_type: CatFormType
+    ) -> CatForm:
+        from_form = self.get_form(from_form_type) or CatForm.create_empty(
+            self.cat_id, from_form_type
+        )
+
+        new_form = self.set_form(to_form_type, from_form.copy())
+        return new_form
 
 
 class Cats:
