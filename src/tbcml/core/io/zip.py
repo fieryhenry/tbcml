@@ -21,6 +21,7 @@ class Zip:
         self.file_data = file_data.to_bytes_io()
         self.salt = None
         self.password = None
+        self.encrypted = encrypted
 
         if encrypted:
             pepper = "tbcml"
@@ -90,13 +91,14 @@ class Zip:
     def to_data(self) -> "core.Data":
         self.close()
         data = core.Data(self.file_data.getvalue())
-        if self.password is not None and self.salt is not None:
-            salt_data = core.Data(self.salt.to_bytes())
-            password_data = core.Data(self.password.to_bytes())
-            key_data = salt_data + password_data
-            data = data.pad_pkcs7()
-            data = core.AesCipher(key_data.to_bytes()).encrypt(data)
-            data = key_data + data
+        if self.encrypted:
+            if self.password is not None and self.salt is not None:
+                salt_data = core.Data(self.salt.to_bytes())
+                password_data = core.Data(self.password.to_bytes())
+                key_data = salt_data + password_data
+                data = data.pad_pkcs7()
+                data = core.AesCipher(key_data.to_bytes()).encrypt(data)
+                data = key_data + data
         return data
 
     def folder_exists(self, folder_name: str) -> bool:
