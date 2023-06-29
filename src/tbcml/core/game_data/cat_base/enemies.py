@@ -3,29 +3,29 @@ from tbcml import core
 
 
 class EnemyStats:
-    def __init__(self, enemy_id: int, raw_data: list[int]):
+    def __init__(self, enemy_id: int, raw_data: list[Optional[int]]):
         self.enemy_id = enemy_id
         raw_data = self.extend(raw_data)
         self.assign(raw_data)
 
-    def extend(self, raw_data: list[int]):
+    def extend(self, raw_data: list[Optional[int]]) -> list[Optional[int]]:
         length = 102
-        raw_data = raw_data + [0] * (length - len(raw_data))
+        raw_data = raw_data + [None] * (length - len(raw_data))
         return raw_data
 
     def has_targeted_effect(self) -> bool:
         to_check = [
-            self.knockback.prob.percent,
-            self.freeze.prob.percent,
-            self.slow.prob.percent,
-            self.weaken.prob.percent,
-            self.warp.prob.percent,
-            self.curse.prob.percent,
-            self.dodge.prob.percent,
+            self.knockback.prob.percent if self.knockback.prob else None,
+            self.freeze.prob.percent if self.freeze.prob else None,
+            self.slow.prob.percent if self.slow.prob else None,
+            self.weaken.prob.percent if self.weaken.prob else None,
+            self.warp.prob.percent if self.warp.prob else None,
+            self.curse.prob.percent if self.curse.prob else None,
+            self.dodge.prob.percent if self.dodge.prob else None,
         ]
         return any(to_check)
 
-    def assign(self, raw_data: list[int]):
+    def assign(self, raw_data: list[Optional[int]]):
         self.hp = raw_data[0]
         self.kbs = raw_data[1]
         self.speed = raw_data[2]
@@ -35,48 +35,52 @@ class EnemyStats:
         self.collision_start = raw_data[7]
         self.collision_width = raw_data[8]
         self.unused = raw_data[9]
-        self.red = bool(raw_data[10])
-        self.area_attack = bool(raw_data[11])
-        self.floating = bool(raw_data[13])
-        self.black = bool(raw_data[14])
-        self.metal = bool(raw_data[15])
-        self.traitless = bool(raw_data[16])
-        self.angel = bool(raw_data[17])
-        self.alien = bool(raw_data[18])
-        self.zombie = bool(raw_data[19])
+        self.red = core.unit_bool(raw_data[10])
+        self.area_attack = core.unit_bool(raw_data[11])
+        self.floating = core.unit_bool(raw_data[13])
+        self.black = core.unit_bool(raw_data[14])
+        self.metal = core.unit_bool(raw_data[15])
+        self.traitless = core.unit_bool(raw_data[16])
+        self.angel = core.unit_bool(raw_data[17])
+        self.alien = core.unit_bool(raw_data[18])
+        self.zombie = core.unit_bool(raw_data[19])
         self.knockback = core.Knockback.from_values(raw_data[20])
         self.freeze = core.Freeze.from_values(raw_data[21], raw_data[22])
         self.slow = core.Slow.from_values(raw_data[23], raw_data[24])
         self.crit = core.Crit.from_values(raw_data[25])
-        self.base_destroyer = bool(raw_data[26])
+        self.base_destroyer = core.unit_bool(raw_data[26])
         self.wave = core.Wave.from_values(
-            raw_data[27], raw_data[28], bool(raw_data[86])
+            raw_data[27], raw_data[28], core.unit_bool(raw_data[86])
         )
         self.weaken = core.Weaken.from_values(raw_data[29], raw_data[30], raw_data[31])
         self.strengthen = core.Strengthen.from_values(raw_data[32], raw_data[33])
         self.survive_lethal_strike = core.SurviveLethalStrike.from_values(raw_data[34])
-        self.wave_immunity = bool(raw_data[37])
-        self.wave_blocker = bool(raw_data[38])
-        self.knockback_immunity = bool(raw_data[39])
-        self.freeze_immunity = bool(raw_data[40])
-        self.slow_immunity = bool(raw_data[41])
-        self.weaken_immunity = bool(raw_data[42])
+        self.wave_immunity = core.unit_bool(raw_data[37])
+        self.wave_blocker = core.unit_bool(raw_data[38])
+        self.knockback_immunity = core.unit_bool(raw_data[39])
+        self.freeze_immunity = core.unit_bool(raw_data[40])
+        self.slow_immunity = core.unit_bool(raw_data[41])
+        self.weaken_immunity = core.unit_bool(raw_data[42])
         self.burrow = core.Burrow.from_values(raw_data[43], raw_data[44])
         self.revive = core.Revive.from_values(raw_data[45], raw_data[46], raw_data[47])
-        self.witch = bool(raw_data[48])
-        self.base = bool(raw_data[49])
+        self.witch = core.unit_bool(raw_data[48])
+        self.base = core.unit_bool(raw_data[49])
         self.attack_state = core.AttackState.from_values(raw_data[50], raw_data[52])
-        self.time_before_death = core.Frames(raw_data[51])
-        self.spawn_anim = core.SpawnAnim.from_values(raw_data[53], bool(raw_data[62]))
-        self.soul_anim = core.SoulAnim(raw_data[54], bool(raw_data[63]))
+        self.time_before_death = (
+            core.Frames(raw_data[51]) if raw_data[51] is not None else None
+        )
+        self.spawn_anim = core.SpawnAnim.from_values(
+            raw_data[53], core.unit_bool(raw_data[62])
+        )
+        self.soul_anim = core.SoulAnim(raw_data[54], core.unit_bool(raw_data[63]))
         self.barrier = core.Barrier.from_values(raw_data[64])
         self.warp = core.Warp.from_values(
             raw_data[65], raw_data[66], raw_data[67], raw_data[68]
         )
-        self.starred_alien = bool(raw_data[69])
-        self.warp_blocker = bool(raw_data[70])
-        self.eva_angel = bool(raw_data[71])
-        self.relic = bool(raw_data[72])
+        self.starred_alien = core.unit_bool(raw_data[69])
+        self.warp_blocker = core.unit_bool(raw_data[70])
+        self.eva_angel = core.unit_bool(raw_data[71])
+        self.relic = core.unit_bool(raw_data[72])
         self.curse = core.Curse.from_values(raw_data[73], raw_data[74])
         self.savage_blow = core.SavageBlow.from_values(raw_data[75], raw_data[76])
         self.dodge = core.Dodge.from_values(raw_data[77], raw_data[78])
@@ -84,19 +88,19 @@ class EnemyStats:
         self.surge = core.Surge.from_values(
             raw_data[81], raw_data[82], raw_data[83], raw_data[84]
         )
-        self.surge_immunity = bool(raw_data[85])
+        self.surge_immunity = core.unit_bool(raw_data[85])
         self.shield = core.Shield.from_values(raw_data[87], raw_data[88])
         self.death_surge = core.Surge.from_values(
             raw_data[89], raw_data[90], raw_data[91], raw_data[92]
         )
-        self.aku = bool(raw_data[93])
-        self.baron = bool(raw_data[94])
-        self.behemoth = bool(raw_data[101])
+        self.aku = core.unit_bool(raw_data[93])
+        self.baron = core.unit_bool(raw_data[94])
+        self.behemoth = core.unit_bool(raw_data[101])
 
         self.attack_1 = core.Attack.from_values(
             raw_data[3],
             raw_data[12],
-            bool(raw_data[59]),
+            core.unit_bool(raw_data[59]),
             True,
             raw_data[35],
             raw_data[36],
@@ -104,124 +108,142 @@ class EnemyStats:
         self.attack_2 = core.Attack.from_values(
             raw_data[55],
             raw_data[57],
-            bool(raw_data[60]),
-            bool(raw_data[95]),
+            core.unit_bool(raw_data[60]),
+            core.unit_bool(raw_data[95]),
             raw_data[96],
             raw_data[97],
         )
         self.attack_3 = core.Attack.from_values(
             raw_data[56],
             raw_data[58],
-            bool(raw_data[61]),
-            bool(raw_data[98]),
+            core.unit_bool(raw_data[61]),
+            core.unit_bool(raw_data[98]),
             raw_data[99],
             raw_data[100],
         )
 
-    def to_raw_data(self) -> list[int]:
+    def to_raw_data(self) -> list[Optional[int]]:
         return [
             self.hp,  # 0
             self.kbs,  # 1
             self.speed,  # 2
             self.attack_1.damage,  # 3
-            self.attack_interval.pair_frames,  # 4
+            self.attack_interval.pair_frames
+            if self.attack_interval is not None
+            else None,  # 4
             self.range,  # 5
             self.money_drop,  # 6
             self.collision_start,  # 7
             self.collision_width,  # 8
             self.unused,  # 9
-            int(self.red),  # 10
-            int(self.area_attack),  # 11
-            self.attack_1.foreswing.frames,  # 12
-            int(self.floating),  # 13
-            int(self.black),  # 14
-            int(self.metal),  # 15
-            int(self.traitless),  # 16
-            int(self.angel),  # 17
-            int(self.alien),  # 18
-            int(self.zombie),  # 19
-            self.knockback.prob.percent,  # 20
-            self.freeze.prob.percent,  # 21
-            self.freeze.time.frames,  # 22
-            self.slow.prob.percent,  # 23
-            self.slow.time.frames,  # 24
-            self.crit.prob.percent,  # 25
-            int(self.base_destroyer),  # 26
-            self.wave.prob.percent,  # 27
+            core.unit_int(self.red),  # 10
+            core.unit_int(self.area_attack),  # 11
+            self.attack_1.foreswing.frames
+            if self.attack_1.foreswing is not None
+            else None,  # 12
+            core.unit_int(self.floating),  # 13
+            core.unit_int(self.black),  # 14
+            core.unit_int(self.metal),  # 15
+            core.unit_int(self.traitless),  # 16
+            core.unit_int(self.angel),  # 17
+            core.unit_int(self.alien),  # 18
+            core.unit_int(self.zombie),  # 19
+            self.knockback.prob.percent
+            if self.knockback.prob is not None
+            else None,  # 20
+            self.freeze.prob.percent if self.freeze.prob is not None else None,  # 21
+            self.freeze.time.frames if self.freeze.time is not None else None,  # 22
+            self.slow.prob.percent if self.slow.prob is not None else None,  # 23
+            self.slow.time.frames if self.slow.time is not None else None,  # 24
+            self.crit.prob.percent if self.crit.prob is not None else None,  # 25
+            core.unit_int(self.base_destroyer),  # 26
+            self.wave.prob.percent if self.wave.prob is not None else None,  # 27
             self.wave.level,  # 28
-            self.weaken.prob.percent,  # 29
-            self.weaken.time.frames,  # 30
+            self.weaken.prob.percent if self.weaken.prob is not None else None,  # 29
+            self.weaken.time.frames if self.weaken.time is not None else None,  # 30
             self.weaken.multiplier,  # 31
             self.strengthen.hp_percent,  # 32
             self.strengthen.multiplier_percent,  # 33
-            self.survive_lethal_strike.prob.percent,  # 34
+            self.survive_lethal_strike.prob.percent
+            if self.survive_lethal_strike.prob is not None
+            else None,  # 34
             self.attack_1.long_distance_start,  # 35
             self.attack_1.long_distance_range,  # 36
-            int(self.wave_immunity),  # 37
-            int(self.wave_blocker),  # 38
-            int(self.knockback_immunity),  # 39
-            int(self.freeze_immunity),  # 40
-            int(self.slow_immunity),  # 41
-            int(self.weaken_immunity),  # 42
+            core.unit_int(self.wave_immunity),  # 37
+            core.unit_int(self.wave_blocker),  # 38
+            core.unit_int(self.knockback_immunity),  # 39
+            core.unit_int(self.freeze_immunity),  # 40
+            core.unit_int(self.slow_immunity),  # 41
+            core.unit_int(self.weaken_immunity),  # 42
             self.burrow.count,  # 43
             self.burrow.distance,  # 44
             self.revive.count,  # 45
-            self.revive.time.frames,  # 46
+            self.revive.time.frames if self.revive.time is not None else None,  # 46
             self.revive.hp_remain_percent,  # 47
-            int(self.witch),  # 48
-            int(self.base),  # 49
+            core.unit_int(self.witch),  # 48
+            core.unit_int(self.base),  # 49
             self.attack_state.attacks_before,  # 50
-            self.time_before_death.frames,  # 51
+            self.time_before_death.frames
+            if self.time_before_death is not None
+            else None,  # 51
             self.attack_state.state_id,  # 52
             self.spawn_anim.model_id,  # 53
             self.soul_anim.model_id,  # 54
             self.attack_2.damage,  # 55
             self.attack_3.damage,  # 56
-            self.attack_2.foreswing.frames,  # 57
-            self.attack_3.foreswing.frames,  # 58
-            int(self.attack_1.use_ability),  # 59
-            int(self.attack_2.use_ability),  # 60
-            int(self.attack_3.use_ability),  # 61
-            int(self.spawn_anim.has_entry_maanim),  # 62
-            int(self.soul_anim.has_death_maanim),  # 63
+            self.attack_2.foreswing.frames
+            if self.attack_2.foreswing is not None
+            else None,  # 57
+            self.attack_3.foreswing.frames
+            if self.attack_3.foreswing is not None
+            else None,  # 58
+            core.unit_int(self.attack_1.use_ability),  # 59
+            core.unit_int(self.attack_2.use_ability),  # 60
+            core.unit_int(self.attack_3.use_ability),  # 61
+            core.unit_int(self.spawn_anim.has_entry_maanim),  # 62
+            core.unit_int(self.soul_anim.has_death_maanim),  # 63
             self.barrier.hp,  # 64
-            self.warp.prob.percent,  # 65
-            self.warp.time.frames,  # 66
+            self.warp.prob.percent if self.warp.prob is not None else None,  # 65
+            self.warp.time.frames if self.warp.time is not None else None,  # 66
             self.warp.min_distance,  # 67
             self.warp.max_distance,  # 68
-            int(self.starred_alien),  # 69
-            int(self.warp_blocker),  # 70
-            int(self.eva_angel),  # 71
-            int(self.relic),  # 72
-            self.curse.prob.percent,  # 73
-            self.curse.time.frames,  # 74
-            self.savage_blow.prob.percent,  # 75
+            core.unit_int(self.starred_alien),  # 69
+            core.unit_int(self.warp_blocker),  # 70
+            core.unit_int(self.eva_angel),  # 71
+            core.unit_int(self.relic),  # 72
+            self.curse.prob.percent if self.curse.prob is not None else None,  # 73
+            self.curse.time.frames if self.curse.time is not None else None,  # 74
+            self.savage_blow.prob.percent
+            if self.savage_blow.prob is not None
+            else None,  # 75
             self.savage_blow.multiplier,  # 76
-            self.dodge.prob.percent,  # 77
-            self.dodge.time.frames,  # 78
-            self.toxic.prob.percent,  # 79
+            self.dodge.prob.percent if self.dodge.prob is not None else None,  # 77
+            self.dodge.time.frames if self.dodge.time is not None else None,  # 78
+            self.toxic.prob.percent if self.toxic.prob is not None else None,  # 79
             self.toxic.hp_percent,  # 80
-            self.surge.prob.percent,  # 81
+            self.surge.prob.percent if self.surge.prob is not None else None,  # 81
             self.surge.start,  # 82
             self.surge.range,  # 83
             self.surge.level,  # 84
-            int(self.surge_immunity),  # 85
-            int(self.wave.is_mini),  # 86
+            core.unit_int(self.surge_immunity),  # 85
+            core.unit_int(self.wave.is_mini),  # 86
             self.shield.hp,  # 87
             self.shield.percent_heal_kb,  # 88
-            self.death_surge.prob.percent,  # 89
+            self.death_surge.prob.percent
+            if self.death_surge.prob is not None
+            else None,  # 89
             self.death_surge.start,  # 90
             self.death_surge.range,  # 91
             self.death_surge.level,  # 92
-            int(self.aku),  # 93
-            int(self.baron),  # 94
-            int(self.attack_2.long_distance_flag),  # 95
+            core.unit_int(self.aku),  # 93
+            core.unit_int(self.baron),  # 94
+            core.unit_int(self.attack_2.long_distance_flag),  # 95
             self.attack_2.long_distance_start,  # 96
             self.attack_2.long_distance_range,  # 97
-            int(self.attack_3.long_distance_flag),  # 98
+            core.unit_int(self.attack_3.long_distance_flag),  # 98
             self.attack_3.long_distance_start,  # 99
             self.attack_3.long_distance_range,  # 100
-            int(self.behemoth),  # 101
+            core.unit_int(self.behemoth),  # 101
         ]
 
     def apply_dict(self, dict_data: dict[str, Any]):
@@ -279,7 +301,9 @@ class EnemyStatsData:
             return None
         csv = core.CSV(stats_data.dec_data)
         for enemy in self.stats.values():
-            csv.lines[enemy.enemy_id + 2] = [str(x) for x in enemy.to_raw_data()]
+            for stat_id, stat_value in enumerate(enemy.to_raw_data()):
+                if stat_value is not None:
+                    csv.lines[enemy.enemy_id + 2][stat_id] = str(stat_value)
 
         game_data.set_file(EnemyStatsData.get_file_name(), csv.to_data())
 
@@ -403,7 +427,7 @@ class EnemyNames:
         game_data.set_file(EnemyNames.get_file_name(), csv.to_data())
 
     def set(self, enemy: "Enemy"):
-        self.names[enemy.enemy_id] = enemy.name
+        self.names[enemy.enemy_id] = enemy.get_name()
 
     def get(self, enemy_id: int) -> str:
         return self.names.get(enemy_id, "???")
@@ -464,10 +488,10 @@ class EnemyDescriptions:
         )
 
     def set(self, enemy: "Enemy"):
-        self.descriptions[enemy.enemy_id] = enemy.description
+        self.descriptions[enemy.enemy_id] = enemy.get_description()
 
     def get(self, enemy_id: int) -> list[str]:
-        return self.descriptions.get(enemy_id, ["???"])
+        return self.descriptions.get(enemy_id, [""])
 
     @staticmethod
     def create_empty() -> "EnemyDescriptions":
@@ -477,12 +501,12 @@ class EnemyDescriptions:
 class Enemy:
     def __init__(
         self,
-        enemy_id: Optional[int],
-        stats: EnemyStats,
-        name: str,
-        description: list[str],
-        anim: EnemyModel,
-        enemy_icon: "core.BCImage",
+        enemy_id: Optional[int] = None,
+        stats: Optional[EnemyStats] = None,
+        name: Optional[str] = None,
+        description: Optional[list[str]] = None,
+        anim: Optional[EnemyModel] = None,
+        enemy_icon: Optional["core.BCImage"] = None,
         release_id: Optional[int] = None,
     ):
         if release_id is not None:
@@ -532,20 +556,51 @@ class Enemy:
         return Enemy(enemy_id, stats, name, description, anim, enemy_icon, release_id)
 
     def to_game_data(self, game_data: "core.GamePacks"):
-        self.anim.to_game_data(game_data)
-        game_data.set_file(
-            Enemy.get_enemy_icon_name(self.enemy_id), self.enemy_icon.to_data()
-        )
+        if self.anim is not None:
+            self.anim.to_game_data(game_data)
+
+        if self.enemy_icon is not None:
+            game_data.set_file(
+                Enemy.get_enemy_icon_name(self.enemy_id), self.enemy_icon.to_data()
+            )
+
+    def get_anim(self) -> EnemyModel:
+        if self.anim is None:
+            self.anim = EnemyModel.create_empty(self.enemy_id)
+        return self.anim
+
+    def get_name(self) -> str:
+        if self.name is None:
+            return ""
+        return self.name
+
+    def get_description(self) -> list[str]:
+        if self.description is None:
+            return []
+        return self.description
+
+    def get_enemy_icon(self) -> "core.BCImage":
+        if self.enemy_icon is None:
+            self.enemy_icon = core.BCImage.create_empty()
+        return self.enemy_icon
 
     def set_enemy_id(self, enemy_id: int):
+        original_enemy_id = self.enemy_id
         self.enemy_id = enemy_id
-        self.stats.enemy_id = enemy_id
-        self.anim.set_enemy_id(enemy_id)
+        if self.stats is not None:
+            self.stats.enemy_id = enemy_id
+        if original_enemy_id != enemy_id:
+            self.get_anim().set_enemy_id(enemy_id)
+
+    def get_stats(self) -> EnemyStats:
+        if self.stats is None:
+            self.stats = EnemyStats.create_empty(self.enemy_id)
+        return self.stats
 
     def apply_dict(self, dict_data: dict[str, Any]):
         stats = dict_data.get("stats")
         if stats is not None:
-            self.stats.apply_dict(stats)
+            self.get_stats().apply_dict(stats)
 
         name = dict_data.get("name")
         if name is not None:
@@ -557,7 +612,7 @@ class Enemy:
 
         anim = dict_data.get("anim")
         if anim is not None:
-            self.anim.apply_dict(anim)
+            self.get_anim().apply_dict(anim)
 
         enemy_icon = dict_data.get("enemy_icon")
         if enemy_icon is not None:
@@ -565,23 +620,19 @@ class Enemy:
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "stats": self.stats.to_dict(),
+            "stats": self.stats.to_dict() if self.stats is not None else None,
             "name": self.name,
             "description": self.description,
-            "anim": self.anim.to_dict(),
-            "enemy_icon": self.enemy_icon.to_dict(),
+            "anim": self.anim.to_dict() if self.anim is not None else None,
+            "enemy_icon": self.enemy_icon.to_dict()
+            if self.enemy_icon is not None
+            else None,
         }
 
     @staticmethod
     def create_empty(enemy_id: int) -> "Enemy":
         return Enemy(
             enemy_id,
-            EnemyStats.create_empty(enemy_id),
-            "",
-            [],
-            EnemyModel.create_empty(enemy_id),
-            core.BCImage.create_empty(),
-            None,
         )
 
 
@@ -609,13 +660,25 @@ class Enemies:
 
     def to_game_data(self, game_data: "core.GamePacks"):
         stats = EnemyStatsData(
-            {enemy.enemy_id: enemy.stats for enemy in self.enemies.values()}
+            {
+                enemy.enemy_id: enemy.stats
+                for enemy in self.enemies.values()
+                if enemy.stats is not None
+            }
         )
         names = EnemyNames(
-            {enemy.enemy_id: enemy.name for enemy in self.enemies.values()}
+            {
+                enemy.enemy_id: enemy.name
+                for enemy in self.enemies.values()
+                if enemy.name is not None
+            }
         )
         descriptions = EnemyDescriptions(
-            {enemy.enemy_id: enemy.description for enemy in self.enemies.values()}
+            {
+                enemy.enemy_id: enemy.description
+                for enemy in self.enemies.values()
+                if enemy.description is not None
+            }
         )
         stats.to_game_data(game_data)
         names.to_game_data(game_data)
