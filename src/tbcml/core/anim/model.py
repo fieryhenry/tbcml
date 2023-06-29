@@ -328,14 +328,16 @@ class Model:
 
     @property
     def anims(self) -> list["core.UnitAnim"]:
+        anims: list["core.UnitAnim"] = []
         for i, anim in enumerate(self.__anims):
             if isinstance(anim, core.UnitAnimLoaderInfo):
                 anim = anim.load()
-                if anim is None:
-                    self.__anims[i] = core.UnitAnim.create_empty()
-                else:
+                if anim is not None:
                     self.__anims[i] = anim
-        return self.__anims  # type: ignore
+                    anims.append(anim)
+            else:
+                anims.append(anim)
+        return anims
 
     @property
     def mamodel(self) -> Mamodel:
@@ -546,3 +548,15 @@ class Model:
         if anim_id < len(self.anims):
             return self.anims[anim_id]
         return None
+
+    def flip_x(self):
+        for part in self.mamodel.parts:
+            part.flip_x()
+        for anim in self.anims:
+            anim.flip_x()
+
+    def flip_y(self):
+        for part in self.mamodel.parts:
+            part.flip_y()
+        for anim in self.anims:
+            anim.flip_y()
