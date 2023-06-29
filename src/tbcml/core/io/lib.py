@@ -58,7 +58,7 @@ class LibFiles:
 
         return hashes
 
-    def replace_hashes(self):
+    def replace_hashes_in_so(self):
         for arc, so in self.so_files.items():
             for pack_name, modified_hash in self.modified_packs_hashes.items():
                 original_packs = self.get_original_packs_lists()
@@ -77,6 +77,28 @@ class LibFiles:
                 so = so.replace(original_hash, modified_hash)
             self.so_files[arc] = so
 
+    def replace_hashes_in_smali(self):
+        smali_handler = self.apk.get_smali_handler()
+        for pack_name, modified_hash in self.modified_packs_hashes.items():
+            if pack_name.endswith("1.pack") and self.apk.is_java():
+                pack_name = pack_name.replace("1.pack", "2.pack")
+            original_packs = self.get_original_packs_lists()
+            original_Pack = None
+            for pack in original_packs:
+                if pack.basename() == pack_name:
+                    original_Pack = pack
+                    break
+            if original_Pack is None:
+                continue
+            original_hash = core.Data(
+                core.Hash(core.HashAlgorithm.MD5)
+                .get_hash(original_Pack.read())
+                .to_hex()
+            )
+            smali_handler.replace_all_strings(
+                original_hash.to_str(), modified_hash.to_str()
+            )
+
     def get_duplicate_packs_lists(self) -> dict["core.Path", list["core.Path"]]:
         """
         Returns a dict where the keys are the modified packs and the values are the duplicate original packs
@@ -88,6 +110,10 @@ class LibFiles:
         for pack in self.modified_packs:
             duplicates[pack] = []
             original_pack_path = self.get_pack_folder_original().add(pack.basename())
+            if pack.basename().endswith("1.pack") and self.apk.is_java():
+                original_pack_path = self.get_pack_folder_original().add(
+                    pack.basename().replace("1.pack", "2.pack")
+                )
             for original in self.get_pack_folder_original().get_files(
                 regex=".*\\.pack|.*\\.list"
             ):
@@ -120,7 +146,10 @@ class LibFiles:
                 original_path.write(pack.read())
 
     def patch(self):
-        self.replace_hashes()
+        if self.apk.is_java():
+            self.replace_hashes_in_smali()
+        else:
+            self.replace_hashes_in_so()
         self.overwrite_duplicate_packs()
         self.write()
 

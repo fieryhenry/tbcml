@@ -477,7 +477,9 @@ class GamePacks:
             list[tuple[str, core.Data, core.Data]]: The pack lists. The first element is the pack name, the second is the encrypted pack data, the third is the encrypted list data.
         """
         packs_lists: list[tuple[str, "core.Data", "core.Data"]] = []
-        should_reencrypt = key is not None or iv is not None
+        should_reencrypt = (
+            key is not None or iv is not None
+        ) and self.gv >= core.GameVersion.from_string("8.9.0")
         for pack_name, pack in self.packs.items():
             if pack_name in self.modified_packs or pack.modified or should_reencrypt:
                 if pack.is_server_pack(pack_name):
@@ -507,14 +509,17 @@ class GamePacks:
             else:
                 pack = self.get_pack("DataLocal")
             if pack is None:
-                pack = self.get_pack("datalocal2")
+                pack = self.get_pack("datalocal1")
             if pack is None:
-                raise FileNotFoundError("Could not find pack")
+                raise FileNotFoundError(f"Could not find pack for {file_name}")
             file = GameFile(data, file_name, pack.pack_name, self.country_code, self.gv)
-        if file.dec_data == data:
-            return file
+        else:
+            if file.dec_data == data:
+                return file
         new_pack_name = PackFile.convert_pack_name_server_local(file.pack_name)
         pack = self.get_pack(new_pack_name)
+        if pack is None:
+            pack = self.get_pack("datalocal1")
         if pack is None:
             raise FileNotFoundError(f"Could not find pack {new_pack_name}")
         file = pack.set_file(file_name, data)

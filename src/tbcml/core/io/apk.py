@@ -247,6 +247,8 @@ class Apk:
     ):
         files = packs.to_packs_lists(self.randomize_key(), self.randomize_iv())
         for pack_name, pack_data, list_data in files:
+            if len(pack_name.split("_")) > 1:
+                continue
             self.add_pack_list(pack_name, pack_data, list_data)
 
     def add_pack_list(
@@ -259,7 +261,14 @@ class Apk:
 
     def copy_modded_packs(self):
         for file in self.modified_packs_path.get_files():
-            file.copy(self.get_pack_location().add(file.basename()))
+            if self.is_java() and file.basename().endswith("1.pack"):
+                file.copy(
+                    self.get_pack_location().add(
+                        file.basename().replace("1.pack", "2.pack")
+                    )
+                )
+            else:
+                file.copy(self.get_pack_location().add(file.basename()))
 
     def load_packs_into_game(
         self,

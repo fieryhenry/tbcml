@@ -263,6 +263,30 @@ class SmaliHandler:
         text = "\n".join(text)
         target_smali.write(core.Data(text))
 
+    def get_all_smali_files(self) -> list["core.Path"]:
+        """Gets all smali files in the apk
+
+        Returns:
+            list[core.Path]: The list of smali files
+        """
+        smali_files: list[core.Path] = []
+        for item in self.apk.extracted_path.recursive_glob("*.smali"):
+            smali_files.append(item)
+        return smali_files
+
+    def replace_all_strings(self, old: str, new: str):
+        """Replaces all instances of a string in the apk
+
+        Args:
+            old (str): The string to replace
+            new (str): The string to replace it with
+        """
+        for smali_file in self.get_all_smali_files():
+            orig_text = smali_file.read().to_str()
+            new_text = orig_text.replace(old, new)
+            if orig_text != new_text:
+                smali_file.write(core.Data(new_text))
+
     def get_data_load_smali(self) -> Smali:
         """Gets the smali code for the DataLoad class which is used to extract data.zip into the
         /data/data/jp.co.ponos.battlecats/files directory
