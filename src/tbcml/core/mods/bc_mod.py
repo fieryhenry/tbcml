@@ -214,6 +214,7 @@ class Mod:
         long_description: str = "",
         icon: Optional["core.BCImage"] = None,
         password: Optional[str] = None,
+        encrypt: bool = True,
     ):
         """Initializes a new instance of the Mod class.
 
@@ -239,6 +240,7 @@ class Mod:
         self.long_description = long_description
         self.icon = icon if icon is not None else core.BCImage.from_size(512, 512)
         self.password = password
+        self.encrypt = encrypt
 
         self.mod_edits: dict[str, Any] = {}
         self.game_files: dict[str, core.Data] = {}
@@ -329,6 +331,7 @@ class Mod:
             "contributors": self.contributors,
             "dependencies": [dependency.to_dict() for dependency in self.dependencies],
             "long_description": self.long_description,
+            "encrypt": self.encrypt,
         }
 
     def save(self, path: "core.Path"):
@@ -346,7 +349,7 @@ class Mod:
         Returns:
             core.Zip: The zip file
         """
-        zip_file = core.Zip(encrypted=True, password=self.password)
+        zip_file = core.Zip(encrypted=self.encrypt, password=self.password)
 
         self.audio.add_to_zip(zip_file)
         self.scripts.add_to_zip(zip_file)
