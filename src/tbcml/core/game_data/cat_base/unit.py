@@ -1,4 +1,4 @@
-import random
+from typing import Optional
 
 
 class Frames:
@@ -97,7 +97,7 @@ class Frames:
         return Frames(seconds * Frames.get_frame_rate())
 
     @staticmethod
-    def from_pair_frames(pair_frames: float) -> "Frames":
+    def from_pair_frames(pair_frames: Optional[float]) -> Optional["Frames"]:
         """Creates a new Frames object from a number of pair frames.
 
         Args:
@@ -106,6 +106,8 @@ class Frames:
         Returns:
             Frames: The new Frames object.
         """
+        if pair_frames is None:
+            return None
         return Frames(pair_frames * 2)
 
     def __str__(self) -> str:
@@ -136,7 +138,7 @@ class Frames:
 class Prob:
     """Represents a probability as a percentage."""
 
-    def __init__(self, percent: int):
+    def __init__(self, percent: Optional[int]):
         """Initializes a new Prob object.
 
         Args:
@@ -168,19 +170,11 @@ class Prob:
         """
         return Prob(self.percent)
 
-    def proc(self) -> bool:
-        """Determines if the probability is successful.
-
-        Returns:
-            bool: True if the probability is successful, False otherwise.
-        """
-        return random.randint(0, 100) <= self.percent
-
 
 class Knockback:
     """Represents a knockback probability."""
 
-    def __init__(self, prob: Prob):
+    def __init__(self, prob: Optional[Prob]):
         """Initializes a new Knockback object.
 
         Args:
@@ -189,7 +183,7 @@ class Knockback:
         self.prob = prob
 
     @staticmethod
-    def from_values(percent: int) -> "Knockback":
+    def from_values(percent: Optional[int]) -> "Knockback":
         """Creates a new Knockback object from a percentage.
 
         Args:
@@ -222,13 +216,13 @@ class Knockback:
         Returns:
             Knockback: The copy of the Knockback object.
         """
-        return Knockback(self.prob.copy())
+        return Knockback(self.prob.copy() if self.prob is not None else None)
 
 
 class BarrierBreak:
     """Represents a barrier break probability."""
 
-    def __init__(self, prob: Prob):
+    def __init__(self, prob: Optional[Prob]):
         """Initializes a new BarrierBreak object.
 
         Args:
@@ -237,7 +231,7 @@ class BarrierBreak:
         self.prob = prob
 
     @staticmethod
-    def from_values(percent: int) -> "BarrierBreak":
+    def from_values(percent: Optional[int]) -> "BarrierBreak":
         """Creates a new BarrierBreak object from a percentage.
 
         Args:
@@ -270,13 +264,13 @@ class BarrierBreak:
         Returns:
             BarrierBreak: The copy of the BarrierBreak object.
         """
-        return BarrierBreak(self.prob.copy())
+        return BarrierBreak(self.prob.copy() if self.prob is not None else None)
 
 
 class LethalStrike:
     """Represents a lethal strike probability."""
 
-    def __init__(self, prob: Prob):
+    def __init__(self, prob: Optional[Prob]):
         """Initializes a new LethalStrike object.
 
         Args:
@@ -285,7 +279,7 @@ class LethalStrike:
         self.prob = prob
 
     @staticmethod
-    def from_values(percent: int) -> "LethalStrike":
+    def from_values(percent: Optional[int]) -> "LethalStrike":
         """Creates a new LethalStrike object from a percentage.
 
         Args:
@@ -318,13 +312,13 @@ class LethalStrike:
         Returns:
             LethalStrike: The copy of the LethalStrike object.
         """
-        return LethalStrike(self.prob.copy())
+        return LethalStrike(self.prob.copy() if self.prob is not None else None)
 
 
 class Burrow:
     """Represents a burrow ability."""
 
-    def __init__(self, count: int, distance: int):
+    def __init__(self, count: Optional[int], distance: Optional[int]):
         """Initializes a new Burrow object.
 
         Args:
@@ -335,7 +329,7 @@ class Burrow:
         self.distance = distance
 
     @staticmethod
-    def from_values(count: int, distance: int) -> "Burrow":
+    def from_values(count: Optional[int], distance: Optional[int]) -> "Burrow":
         """Creates a new Burrow object from values.
 
         Args:
@@ -377,9 +371,9 @@ class Revive:
 
     def __init__(
         self,
-        count: int,
-        time: Frames,
-        hp_remain_percent: int,
+        count: Optional[int],
+        time: Optional[Frames],
+        hp_remain_percent: Optional[int],
     ):
         """Initializes a new Revive object.
 
@@ -393,7 +387,9 @@ class Revive:
         self.hp_remain_percent = hp_remain_percent
 
     @staticmethod
-    def from_values(count: int, time: int, hp_remain_percent: int) -> "Revive":
+    def from_values(
+        count: Optional[int], time: Optional[int], hp_remain_percent: Optional[int]
+    ) -> "Revive":
         """Creates a new Revive object from values.
 
         Args:
@@ -404,7 +400,8 @@ class Revive:
         Returns:
             Revive: The new Revive object.
         """
-        return Revive(count, Frames(time), hp_remain_percent)
+        frames = Frames(time) if time is not None else None
+        return Revive(count, frames, hp_remain_percent)
 
     def __str__(self) -> str:
         """Gets a string representation of the Revive object.
@@ -428,13 +425,17 @@ class Revive:
         Returns:
             Revive: The copy of the Revive object.
         """
-        return Revive(self.count, self.time.copy(), self.hp_remain_percent)
+        return Revive(
+            self.count,
+            self.time.copy() if self.time is not None else None,
+            self.hp_remain_percent,
+        )
 
 
 class Barrier:
     """Represents a barrier ability."""
 
-    def __init__(self, hp: int):
+    def __init__(self, hp: Optional[int]):
         """Initializes a new Barrier object.
 
         Args:
@@ -443,7 +444,7 @@ class Barrier:
         self.hp = hp
 
     @staticmethod
-    def from_values(hp: int) -> "Barrier":
+    def from_values(hp: Optional[int]) -> "Barrier":
         """Creates a new Barrier object from values.
 
         Args:
@@ -482,7 +483,7 @@ class Barrier:
 class SurviveLethalStrike:
     """Represents a survive lethal strike ability."""
 
-    def __init__(self, prob: Prob):
+    def __init__(self, prob: Optional[Prob]):
         """Initializes a new SurviveLethalStrike object.
 
         Args:
@@ -491,7 +492,7 @@ class SurviveLethalStrike:
         self.prob = prob
 
     @staticmethod
-    def from_values(percent: int) -> "SurviveLethalStrike":
+    def from_values(percent: Optional[int]) -> "SurviveLethalStrike":
         """Creates a new SurviveLethalStrike object from values.
 
         Args:
@@ -524,13 +525,13 @@ class SurviveLethalStrike:
         Returns:
             SurviveLethalStrike: The copy of the SurviveLethalStrike object.
         """
-        return SurviveLethalStrike(self.prob.copy())
+        return SurviveLethalStrike(self.prob.copy() if self.prob is not None else None)
 
 
 class Toxic:
     """Represents a toxic ability."""
 
-    def __init__(self, prob: Prob, hp_percent: int):
+    def __init__(self, prob: Optional[Prob], hp_percent: Optional[int]):
         """Initializes a new Toxic object.
 
         Args:
@@ -541,7 +542,7 @@ class Toxic:
         self.hp_percent = hp_percent
 
     @staticmethod
-    def from_values(prob: int, hp_percent: int) -> "Toxic":
+    def from_values(prob: Optional[int], hp_percent: Optional[int]) -> "Toxic":
         """Creates a new Toxic object from values.
 
         Args:
@@ -575,13 +576,15 @@ class Toxic:
         Returns:
             Toxic: The copy of the Toxic object.
         """
-        return Toxic(self.prob.copy(), self.hp_percent)
+        return Toxic(
+            self.prob.copy() if self.prob is not None else None, self.hp_percent
+        )
 
 
 class Crit:
     """Represents a crit ability."""
 
-    def __init__(self, prob: Prob):
+    def __init__(self, prob: Optional[Prob]):
         """Initializes a new Crit object.
 
         Args:
@@ -590,7 +593,7 @@ class Crit:
         self.prob = prob
 
     @staticmethod
-    def from_values(percent: int) -> "Crit":
+    def from_values(percent: Optional[int]) -> "Crit":
         """Creates a new Crit object from values.
 
         Args:
@@ -623,13 +626,13 @@ class Crit:
         Returns:
             Crit: The copy of the Crit object.
         """
-        return Crit(self.prob.copy())
+        return Crit(self.prob.copy() if self.prob is not None else None)
 
 
 class Freeze:
     """Represents a freeze ability."""
 
-    def __init__(self, prob: Prob, time: Frames):
+    def __init__(self, prob: Optional[Prob], time: Optional[Frames]):
         """Initializes a new Freeze object.
 
         Args:
@@ -640,7 +643,7 @@ class Freeze:
         self.time = time
 
     @staticmethod
-    def from_values(prob: int, time: int) -> "Freeze":
+    def from_values(prob: Optional[int], time: Optional[int]) -> "Freeze":
         """Creates a new Freeze object from values.
 
         Args:
@@ -650,7 +653,7 @@ class Freeze:
         Returns:
             Freeze: The new Freeze object.
         """
-        return Freeze(Prob(prob), Frames(time))
+        return Freeze(Prob(prob), Frames(time) if time is not None else None)
 
     def __str__(self) -> str:
         """Gets a string representation of the Freeze object.
@@ -674,13 +677,16 @@ class Freeze:
         Returns:
             Freeze: The copy of the Freeze object.
         """
-        return Freeze(self.prob.copy(), self.time.copy())
+        return Freeze(
+            self.prob.copy() if self.prob is not None else None,
+            self.time.copy() if self.time is not None else None,
+        )
 
 
 class Slow:
     """Represents a slow ability."""
 
-    def __init__(self, prob: Prob, time: Frames):
+    def __init__(self, prob: Optional[Prob], time: Optional[Frames]):
         """Initializes a new Slow object.
 
         Args:
@@ -691,7 +697,7 @@ class Slow:
         self.time = time
 
     @staticmethod
-    def from_values(prob: int, time: int) -> "Slow":
+    def from_values(prob: Optional[int], time: Optional[int]) -> "Slow":
         """Creates a new Slow object from values.
 
         Args:
@@ -701,7 +707,7 @@ class Slow:
         Returns:
             Slow: The new Slow object.
         """
-        return Slow(Prob(prob), Frames(time))
+        return Slow(Prob(prob), Frames(time) if time is not None else None)
 
     def __str__(self) -> str:
         """Gets a string representation of the Slow object.
@@ -725,13 +731,18 @@ class Slow:
         Returns:
             Slow: The copy of the Slow object.
         """
-        return Slow(self.prob.copy(), self.time.copy())
+        return Slow(
+            self.prob.copy() if self.prob is not None else None,
+            self.time.copy() if self.time is not None else None,
+        )
 
 
 class Wave:
     """Represents a wave ability."""
 
-    def __init__(self, prob: Prob, level: int, is_mini: bool):
+    def __init__(
+        self, prob: Optional[Prob], level: Optional[int], is_mini: Optional[bool]
+    ):
         """Initializes a new Wave object.
 
         Args:
@@ -744,7 +755,9 @@ class Wave:
         self.is_mini = is_mini
 
     @staticmethod
-    def from_values(prob: int, level: int, is_mini: bool) -> "Wave":
+    def from_values(
+        prob: Optional[int], level: Optional[int], is_mini: Optional[int]
+    ) -> "Wave":
         """Creates a new Wave object from values.
 
         Args:
@@ -755,7 +768,7 @@ class Wave:
         Returns:
             Wave: The new Wave object.
         """
-        return Wave(Prob(prob), level, is_mini)
+        return Wave(Prob(prob), level, bool(is_mini) if is_mini is not None else None)
 
     def __str__(self) -> str:
         """Gets a string representation of the Wave object.
@@ -779,13 +792,22 @@ class Wave:
         Returns:
             Wave: The copy of the Wave object.
         """
-        return Wave(self.prob.copy(), self.level, self.is_mini)
+        return Wave(
+            self.prob.copy() if self.prob is not None else None,
+            self.level,
+            self.is_mini,
+        )
 
 
 class Weaken:
     """Represents a weaken ability."""
 
-    def __init__(self, prob: Prob, time: Frames, weaken_percent: int):
+    def __init__(
+        self,
+        prob: Optional[Prob],
+        time: Optional[Frames],
+        weaken_percent: Optional[int],
+    ):
         """Initializes a new Weaken object.
 
         Args:
@@ -798,7 +820,9 @@ class Weaken:
         self.multiplier = weaken_percent
 
     @staticmethod
-    def from_values(prob: int, time: int, weaken_percent: int) -> "Weaken":
+    def from_values(
+        prob: Optional[int], time: Optional[int], weaken_percent: Optional[int]
+    ) -> "Weaken":
         """Creates a new Weaken object from values.
 
         Args:
@@ -809,7 +833,9 @@ class Weaken:
         Returns:
             Weaken: The new Weaken object.
         """
-        return Weaken(Prob(prob), Frames(time), weaken_percent)
+        return Weaken(
+            Prob(prob), Frames(time) if time is not None else None, weaken_percent
+        )
 
     def __str__(self) -> str:
         """Gets a string representation of the Weaken object.
@@ -833,13 +859,17 @@ class Weaken:
         Returns:
             Weaken: The copy of the Weaken object.
         """
-        return Weaken(self.prob.copy(), self.time.copy(), self.multiplier)
+        return Weaken(
+            self.prob.copy() if self.prob is not None else None,
+            self.time.copy() if self.time is not None else None,
+            self.multiplier,
+        )
 
 
 class Strengthen:
     """Represents a strengthen ability."""
 
-    def __init__(self, hp_percent: int, multiplier_percent: int):
+    def __init__(self, hp_percent: Optional[int], multiplier_percent: Optional[int]):
         """Initializes a new Strengthen object.
 
         Args:
@@ -850,7 +880,9 @@ class Strengthen:
         self.multiplier_percent = multiplier_percent
 
     @staticmethod
-    def from_values(hp_percent: int, multiplier_percent: int) -> "Strengthen":
+    def from_values(
+        hp_percent: Optional[int], multiplier_percent: Optional[int]
+    ) -> "Strengthen":
         """Creates a new Strengthen object from values.
 
         Args:
@@ -890,7 +922,7 @@ class Strengthen:
 class ZLayers:
     """Represents a ZLayer range."""
 
-    def __init__(self, min: int, max: int):
+    def __init__(self, min: Optional[int], max: Optional[int]):
         """Initializes a new ZLayers object.
 
         Args:
@@ -901,7 +933,7 @@ class ZLayers:
         self.max = max
 
     @staticmethod
-    def from_values(min: int, max: int) -> "ZLayers":
+    def from_values(min: Optional[int], max: Optional[int]) -> "ZLayers":
         """Creates a new ZLayers object from values.
 
         Args:
@@ -943,12 +975,12 @@ class Attack:
 
     def __init__(
         self,
-        damage: int,
-        foreswing: Frames,
-        use_ability: bool,
-        long_distance_flag: bool,
-        long_distance_start: int,
-        long_distance_range: int,
+        damage: Optional[int],
+        foreswing: Optional[Frames],
+        use_ability: Optional[bool],
+        long_distance_flag: Optional[bool],
+        long_distance_start: Optional[int],
+        long_distance_range: Optional[int],
     ):
         """Initializes a new Attack object.
 
@@ -969,12 +1001,12 @@ class Attack:
 
     @staticmethod
     def from_values(
-        damage: int,
-        foreswing: int,
-        use_ability: bool,
-        long_distance_flag: bool,
-        long_distance_start: int,
-        long_distance_range: int,
+        damage: Optional[int],
+        foreswing: Optional[int],
+        use_ability: Optional[int],
+        long_distance_flag: Optional[int],
+        long_distance_start: Optional[int],
+        long_distance_range: Optional[int],
     ) -> "Attack":
         """Creates a new Attack object from values.
 
@@ -991,14 +1023,16 @@ class Attack:
         """
         return Attack(
             damage,
-            Frames(foreswing),
-            use_ability,
-            long_distance_flag,
+            Frames(foreswing) if foreswing is not None else None,
+            bool(use_ability) if use_ability is not None else None,
+            bool(long_distance_flag) if long_distance_flag is not None else None,
             long_distance_start,
             long_distance_range,
         )
 
-    def set_ld(self, long_distance_start: int, long_distance_range: int):
+    def set_ld(
+        self, long_distance_start: Optional[int], long_distance_range: Optional[int]
+    ):
         """Sets the long distance values of the attack.
 
         Args:
@@ -1019,7 +1053,7 @@ class Attack:
         Returns:
             str: The string representation of the Attack object.
         """
-        return f"Damage: {self.damage}, Foreswing: {self.foreswing}, Use Ability: {self.use_ability}, Long Distance: {self.long_distance_flag}, Long Distance {self.long_distance_start}-{self.long_distance_range + self.long_distance_start}"
+        return f"Damage: {self.damage}, Foreswing: {self.foreswing}, Use Ability: {self.use_ability}, Long Distance: {self.long_distance_flag}, Long Distance {self.long_distance_start}-{self.long_distance_range or 0 + (self.long_distance_start or 0)}"
 
     def __repr__(self) -> str:
         """Gets a string representation of the Attack object.
@@ -1037,7 +1071,7 @@ class Attack:
         """
         return Attack(
             self.damage,
-            self.foreswing.copy(),
+            self.foreswing.copy() if self.foreswing is not None else None,
             self.use_ability,
             self.long_distance_flag,
             self.long_distance_start,
@@ -1048,7 +1082,7 @@ class Attack:
 class AttackState:
     """Represents an attack state."""
 
-    def __init__(self, attacks_before: int, state_id: int):
+    def __init__(self, attacks_before: Optional[int], state_id: Optional[int]):
         """Initializes a new AttackState object.
 
         Args:
@@ -1059,7 +1093,9 @@ class AttackState:
         self.state_id = state_id
 
     @staticmethod
-    def from_values(attacks_before: int, state_id: int) -> "AttackState":
+    def from_values(
+        attacks_before: Optional[int], state_id: Optional[int]
+    ) -> "AttackState":
         """Creates a new AttackState object from values.
 
         Args:
@@ -1099,7 +1135,7 @@ class AttackState:
 class SpawnAnim:
     """Represents a spawn animation."""
 
-    def __init__(self, model_id: int, has_entry_maanim: bool):
+    def __init__(self, model_id: Optional[int], has_entry_maanim: Optional[bool]):
         """Initializes a new SpawnAnim object.
 
         Args:
@@ -1111,7 +1147,9 @@ class SpawnAnim:
         self.has_entry_maanim = has_entry_maanim
 
     @staticmethod
-    def from_values(model_id: int, has_entry_maanim: bool) -> "SpawnAnim":
+    def from_values(
+        model_id: Optional[int], has_entry_maanim: Optional[int]
+    ) -> "SpawnAnim":
         """Creates a new SpawnAnim object from values.
 
         Args:
@@ -1121,7 +1159,9 @@ class SpawnAnim:
         Returns:
             SpawnAnim: The new SpawnAnim object.
         """
-        return SpawnAnim(model_id, has_entry_maanim)
+        return SpawnAnim(
+            model_id, bool(has_entry_maanim) if has_entry_maanim is not None else None
+        )
 
     def __str__(self) -> str:
         """Gets a string representation of the SpawnAnim object.
@@ -1152,7 +1192,13 @@ class SpawnAnim:
 class Warp:
     """Represents a warp."""
 
-    def __init__(self, prob: Prob, time: Frames, min_distance: int, max_distance: int):
+    def __init__(
+        self,
+        prob: Optional[Prob],
+        time: Optional[Frames],
+        min_distance: Optional[int],
+        max_distance: Optional[int],
+    ):
         """Initializes a new Warp object.
 
         Args:
@@ -1168,10 +1214,10 @@ class Warp:
 
     @staticmethod
     def from_values(
-        prob: int,
-        time: int,
-        min_distance: int,
-        max_distance: int,
+        prob: Optional[int],
+        time: Optional[int],
+        min_distance: Optional[int],
+        max_distance: Optional[int],
     ) -> "Warp":
         """Creates a new Warp object from values.
 
@@ -1184,7 +1230,12 @@ class Warp:
         Returns:
             Warp: The new Warp object.
         """
-        return Warp(Prob(prob), Frames(time), min_distance, max_distance)
+        return Warp(
+            Prob(prob),
+            Frames(time) if time is not None else None,
+            min_distance,
+            max_distance,
+        )
 
     def __str__(self) -> str:
         """Gets a string representation of the Warp object.
@@ -1209,8 +1260,8 @@ class Warp:
             Warp: The copy of the Warp object.
         """
         return Warp(
-            self.prob.copy(),
-            self.time.copy(),
+            self.prob.copy() if self.prob is not None else None,
+            self.time.copy() if self.time is not None else None,
             self.min_distance,
             self.max_distance,
         )
@@ -1221,8 +1272,8 @@ class SavageBlow:
 
     def __init__(
         self,
-        prob: Prob,
-        added_percentage_multiplier: int,
+        prob: Optional[Prob],
+        added_percentage_multiplier: Optional[int],
     ):
         """Initializes a new SavageBlow object.
 
@@ -1234,7 +1285,7 @@ class SavageBlow:
         self.multiplier = added_percentage_multiplier
 
     @staticmethod
-    def from_values(prob: int, multiplier: int) -> "SavageBlow":
+    def from_values(prob: Optional[int], multiplier: Optional[int]) -> "SavageBlow":
         """Creates a new SavageBlow object from values.
 
         Args:
@@ -1268,13 +1319,15 @@ class SavageBlow:
         Returns:
             SavageBlow: The copy of the SavageBlow object.
         """
-        return SavageBlow(self.prob.copy(), self.multiplier)
+        return SavageBlow(
+            self.prob.copy() if self.prob is not None else None, self.multiplier
+        )
 
 
 class Dodge:
     """Represents a dodge."""
 
-    def __init__(self, prob: Prob, time: Frames):
+    def __init__(self, prob: Optional[Prob], time: Optional[Frames]):
         """Initializes a new Dodge object.
 
         Args:
@@ -1285,7 +1338,7 @@ class Dodge:
         self.time = time
 
     @staticmethod
-    def from_values(prob: int, time: int) -> "Dodge":
+    def from_values(prob: Optional[int], time: Optional[int]) -> "Dodge":
         """Creates a new Dodge object from values.
 
         Args:
@@ -1295,7 +1348,7 @@ class Dodge:
         Returns:
             Dodge: The new Dodge object.
         """
-        return Dodge(Prob(prob), Frames(time))
+        return Dodge(Prob(prob), Frames(time) if time is not None else None)
 
     def __str__(self) -> str:
         """Gets a string representation of the Dodge object.
@@ -1314,7 +1367,10 @@ class Dodge:
         return str(self)
 
     def copy(self) -> "Dodge":
-        return Dodge(self.prob.copy(), self.time.copy())
+        return Dodge(
+            self.prob.copy() if self.prob is not None else None,
+            self.time.copy() if self.time is not None else None,
+        )
 
 
 class Surge:
@@ -1322,10 +1378,10 @@ class Surge:
 
     def __init__(
         self,
-        prob: Prob,
-        start: int,
-        range: int,
-        level: int,
+        prob: Optional[Prob],
+        start: Optional[int],
+        range: Optional[int],
+        level: Optional[int],
     ):
         """Initializes a new Surge object.
 
@@ -1342,10 +1398,10 @@ class Surge:
 
     @staticmethod
     def from_values(
-        prob: int,
-        start: int,
-        range: int,
-        level: int,
+        prob: Optional[int],
+        start: Optional[int],
+        range: Optional[int],
+        level: Optional[int],
     ) -> "Surge":
         """Creates a new Surge object from values.
 
@@ -1366,7 +1422,7 @@ class Surge:
         Returns:
             str: The string representation of the Surge object.
         """
-        return f"{self.prob} chance to surge at level {self.level} by {self.start//4}-{(self.range//4 + self.start//4)}"
+        return f"{self.prob} chance to surge at level {self.level} by {(self.start or 0) //4}-{((self.range or 0) //4 + (self.start or 0) //4)}"
 
     def __repr__(self) -> str:
         """Gets a string representation of the Surge object.
@@ -1382,7 +1438,12 @@ class Surge:
         Returns:
             Surge: The copy of the Surge object.
         """
-        return Surge(self.prob.copy(), self.start, self.range, self.level)
+        return Surge(
+            self.prob.copy() if self.prob is not None else None,
+            self.start,
+            self.range,
+            self.level,
+        )
 
     def get_time(self) -> Frames:
         """Gets the duration of the surge.
@@ -1390,7 +1451,7 @@ class Surge:
         Returns:
             Frames: The duration of the surge.
         """
-        return Frames(self.level * 20)
+        return Frames((self.level or 0) * 20)
 
 
 class Shield:
@@ -1398,8 +1459,8 @@ class Shield:
 
     def __init__(
         self,
-        hp: int,
-        percent_heal_kb: int,
+        hp: Optional[int],
+        percent_heal_kb: Optional[int],
     ):
         """Initializes a new Shield object.
 
@@ -1411,7 +1472,7 @@ class Shield:
         self.percent_heal_kb = percent_heal_kb
 
     @staticmethod
-    def from_values(hp: int, percent_heal_kb: int) -> "Shield":
+    def from_values(hp: Optional[int], percent_heal_kb: Optional[int]) -> "Shield":
         """Creates a new Shield object from values.
 
         Args:
@@ -1453,8 +1514,8 @@ class Curse:
 
     def __init__(
         self,
-        prob: Prob,
-        time: Frames,
+        prob: Optional[Prob],
+        time: Optional[Frames],
     ):
         """Initializes a new Curse object.
 
@@ -1467,8 +1528,8 @@ class Curse:
 
     @staticmethod
     def from_values(
-        prob: int,
-        time: int,
+        prob: Optional[int],
+        time: Optional[int],
     ) -> "Curse":
         """Creates a new Curse object from values.
 
@@ -1479,7 +1540,7 @@ class Curse:
         Returns:
             Curse: The new Curse object.
         """
-        return Curse(Prob(prob), Frames(time))
+        return Curse(Prob(prob), Frames(time) if time is not None else None)
 
     def __str__(self) -> str:
         """Gets a string representation of the Curse object.
@@ -1503,13 +1564,16 @@ class Curse:
         Returns:
             Curse: The copy of the Curse object.
         """
-        return Curse(self.prob.copy(), self.time.copy())
+        return Curse(
+            self.prob.copy() if self.prob is not None else None,
+            self.time.copy() if self.time is not None else None,
+        )
 
 
 class ShieldPierce:
     """Represents a shield pierce ability."""
 
-    def __init__(self, prob: Prob):
+    def __init__(self, prob: Optional[Prob]):
         """Initializes a new ShieldPierce object.
 
         Args:
@@ -1518,7 +1582,7 @@ class ShieldPierce:
         self.prob = prob
 
     @staticmethod
-    def from_values(prob: int) -> "ShieldPierce":
+    def from_values(prob: Optional[int]) -> "ShieldPierce":
         """Creates a new ShieldPierce object from values.
 
         Args:
@@ -1551,7 +1615,7 @@ class ShieldPierce:
         Returns:
             ShieldPierce: The copy of the ShieldPierce object.
         """
-        return ShieldPierce(self.prob.copy())
+        return ShieldPierce(self.prob.copy() if self.prob is not None else None)
 
 
 class BehemothDodge:
@@ -1559,8 +1623,8 @@ class BehemothDodge:
 
     def __init__(
         self,
-        prob: Prob,
-        time: Frames,
+        prob: Optional[Prob],
+        time: Optional[Frames],
     ):
         """Initializes a new BehemothDodge object.
 
@@ -1573,8 +1637,8 @@ class BehemothDodge:
 
     @staticmethod
     def from_values(
-        prob: int,
-        time: int,
+        prob: Optional[int],
+        time: Optional[int],
     ) -> "BehemothDodge":
         """Creates a new BehemothDodge object from values.
 
@@ -1585,7 +1649,7 @@ class BehemothDodge:
         Returns:
             BehemothDodge: The new BehemothDodge object.
         """
-        return BehemothDodge(Prob(prob), Frames(time))
+        return BehemothDodge(Prob(prob), Frames(time) if time is not None else None)
 
     def __str__(self) -> str:
         """Gets a string representation of the BehemothDodge object.
@@ -1609,13 +1673,16 @@ class BehemothDodge:
         Returns:
             BehemothDodge: The copy of the BehemothDodge object.
         """
-        return BehemothDodge(self.prob.copy(), self.time.copy())
+        return BehemothDodge(
+            self.prob.copy() if self.prob is not None else None,
+            self.time.copy() if self.time is not None else None,
+        )
 
 
 class SoulAnim:
     """Represents a soul animation."""
 
-    def __init__(self, model_id: int, has_death_maanim: bool):
+    def __init__(self, model_id: Optional[int], has_death_maanim: Optional[bool]):
         """Initializes a new SoulAnim object.
 
         Args:
@@ -1625,7 +1692,7 @@ class SoulAnim:
         self.model_id = model_id
         self.has_death_maanim = has_death_maanim
 
-    def set(self, anim_type: int):
+    def set(self, anim_type: Optional[int]):
         """Sets the type of the soul animation.
 
         Args:
@@ -1659,8 +1726,8 @@ class SoulAnim:
 
     @staticmethod
     def from_values(
-        model_id: int,
-        has_soul_maanim: bool,
+        model_id: Optional[int],
+        has_soul_maanim: Optional[int],
     ) -> "SoulAnim":
         """Creates a new SoulAnim object from values.
 
@@ -1671,7 +1738,9 @@ class SoulAnim:
         Returns:
             SoulAnim: The new SoulAnim object.
         """
-        return SoulAnim(model_id, has_soul_maanim)
+        return SoulAnim(
+            model_id, bool(has_soul_maanim) if has_soul_maanim is not None else None
+        )
 
 
 class EvolveItem:
@@ -1679,8 +1748,8 @@ class EvolveItem:
 
     def __init__(
         self,
-        item_id: int,
-        amount: int,
+        item_id: Optional[int],
+        amount: Optional[int],
     ):
         """Initializes a new EvolveItem object.
 
@@ -1720,7 +1789,9 @@ class EvolveItems:
         self.evolve_items = evolve_items
 
     @staticmethod
-    def from_unit_buy_list(raw_data: list[int], start_index: int) -> "EvolveItems":
+    def from_unit_buy_list(
+        raw_data: list[Optional[int]], start_index: int
+    ) -> "EvolveItems":
         """Creates a new EvolveItems object from a row from unitbuy.csv.
 
         Args:
@@ -1759,7 +1830,13 @@ class EvolveItems:
             list[int]: The list representation of the EvolveItems object.
         """
         items: list[int] = []
-        for item in self.evolve_items:
-            items.append(item.item_id)
-            items.append(item.amount)
+        for i in range(5):
+            try:
+                item = self.evolve_items[i]
+            except IndexError:
+                items.append(0)
+                items.append(0)
+                continue
+            items.append(item.item_id or 0)
+            items.append(item.amount or 0)
         return items
