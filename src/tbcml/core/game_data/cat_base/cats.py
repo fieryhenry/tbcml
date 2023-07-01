@@ -965,14 +965,6 @@ class UnlockSourceType(enum.Enum):
     GACHA = 1
 
 
-class GatchaRarity(enum.Enum):
-    NONE = 0
-    RARE = 1
-    SUPER_RARE = 2
-    UBER_RARE = 3
-    LEGEND_RARE = 4
-
-
 class Rarity(enum.Enum):
     NORMAL = 0
     SPECIAL = 1
@@ -1005,7 +997,7 @@ class UnitBuyData:
         self.chapter_unlock = raw_data[15]
         self.sell_price = raw_data[16]
         self.gatya_rarity = (
-            GatchaRarity(raw_data[17]) if raw_data[17] is not None else None
+            GatyaRarity(raw_data[17]) if raw_data[17] is not None else None
         )
         self.original_max_levels = raw_data[18], raw_data[19]
         self.force_true_form_level = raw_data[20]
