@@ -362,7 +362,7 @@ class SmaliHandler:
 
             smali_path = temp_folder.add("smali")
 
-            baksmali_path = core.Path("lib", is_relative=True).add("baksmali.jar")
+            baksmali_path = core.Path.get_lib("baksmali.jar")
             command = core.Command(
                 f"java -jar {baksmali_path} d '{dex_path}' -o '{smali_path}'",
                 cwd=temp_folder,

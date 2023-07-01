@@ -14,6 +14,10 @@ class Path:
         else:
             self.path = path
 
+    @staticmethod
+    def get_lib(lib_name: str) -> "Path":
+        return Path("lib", is_relative=True).add(lib_name)
+
     def get_relative_path(self, path: str) -> str:
         return os.path.join(self.get_files_folder().path, path)
 
