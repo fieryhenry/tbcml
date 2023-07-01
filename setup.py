@@ -43,5 +43,4 @@ setuptools.setup(
         ],
     },
     package_data={"tbcml": ["py.typed"]},
-    flake8={"max-line-length": 160},
 )
