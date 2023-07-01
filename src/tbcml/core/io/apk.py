@@ -105,9 +105,13 @@ class Apk:
         self.original_extracted_path.copy(self.extracted_path)
 
     @staticmethod
+    def run_apktool(command: str) -> "core.CommandResult":
+        apktool_path = core.Path.get_lib("apktool.jar")
+        return core.Command(f"java -jar {apktool_path} {command}").run()
+
+    @staticmethod
     def check_apktool_installed() -> bool:
-        cmd = core.Command("apktool -version", False)
-        res = cmd.run()
+        res = Apk.run_apktool("-version")
         return res.exit_code == 0
 
     @staticmethod
@@ -153,11 +157,9 @@ class Apk:
 
         if not self.check_display_apktool_error():
             return
-
-        cmd = core.Command(
-            f"apktool d -f -s {self.apk_path} -o {self.original_extracted_path}", False
+        res = self.run_apktool(
+            f"d -f -s {self.apk_path} -o {self.original_extracted_path}"
         )
-        res = cmd.run()
         if res.exit_code != 0:
             print(f"Failed to extract APK: {res.result}")
             return
@@ -169,8 +171,7 @@ class Apk:
             return
 
         with core.TempFolder() as temp_folder:
-            cmd = core.Command(f"apktool d -f {self.apk_path} -o {temp_folder}", False)
-            res = cmd.run()
+            res = self.run_apktool(f"d -f {self.apk_path} -o {temp_folder}")
             if res.exit_code != 0:
                 print(f"Failed to extract APK: {res.result}")
                 return
@@ -188,10 +189,7 @@ class Apk:
     def pack(self):
         if not self.check_display_apktool_error():
             return
-        cmd = core.Command(
-            f"apktool b {self.extracted_path} -o {self.final_apk_path}", False
-        )
-        res = cmd.run()
+        res = self.run_apktool(f"b {self.extracted_path} -o {self.final_apk_path}")
         if res.exit_code != 0:
             print(f"Failed to pack APK: {res.result}")
             return
