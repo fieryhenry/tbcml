@@ -1,35 +1,44 @@
-import enum
-from typing import Any
+"""Module for base ability data."""
+from typing import Any, Optional
 from tbcml import core
 
 
-class Probability(enum.Enum):
-    NORMAL = 0
-    RARE = 1
-    SUPER_RARE = 2
-    E_RARE = 3  # e could mean special?
-
-
 class BaseAbilityData:
+    """Class for base ability data."""
+
     def __init__(
         self,
-        sell_price: int,
-        probability: Probability,
-        max_base_level: int,
-        max_plus_level: int,
-        chapter_1_to_2_max_level: int,
+        sell_price: Optional[int] = None,
+        gatya_rarity: Optional["core.GatyaRarity"] = None,
+        max_base_level: Optional[int] = None,
+        max_plus_level: Optional[int] = None,
+        chapter_1_to_2_max_level: Optional[int] = None,
     ):
+        """Class for base ability data.
+
+        Args:
+            sell_price (Optional[int], optional): Sell price of the base ability. Defaults to None.
+            gatya_rarity (Optional[core.GatyaRarity], optional): Gatya rarity of the base ability. Defaults to None.
+            max_base_level (Optional[int], optional): The max base level of the base ability. Defaults to None.
+            max_plus_level (Optional[int], optional): The max plus level of the base ability. Defaults to None.
+            chapter_1_to_2_max_level (Optional[int], optional): The max level of the base ability from chapter 1 to 2. Defaults to None.
+        """
         self.sell_price = sell_price
-        self.probability = probability
+        self.gatya_rarity = gatya_rarity
         self.max_base_level = max_base_level
         self.max_plus_level = max_plus_level
         self.chapter_1_to_2_max_level = chapter_1_to_2_max_level
 
     def apply_dict(self, dict_data: dict[str, Any]):
+        """Apply a dict to the base ability data.
+
+        Args:
+            dict_data (dict[str, Any]): The dict to apply.
+        """
         self.sell_price = dict_data.get("sell_price", self.sell_price)
-        probability = dict_data.get("probability")
-        if probability is not None:
-            self.probability = Probability(probability)
+        gatya_rarity = dict_data.get("gatya_rarity")
+        if gatya_rarity is not None:
+            self.gatya_rarity = core.GatyaRarity(gatya_rarity)
         self.max_base_level = dict_data.get("max_base_level", self.max_base_level)
         self.max_plus_level = dict_data.get("max_plus_level", self.max_plus_level)
         self.chapter_1_to_2_max_level = dict_data.get(
@@ -38,40 +47,202 @@ class BaseAbilityData:
 
     @staticmethod
     def create_empty() -> "BaseAbilityData":
-        return BaseAbilityData(
-            0,
-            Probability.NORMAL,
-            0,
-            0,
-            0,
-        )
+        """Create an empty base ability data.
+
+        Returns:
+            BaseAbilityData: The empty base ability data.
+        """
+        return BaseAbilityData()
 
 
 class BaseAbility:
-    def __init__(self, ability_id: int, data: BaseAbilityData):
+    """Class for base ability."""
+
+    def __init__(
+        self,
+        ability_id: int,
+        upgrade_icon: Optional["core.BCImage"] = None,
+        upgrade_icon_max: Optional["core.BCImage"] = None,
+        data: Optional[BaseAbilityData] = None,
+    ):
+        """Class for base ability.
+
+        Args:
+            ability_id (int): The ID of the base ability.
+            upgrade_icon (Optional[core.BCImage], optional): The upgrade icon of the base ability. Defaults to None.
+            upgrade_icon_max (Optional[core.BCImage], optional): The upgrade icon of the base ability at max level. Defaults to None.
+            data (Optional[BaseAbilityData], optional): The data of the base ability. Defaults to None.
+        """
         self.ability_id = ability_id
+        self.upgrade_icon = upgrade_icon
+        self.upgrade_icon_max = upgrade_icon_max
         self.data = data
 
+    def get_upgrade_icon(self) -> "core.BCImage":
+        """Get the upgrade icon of the base ability.
+
+        Returns:
+            core.BCImage: The upgrade icon of the base ability.
+        """
+        if self.upgrade_icon is None:
+            self.upgrade_icon = core.BCImage.from_size(512, 128)
+        return self.upgrade_icon
+
+    def get_upgrade_icon_max(self) -> "core.BCImage":
+        """Get the upgrade icon max of the base ability.
+
+        Returns:
+            core.BCImage: The upgrade icon max of the base ability.
+        """
+        if self.upgrade_icon_max is None:
+            self.upgrade_icon_max = core.BCImage.from_size(512, 128)
+        return self.upgrade_icon_max
+
+    def get_data(self) -> BaseAbilityData:
+        """Get the data of the base ability.
+
+        Returns:
+            BaseAbilityData: The data of the base ability.
+        """
+        if self.data is None:
+            self.data = BaseAbilityData.create_empty()
+        return self.data
+
     def apply_dict(self, dict_data: dict[str, Any]):
+        """Apply a dict to the base ability.
+
+        Args:
+            dict_data (dict[str, Any]): The dict to apply.
+        """
         self.ability_id = dict_data.get("ability_id", self.ability_id)
+        upgrade_icon = dict_data.get("upgrade_icon")
+        if upgrade_icon is not None:
+            self.get_upgrade_icon().apply_dict(upgrade_icon)
+        upgrade_icon_max = dict_data.get("upgrade_icon_max")
+        if upgrade_icon_max is not None:
+            self.get_upgrade_icon_max().apply_dict(upgrade_icon_max)
         data = dict_data.get("data")
         if data is not None:
-            self.data.apply_dict(data)
+            self.get_data().apply_dict(data)
+
+    @staticmethod
+    def get_upgrade_icon_file_name(id: int, lang: str) -> str:
+        """Get the upgrade icon file name of the base ability.
+
+        Args:
+            id (int): The ability ID of the base ability.
+            lang (str): The language of the upgrade icon.
+
+        Returns:
+            str: The upgrade icon file name of the base ability.
+        """
+        return f"udi{core.PaddedInt(id, 3)}_s_{lang}.png"
+
+    @staticmethod
+    def get_upgrade_icon_max_file_name(id: int, lang: str) -> str:
+        """Get the upgrade icon max file name of the base ability.
+
+        Args:
+            id (int): The ability ID of the base ability.
+            lang (str): The language of the upgrade icon max.
+
+        Returns:
+            str: The upgrade icon max file name of the base ability.
+        """
+
+        return f"udi{core.PaddedInt(id, 3)}_sg_{lang}.png"
+
+    @staticmethod
+    def from_game_data(
+        ability_id: int,
+        game_data: "core.GamePacks",
+        data: Optional[BaseAbilityData] = None,
+    ) -> "BaseAbility":
+        """Create a base ability from game data.
+
+        Args:
+            ability_id (int): The ability ID of the base ability.
+            game_data (core.GamePacks): The game data.
+            data (Optional[BaseAbilityData], optional): The data of the base ability. Defaults to None.
+
+        Returns:
+            BaseAbility: The base ability.
+        """
+        upgrade_icon_file = game_data.find_file(
+            BaseAbility.get_upgrade_icon_file_name(
+                ability_id, game_data.localizable.get_lang()
+            )
+        )
+        upgrade_icon_max_file = game_data.find_file(
+            BaseAbility.get_upgrade_icon_max_file_name(
+                ability_id, game_data.localizable.get_lang()
+            )
+        )
+
+        upgrade_icon = None
+        upgrade_icon_max = None
+
+        if upgrade_icon_file is not None:
+            upgrade_icon = core.BCImage(upgrade_icon_file.dec_data)
+        if upgrade_icon_max_file is not None:
+            upgrade_icon_max = core.BCImage(upgrade_icon_max_file.dec_data)
+
+        return BaseAbility(ability_id, upgrade_icon, upgrade_icon_max, data)
+
+    def to_game_data(self, game_data: "core.GamePacks"):
+        """Convert the base ability to game data.
+
+        Args:
+            game_data (core.GamePacks): The game data.
+        """
+        upgrade_icon_file_name = BaseAbility.get_upgrade_icon_file_name(
+            self.ability_id, game_data.localizable.get_lang()
+        )
+        upgrade_icon_max_file_name = BaseAbility.get_upgrade_icon_max_file_name(
+            self.ability_id, game_data.localizable.get_lang()
+        )
+
+        if self.upgrade_icon is not None:
+            game_data.set_file(upgrade_icon_file_name, self.upgrade_icon.to_data())
+        if self.upgrade_icon_max is not None:
+            game_data.set_file(
+                upgrade_icon_max_file_name, self.upgrade_icon_max.to_data()
+            )
 
     @staticmethod
     def create_empty(ability_id: int) -> "BaseAbility":
-        return BaseAbility(
-            ability_id,
-            BaseAbilityData.create_empty(),
-        )
+        """Create an empty base ability.
+
+        Args:
+            ability_id (int): The ability ID of the base ability.
+
+        Returns:
+            BaseAbility: The empty base ability.
+        """
+        return BaseAbility(ability_id)
 
 
 class BaseAbilities:
+    """A collection of base abilities."""
+
     def __init__(self, abilities: dict[int, BaseAbility]):
+        """Create a collection of base abilities.
+
+        Args:
+            abilities (dict[int, BaseAbility]): The base abilities.
+        """
         self.abilities = abilities
 
     @staticmethod
     def from_game_data(game_data: "core.GamePacks") -> "BaseAbilities":
+        """Create a collection of base abilities from game data.
+
+        Args:
+            game_data (core.GamePacks): The game data.
+
+        Returns:
+            BaseAbilities: The collection of base abilities.
+        """
         if game_data.base_abilities is not None:
             return game_data.base_abilities
         file = game_data.find_file("AbilityData.csv")
@@ -84,62 +255,90 @@ class BaseAbilities:
             if line is None:
                 continue
             xp = int(line[0])
-            probability = int(line[1])
+            gatya_rarity = int(line[1])
             max_base_level = int(line[2])
             max_plus_level = int(line[3])
             chapter_1_to_2_max_level = int(line[4])
             data = BaseAbilityData(
                 xp,
-                Probability(probability),
+                core.GatyaRarity(gatya_rarity),
                 max_base_level,
                 max_plus_level,
                 chapter_1_to_2_max_level,
             )
-            abilitise[i] = BaseAbility(i, data)
+            abilitise[i] = BaseAbility.from_game_data(i, game_data, data)
 
         abilities = BaseAbilities(abilitise)
         game_data.base_abilities = abilities
         return abilities
 
     def to_game_data(self, game_data: "core.GamePacks"):
-        file = game_data.find_file(self.get_file_name())
+        """Convert the collection of base abilities to game data.
+
+        Args:
+            game_data (core.GamePacks): The game data.
+        """
+        file = game_data.find_file(self.get_ability_data_file_name())
         if file is None:
-            raise FileNotFoundError(f"{self.get_file_name()} not found")
+            return
         csv = core.CSV(file.dec_data)
         remaining_abilities = self.abilities.copy()
         for i, line in enumerate(csv):
             line = csv.read_line()
             if line is None:
                 continue
-            try:
-                ability = self.abilities[i]
-            except KeyError:
+            ability = self.abilities.get(i)
+            if ability is None:
                 continue
-            line[0] = str(ability.data.sell_price)
-            line[1] = str(ability.data.probability.value)
-            line[2] = str(ability.data.max_base_level)
-            line[3] = str(ability.data.max_plus_level)
-            line[4] = str(ability.data.chapter_1_to_2_max_level)
+            if ability.data is None:
+                continue
+            if ability.data.sell_price is not None:
+                line[0] = str(ability.data.sell_price)
+            if ability.data.gatya_rarity is not None:
+                line[1] = str(ability.data.gatya_rarity.value)
+            if ability.data.max_base_level is not None:
+                line[2] = str(ability.data.max_base_level)
+            if ability.data.max_plus_level is not None:
+                line[3] = str(ability.data.max_plus_level)
+            if ability.data.chapter_1_to_2_max_level is not None:
+                line[4] = str(ability.data.chapter_1_to_2_max_level)
             csv.lines[i] = line
             del remaining_abilities[i]
 
         for ability in remaining_abilities.values():
+            if ability.data is None:
+                continue
             line = [
-                str(ability.data.sell_price),
-                str(ability.data.probability.value),
-                str(ability.data.max_base_level),
-                str(ability.data.max_plus_level),
-                str(ability.data.chapter_1_to_2_max_level),
+                str(ability.data.sell_price or 0),
+                str(
+                    ability.data.gatya_rarity.value if ability.data.gatya_rarity else 0
+                ),
+                str(ability.data.max_base_level or 0),
+                str(ability.data.max_plus_level or 0),
+                str(ability.data.chapter_1_to_2_max_level or 0),
             ]
             csv.lines.append(line)
 
-        game_data.set_file(self.get_file_name(), csv.to_data())
+        game_data.set_file(self.get_ability_data_file_name(), csv.to_data())
+
+        for ability in self.abilities.values():
+            ability.to_game_data(game_data)
 
     @staticmethod
-    def get_file_name() -> str:
+    def get_ability_data_file_name() -> str:
+        """Get the file name of the base ability data.
+
+        Returns:
+            str: The file name of the base ability data.
+        """
         return "AbilityData.csv"
 
     def apply_dict(self, dict_data: dict[str, Any]):
+        """Apply a dictionary to the collection of base abilities.
+
+        Args:
+            dict_data (dict[str, Any]): The dictionary.
+        """
         abilities = dict_data.get("abilities")
         if abilities is not None:
             current_abilities = self.abilities.copy()
@@ -156,11 +355,16 @@ class BaseAbilities:
 
     @staticmethod
     def create_empty() -> "BaseAbilities":
+        """Create an empty collection of base abilities.
+
+        Returns:
+            BaseAbilities: The empty collection of base abilities.
+        """
         return BaseAbilities({})
 
     @staticmethod
     def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
-        """Apply a mod to a GamePacks object.
+        """Apply a mod to the collection of base abilities in game data.
 
         Args:
             mod (core.Mod): The mod.
