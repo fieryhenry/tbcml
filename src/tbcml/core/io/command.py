@@ -4,7 +4,7 @@ from typing import Optional
 from tbcml import core
 
 
-class Result:
+class CommandResult:
     def __init__(self, result: str, exit_code: int):
         self.result = result
         self.exit_code = exit_code
@@ -32,7 +32,7 @@ class Command:
         else:
             self.cwd = cwd
 
-    def run(self, inputData: str = "\n") -> Result:
+    def run(self, inputData: str = "\n") -> CommandResult:
         self.process = subprocess.Popen(
             self.command,
             stdout=subprocess.PIPE,
@@ -44,7 +44,7 @@ class Command:
         )
         output, _ = self.process.communicate(inputData)
         return_code = self.process.wait()
-        return Result(output, return_code)
+        return CommandResult(output, return_code)
 
     def run_in_thread(self, inputData: str = "\n") -> None:
         self.thread = threading.Thread(target=self.run, args=(inputData,))

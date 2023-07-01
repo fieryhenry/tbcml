@@ -111,7 +111,7 @@ from .io.bc_csv import CSV, Delimeter
 from .io.apk import Apk
 from .io.path import Path
 from .io.data import Data, PaddedInt
-from .io.command import Command
+from .io.command import Command, CommandResult
 from .io.config import Config, ConfigKey
 from .io.lib import LibFiles, Lib
 from .io.json_file import JsonFile
