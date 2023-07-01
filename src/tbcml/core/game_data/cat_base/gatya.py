@@ -3,10 +3,47 @@ from typing import Any, Optional
 from tbcml import core
 
 
+class RollType(enum.Enum):
+    RARE_TICKET = 0
+    SINGLE_CF = 1
+    MULTI_CF = 2
+    PLATINUM_TICKET = 3
+    STEP_UP = 4
+
+
 class GatyaType(enum.Enum):
     RARE = "R"
     NORMAL = "N"
     EVENT = "E"
+
+    def get_index(self: "GatyaType") -> int:
+        if self == GatyaType.RARE:
+            return 0
+        elif self == GatyaType.NORMAL:
+            return 1
+        elif self == GatyaType.EVENT:
+            return 2
+        else:
+            return -1
+
+    @staticmethod
+    def from_index(index: int) -> "GatyaType":
+        if index == 0:
+            return GatyaType.RARE
+        elif index == 1:
+            return GatyaType.NORMAL
+        elif index == 2:
+            return GatyaType.EVENT
+        else:
+            return GatyaType.RARE
+
+
+class GatyaRarity(enum.Enum):
+    NONE = 0
+    RARE = 1
+    SUPER_RARE = 2
+    UBER_RARE = 3
+    LEGEND_RARE = 4
 
 
 class GatyaDataSetData:
