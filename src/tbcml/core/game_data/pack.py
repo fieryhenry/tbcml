@@ -1,3 +1,5 @@
+"""Module for handling game data."""
+
 from typing import Optional
 import copy
 
@@ -5,6 +7,8 @@ from tbcml import core
 
 
 class GameFile:
+    """Represents a single game file."""
+
     def __init__(
         self,
         dec_data: "core.Data",
@@ -97,11 +101,22 @@ class GameFile:
 
     @staticmethod
     def is_anim(file_name: str) -> bool:
+        """Check if a file is an animation file.
+
+        Args:
+            file_name (str): The name of the file.
+
+        Returns:
+            bool: True if the file is an animation file, False otherwise.
+        """
+
         extensions = [".maanim", ".mamodel", ".imgcut"]
         return any(file_name.endswith(ext) for ext in extensions)
 
 
 class PackFile:
+    """Represents a pack file containing multiple game files."""
+
     def __init__(
         self,
         pack_name: str,
@@ -360,6 +375,8 @@ class PackFile:
 
 
 class GamePacks:
+    """A class to represent the game packs."""
+
     def __init__(
         self,
         packs: dict[str, PackFile],
@@ -380,6 +397,8 @@ class GamePacks:
         self.init_data()
 
     def init_data(self):
+        """Initialize the data objects."""
+
         self.base_abilities: Optional[core.BaseAbilities] = None
         self.bgs: Optional[core.Bgs] = None
         self.chara_groups: Optional[core.CharaGroups] = None
@@ -492,6 +511,29 @@ class GamePacks:
                 packs_lists.append(pack.to_pack_list_file(key, iv))
         return packs_lists
 
+    def to_java_name(self, name: str) -> str:
+        """Convert a name to a java name.
+
+        Args:
+            name (str): The name to convert.
+
+        Returns:
+            str: The converted name.
+        """
+        return name.lower() + "1"
+
+    def get_pack_gv(self, pack_name: str) -> Optional["PackFile"]:
+        """Get a pack from the game packs.
+
+        Args:
+            pack_name (str): The name of the pack.
+
+        Returns:
+            Optional[PackFile]: The pack if it exists, None otherwise.
+        """
+        pack_name = self.to_java_name(pack_name) if self.gv.is_java() else pack_name
+        return self.get_pack(pack_name)
+
     def set_file(self, file_name: str, data: "core.Data") -> Optional["GameFile"]:
         """Set a file in the game packs.
 
@@ -510,13 +552,11 @@ class GamePacks:
         file = self.find_file(file_name)
         if file is None:
             if GameFile.is_anim(file_name):
-                pack = self.get_pack("ImageDataLocal")
+                pack = self.get_pack_gv("ImageDataLocal")
             elif file_name.endswith(".png"):
-                pack = self.get_pack("ImageLocal")
+                pack = self.get_pack_gv("ImageLocal")
             else:
-                pack = self.get_pack("DataLocal")
-            if pack is None:
-                pack = self.get_pack("datalocal1")
+                pack = self.get_pack_gv("DataLocal")
             if pack is None:
                 raise FileNotFoundError(f"Could not find pack for {file_name}")
             file = GameFile(data, file_name, pack.pack_name, self.country_code, self.gv)
@@ -524,9 +564,7 @@ class GamePacks:
             if file.dec_data == data:
                 return file
         new_pack_name = PackFile.convert_pack_name_server_local(file.pack_name)
-        pack = self.get_pack(new_pack_name)
-        if pack is None:
-            pack = self.get_pack("datalocal1")
+        pack = self.get_pack_gv(new_pack_name)
         if pack is None:
             raise FileNotFoundError(f"Could not find pack {new_pack_name}")
         file = pack.set_file(file_name, data)
