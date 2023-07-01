@@ -1001,7 +1001,7 @@ class UnitBuyData:
         self.chapter_unlock = raw_data[15]
         self.sell_price = raw_data[16]
         self.gatya_rarity = (
-            GatyaRarity(raw_data[17]) if raw_data[17] is not None else None
+            core.GatyaRarity(raw_data[17]) if raw_data[17] is not None else None
         )
         self.original_max_levels = raw_data[18], raw_data[19]
         self.force_true_form_level = raw_data[20]
