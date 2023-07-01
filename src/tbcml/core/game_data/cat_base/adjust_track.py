@@ -1040,6 +1040,8 @@ class UserRankTrackData:
 
 
 class AdjustData:
+    """Represents the AdjustData."""
+
     def __init__(
         self,
         gatya_track_data: Optional[GatyaTrackData] = None,
@@ -1048,6 +1050,15 @@ class AdjustData:
         purchase_track_data: Optional[PurchaseTrackData] = None,
         user_rank_track_data: Optional[UserRankTrackData] = None,
     ):
+        """Create an AdjustData.
+
+        Args:
+            gatya_track_data (Optional[GatyaTrackData], optional): GatyaTrackData. Defaults to None.
+            legend_stage_track_data (Optional[LegendStageTrackData], optional): LegendStageTrackData. Defaults to None.
+            stage_clear_track_data (Optional[StageClearTrackData], optional): StageClearTrackData. Defaults to None.
+            purchase_track_data (Optional[PurchaseTrackData], optional): PurchaseTrackData. Defaults to None.
+            user_rank_track_data (Optional[UserRankTrackData], optional): UserRankTrackData. Defaults to None.
+        """
         self.gatya_track_data = gatya_track_data
         self.legend_stage_track_data = legend_stage_track_data
         self.stage_clear_track_data = stage_clear_track_data
@@ -1055,31 +1066,61 @@ class AdjustData:
         self.user_rank_track_data = user_rank_track_data
 
     def get_gatya_track_data(self) -> GatyaTrackData:
+        """Get the GatyaTrackData.
+
+        Returns:
+            GatyaTrackData: The GatyaTrackData.
+        """
         if self.gatya_track_data is None:
             return GatyaTrackData.create_empty()
         return self.gatya_track_data
 
     def get_legend_stage_track_data(self) -> LegendStageTrackData:
+        """Get the LegendStageTrackData.
+
+        Returns:
+            LegendStageTrackData: The LegendStageTrackData.
+        """
         if self.legend_stage_track_data is None:
             return LegendStageTrackData.create_empty()
         return self.legend_stage_track_data
 
     def get_stage_clear_track_data(self) -> StageClearTrackData:
+        """Get the StageClearTrackData.
+
+        Returns:
+            StageClearTrackData: The StageClearTrackData.
+        """
         if self.stage_clear_track_data is None:
             return StageClearTrackData.create_empty()
         return self.stage_clear_track_data
 
     def get_purchase_track_data(self) -> PurchaseTrackData:
+        """Get the PurchaseTrackData.
+
+        Returns:
+            PurchaseTrackData: The PurchaseTrackData.
+        """
         if self.purchase_track_data is None:
             return PurchaseTrackData.create_empty()
         return self.purchase_track_data
 
     def get_user_rank_track_data(self) -> UserRankTrackData:
+        """Get the UserRankTrackData.
+
+        Returns:
+            UserRankTrackData: The UserRankTrackData.
+        """
         if self.user_rank_track_data is None:
             return UserRankTrackData.create_empty()
         return self.user_rank_track_data
 
     def apply_dict(self, dict_data: dict[str, Any]):
+        """Apply a dict to the AdjustData.
+
+        Args:
+            dict_data (dict[str, Any]): The dict.
+        """
         gatya_track_data = dict_data.get("gatya_track_data")
         if gatya_track_data is not None:
             self.get_gatya_track_data().apply_dict(gatya_track_data)
@@ -1098,6 +1139,14 @@ class AdjustData:
 
     @staticmethod
     def from_game_data(game_data: "core.GamePacks") -> "AdjustData":
+        """Create an AdjustData from a GamePacks.
+
+        Args:
+            game_data (core.GamePacks): The GamePacks.
+
+        Returns:
+            AdjustData: The AdjustData.
+        """
         if game_data.adjust_data is not None:
             return game_data.adjust_data
         gatya_track_data = GatyaTrackData.from_game_data(game_data)
@@ -1116,6 +1165,11 @@ class AdjustData:
         return adjust_data
 
     def to_game_data(self, game_data: "core.GamePacks"):
+        """Apply the AdjustData to a GamePacks.
+
+        Args:
+            game_data (core.GamePacks): The GamePacks.
+        """
         if self.gatya_track_data is not None:
             self.gatya_track_data.to_game_data(game_data)
         if self.legend_stage_track_data is not None:
