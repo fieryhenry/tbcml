@@ -887,6 +887,8 @@ class CatForm:
             self.stats.cat_id = cat_id
 
         if original_cat_id != self.cat_id:
+            if self.anim is None:
+                raise ValueError("Cannot set cat id without anim being loaded")
             self.get_anim().set_cat_id(cat_id)
 
     def set_form(self, form: CatFormType):
@@ -895,6 +897,8 @@ class CatForm:
         if self.stats is not None:
             self.stats.form = form
         if original_form != self.form:
+            if self.anim is None:
+                raise ValueError("Cannot set form without anim being loaded")
             self.get_anim().set_form(form)
 
     def import_enemy(self, enemy: "core.Enemy"):
