@@ -405,6 +405,7 @@ class GamePacks:
         self.base_abilities: Optional[core.BaseAbilities] = None
         self.matatabi: Optional[core.MatatabiData] = None
         self.castle_mix_recipies: Optional[core.CastleMixRecipies] = None
+        self.adjust_data: Optional[core.AdjustData] = None
 
     def get_pack(self, pack_name: str) -> Optional["PackFile"]:
         """Get a pack from the game packs.
@@ -584,6 +585,7 @@ class GamePacks:
         core.ShakeEffects.apply_mod_to_game_data(mod, self)
         core.Bgs.apply_mod_to_game_data(mod, self)
         core.CharaGroups.apply_mod_to_game_data(mod, self)
+        core.BaseAbilities.apply_mod_to_game_data(mod, self)
 
         core.Cats.apply_mod_to_game_data(mod, self)
         core.Enemies.apply_mod_to_game_data(mod, self)
@@ -593,6 +595,7 @@ class GamePacks:
         core.MatatabiData.apply_mod_to_game_data(mod, self)
         core.SchemeItems.apply_mod_to_game_data(mod, self)
         core.UserRankReward.apply_mod_to_game_data(mod, self)
+        core.AdjustData.apply_mod_to_game_data(mod, self)
 
         core.Castles.apply_mod_to_game_data(mod, self)
         core.EngineerAnim.apply_mod_to_game_data(mod, self)
@@ -601,8 +604,6 @@ class GamePacks:
         core.OtotoAnim.apply_mod_to_game_data(mod, self)
 
         core.Maps.apply_mod_to_game_data(mod, self)
-
-        core.BaseAbilities.apply_mod_to_game_data(mod, self)
 
         core.Localizable.apply_mod_to_game_data(mod, self)
 

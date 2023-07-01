@@ -8,6 +8,7 @@ from tbcml.core.game_data.cat_base import (
     user_rank_reward,
     gatya_item,
     matatabi,
+    adjust_track,
 )
 
 __all__ = [
@@ -20,4 +21,5 @@ __all__ = [
     "user_rank_reward",
     "gatya_item",
     "matatabi",
+    "adjust_track",
 ]
