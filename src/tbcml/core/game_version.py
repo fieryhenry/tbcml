@@ -222,3 +222,12 @@ class GameVersion:
             bool: True if the game version is greater than or equal to the other object, False otherwise.
         """
         return not self.__lt__(other)
+
+    def is_java(self):
+        """Checks if the game version is a java version.
+
+        Returns:
+            bool: True if the game version is a java version, False otherwise.
+        """
+
+        return self.game_version < core.GameVersion.from_string("7.0.0")

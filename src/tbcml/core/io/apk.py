@@ -646,7 +646,7 @@ class Apk:
         return self.get_lib_path(architecture).add("libbattlecats-jni.so")
 
     def is_java(self):
-        return self.game_version < core.GameVersion.from_string("7.0.0")
+        return self.game_version.is_java()
 
     def parse_libnative(self, architecture: str) -> Optional["core.Lib"]:
         path = self.get_libnative_path(architecture)
