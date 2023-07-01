@@ -9,7 +9,7 @@ class GatyaTrack:
 
     def __init__(
         self,
-        roll_type: core.RollType,
+        roll_type: "core.RollType",
         event_token_1_uu: Optional[str] = None,
         event_token_2_total: Optional[str] = None,
         name: Optional[str] = None,
@@ -38,7 +38,7 @@ class GatyaTrack:
         self.name = dict_data.get("name")
 
     @staticmethod
-    def create_empty(roll_type: core.RollType) -> "GatyaTrack":
+    def create_empty(roll_type: "core.RollType") -> "GatyaTrack":
         """Create an empty GatyaTrack.
 
         Args:
@@ -55,8 +55,8 @@ class GatyaTrackEvents:
 
     def __init__(
         self,
-        gatya_type: core.GatyaType,
-        events: dict[core.RollType, GatyaTrack],
+        gatya_type: "core.GatyaType",
+        events: dict["core.RollType", GatyaTrack],
     ):
         """Initialize a GatyaTrackEvents.
 
@@ -90,7 +90,7 @@ class GatyaTrackEvents:
             self.events = current_events
 
     @staticmethod
-    def create_empty(gatya_type: core.GatyaType) -> "GatyaTrackEvents":
+    def create_empty(gatya_type: "core.GatyaType") -> "GatyaTrackEvents":
         """Create an empty GatyaTrackEvents.
 
         Args:
@@ -105,7 +105,7 @@ class GatyaTrackEvents:
 class GatyaTrackData:
     """A class to represent the gatya track data."""
 
-    def __init__(self, data: dict[core.GatyaType, GatyaTrackEvents]):
+    def __init__(self, data: dict["core.GatyaType", GatyaTrackEvents]):
         """Initialize a GatyaTrackData.
 
         Args:
