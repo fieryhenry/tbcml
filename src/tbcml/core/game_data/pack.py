@@ -653,15 +653,25 @@ class GamePacks:
         for file_name, data in mod.game_files.items():
             self.set_file(file_name, data)
 
-    def extract(self, path: "core.Path", clear: bool = False):
+    def extract(
+        self,
+        path: "core.Path",
+        clear: bool = False,
+        only_local: bool = False,
+    ):
         """Extract the game packs to a path.
 
         Args:
             path (core.Path): The path.
+            clear (bool, optional): Whether to clear the path before extracting. Defaults to False.
+            only_local (bool, optional): Whether to only extract local packs. Defaults to False.
         """
         if clear:
             path.remove()
         for pack in self.packs.values():
+            if only_local:
+                if pack.is_server_pack(pack.pack_name):
+                    continue
             pack.extract(path)
 
     def apply_mods(self, mods: list["core.Mod"]):
