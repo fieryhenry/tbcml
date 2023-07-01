@@ -30,7 +30,7 @@ class Apk:
         self.key = None
         self.iv = None
 
-        self.libs: dict[str, core.Lib] = {}
+        self.libs: Optional[dict[str, core.Lib]] = None
 
     @staticmethod
     def from_format_string(
@@ -149,7 +149,6 @@ class Apk:
         if self.original_extracted_path.has_files():
             self.copy_extracted()
             self.copy_packs()
-            self.libs = self.get_libs()
             return
 
         if not self.check_display_apktool_error():
@@ -164,7 +163,6 @@ class Apk:
             return
         self.copy_extracted()
         self.copy_packs()
-        self.libs = self.get_libs()
 
     def extract_smali(self):
         if not self.check_display_apktool_error():
@@ -660,7 +658,7 @@ class Apk:
         return self.smali_handler
 
     def add_library(self, architecture: str, library_path: "core.Path"):
-        libnative = self.libs.get(architecture)
+        libnative = self.get_libs().get(architecture)
         if libnative is None:
             print(f"Could not find libnative for {architecture}")
             return
@@ -776,12 +774,15 @@ class Apk:
             self.add_frida_scripts(scripts)
 
     def get_libs(self) -> dict[str, "core.Lib"]:
+        if self.libs is not None:
+            return self.libs
         libs: dict[str, "core.Lib"] = {}
         for architecture in self.get_architectures():
             libnative = self.parse_libnative(architecture)
             if libnative is None:
                 continue
             libs[architecture] = libnative
+        self.libs = libs
         return libs
 
     def get_manifest_path(self) -> "core.Path":
