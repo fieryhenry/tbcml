@@ -531,7 +531,8 @@ class GamePacks:
         Returns:
             Optional[PackFile]: The pack if it exists, None otherwise.
         """
-        pack_name = self.to_java_name(pack_name) if self.gv.is_java() else pack_name
+        if not pack_name.endswith("1"):
+            pack_name = self.to_java_name(pack_name) if self.gv.is_java() else pack_name
         return self.get_pack(pack_name)
 
     def set_file(self, file_name: str, data: "core.Data") -> Optional["GameFile"]:
