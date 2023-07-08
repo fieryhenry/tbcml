@@ -32,6 +32,9 @@ class Apk:
 
         self.libs: Optional[dict[str, core.Lib]] = None
 
+    def replace_lib_string(self, original: str, new: str, pad: str = "\x00") -> str:
+        return core.LibFiles(self).replace_str(original, new, pad)
+
     @staticmethod
     def from_format_string(
         format_string: str,
@@ -953,6 +956,15 @@ class Apk:
 
             provider.set(attribute, package_name + "." + end)
 
+        self.set_manifest(manifest)
+
+    def set_clear_text_traffic(self, clear_text_traffic: bool):
+        manifest = self.parse_manifest()
+        path = "application"
+        if clear_text_traffic:
+            manifest.set_attribute(path, "android:usesCleartextTraffic", "true")
+        else:
+            manifest.set_attribute(path, "android:usesCleartextTraffic", "false")
         self.set_manifest(manifest)
 
     def get_mod_html_files(self) -> list["core.Path"]:

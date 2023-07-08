@@ -38,6 +38,20 @@ class LibFiles:
         if self.apk.iv is not None:
             self.change_iv(self.apk.iv)
 
+    def replace_str(self, original: str, new: str, pad: str) -> str:
+        if len(new) > len(original):
+            raise ValueError("New string is larger than original string")
+        to_add = len(original) - len(new)
+        new += pad * to_add
+
+        for arc, so in self.so_files.items():
+            so = so.replace(core.Data(original), core.Data(new))
+            self.so_files[arc] = so
+
+        self.write()
+
+        return new
+
     def get_so_files(self):
         files: dict[str, "core.Data"] = {}
         for arc in self.libs_folder.get_dirs():
