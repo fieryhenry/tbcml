@@ -132,23 +132,21 @@ class Apk:
     def check_display_apktool_error(self) -> bool:
         if self.check_apktool_installed():
             return True
-        message = "Apktool is not installed. Please install it and add it to your PATH. You can download it from https://ibotpeaches.github.io/Apktool/install/"
+        message = "Apktool or java is not installed. Please install it and add it to your PATH. You can download it from https://ibotpeaches.github.io/Apktool/install/"
         print(message)
         return False
 
     def check_display_jarsigner_error(self) -> bool:
         if self.check_jarsigner_installed():
             return True
-        message = (
-            "Jarsigner is not installed. Please install it and add it to your PATH."
-        )
+        message = "Jarsigner or java is not installed. Please install it and add it to your PATH."
         print(message)
         return False
 
     def check_display_keytool_error(self) -> bool:
         if self.check_keytool_installed():
             return True
-        message = "Keytool is not installed. Please install it and add it to your PATH."
+        message = "Keytool or java is not installed. Please install it and add it to your PATH."
         print(message)
         return False
 
