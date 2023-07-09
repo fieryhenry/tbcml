@@ -22,6 +22,9 @@ class JsonFile:
     def to_data(self) -> "core.Data":
         return core.Data(json.dumps(self.json, indent=4))
 
+    def to_data_request(self) -> "core.Data":
+        return core.Data(json.dumps(self.json)).replace(core.Data(" "), core.Data(""))
+
     def save(self, path: "core.Path") -> None:
         path.write(self.to_data())
 
