@@ -34,6 +34,7 @@ setuptools.setup(
         "requests",
         "PyQt5",
         "androguard",
+        "qtawesome",
     ],
     include_package_data=True,
     extras_require={
