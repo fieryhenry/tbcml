@@ -3,6 +3,7 @@ import base64
 import datetime
 import json
 import time
+from typing import Any
 
 import requests
 from cryptography.hazmat.backends import default_backend
@@ -348,12 +349,19 @@ class EventData:
     Lots of this code is taken from the PackPack discord bot: https://github.com/battlecatsultimate/PackPack
     """
 
-    def __init__(self, file_name: str):
+    def __init__(
+        self,
+        file_name: str,
+        cc: "core.CountryCode",
+        gv: "core.GameVersion",
+        use_old: bool = False,
+    ):
         """Initializes the class
 
         Args:
             file_name (str): File to download
         """
+        self.use_old = use_old
         self.aws_access_key_id = "AKIAJCUP3WWCHRJDTPPQ"
         self.aws_secret_access_key = "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"
         self.region = "ap-northeast-1"
@@ -361,8 +369,13 @@ class EventData:
         self.request = "aws4_request"
         self.algorithm = "AWS4-HMAC-SHA256"
         self.domain = "nyanko-events-prd.s3.ap-northeast-1.amazonaws.com"
+        self.cc = cc
+        self.gv = gv
 
-        self.url = f"https://{self.domain}/battlecatsen_production/{file_name}"
+        if not self.use_old:
+            self.domain = "nyanko-events.ponosgames.com"
+
+        self.url = f"https://{self.domain}/battlecats{self.cc.get_patching_code()}_production/{file_name}"
 
     def get_auth_header(self) -> str:
         """Gets the authorization header
@@ -480,6 +493,85 @@ class EventData:
         """
         return self.url.split(self.domain)[1]
 
+    def get_inquiry_code(self) -> str:
+        url = "https://nyanko-backups.ponosgames.com/?action=createAccount&referenceId="
+        return core.request.RequestHandler(url).get().json()["accountId"]
+
+    def generate_signature(self, iq: str, data: str) -> str:
+        """Generates a signature from the inquiry code and data.
+
+        Returns:
+            str: The signature.
+        """
+        random_data = core.Random.get_hex_string(64)
+        key = iq + random_data
+        hmac = core.Hmac(core.Data(key), core.HashAlgorithm.SHA256)
+        signature = hmac.get_hmac(core.Data(data))
+
+        return random_data + signature.to_hex()
+
+    def get_headers(self, iq: str, data: str) -> dict[str, str]:
+        return {
+            "accept-enconding": "gzip",
+            "connection": "keep-alive",
+            "content-type": "application/json",
+            "nyanko-signature": self.generate_signature(iq, data),
+            "nyanko-timestamp": str(int(time.time())),
+            "nyanko-signature-version": "1",
+            "nyanko-signature-algorithm": "HMACSHA256",
+            "user-agent": "Dalvik/2.1.0 (Linux; U; Android 9; SM-G955F Build/N2G48B)",
+        }
+
+    def get_password(self, inquiry_code: str) -> str:
+        url = "https://nyanko-auth.ponosgames.com/v1/users"
+        data = {
+            "accountCode": inquiry_code,
+            "accountCreatedAt": str(int(time.time())),
+            "nonce": core.Random.get_hex_string(32),
+        }
+        data = core.JsonFile.from_object(data).to_data_request()
+        headers = self.get_headers(inquiry_code, data.to_str())
+        response = core.RequestHandler(url, headers=headers, data=data).post()
+        json_data: dict[str, Any] = response.json()
+        payload = json_data.get("payload", {})
+        password = payload.get("password", "")
+        return password
+
+    def get_client_info(self) -> dict[str, Any]:
+        country_code = self.cc
+        data = {
+            "clientInfo": {
+                "client": {
+                    "countryCode": country_code.get_request_code(),
+                    "version": self.gv.game_version,
+                },
+                "device": {
+                    "model": "SM-G955F",
+                },
+                "os": {
+                    "type": "android",
+                    "version": "9",
+                },
+            },
+            "nonce": core.Random.get_hex_string(32),
+        }
+        return data
+
+    def get_token(self) -> str:
+        inquiry_code = self.get_inquiry_code()
+        password = self.get_password(inquiry_code)
+        url = "https://nyanko-auth.ponosgames.com/v1/tokens"
+        data = self.get_client_info()
+        data["password"] = password
+        data["accountCode"] = inquiry_code
+        data = core.JsonFile.from_object(data).to_data_request()
+        headers = self.get_headers(inquiry_code, data.to_str())
+        response = core.RequestHandler(url, headers=headers, data=data).post()
+        json_data: dict[str, Any] = response.json()
+        payload = json_data.get("payload", {})
+        token = payload.get("token", "")
+        return token
+
     def make_request(self) -> "requests.Response":
         """Makes the request to download the event data
 
@@ -489,12 +581,15 @@ class EventData:
         url = self.url
         headers = {
             "accept-encoding": "gzip",
-            "authorization": self.get_auth_header(),
             "connection": "keep-alive",
             "host": self.domain,
             "user-agent": "Dalvik/2.1.0 (Linux; U; Android 9; Pixel 2 Build/PQ3A.190801.002)",
-            "x-amz-content-sha256": "UNSIGNED-PAYLOAD",
-            "x-amz-date": self.get_amz_date(),
         }
+        if self.use_old:
+            headers["authorization"] = self.get_auth_header()
+            headers["x-amz-content-sha256"] = "UNSIGNED-PAYLOAD"
+            headers["x-amz-date"] = self.get_amz_date()
+        else:
+            url += "?jwt=" + self.get_token()
 
         return core.RequestHandler(url, headers=headers).get()

@@ -127,7 +127,7 @@ from .log import Logger
 from .crypto import AesCipher, Hash, HashAlgorithm, Random, Hmac
 from .langs import Languages
 from .request import RequestHandler
-from .server_handler import ServerFileHandler
+from .server_handler import ServerFileHandler, EventData
 from .locale_handler import LocalManager
 from .game_data.pack import GamePacks, PackFile, GameFile
 from .country_code import CountryCode
