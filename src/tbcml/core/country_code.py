@@ -26,6 +26,14 @@ class CountryCode(enum.Enum):
         """
         return self.get_code().replace("jp", "")
 
+    def get_request_code(self) -> str:
+        """Gets the 2 letter lowercase country code, jp is ja
+
+        Returns:
+            str: The 2 letter lowercase country code, jp is ja
+        """
+        return self.get_code().replace("jp", "ja")
+
     @staticmethod
     def from_patching_code(code: str) -> "CountryCode":
         """Gets the country code from the patching code.
