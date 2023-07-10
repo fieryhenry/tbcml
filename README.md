@@ -101,7 +101,7 @@ mod.add_mod_edit(mod_edit)
 apk.load_mods([mod], game_packs)
 
 # open the apk folder in the file explorer (optional)
-apk.final_apk_path.open()
+apk.output_path.open()
 
 ```
 
