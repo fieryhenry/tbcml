@@ -214,9 +214,12 @@ class GatyaTrackData:
             track_event = event.events.get(roll_type)
             if track_event is None:
                 continue
-            line[2] = str(track_event.event_token_1_uu)
-            line[3] = str(track_event.event_token_2_total)
-            line[4] = str(track_event.name)
+            if track_event.event_token_1_uu is not None:
+                line[2] = str(track_event.event_token_1_uu)
+            if track_event.event_token_2_total is not None:
+                line[3] = str(track_event.event_token_2_total)
+            if track_event.name is not None:
+                line[4] = str(track_event.name)
             csv_data.lines[i + 1] = line
             del remaining_events[gatya_type]
         for gatya_type, event in remaining_events.items():
@@ -435,7 +438,8 @@ class LegendStageTrackData:
             track_event = event.events.get(stage_index)
             if track_event is None:
                 continue
-            line[2] = str(track_event.event_token)
+            if track_event.event_token is not None:
+                line[2] = str(track_event.event_token)
             csv_data.lines[i] = line
             del remaining_events[map_id]
         for map_id, event in remaining_events.items():
@@ -834,15 +838,17 @@ class PurchaseTrackData:
             event = remaining_events.get(product_id)
             if event is None:
                 continue
-            line[1] = str(event.event_token)
-            line[2] = str(event.name)
+            if event.event_token is not None:
+                line[1] = str(event.event_token)
+            if event.name is not None:
+                line[2] = str(event.name)
             del remaining_events[product_id]
         for product_id, event in remaining_events.items():
             csv_data.lines.append(
                 [
                     str(product_id),
-                    str(event.event_token),
-                    str(event.name),
+                    str(event.event_token or ""),
+                    str(event.name or ""),
                 ]
             )
 
@@ -999,13 +1005,14 @@ class UserRankTrackData:
             event = remaining_events.get(user_rank)
             if event is None:
                 continue
-            line[1] = str(event.event_token)
+            if event.event_token is not None:
+                line[1] = str(event.event_token)
             del remaining_events[user_rank]
         for user_rank, event in remaining_events.items():
             csv_data.lines.append(
                 [
                     str(user_rank),
-                    str(event.event_token),
+                    str(event.event_token or ""),
                 ]
             )
 

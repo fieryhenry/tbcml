@@ -22,18 +22,18 @@ class GatyaItemBuyItem:
     def __init__(
         self,
         item_id: int,
-        rarity: int,
-        storage: bool,
-        sell_price: int,
-        stage_drop_item_id: int,
-        quantity: int,
-        server_id: int,
-        category: ItemBuyCategory,
-        index_in_category: int,
-        src_item_id: int,
-        main_menu_type: int,
-        gatya_ticket_id: int,
-        comment: str,
+        rarity: Optional[int] = None,
+        storage: Optional[bool] = None,
+        sell_price: Optional[int] = None,
+        stage_drop_item_id: Optional[int] = None,
+        quantity: Optional[int] = None,
+        server_id: Optional[int] = None,
+        category: Optional[ItemBuyCategory] = None,
+        index_in_category: Optional[int] = None,
+        src_item_id: Optional[int] = None,
+        main_menu_type: Optional[int] = None,
+        gatya_ticket_id: Optional[int] = None,
+        comment: Optional[str] = None,
     ):
         self.item_id = item_id
         self.rarity = rarity
@@ -77,18 +77,6 @@ class GatyaItemBuyItem:
     def create_empty(item_id: int) -> "GatyaItemBuyItem":
         return GatyaItemBuyItem(
             item_id,
-            0,
-            False,
-            0,
-            0,
-            0,
-            0,
-            ItemBuyCategory.NONE,
-            0,
-            0,
-            0,
-            0,
-            "",
         )
 
 
@@ -139,21 +127,55 @@ class GatyaItemBuy:
             return None
 
         csv = core.CSV(csv_data.dec_data)
-        for item in self.gatya_item_buys.values():
-            line: list[str] = []
-            line.append(str(item.rarity))
-            line.append("1" if item.storage else "0")
-            line.append(str(item.sell_price))
-            line.append(str(item.stage_drop_item_id))
-            line.append(str(item.quantity))
-            line.append(str(item.server_id))
-            line.append(str(item.category.value))
-            line.append(str(item.index_in_category))
-            line.append(str(item.src_item_id))
-            line.append(str(item.main_menu_type))
-            line.append(str(item.gatya_ticket_id))
-            line.append(item.comment)
-            csv.lines[item.item_id + 1] = line
+        remaining_items = self.gatya_item_buys.copy()
+        for i, line in enumerate(csv.lines[1:]):
+            try:
+                item = self.gatya_item_buys[i]
+            except KeyError:
+                continue
+            if item.rarity is not None:
+                line[0] = str(item.rarity)
+            if item.storage is not None:
+                line[1] = str(int(item.storage))
+            if item.sell_price is not None:
+                line[2] = str(item.sell_price)
+            if item.stage_drop_item_id is not None:
+                line[3] = str(item.stage_drop_item_id)
+            if item.quantity is not None:
+                line[4] = str(item.quantity)
+            if item.server_id is not None:
+                line[5] = str(item.server_id)
+            if item.category is not None:
+                line[6] = str(item.category.value)
+            if item.index_in_category is not None:
+                line[7] = str(item.index_in_category)
+            if item.src_item_id is not None:
+                line[8] = str(item.src_item_id)
+            if item.main_menu_type is not None:
+                line[9] = str(item.main_menu_type)
+            if item.gatya_ticket_id is not None:
+                line[10] = str(item.gatya_ticket_id)
+            if item.comment is not None:
+                line[11] = item.comment
+            remaining_items.pop(i)
+            csv.lines[i + 1] = line
+
+        for i, item in remaining_items.items():
+            new_line: list[str] = [
+                str(item.rarity or 0),
+                str(int(item.storage or False)),
+                str(item.sell_price or 0),
+                str(item.stage_drop_item_id or 0),
+                str(item.quantity or 0),
+                str(item.server_id or 0),
+                str(item.category.value) if item.category is not None else "0",
+                str(item.index_in_category or 0),
+                str(item.src_item_id or 0),
+                str(item.main_menu_type or 0),
+                str(item.gatya_ticket_id or 0),
+                item.comment or "",
+            ]
+            csv.lines.append(new_line)
 
         game_data.set_file(GatyaItemBuy.get_file_name(), csv.to_data())
 
@@ -282,10 +304,10 @@ class GatyaItem:
     def __init__(
         self,
         id: int,
-        gatya_item_buy_item: GatyaItemBuyItem,
-        gatya_item_name_item: GatyaItemNameItem,
-        image: "core.BCImage",
-        silhouette: "core.BCImage",
+        gatya_item_buy_item: Optional[GatyaItemBuyItem] = None,
+        gatya_item_name_item: Optional[GatyaItemNameItem] = None,
+        image: Optional["core.BCImage"] = None,
+        silhouette: Optional["core.BCImage"] = None,
     ):
         self.id = id
         self.gatya_item_buy_item = gatya_item_buy_item
@@ -318,37 +340,45 @@ class GatyaItem:
         )
 
     def to_game_data(self, game_data: "core.GamePacks") -> None:
-        game_data.set_file(
-            GatyaItem.get_image_name(self.id, False),
-            self.image.to_data(),
-        )
-        game_data.set_file(
-            GatyaItem.get_image_name(self.id, True),
-            self.silhouette.to_data(),
-        )
+        if self.image is not None:
+            game_data.set_file(
+                GatyaItem.get_image_name(self.id, False),
+                self.image.to_data(),
+            )
+        if self.silhouette is not None:
+            game_data.set_file(
+                GatyaItem.get_image_name(self.id, True),
+                self.silhouette.to_data(),
+            )
+
+    def get_gatya_item_buy_item(self) -> GatyaItemBuyItem:
+        if self.gatya_item_buy_item is None:
+            self.gatya_item_buy_item = GatyaItemBuyItem.create_empty(self.id)
+        return self.gatya_item_buy_item
+
+    def get_gatya_item_name_item(self) -> GatyaItemNameItem:
+        if self.gatya_item_name_item is None:
+            self.gatya_item_name_item = GatyaItemNameItem.create_empty(self.id)
+        return self.gatya_item_name_item
 
     def set_id(self, id: int) -> None:
         self.id = id
-        self.gatya_item_buy_item.set_id(id)
-        self.gatya_item_name_item.set_id(id)
+        if self.gatya_item_buy_item is not None:
+            self.gatya_item_buy_item.set_id(id)
+        if self.gatya_item_name_item is not None:
+            self.gatya_item_name_item.set_id(id)
 
     @staticmethod
     def create_empty(id: int) -> "GatyaItem":
-        return GatyaItem(
-            id,
-            GatyaItemBuyItem.create_empty(id),
-            GatyaItemNameItem.create_empty(id),
-            core.BCImage.create_empty(),
-            core.BCImage.create_empty(),
-        )
+        return GatyaItem(id)
 
     def apply_dict(self, dict_data: dict[str, Any]):
         gatya_item_buy_item = dict_data.get("gatya_item_buy_item")
         if gatya_item_buy_item is not None:
-            self.gatya_item_buy_item.apply_dict(gatya_item_buy_item)
+            self.get_gatya_item_buy_item().apply_dict(gatya_item_buy_item)
         gatya_item_name_item = dict_data.get("gatya_item_name_item")
         if gatya_item_name_item is not None:
-            self.gatya_item_name_item.apply_dict(gatya_item_name_item)
+            self.get_gatya_item_name_item().apply_dict(gatya_item_name_item)
 
 
 class GatyaItems:
@@ -388,8 +418,10 @@ class GatyaItems:
         gatya_item_name = GatyaItemName({})
         for item in self.items.values():
             item.to_game_data(game_data)
-            gatya_item_buy.set_item(item.id, item.gatya_item_buy_item)
-            gatya_item_name.set_item(item.id, item.gatya_item_name_item)
+            if item.gatya_item_buy_item is not None:
+                gatya_item_buy.set_item(item.id, item.gatya_item_buy_item)
+            if item.gatya_item_name_item is not None:
+                gatya_item_name.set_item(item.id, item.gatya_item_name_item)
 
         gatya_item_buy.to_game_data(game_data)
         gatya_item_name.to_game_data(game_data)
@@ -422,6 +454,8 @@ class GatyaItems:
     def get_item_stage_drop_id(self, id: int) -> Optional[int]:
         item = self.get_item(id)
         if item is None:
+            return None
+        if item.gatya_item_buy_item is None:
             return None
         return item.gatya_item_buy_item.stage_drop_item_id
 

@@ -130,7 +130,7 @@ class CharaGroups:
             group = self.groups[id]
             a_line = [
                 str(id),
-                str(group.text_id or 0),
+                str(group.text_id or ""),
                 str(group.group_type.value) if group.group_type is not None else "0",
             ]
             for chara_id in group.chara_ids or []:
