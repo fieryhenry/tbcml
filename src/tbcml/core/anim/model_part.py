@@ -1,10 +1,15 @@
+"""Module for representing a part of a model"""
 import math
 from typing import Any, Optional
+
+from PyQt5 import QtCore, QtGui
+
 from tbcml import core
-from PyQt5 import QtGui, QtCore
 
 
 class ModelPart:
+    """Represents a part of a model"""
+
     def __init__(
         self,
         index: int,
@@ -739,6 +744,11 @@ class ModelPart:
         return children
 
     def apply_dict(self, dict_data: dict[str, Any]):
+        """Applies the data from the dict to the part.
+
+        Args:
+            dict_data (dict[str, Any]): The data to apply to the part.
+        """
         x = dict_data.get("x")
         if x is not None:
             self.x = x
