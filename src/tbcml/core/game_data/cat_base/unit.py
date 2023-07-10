@@ -1,3 +1,5 @@
+"""Module for unit data types."""
+
 from typing import Optional
 
 
@@ -1391,6 +1393,11 @@ class Dodge:
         return str(self)
 
     def copy(self) -> "Dodge":
+        """Creates a copy of the Dodge object.
+
+        Returns:
+            Dodge: The copy of the Dodge object.
+        """
         return Dodge(
             self.prob.copy() if self.prob is not None else None,
             self.time.copy() if self.time is not None else None,

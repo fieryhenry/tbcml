@@ -171,16 +171,17 @@ class GatyaTrackData:
         )
         if file is None:
             return GatyaTrackData.create_empty()
-        csv_data = core.CSV(file.dec_data, "\t")
+        csv = core.CSV(file.dec_data, "\t")
 
         data: dict[core.GatyaType, GatyaTrackEvents] = {}
         events: dict[core.GatyaType, dict[core.RollType, GatyaTrack]] = {}
-        for line in csv_data.lines[1:]:
-            gatya_type = core.GatyaType(int(line[0]))
-            roll_type = core.RollType(int(line[1]))
-            event_token_1_uu = line[2]
-            event_token_2_total = line[3]
-            name = line[4]
+        for i in range(len(csv.lines[1:])):
+            csv.init_getter(i + 1)
+            gatya_type = core.GatyaType(csv.get_int())
+            roll_type = core.RollType(csv.get_int())
+            event_token_1_uu = csv.get_str()
+            event_token_2_total = csv.get_str()
+            name = csv.get_str()
             if gatya_type not in events:
                 events[gatya_type] = {}
             events[gatya_type][roll_type] = GatyaTrack(
@@ -202,10 +203,10 @@ class GatyaTrackData:
         )
         if file is None:
             return
-        csv_data = core.CSV(file.dec_data, "\t")
+        csv = core.CSV(file.dec_data, "\t")
 
         remaining_events = self.data.copy()
-        for i, line in enumerate(csv_data.lines[1:]):
+        for i, line in enumerate(csv.lines[1:]):
             gatya_type = core.GatyaType(int(line[0]))
             roll_type = core.RollType(int(line[1]))
             event = remaining_events.get(gatya_type)
@@ -220,11 +221,11 @@ class GatyaTrackData:
                 line[3] = str(track_event.event_token_2_total)
             if track_event.name is not None:
                 line[4] = str(track_event.name)
-            csv_data.lines[i + 1] = line
+            csv.lines[i + 1] = line
             del remaining_events[gatya_type]
         for gatya_type, event in remaining_events.items():
             for roll_type, track_event in event.events.items():
-                csv_data.lines.append(
+                csv.lines.append(
                     [
                         str(gatya_type),
                         str(roll_type),
@@ -236,7 +237,7 @@ class GatyaTrackData:
 
         game_data.set_file(
             GatyaTrackData.get_file_name(game_data.localizable.get_lang()),
-            csv_data.to_data(),
+            csv.to_data(),
         )
 
     @staticmethod

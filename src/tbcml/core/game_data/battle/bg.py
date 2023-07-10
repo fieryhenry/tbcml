@@ -266,38 +266,36 @@ class Bgs:
             return Bgs.create_empty()
         csv = core.CSV(file.dec_data)
         bgs: dict[int, Bg] = {}
-        for line in csv.lines[1:]:
-            id = int(line[0])
+        for i in range(len(csv.lines[1:])):
+            csv.init_getter(i + 1)
+            id = csv.get_int()
             sky_top = Color(
                 ColorType.SKY_TOP,
-                int(line[1]),
-                int(line[2]),
-                int(line[3]),
+                csv.get_int(),
+                csv.get_int(),
+                csv.get_int(),
             )
             sky_bottom = Color(
                 ColorType.SKY_BOTTOM,
-                int(line[4]),
-                int(line[5]),
-                int(line[6]),
+                csv.get_int(),
+                csv.get_int(),
+                csv.get_int(),
             )
             ground_top = Color(
                 ColorType.GROUND_TOP,
-                int(line[7]),
-                int(line[8]),
-                int(line[9]),
+                csv.get_int(),
+                csv.get_int(),
+                csv.get_int(),
             )
             ground_bottom = Color(
                 ColorType.GROUND_BOTTOM,
-                int(line[10]),
-                int(line[11]),
-                int(line[12]),
+                csv.get_int(),
+                csv.get_int(),
+                csv.get_int(),
             )
-            imgcut_id = int(line[13])
-            is_upper_side_bg_enabled = int(line[14]) != 0
-            try:
-                extra = [int(x) for x in line[15:]]
-            except ValueError:
-                extra = None
+            imgcut_id = csv.get_int()
+            is_upper_side_bg_enabled = csv.get_bool()
+            extra = csv.get_int_list()
             bgs[id] = Bg.from_game_data(
                 game_data,
                 id,
@@ -323,71 +321,28 @@ class Bgs:
         if file is None:
             return
         csv = core.CSV(file.dec_data)
-        remaining_bgs = self.bgs.copy()
-        for i, line in enumerate(csv.lines[1:]):
-            try:
-                bg = self.bgs[i]
-            except KeyError:
-                continue
+        for bg in self.bgs.values():
+            csv.init_setter(bg.id, 15, index_line_index=0)
+            csv.set_str(bg.id)
             if bg.sky_top is not None:
-                if bg.sky_top.r is not None:
-                    line[1] = str((bg.sky_top.r))
-                if bg.sky_top.g is not None:
-                    line[2] = str((bg.sky_top.g))
-                if bg.sky_top.b is not None:
-                    line[3] = str((bg.sky_top.b))
+                csv.set_str(bg.sky_top.r)
+                csv.set_str(bg.sky_top.g)
+                csv.set_str(bg.sky_top.b)
             if bg.sky_bottom is not None:
-                if bg.sky_bottom.r is not None:
-                    line[4] = str((bg.sky_bottom.r))
-                if bg.sky_bottom.g is not None:
-                    line[5] = str((bg.sky_bottom.g))
-                if bg.sky_bottom.b is not None:
-                    line[6] = str((bg.sky_bottom.b))
+                csv.set_str(bg.sky_bottom.r)
+                csv.set_str(bg.sky_bottom.g)
+                csv.set_str(bg.sky_bottom.b)
             if bg.ground_top is not None:
-                if bg.ground_top.r is not None:
-                    line[7] = str((bg.ground_top.r))
-                if bg.ground_top.g is not None:
-                    line[8] = str((bg.ground_top.g))
-                if bg.ground_top.b is not None:
-                    line[9] = str((bg.ground_top.b))
+                csv.set_str(bg.ground_top.r)
+                csv.set_str(bg.ground_top.g)
+                csv.set_str(bg.ground_top.b)
             if bg.ground_bottom is not None:
-                if bg.ground_bottom.r is not None:
-                    line[10] = str((bg.ground_bottom.r))
-                if bg.ground_bottom.g is not None:
-                    line[11] = str((bg.ground_bottom.g))
-                if bg.ground_bottom.b is not None:
-                    line[12] = str((bg.ground_bottom.b))
-            if bg.imgcut_id is not None:
-                line[13] = str((bg.imgcut_id))
-            if bg.is_upper_side_bg_enabled is not None:
-                line[14] = str((1 if bg.is_upper_side_bg_enabled else 0))
-            if bg.extra is not None:
-                for j, extra in enumerate(bg.extra):
-                    line[15 + j] = str(extra)
-            csv.lines[i + 1] = line
-            del remaining_bgs[i]
-
-        for i, bg in remaining_bgs.items():
-            new_line = [
-                str(bg.id),
-                str(bg.sky_top.r or 0) if bg.sky_top is not None else "0",
-                str(bg.sky_top.g or 0) if bg.sky_top is not None else "0",
-                str(bg.sky_top.b or 0) if bg.sky_top is not None else "0",
-                str(bg.sky_bottom.r or 0) if bg.sky_bottom is not None else "0",
-                str(bg.sky_bottom.g or 0) if bg.sky_bottom is not None else "0",
-                str(bg.sky_bottom.b or 0) if bg.sky_bottom is not None else "0",
-                str(bg.ground_top.r or 0) if bg.ground_top is not None else "0",
-                str(bg.ground_top.g or 0) if bg.ground_top is not None else "0",
-                str(bg.ground_top.b or 0) if bg.ground_top is not None else "0",
-                str(bg.ground_bottom.r or 0) if bg.ground_bottom is not None else "0",
-                str(bg.ground_bottom.g or 0) if bg.ground_bottom is not None else "0",
-                str(bg.ground_bottom.b or 0) if bg.ground_bottom is not None else "0",
-                str(bg.imgcut_id or 0),
-                str(1) if bg.is_upper_side_bg_enabled else str(0),
-            ]
-            if bg.extra is not None:
-                new_line.extend([str(x) for x in bg.extra])
-            csv.lines.append(new_line)
+                csv.set_str(bg.ground_bottom.r)
+                csv.set_str(bg.ground_bottom.g)
+                csv.set_str(bg.ground_bottom.b)
+            csv.set_str(bg.imgcut_id)
+            csv.set_str(bg.is_upper_side_bg_enabled)
+            csv.set_list(bg.extra)
 
         for bg in self.bgs.values():
             bg.to_game_data(game_data)

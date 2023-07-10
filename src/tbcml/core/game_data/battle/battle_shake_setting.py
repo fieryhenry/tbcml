@@ -1,22 +1,14 @@
 """Module for handling the screen shake effects in battle. This feature was added in version 11.8.0"""
-import enum
 from typing import Any, Optional
 from tbcml import core
 
 
-class ShakeLocation(enum.Enum):
-    """At what location the shake effect should be applied to."""
-
-    BASE_HIT = 0
-    """The shake effect is applied when the cat base is hit."""
-    BOSS_WAVE = 1
-    """The shake effect is applied when an ending main story boss appears (e.g The Face, Nyandam, etc)"""
-
-
 class ShakeEffect:
+    """A screen shake effect. This feature was added in version 11.8.0"""
+
     def __init__(
         self,
-        shake_location: ShakeLocation,
+        id: int,
         start_distance: Optional[int] = None,
         end_distance: Optional[int] = None,
         frames: Optional[int] = None,
@@ -27,7 +19,7 @@ class ShakeEffect:
         """Initializes a new Screenshake Effect.
 
         Args:
-            shake_location (ShakeLocation): At what points the shake effect should occur.
+            id (int): The ID of the ShakeEffect.
             start_distance (int): The starting camera distance of the shake effect.
             end_distance (int): The ending camera distance of the shake effect.
             frames (int): The number of frames the shake effect should last (30 frames = 1 second) (The time taken for the camera to move from start_distance to end_distance)
@@ -35,8 +27,7 @@ class ShakeEffect:
             reset_frame (int): ???
             priority (int): ???
         """
-
-        self.shake_location = shake_location
+        self.id = id
         self.start_distance = start_distance
         self.end_distance = end_distance
         self.frames = frames
@@ -50,9 +41,6 @@ class ShakeEffect:
         Args:
             dict_data (dict[str, Any]): The dictionary to apply the data from.
         """
-        shake_location = dict_data.get("shake_location")
-        if shake_location is not None:
-            self.shake_location = ShakeLocation(shake_location)
         self.start_distance = dict_data.get("start_distance", self.start_distance)
         self.end_distance = dict_data.get("end_distance", self.end_distance)
         self.frames = dict_data.get("frames", self.frames)
@@ -63,13 +51,13 @@ class ShakeEffect:
         self.priority = dict_data.get("priority", self.priority)
 
     @staticmethod
-    def create_empty() -> "ShakeEffect":
+    def create_empty(id: int) -> "ShakeEffect":
         """Creates an empty ShakeEffect.
 
         Returns:
             ShakeEffect: An empty ShakeEffect.
         """
-        return ShakeEffect(ShakeLocation.BASE_HIT)
+        return ShakeEffect(id)
 
 
 class ShakeEffects:
@@ -107,16 +95,17 @@ class ShakeEffects:
             return ShakeEffects.create_empty()
         csv = core.CSV(file.dec_data)
         effects: dict[int, ShakeEffect] = {}
-        for i, line in enumerate(csv.lines):
-            shake_location = ShakeLocation(int(line[0]))
-            start_distance = int(line[1])
-            end_distance = int(line[2])
-            frames = int(line[3])
-            events_until_next_shake = int(line[4])
-            reset_frame = int(line[5])
-            priority = int(line[6])
-            effects[i] = ShakeEffect(
-                shake_location,
+        for i in range(len(csv.lines)):
+            csv.init_getter(i)
+            id = csv.get_int()
+            start_distance = csv.get_int()
+            end_distance = csv.get_int()
+            frames = csv.get_int()
+            events_until_next_shake = csv.get_int()
+            reset_frame = csv.get_int()
+            priority = csv.get_int()
+            effects[id] = ShakeEffect(
+                id,
                 start_distance,
                 end_distance,
                 frames,
@@ -138,39 +127,15 @@ class ShakeEffects:
         if file is None:
             return
         csv = core.CSV(file.dec_data)
-        remaing_effects = self.effects.copy()
-        for i, line in enumerate(csv.lines):
-            try:
-                effect = self.effects[i]
-            except KeyError:
-                continue
-            line[0] = str(effect.shake_location.value)
-            if effect.start_distance is not None:
-                line[1] = str(effect.start_distance)
-            if effect.end_distance is not None:
-                line[2] = str(effect.end_distance)
-            if effect.frames is not None:
-                line[3] = str(effect.frames)
-            if effect.events_until_next_shake is not None:
-                line[4] = str(effect.events_until_next_shake)
-            if effect.reset_frame is not None:
-                line[5] = str(effect.reset_frame)
-            if effect.priority is not None:
-                line[6] = str(effect.priority)
-            csv.lines[i] = line
-            remaing_effects.pop(i)
-
-        for i, effect in remaing_effects.items():
-            a_line = [
-                str(effect.shake_location.value),
-                str(effect.start_distance or 0),
-                str(effect.end_distance or 0),
-                str(effect.frames or 0),
-                str(effect.events_until_next_shake or 0),
-                str(effect.reset_frame or 0),
-                str(effect.priority or 0),
-            ]
-            csv.lines.append(a_line)
+        for effect in self.effects.values():
+            csv.init_setter(effect.id, 7, index_line_index=0)
+            csv.set_str(effect.id)
+            csv.set_str(effect.start_distance)
+            csv.set_str(effect.end_distance)
+            csv.set_str(effect.frames)
+            csv.set_str(effect.events_until_next_shake)
+            csv.set_str(effect.reset_frame)
+            csv.set_str(effect.priority)
 
         game_data.set_file(self.get_file_name(), csv.to_data())
 
@@ -199,7 +164,7 @@ class ShakeEffects:
                 if effect_id in current_effects:
                     effect = current_effects[effect_id]
                 else:
-                    effect = ShakeEffect.create_empty()
+                    effect = ShakeEffect.create_empty(effect_id)
                 effect.apply_dict(effect_data)
                 current_effects[effect_id] = effect
             self.effects = current_effects

@@ -250,15 +250,13 @@ class BaseAbilities:
             return BaseAbilities.create_empty()
         csv = core.CSV(file.dec_data)
         abilitise: dict[int, BaseAbility] = {}
-        for i, line in enumerate(csv):
-            line = csv.read_line()
-            if line is None:
-                continue
-            xp = int(line[0])
-            gatya_rarity = int(line[1])
-            max_base_level = int(line[2])
-            max_plus_level = int(line[3])
-            chapter_1_to_2_max_level = int(line[4])
+        for i in range(len(csv.lines)):
+            csv.init_getter(i)
+            xp = csv.get_int()
+            gatya_rarity = csv.get_int()
+            max_base_level = csv.get_int()
+            max_plus_level = csv.get_int()
+            chapter_1_to_2_max_level = csv.get_int()
             data = BaseAbilityData(
                 xp,
                 core.GatyaRarity(gatya_rarity),
@@ -267,7 +265,6 @@ class BaseAbilities:
                 chapter_1_to_2_max_level,
             )
             abilitise[i] = BaseAbility.from_game_data(i, game_data, data)
-
         abilities = BaseAbilities(abilitise)
         game_data.base_abilities = abilities
         return abilities
@@ -282,42 +279,15 @@ class BaseAbilities:
         if file is None:
             return
         csv = core.CSV(file.dec_data)
-        remaining_abilities = self.abilities.copy()
-        for i, line in enumerate(csv):
-            line = csv.read_line()
-            if line is None:
-                continue
-            ability = self.abilities.get(i)
-            if ability is None:
-                continue
+        for ability in self.abilities.values():
             if ability.data is None:
                 continue
-            if ability.data.sell_price is not None:
-                line[0] = str(ability.data.sell_price)
-            if ability.data.gatya_rarity is not None:
-                line[1] = str(ability.data.gatya_rarity.value)
-            if ability.data.max_base_level is not None:
-                line[2] = str(ability.data.max_base_level)
-            if ability.data.max_plus_level is not None:
-                line[3] = str(ability.data.max_plus_level)
-            if ability.data.chapter_1_to_2_max_level is not None:
-                line[4] = str(ability.data.chapter_1_to_2_max_level)
-            csv.lines[i] = line
-            del remaining_abilities[i]
-
-        for ability in remaining_abilities.values():
-            if ability.data is None:
-                continue
-            line = [
-                str(ability.data.sell_price or 0),
-                str(
-                    ability.data.gatya_rarity.value if ability.data.gatya_rarity else 0
-                ),
-                str(ability.data.max_base_level or 0),
-                str(ability.data.max_plus_level or 0),
-                str(ability.data.chapter_1_to_2_max_level or 0),
-            ]
-            csv.lines.append(line)
+            csv.init_setter(ability.ability_id, 5)
+            csv.set_str(ability.data.sell_price)
+            csv.set_str(ability.data.gatya_rarity)
+            csv.set_str(ability.data.max_base_level)
+            csv.set_str(ability.data.max_plus_level)
+            csv.set_str(ability.data.chapter_1_to_2_max_level)
 
         game_data.set_file(self.get_ability_data_file_name(), csv.to_data())
 

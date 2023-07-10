@@ -87,11 +87,12 @@ class CharaGroups:
             return CharaGroups.create_empty()
         csv = core.CSV(file.dec_data)
         groups: dict[int, CharaGroupSet] = {}
-        for line in csv.lines[1:]:
-            id = int(line[0])
-            text_id = line[1]
-            group_type = GroupType(int(line[2]))
-            chara_ids = [int(line[i]) for i in range(3, len(line))]
+        for i in range(len(csv.lines[1:])):
+            csv.init_getter(i + 1)
+            id = csv.get_int()
+            text_id = csv.get_str()
+            group_type = GroupType(csv.get_int())
+            chara_ids = csv.get_int_list()
             groups[id] = CharaGroupSet(id, text_id, group_type, chara_ids)
         chara_o = CharaGroups(groups)
         game_data.chara_groups = chara_o
@@ -108,34 +109,12 @@ class CharaGroups:
         if file is None:
             return
         csv = core.CSV(file.dec_data)
-        remaining_groups = set(self.groups.keys())
-        for i, line in enumerate(csv.lines[1:]):
-            id = int(line[0])
-            try:
-                group = self.groups[id]
-            except KeyError:
-                continue
-            if group.text_id is not None:
-                line[1] = str(group.text_id)
-            if group.group_type is not None:
-                line[2] = str(group.group_type.value)
-
-            if group.chara_ids is not None:
-                for j, chara_id in enumerate(group.chara_ids):
-                    line[j + 3] = str(chara_id)
-            csv.lines[i + 1] = line
-            remaining_groups.remove(id)
-
-        for id in remaining_groups:
-            group = self.groups[id]
-            a_line = [
-                str(id),
-                str(group.text_id or ""),
-                str(group.group_type.value) if group.group_type is not None else "0",
-            ]
-            for chara_id in group.chara_ids or []:
-                a_line.append(str(chara_id))
-            csv.lines.append(a_line)
+        for group in self.groups.values():
+            csv.init_setter(group.group_id, 3, index_line_index=0)
+            csv.set_str(group.group_id)
+            csv.set_str(group.text_id)
+            csv.set_str(group.group_type)
+            csv.set_list(group.chara_ids)
 
         game_data.set_file(file_name, csv.to_data())
 

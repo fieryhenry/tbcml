@@ -1,9 +1,14 @@
+"""Module for map and stage stuff"""
+
 import enum
 from typing import Any, Optional
+
 from tbcml import core
 
 
 class StageNameNameType(enum.Enum):
+    """The code name of the map type for the stage name files"""
+
     STORY = ""
     AKU = "DM"
     GAUNTLET = "RA"
@@ -22,6 +27,11 @@ class StageNameNameType(enum.Enum):
     TOWER = "RV"
 
     def get_map_index_type(self) -> Optional["MapIndexType"]:
+        """Gets the MapIndexType that corresponds to this StageNameNameType
+
+        Returns:
+            Optional[MapIndexType]: The MapIndexType that corresponds to this StageNameNameType
+        """
         for index_type in MapIndexType:
             if index_type.name == self.name:
                 return index_type
@@ -29,6 +39,8 @@ class StageNameNameType(enum.Enum):
 
 
 class MapStageDataNameType(enum.Enum):
+    """The code name of the map type for the map stage data files"""
+
     STORY = ""
     SOL = "N"
     REGULAR_EVENT = "S"
@@ -46,6 +58,11 @@ class MapStageDataNameType(enum.Enum):
     BEHEMOTH = "Q"
 
     def get_map_index_type(self) -> Optional["MapIndexType"]:
+        """Gets the MapIndexType that corresponds to this MapStageDataNameType
+
+        Returns:
+            Optional[MapIndexType]: The MapIndexType that corresponds to this MapStageDataNameType
+        """
         for index_type in MapIndexType:
             if index_type.name == self.name:
                 return index_type
@@ -53,6 +70,8 @@ class MapStageDataNameType(enum.Enum):
 
 
 class MapNameType(enum.Enum):
+    """The code name of the map type for the map name files"""
+
     STORY = ""
     AKU = "DM"
     EXTRA = "EX"  # also RE
@@ -74,6 +93,12 @@ class MapNameType(enum.Enum):
     OUTBREAKS = "Z"
 
     def get_map_index_type(self) -> Optional["MapIndexType"]:
+        """Gets the MapIndexType that corresponds to this MapNameType
+
+        Returns:
+            Optional[MapIndexType]: The MapIndexType that corresponds to this MapNameType
+        """
+
         for index_type in MapIndexType:
             if index_type.name == self.name:
                 return index_type
@@ -81,6 +106,8 @@ class MapNameType(enum.Enum):
 
 
 class MapIndexType(enum.Enum):
+    """The index of the map type for the map files"""
+
     SOL = 0
     REGULAR_EVENT = 1000
     COLLAB = 2000
@@ -103,21 +130,41 @@ class MapIndexType(enum.Enum):
 
     @staticmethod
     def get_all() -> list["MapIndexType"]:
+        """Gets all the MapIndexTypes
+
+        Returns:
+            list[MapIndexType]: All the MapIndexTypes
+        """
         return sorted(MapIndexType, key=lambda x: x.value)
 
     def get_map_name_type(self) -> Optional[MapNameType]:
+        """Gets the MapNameType that corresponds to this MapIndexType
+
+        Returns:
+            Optional[MapNameType]: The MapNameType that corresponds to this MapIndexType
+        """
         for name_type in MapNameType:
             if name_type.name == self.name:
                 return name_type
         return None
 
     def get_map_stage_data_name_type(self) -> Optional[MapStageDataNameType]:
+        """Gets the MapStageDataNameType that corresponds to this MapIndexType
+
+        Returns:
+            Optional[MapStageDataNameType]: The MapStageDataNameType that corresponds to this MapIndexType
+        """
         for name_type in MapStageDataNameType:
             if name_type.name == self.name:
                 return name_type
         return None
 
     def get_stage_name_name_type(self) -> Optional[StageNameNameType]:
+        """Gets the StageNameNameType that corresponds to this MapIndexType
+
+        Returns:
+            Optional[StageNameNameType]: The StageNameNameType that corresponds to this MapIndexType
+        """
         for name_type in StageNameNameType:
             if name_type.name == self.name:
                 return name_type
@@ -125,6 +172,11 @@ class MapIndexType(enum.Enum):
 
     @staticmethod
     def from_index(index: int) -> Optional["MapIndexType"]:
+        """Gets the MapIndexType that corresponds to the given index
+
+        Returns:
+            Optional[MapIndexType]: The MapIndexType that corresponds to the given index
+        """
         types_sorted = sorted(MapIndexType, key=lambda x: x.value)
         for i in range(len(types_sorted)):
             if index < types_sorted[i].value:
@@ -135,6 +187,8 @@ class MapIndexType(enum.Enum):
 
 
 class ResetType(enum.Enum):
+    """The type of reward reset for a map"""
+
     NONE = 0
     REWARD = 1
     CLEAR_STATUS = 2
@@ -142,24 +196,45 @@ class ResetType(enum.Enum):
 
 
 class MapOption:
+    """Class for storing map options"""
+
     def __init__(
         self,
         stage_id: int,
-        number_of_stars: int,
-        star_mult_1: int,
-        star_mult_2: int,
-        star_mult_3: int,
-        star_mult_4: int,
-        guerrilla_set: int,
-        reset_type: ResetType,
-        one_time_display: bool,
-        display_order: int,
-        interval: int,
-        challenge_flag: bool,
-        difficulty_mask: int,
-        hide_after_clear: bool,
-        map_comment: str,
+        number_of_stars: Optional[int] = None,
+        star_mult_1: Optional[int] = None,
+        star_mult_2: Optional[int] = None,
+        star_mult_3: Optional[int] = None,
+        star_mult_4: Optional[int] = None,
+        guerrilla_set: Optional[int] = None,
+        reset_type: Optional[ResetType] = None,
+        one_time_display: Optional[bool] = None,
+        display_order: Optional[int] = None,
+        interval: Optional[int] = None,
+        challenge_flag: Optional[bool] = None,
+        difficulty_mask: Optional[int] = None,
+        hide_after_clear: Optional[bool] = None,
+        map_comment: Optional[str] = None,
     ):
+        """Initializes a MapOption
+
+        Args:
+            stage_id (int): The stage id
+            number_of_stars (Optional[int], optional): The number of stars of the map. Defaults to None.
+            star_mult_1 (Optional[int], optional): The enemy multiplier for 1 star. Defaults to None.
+            star_mult_2 (Optional[int], optional): The enemy multiplier for 2 stars. Defaults to None.
+            star_mult_3 (Optional[int], optional): The enemy multiplier for 3 stars. Defaults to None.
+            star_mult_4 (Optional[int], optional): The enemy multiplier for 4 stars. Defaults to None.
+            guerrilla_set (Optional[int], optional): The guerrilla set (idk). Defaults to None.
+            reset_type (Optional[ResetType], optional): The reward reset type. Defaults to None.
+            one_time_display (Optional[bool], optional): If the map is a one time display. Defaults to None.
+            display_order (Optional[int], optional): The display order of the map in the map select screen list. Defaults to None.
+            interval (Optional[int], optional): The interval of the map?. Defaults to None.
+            challenge_flag (Optional[bool], optional): If the map is a challenge map. Defaults to None.
+            difficulty_mask (Optional[int], optional): The star difficulty mask. The bits of this number reflect the pattern of the stars. Defaults to None.
+            hide_after_clear (Optional[bool], optional): If the map is hidden after clearing. Defaults to None.
+            map_comment (Optional[str], optional): The map comment. Defaults to None.
+        """
         self.stage_id = stage_id
         self.map_index_type = MapIndexType.from_index(stage_id)
         if self.map_index_type is not None:
@@ -184,6 +259,11 @@ class MapOption:
         self.map_comment = map_comment
 
     def apply_dict(self, dict_data: dict[str, Any]):
+        """Applies a dict to this MapOption
+
+        Args:
+            dict_data (dict[str, Any]): The dict to apply
+        """
         self.stage_id = dict_data.get("stage_id", self.stage_id)
         self.map_index_type = MapIndexType.from_index(self.stage_id)
         if self.map_index_type is not None:
@@ -211,41 +291,66 @@ class MapOption:
 
     @staticmethod
     def create_empty(stage_id: int) -> "MapOption":
-        return MapOption(
-            stage_id,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            ResetType.NONE,
-            False,
-            0,
-            0,
-            False,
-            0,
-            False,
-            "",
-        )
+        """Creates an empty MapOption
+
+        Args:
+            stage_id (int): The stage id
+
+        Returns:
+            MapOption: The empty MapOption
+        """
+        return MapOption(stage_id)
 
 
 class MapOptions:
+    """A class representing a collection of map options"""
+
     def __init__(self, options: dict[int, MapOption]):
+        """Creates a MapOptions object
+
+        Args:
+            options (dict[int, MapOption]): The map options
+        """
         self.options = options
 
     def get(self, stage_id: int) -> Optional[MapOption]:
+        """Gets the map option for a stage id
+
+        Args:
+            stage_id (int): The stage id
+
+        Returns:
+            Optional[MapOption]: The map option
+        """
         return self.options.get(stage_id)
 
     def set(self, option: MapOption):
+        """Sets the map option for a stage id
+
+        Args:
+            option (MapOption): The map option
+        """
         self.options[option.stage_id] = option
 
     @staticmethod
     def get_file_name() -> str:
+        """Gets the file name of the map option file
+
+        Returns:
+            str: The file name
+        """
         return "Map_option.csv"
 
     @staticmethod
     def from_game_data(game_data: "core.GamePacks") -> "MapOptions":
+        """Creates a MapOptions object from game data
+
+        Args:
+            game_data (core.GamePacks): The game data
+
+        Returns:
+            MapOptions: The map options
+        """
         map_options = game_data.find_file(MapOptions.get_file_name())
         if map_options is None:
             return MapOptions.create_empty()
@@ -273,6 +378,12 @@ class MapOptions:
         return MapOptions(options)
 
     def to_game_data(self, game_data: "core.GamePacks"):
+        """Writes the map options to game data
+
+        Args:
+            game_data (core.GamePacks): The game data
+        """
+
         map_options = game_data.find_file(MapOptions.get_file_name())
         if map_options is None:
             return None
@@ -283,44 +394,63 @@ class MapOptions:
             option = self.options.get(stage_id)
             if option is None:
                 continue
-            line[1] = str(option.number_of_stars)
-            line[2] = str(option.star_mult_1)
-            line[3] = str(option.star_mult_2)
-            line[4] = str(option.star_mult_3)
-            line[5] = str(option.star_mult_4)
-            line[6] = str(option.guerrilla_set)
-            line[7] = str(option.reset_type.value)
-            line[8] = "1" if option.one_time_display else "0"
-            line[9] = str(option.display_order)
-            line[10] = str(option.interval)
-            line[11] = "1" if option.challenge_flag else "0"
-            line[12] = str(option.difficulty_mask)
-            line[13] = "1" if option.hide_after_clear else "0"
-            line[14] = option.map_comment
+            if option.number_of_stars is not None:
+                line[1] = str(option.number_of_stars)
+            if option.star_mult_1 is not None:
+                line[2] = str(option.star_mult_1)
+            if option.star_mult_2 is not None:
+                line[3] = str(option.star_mult_2)
+            if option.star_mult_3 is not None:
+                line[4] = str(option.star_mult_3)
+            if option.star_mult_4 is not None:
+                line[5] = str(option.star_mult_4)
+            if option.guerrilla_set is not None:
+                line[6] = str(option.guerrilla_set)
+            if option.reset_type is not None:
+                line[7] = str(option.reset_type.value)
+            if option.one_time_display is not None:
+                line[8] = "1" if option.one_time_display else "0"
+            if option.display_order is not None:
+                line[9] = str(option.display_order)
+            if option.interval is not None:
+                line[10] = str(option.interval)
+            if option.challenge_flag is not None:
+                line[11] = "1" if option.challenge_flag else "0"
+            if option.difficulty_mask is not None:
+                line[12] = str(option.difficulty_mask)
+            if option.hide_after_clear is not None:
+                line[13] = "1" if option.hide_after_clear else "0"
+            if option.map_comment is not None:
+                line[14] = option.map_comment
             csv.lines[i + 1] = line
             del remaining[stage_id]
         for option in remaining.values():
             line: list[str] = []
-            line.append(str(option.stage_id))
-            line.append(str(option.number_of_stars))
-            line.append(str(option.star_mult_1))
-            line.append(str(option.star_mult_2))
-            line.append(str(option.star_mult_3))
-            line.append(str(option.star_mult_4))
-            line.append(str(option.guerrilla_set))
-            line.append(str(option.reset_type.value))
+            line.append(str(option.stage_id or 0))
+            line.append(str(option.number_of_stars or 0))
+            line.append(str(option.star_mult_1 or 0))
+            line.append(str(option.star_mult_2 or 0))
+            line.append(str(option.star_mult_3 or 0))
+            line.append(str(option.star_mult_4 or 0))
+            line.append(str(option.guerrilla_set or 0))
+            line.append(str(option.reset_type.value) if option.reset_type else "0")
             line.append("1" if option.one_time_display else "0")
-            line.append(str(option.display_order))
-            line.append(str(option.interval))
+            line.append(str(option.display_order or 0))
+            line.append(str(option.interval or 0))
             line.append("1" if option.challenge_flag else "0")
-            line.append(str(option.difficulty_mask))
+            line.append(str(option.difficulty_mask or 0))
             line.append("1" if option.hide_after_clear else "0")
-            line.append(option.map_comment)
+            line.append(option.map_comment or "")
             csv.lines.append(line)
 
         game_data.set_file(MapOptions.get_file_name(), csv.to_data())
 
     def apply_dict(self, dict_data: dict[str, Any]):
+        """Applies a dict to the map options
+
+        Args:
+            dict_data (dict[str, Any]): The dict to apply
+        """
         options = dict_data.get("options")
         if options is not None:
             current_options = self.options.copy()
@@ -336,28 +466,54 @@ class MapOptions:
 
     @staticmethod
     def create_empty() -> "MapOptions":
+        """Creates an empty map options object
+
+        Returns:
+            MapOptions: The created map options
+        """
         return MapOptions({})
 
 
 class EnemyRow:
+    """Represents an enemy row in the stage csv files"""
+
     def __init__(
         self,
         index: int,
-        enemy_id: int,
-        total_spawn_count: int,
-        start_frame: int,
-        min_spawn_interval: int,
-        max_spawn_interval: int,
-        spawn_base_percentage: int,
-        min_z: int,
-        max_z: int,
-        boss_flag: bool,
+        enemy_id: Optional[int] = None,
+        total_spawn_count: Optional[int] = None,
+        start_frame: Optional[int] = None,
+        min_spawn_interval: Optional[int] = None,
+        max_spawn_interval: Optional[int] = None,
+        spawn_base_percentage: Optional[int] = None,
+        min_z: Optional[int] = None,
+        max_z: Optional[int] = None,
+        boss_flag: Optional[bool] = None,
         magnification: Optional[int] = None,
         spawn_1: Optional[int] = None,
         castle_1: Optional[int] = None,
         group: Optional[int] = None,
         kill_count: Optional[int] = None,
     ):
+        """Creates a new enemy row
+
+        Args:
+            index (int): The index of the row
+            enemy_id (Optional[int], optional): The enemy id of the row. Defaults to None.
+            total_spawn_count (Optional[int], optional): The max amount of enemies to spawn. Defaults to None.
+            start_frame (Optional[int], optional): The frame to start spawning enemies. Defaults to None.
+            min_spawn_interval (Optional[int], optional): The min amount of frames between spawns. Defaults to None.
+            max_spawn_interval (Optional[int], optional): The max amount of frames between spawns. Defaults to None.
+            spawn_base_percentage (Optional[int], optional): The base percentage to spawn enemies. Defaults to None.
+            min_z (Optional[int], optional): The min z level to spawn enemies. Defaults to None.
+            max_z (Optional[int], optional): The max z level to spawn enemies. Defaults to None.
+            boss_flag (Optional[bool], optional): Whether the enemy is a boss. Defaults to None.
+            magnification (Optional[int], optional): The stat boost multiplier. Defaults to None.
+            spawn_1 (Optional[int], optional): ? Defaults to None.
+            castle_1 (Optional[int], optional): ? Defaults to None.
+            group (Optional[int], optional): ? Defaults to None.
+            kill_count (Optional[int], optional): Amount of enemies to kill before spawning enemies? Defaults to None.
+        """
         self.index = index
         self.enemy_id = enemy_id
         self.total_spawn_count = total_spawn_count
@@ -375,6 +531,11 @@ class EnemyRow:
         self.kill_count = kill_count
 
     def apply_dict(self, dict_data: dict[str, Any]):
+        """Applies a dict to the enemy row
+
+        Args:
+            dict_data (dict[str, Any]): The dict to apply
+        """
         self.enemy_id = dict_data.get("enemy_id", self.enemy_id)
         self.total_spawn_count = dict_data.get(
             "total_spawn_count", self.total_spawn_count
@@ -400,28 +561,57 @@ class EnemyRow:
 
     @staticmethod
     def create_empty(index: int) -> "EnemyRow":
-        return EnemyRow(index, 0, 0, 0, 0, 0, 0, 0, 0, False, 0)
+        """Creates an empty enemy row
+
+        Args:
+            index (int): The index of the row
+
+        Returns:
+            EnemyRow: The created enemy row
+        """
+        return EnemyRow(index)
 
 
 class StageStats:
+    """Represents the stats of a stage"""
+
     def __init__(
         self,
         stage_id: int,
         stage_index: int,
-        castle_type: Optional[int],
-        no_continues: bool,
-        ex_stage_prob: int,
-        ex_stage_chapter_id: int,
-        ex_stage_stage_id: int,
-        stage_width: int,
-        base_health: int,
-        min_production_frames: int,
-        max_production_frames: int,
-        background_type: int,
-        max_enemy_count: int,
-        unused: int,
-        enemies: dict[int, EnemyRow],
+        castle_type: Optional[int] = None,
+        no_continues: Optional[bool] = None,
+        ex_stage_prob: Optional[int] = None,
+        ex_stage_chapter_id: Optional[int] = None,
+        ex_stage_stage_id: Optional[int] = None,
+        stage_width: Optional[int] = None,
+        base_health: Optional[int] = None,
+        min_production_frames: Optional[int] = None,
+        max_production_frames: Optional[int] = None,
+        background_type: Optional[int] = None,
+        max_enemy_count: Optional[int] = None,
+        unused: Optional[int] = None,
+        enemies: Optional[dict[int, EnemyRow]] = None,
     ):
+        """Creates a new stage stats object
+
+        Args:
+            stage_id (int): The map id of the stage
+            stage_index (int): The index of the stage
+            castle_type (Optional[int], optional): The castle type of the stage. Defaults to None.
+            no_continues (Optional[bool], optional): Whether the stage disallows continues. Defaults to None.
+            ex_stage_prob (Optional[int], optional): Probability of a second stage after you clear the first (e.g catfruit jubilee). Defaults to None.
+            ex_stage_chapter_id (Optional[int], optional): The chapter id of the second stage. Defaults to None.
+            ex_stage_stage_id (Optional[int], optional): The stage id of the second stage. Defaults to None.
+            stage_width (Optional[int], optional): The width of the stage. Defaults to None.
+            base_health (Optional[int], optional): The base health of the stage. Defaults to None.
+            min_production_frames (Optional[int], optional): The minimum amount of frames between enemy spawns. Defaults to None.
+            max_production_frames (Optional[int], optional): The maximum amount of frames between enemy spawns. Defaults to None.
+            background_type (Optional[int], optional): The background type of the stage. Defaults to None.
+            max_enemy_count (Optional[int], optional): The maximum amount of enemies that can be spawned. Defaults to None.
+            unused (Optional[int], optional): ? Defaults to None.
+            enemies (Optional[dict[int, EnemyRow]], optional): The enemies of the stage. Defaults to None.
+        """
         self.stage_id = stage_id
         self.stage_index = stage_index
         self.map_index_type = MapIndexType.from_index(stage_id)
@@ -443,7 +633,16 @@ class StageStats:
         self.enemies = enemies
 
     @staticmethod
-    def get_file_name(stage_id: int, stage_index: int):
+    def get_file_name(stage_id: int, stage_index: int) -> Optional[str]:
+        """Gets the file name of a stage
+
+        Args:
+            stage_id (int): The map id of the stage
+            stage_index (int): The index of the stage
+
+        Returns:
+            Optional[str]: The file name of the stage
+        """
         map_index_type = MapIndexType.from_index(stage_id)
         if map_index_type is None:
             return None
@@ -457,8 +656,20 @@ class StageStats:
 
     @staticmethod
     def from_game_data(
-        game_data: "core.GamePacks", stage_id: int, stage_index: int
+        game_data: "core.GamePacks",
+        stage_id: int,
+        stage_index: int,
     ) -> Optional["StageStats"]:
+        """Creates a stage stats object from game data
+
+        Args:
+            game_data (core.GamePacks): The game data
+            stage_id (int): The map id of the stage
+            stage_index (int): The index of the stage
+
+        Returns:
+            Optional[StageStats]: The created stage stats object
+        """
         file_name = StageStats.get_file_name(stage_id, stage_index)
         if file_name is None:
             return None
@@ -550,6 +761,11 @@ class StageStats:
         )
 
     def to_game_data(self, game_data: "core.GamePacks"):
+        """Writes the stage stats to game data
+
+        Args:
+            game_data (core.GamePacks): The game data
+        """
         file_name = StageStats.get_file_name(self.stage_id, self.stage_index)
         if file_name is None:
             return None
@@ -557,49 +773,76 @@ class StageStats:
         if file is None:
             return None
         csv = core.CSV(file.dec_data)
-        line_1 = [
-            str(self.castle_type),
-            "1" if self.no_continues else "0",
-            str(self.ex_stage_prob),
-            str(self.ex_stage_chapter_id),
-            str(self.ex_stage_stage_id),
-        ]
+        line_1 = csv.read_line()
+        if line_1 is None:
+            return None
+        if self.castle_type is not None:
+            line_1[0] = str(self.castle_type)
+        if self.no_continues is not None:
+            line_1[1] = "1" if self.no_continues else "0"
+        if self.ex_stage_prob is not None:
+            line_1[2] = str(self.ex_stage_prob)
+        if self.ex_stage_chapter_id is not None:
+            line_1[3] = str(self.ex_stage_chapter_id)
+        if self.ex_stage_stage_id is not None:
+            line_1[4] = str(self.ex_stage_stage_id)
         csv.lines[0] = line_1
-        line_2 = [
-            str(self.stage_width),
-            str(self.base_health),
-            str(self.min_production_frames),
-            str(self.max_production_frames),
-            str(self.background_type),
-            str(self.max_enemy_count),
-            str(self.unused),
-        ]
-        csv.lines[1] = line_2
-        for i, enemy in self.enemies.items():
-            line: list[str] = [
-                str(enemy.enemy_id),
-                str(enemy.total_spawn_count),
-                str(enemy.start_frame),
-                str(enemy.min_spawn_interval),
-                str(enemy.max_spawn_interval),
-                str(enemy.spawn_base_percentage),
-                str(enemy.min_z),
-                str(enemy.max_z),
-                "1" if enemy.boss_flag else "0",
-            ]
-            if enemy.magnification is not None:
-                line.append(str(enemy.magnification))
-            if enemy.spawn_1 is not None:
-                line.append(str(enemy.spawn_1))
-            if enemy.castle_1 is not None:
-                line.append(str(enemy.castle_1))
-            if enemy.group is not None:
-                line.append(str(enemy.group))
-            if enemy.kill_count is not None:
-                line.append(str(enemy.kill_count))
 
-            csv.lines[i + 2] = line
-        game_data.set_file(file_name, csv.to_data())
+        line_2 = csv.read_line()
+        if line_2 is None:
+            return None
+        if self.stage_width is not None:
+            line_2[0] = str(self.stage_width)
+        if self.base_health is not None:
+            line_2[1] = str(self.base_health)
+        if self.min_production_frames is not None:
+            line_2[2] = str(self.min_production_frames)
+        if self.max_production_frames is not None:
+            line_2[3] = str(self.max_production_frames)
+        if self.background_type is not None:
+            line_2[4] = str(self.background_type)
+        if self.max_enemy_count is not None:
+            line_2[5] = str(self.max_enemy_count)
+        if self.unused is not None:
+            line_2[6] = str(self.unused)
+        csv.lines[1] = line_2
+
+        if self.enemies is not None:
+            for i, enemy in self.enemies.items():
+                line = csv.lines[i + 2]
+                if enemy.enemy_id is not None:
+                    line[0] = str(enemy.enemy_id)
+                if enemy.total_spawn_count is not None:
+                    line[1] = str(enemy.total_spawn_count)
+                if enemy.start_frame is not None:
+                    line[2] = str(enemy.start_frame)
+                if enemy.min_spawn_interval is not None:
+                    line[3] = str(enemy.min_spawn_interval)
+                if enemy.max_spawn_interval is not None:
+                    line[4] = str(enemy.max_spawn_interval)
+                if enemy.spawn_base_percentage is not None:
+                    line[5] = str(enemy.spawn_base_percentage)
+                if enemy.min_z is not None:
+                    line[6] = str(enemy.min_z)
+                if enemy.max_z is not None:
+                    line[7] = str(enemy.max_z)
+                if enemy.boss_flag is not None:
+                    line[8] = "1" if enemy.boss_flag else "0"
+                if enemy.magnification is not None:
+                    try:
+                        line[9] = str(enemy.magnification)
+                    except IndexError:
+                        line.append(str(enemy.magnification))
+                if enemy.spawn_1 is not None:
+                    line[10] = str(enemy.spawn_1)
+                if enemy.castle_1 is not None:
+                    line[11] = str(enemy.castle_1)
+                if enemy.group is not None:
+                    line[12] = str(enemy.group)
+                if enemy.kill_count is not None:
+                    line[13] = str(enemy.kill_count)
+                csv.lines[i + 2] = line
+            game_data.set_file(file_name, csv.to_data())
 
     def apply_dict(self, dict_data: dict[str, Any]):
         self.castle_type = dict_data.get("castle_type", self.castle_type)

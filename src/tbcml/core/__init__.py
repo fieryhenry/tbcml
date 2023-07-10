@@ -107,7 +107,7 @@ from .anim.rect import Rect
 from .anim.texture import TexLoaderInfo, Texture
 
 
-from .io.bc_csv import CSV, Delimeter
+from .io.bc_csv import CSV, Delimeter, to_str
 from .io.apk import Apk
 from .io.path import Path
 from .io.data import Data, PaddedInt
