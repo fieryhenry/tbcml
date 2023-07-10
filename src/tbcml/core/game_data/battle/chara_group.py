@@ -1,5 +1,5 @@
 import enum
-from typing import Any
+from typing import Any, Optional
 from tbcml import core
 
 
@@ -16,9 +16,9 @@ class CharaGroupSet:
     def __init__(
         self,
         group_id: int,
-        text_id: str,
-        group_type: GroupType,
-        chara_ids: list[int],
+        text_id: Optional[str] = None,
+        group_type: Optional[GroupType] = None,
+        chara_ids: Optional[list[int]] = None,
     ):
         """Initializes a new CharaGroupSet.
 
@@ -51,7 +51,7 @@ class CharaGroupSet:
         Returns:
             CharaGroupSet: An empty CharaGroupSet.
         """
-        return CharaGroupSet(group_id, "", GroupType.EXCLUDE, [])
+        return CharaGroupSet(group_id)
 
 
 class CharaGroups:
@@ -115,10 +115,14 @@ class CharaGroups:
                 group = self.groups[id]
             except KeyError:
                 continue
-            line[1] = str(group.text_id)
-            line[2] = str(group.group_type.value)
-            for j, chara_id in enumerate(group.chara_ids):
-                line[j + 3] = str(chara_id)
+            if group.text_id is not None:
+                line[1] = str(group.text_id)
+            if group.group_type is not None:
+                line[2] = str(group.group_type.value)
+
+            if group.chara_ids is not None:
+                for j, chara_id in enumerate(group.chara_ids):
+                    line[j + 3] = str(chara_id)
             csv.lines[i + 1] = line
             remaining_groups.remove(id)
 
@@ -126,10 +130,10 @@ class CharaGroups:
             group = self.groups[id]
             a_line = [
                 str(id),
-                str(group.text_id),
-                str(group.group_type.value),
+                str(group.text_id or 0),
+                str(group.group_type.value) if group.group_type is not None else "0",
             ]
-            for chara_id in group.chara_ids:
+            for chara_id in group.chara_ids or []:
                 a_line.append(str(chara_id))
             csv.lines.append(a_line)
 

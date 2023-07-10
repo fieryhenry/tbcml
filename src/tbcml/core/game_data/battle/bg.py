@@ -17,7 +17,13 @@ class ColorType(enum.Enum):
 class Color:
     """Class for a color."""
 
-    def __init__(self, c_type: ColorType, r: int, g: int, b: int):
+    def __init__(
+        self,
+        c_type: ColorType,
+        r: Optional[int] = None,
+        g: Optional[int] = None,
+        b: Optional[int] = None,
+    ):
         """Initializes a Color object.
 
         Args:
@@ -55,7 +61,7 @@ class Color:
         Returns:
             Color: An empty Color.
         """
-        return Color(c_type, 0, 0, 0)
+        return Color(c_type)
 
 
 class Bg:
@@ -64,12 +70,12 @@ class Bg:
     def __init__(
         self,
         id: int,
-        sky_top: Color,
-        sky_bottom: Color,
-        ground_top: Color,
-        ground_bottom: Color,
-        imgcut_id: int,
-        is_upper_side_bg_enabled: bool,
+        sky_top: Optional[Color] = None,
+        sky_bottom: Optional[Color] = None,
+        ground_top: Optional[Color] = None,
+        ground_bottom: Optional[Color] = None,
+        imgcut_id: Optional[int] = None,
+        is_upper_side_bg_enabled: Optional[bool] = None,
         extra: Optional[list[int]] = None,
         json_data: Optional[dict[str, Any]] = None,
     ):
@@ -95,6 +101,26 @@ class Bg:
         self.extra = extra
         self.json_data = json_data
 
+    def get_sky_top(self) -> Color:
+        if self.sky_top is None:
+            return Color.create_empty(ColorType.SKY_TOP)
+        return self.sky_top
+
+    def get_sky_bottom(self) -> Color:
+        if self.sky_bottom is None:
+            return Color.create_empty(ColorType.SKY_BOTTOM)
+        return self.sky_bottom
+
+    def get_ground_top(self) -> Color:
+        if self.ground_top is None:
+            return Color.create_empty(ColorType.GROUND_TOP)
+        return self.ground_top
+
+    def get_ground_bottom(self) -> Color:
+        if self.ground_bottom is None:
+            return Color.create_empty(ColorType.GROUND_BOTTOM)
+        return self.ground_bottom
+
     def apply_dict(self, dict_data: dict[str, Any]):
         """Applies a dictionary to the Bg object.
 
@@ -102,10 +128,18 @@ class Bg:
             dict_data (dict[str, Any]): The dictionary to apply.
         """
         self.id = dict_data.get("id", self.id)
-        self.sky_top.apply_dict(dict_data.get("sky_top", {}))
-        self.sky_bottom.apply_dict(dict_data.get("sky_bottom", {}))
-        self.ground_top.apply_dict(dict_data.get("ground_top", {}))
-        self.ground_bottom.apply_dict(dict_data.get("ground_bottom", {}))
+        sky_top = dict_data.get("sky_top")
+        if sky_top is not None:
+            self.get_sky_top().apply_dict(sky_top)
+        sky_bottom = dict_data.get("sky_bottom")
+        if sky_bottom is not None:
+            self.get_sky_bottom().apply_dict(sky_bottom)
+        ground_top = dict_data.get("ground_top")
+        if ground_top is not None:
+            self.get_ground_top().apply_dict(ground_top)
+        ground_bottom = dict_data.get("ground_bottom")
+        if ground_bottom is not None:
+            self.get_ground_bottom().apply_dict(ground_bottom)
         self.imgcut_id = dict_data.get("imgcut_id", self.imgcut_id)
         self.is_upper_side_bg_enabled = dict_data.get(
             "is_upper_side_bg_enabled", self.is_upper_side_bg_enabled
@@ -123,15 +157,7 @@ class Bg:
         Returns:
             Bg: An empty Bg.
         """
-        return Bg(
-            id,
-            Color.create_empty(ColorType.SKY_TOP),
-            Color.create_empty(ColorType.SKY_BOTTOM),
-            Color.create_empty(ColorType.GROUND_TOP),
-            Color.create_empty(ColorType.GROUND_BOTTOM),
-            0,
-            False,
-        )
+        return Bg(id)
 
     @staticmethod
     def get_json_file_name(id: int) -> str:
@@ -303,20 +329,38 @@ class Bgs:
                 bg = self.bgs[i]
             except KeyError:
                 continue
-            line[1] = str((bg.sky_top.r))
-            line[2] = str((bg.sky_top.g))
-            line[3] = str((bg.sky_top.b))
-            line[4] = str((bg.sky_bottom.r))
-            line[5] = str((bg.sky_bottom.g))
-            line[6] = str((bg.sky_bottom.b))
-            line[7] = str((bg.ground_top.r))
-            line[8] = str((bg.ground_top.g))
-            line[9] = str((bg.ground_top.b))
-            line[10] = str((bg.ground_bottom.r))
-            line[11] = str((bg.ground_bottom.g))
-            line[12] = str((bg.ground_bottom.b))
-            line[13] = str((bg.imgcut_id))
-            line[14] = str((1 if bg.is_upper_side_bg_enabled else 0))
+            if bg.sky_top is not None:
+                if bg.sky_top.r is not None:
+                    line[1] = str((bg.sky_top.r))
+                if bg.sky_top.g is not None:
+                    line[2] = str((bg.sky_top.g))
+                if bg.sky_top.b is not None:
+                    line[3] = str((bg.sky_top.b))
+            if bg.sky_bottom is not None:
+                if bg.sky_bottom.r is not None:
+                    line[4] = str((bg.sky_bottom.r))
+                if bg.sky_bottom.g is not None:
+                    line[5] = str((bg.sky_bottom.g))
+                if bg.sky_bottom.b is not None:
+                    line[6] = str((bg.sky_bottom.b))
+            if bg.ground_top is not None:
+                if bg.ground_top.r is not None:
+                    line[7] = str((bg.ground_top.r))
+                if bg.ground_top.g is not None:
+                    line[8] = str((bg.ground_top.g))
+                if bg.ground_top.b is not None:
+                    line[9] = str((bg.ground_top.b))
+            if bg.ground_bottom is not None:
+                if bg.ground_bottom.r is not None:
+                    line[10] = str((bg.ground_bottom.r))
+                if bg.ground_bottom.g is not None:
+                    line[11] = str((bg.ground_bottom.g))
+                if bg.ground_bottom.b is not None:
+                    line[12] = str((bg.ground_bottom.b))
+            if bg.imgcut_id is not None:
+                line[13] = str((bg.imgcut_id))
+            if bg.is_upper_side_bg_enabled is not None:
+                line[14] = str((1 if bg.is_upper_side_bg_enabled else 0))
             if bg.extra is not None:
                 for j, extra in enumerate(bg.extra):
                     line[15 + j] = str(extra)
@@ -326,19 +370,19 @@ class Bgs:
         for i, bg in remaining_bgs.items():
             new_line = [
                 str(bg.id),
-                str(bg.sky_top.r),
-                str(bg.sky_top.g),
-                str(bg.sky_top.b),
-                str(bg.sky_bottom.r),
-                str(bg.sky_bottom.g),
-                str(bg.sky_bottom.b),
-                str(bg.ground_top.r),
-                str(bg.ground_top.g),
-                str(bg.ground_top.b),
-                str(bg.ground_bottom.r),
-                str(bg.ground_bottom.g),
-                str(bg.ground_bottom.b),
-                str(bg.imgcut_id),
+                str(bg.sky_top.r or 0) if bg.sky_top is not None else "0",
+                str(bg.sky_top.g or 0) if bg.sky_top is not None else "0",
+                str(bg.sky_top.b or 0) if bg.sky_top is not None else "0",
+                str(bg.sky_bottom.r or 0) if bg.sky_bottom is not None else "0",
+                str(bg.sky_bottom.g or 0) if bg.sky_bottom is not None else "0",
+                str(bg.sky_bottom.b or 0) if bg.sky_bottom is not None else "0",
+                str(bg.ground_top.r or 0) if bg.ground_top is not None else "0",
+                str(bg.ground_top.g or 0) if bg.ground_top is not None else "0",
+                str(bg.ground_top.b or 0) if bg.ground_top is not None else "0",
+                str(bg.ground_bottom.r or 0) if bg.ground_bottom is not None else "0",
+                str(bg.ground_bottom.g or 0) if bg.ground_bottom is not None else "0",
+                str(bg.ground_bottom.b or 0) if bg.ground_bottom is not None else "0",
+                str(bg.imgcut_id or 0),
                 str(1) if bg.is_upper_side_bg_enabled else str(0),
             ]
             if bg.extra is not None:

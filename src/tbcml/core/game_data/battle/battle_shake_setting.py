@@ -1,6 +1,6 @@
 """Module for handling the screen shake effects in battle. This feature was added in version 11.8.0"""
 import enum
-from typing import Any
+from typing import Any, Optional
 from tbcml import core
 
 
@@ -17,12 +17,12 @@ class ShakeEffect:
     def __init__(
         self,
         shake_location: ShakeLocation,
-        start_distance: int,
-        end_distance: int,
-        frames: int,
-        events_until_next_shake: int,
-        reset_frame: int,
-        priority: int,
+        start_distance: Optional[int] = None,
+        end_distance: Optional[int] = None,
+        frames: Optional[int] = None,
+        events_until_next_shake: Optional[int] = None,
+        reset_frame: Optional[int] = None,
+        priority: Optional[int] = None,
     ):
         """Initializes a new Screenshake Effect.
 
@@ -69,15 +69,7 @@ class ShakeEffect:
         Returns:
             ShakeEffect: An empty ShakeEffect.
         """
-        return ShakeEffect(
-            ShakeLocation.BASE_HIT,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-        )
+        return ShakeEffect(ShakeLocation.BASE_HIT)
 
 
 class ShakeEffects:
@@ -153,24 +145,30 @@ class ShakeEffects:
             except KeyError:
                 continue
             line[0] = str(effect.shake_location.value)
-            line[1] = str(effect.start_distance)
-            line[2] = str(effect.end_distance)
-            line[3] = str(effect.frames)
-            line[4] = str(effect.events_until_next_shake)
-            line[5] = str(effect.reset_frame)
-            line[6] = str(effect.priority)
+            if effect.start_distance is not None:
+                line[1] = str(effect.start_distance)
+            if effect.end_distance is not None:
+                line[2] = str(effect.end_distance)
+            if effect.frames is not None:
+                line[3] = str(effect.frames)
+            if effect.events_until_next_shake is not None:
+                line[4] = str(effect.events_until_next_shake)
+            if effect.reset_frame is not None:
+                line[5] = str(effect.reset_frame)
+            if effect.priority is not None:
+                line[6] = str(effect.priority)
             csv.lines[i] = line
             remaing_effects.pop(i)
 
         for i, effect in remaing_effects.items():
             a_line = [
                 str(effect.shake_location.value),
-                str(effect.start_distance),
-                str(effect.end_distance),
-                str(effect.frames),
-                str(effect.events_until_next_shake),
-                str(effect.reset_frame),
-                str(effect.priority),
+                str(effect.start_distance or 0),
+                str(effect.end_distance or 0),
+                str(effect.frames or 0),
+                str(effect.events_until_next_shake or 0),
+                str(effect.reset_frame or 0),
+                str(effect.priority or 0),
             ]
             csv.lines.append(a_line)
 
