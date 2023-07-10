@@ -1532,7 +1532,7 @@ class Cat:
     def __init__(
         self,
         cat_id: int,
-        forms: dict[CatFormType, CatForm],
+        forms: Optional[dict[CatFormType, CatForm]] = None,
         unit_buy_data: Optional[UnitBuyData] = None,
         talent: Optional["Talent"] = None,
         nyanko_picture_book_data: Optional[NyankoPictureBookData] = None,
@@ -1541,6 +1541,8 @@ class Cat:
         if isinstance(cat_id, str):
             raise ValueError("cat_id must be an int")
         self.cat_id = cat_id
+        if forms is None:
+            forms = {}
         self.forms = forms
         self.unit_buy_data = unit_buy_data
         self.talent = talent
