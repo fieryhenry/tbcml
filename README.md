@@ -82,14 +82,11 @@ mod = Mod(
 cat_id = 0
 cat_form_type = CatFormType.FIRST
 
-# Create a form
-form = CatForm.create_empty(cat_id, cat_form_type)
-
-# Set the form's name to "Test Cat"
-form.name = "Test Cat"
+# Create a form with the name "Test Cat"
+form = CatForm(cat_id, cat_form_type, name="Test Cat")
 
 # Create a cat
-cat = Cat.create_empty(cat_id)
+cat = Cat(cat_id)
 
 # Set the form
 cat.set_form(cat_form_type, form)
@@ -104,7 +101,8 @@ mod.add_mod_edit(mod_edit)
 apk.load_mods([mod], game_packs)
 
 # open the apk folder in the file explorer (optional)
-apk_folder.open()
+apk.final_apk_path.open()
+
 ```
 
 Run the script
