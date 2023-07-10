@@ -143,58 +143,55 @@ class ModelPart:
 
         Args:
             frame_counter (int): The current frame of the animation.
-            keyframes (core.PartAnim): The collection of keyframes to use for the animation.
+            keyframes (core.KeyFrames): The collection of keyframes to use for the animation.
         """
         change_in_value = keyframes.set_action(frame_counter)
         if change_in_value is None:
             return
-
-        start_frame = keyframes.keyframes[0].frame
-        if frame_counter >= start_frame:
-            mod = keyframes.modification_type
-            if mod == core.AnimModificationType.PARENT:
-                self.parent_id = change_in_value
-                self.set_parent_by_id(self.parent_id)
-            elif mod == core.AnimModificationType.ID:
-                self.unit_id = change_in_value
-            elif mod == core.AnimModificationType.SPRITE:
-                self.rect_id = change_in_value
-                self.set_rect(self.rect_id)
-            elif mod == core.AnimModificationType.Z_ORDER and self.model is not None:
-                self.z_depth = (
-                    change_in_value * len(self.model.mamodel.parts) + self.index
-                )
-            elif mod == core.AnimModificationType.POS_X:
-                self.x = change_in_value + self.pos_x_orig
-            elif mod == core.AnimModificationType.POS_Y:
-                self.y = change_in_value + self.pos_y_orig
-            elif mod == core.AnimModificationType.PIVOT_X:
-                self.pivot_x = change_in_value + self.pivot_x_orig
-            elif mod == core.AnimModificationType.PIVOT_Y:
-                self.pivot_y = change_in_value + self.pivot_y_orig
-            elif mod == core.AnimModificationType.SCALE_UNIT:
-                self.gsca = change_in_value
-                self.calc_scale()
-            elif mod == core.AnimModificationType.SCALE_X:
-                self.scale_x = int(
-                    change_in_value * self.scale_x_orig / self.scale_unit
-                )
-                self.calc_scale()
-            elif mod == core.AnimModificationType.SCALE_Y:
-                self.scale_y = int(
-                    change_in_value * self.scale_y_orig / self.scale_unit
-                )
-                self.calc_scale()
-            elif mod == core.AnimModificationType.ANGLE:
-                self.rotation = change_in_value + self.rotation_orig
-                self.set_rotation(self.rotation)
-            elif mod == core.AnimModificationType.OPACITY:
-                self.alpha = int(change_in_value * self.alpha_orig / self.alpha_unit)
-                self.set_alpha(self.alpha)
-            elif mod == core.AnimModificationType.H_FLIP:
-                self.h_flip = change_in_value
-            elif mod == core.AnimModificationType.V_FLIP:
-                self.v_flip = change_in_value
+        try:
+            start_frame = keyframes.keyframes[0].frame
+        except IndexError:
+            return
+        if frame_counter < start_frame:
+            return
+        mod = keyframes.modification_type
+        if mod == core.AnimModificationType.PARENT:
+            self.parent_id = change_in_value
+            self.set_parent_by_id(self.parent_id)
+        elif mod == core.AnimModificationType.ID:
+            self.unit_id = change_in_value
+        elif mod == core.AnimModificationType.SPRITE:
+            self.rect_id = change_in_value
+            self.set_rect(self.rect_id)
+        elif mod == core.AnimModificationType.Z_ORDER and self.model is not None:
+            self.z_depth = change_in_value * len(self.model.mamodel.parts) + self.index
+        elif mod == core.AnimModificationType.POS_X:
+            self.x = change_in_value + self.pos_x_orig
+        elif mod == core.AnimModificationType.POS_Y:
+            self.y = change_in_value + self.pos_y_orig
+        elif mod == core.AnimModificationType.PIVOT_X:
+            self.pivot_x = change_in_value + self.pivot_x_orig
+        elif mod == core.AnimModificationType.PIVOT_Y:
+            self.pivot_y = change_in_value + self.pivot_y_orig
+        elif mod == core.AnimModificationType.SCALE_UNIT:
+            self.gsca = change_in_value
+            self.calc_scale()
+        elif mod == core.AnimModificationType.SCALE_X:
+            self.scale_x = int(change_in_value * self.scale_x_orig / self.scale_unit)
+            self.calc_scale()
+        elif mod == core.AnimModificationType.SCALE_Y:
+            self.scale_y = int(change_in_value * self.scale_y_orig / self.scale_unit)
+            self.calc_scale()
+        elif mod == core.AnimModificationType.ANGLE:
+            self.rotation = change_in_value + self.rotation_orig
+            self.set_rotation(self.rotation)
+        elif mod == core.AnimModificationType.OPACITY:
+            self.alpha = int(change_in_value * self.alpha_orig / self.alpha_unit)
+            self.set_alpha(self.alpha)
+        elif mod == core.AnimModificationType.H_FLIP:
+            self.h_flip = change_in_value
+        elif mod == core.AnimModificationType.V_FLIP:
+            self.v_flip = change_in_value
 
     def calc_scale(self):
         """Calculates the real scale of the part."""
@@ -531,31 +528,27 @@ class ModelPart:
                 self.__sv_x = size_x * signum_x
                 self.__sv_y = size_y * signum_y
                 return self.__sv_x, self.__sv_y
-            else:
-                self.__sv_x = signum_x
-                self.__sv_y = signum_y
-                return self.__sv_x, self.__sv_y
-        else:
-            part_id = self.ints[0][0]
-            if part_id == -1:
-                self.__sv_x = self.real_scale_x
-                self.__sv_y = self.real_scale_y
-                return self.__sv_x, self.__sv_y
-            else:
-                if part_id == self.index:
-                    self.__sv_x = self.real_scale_x
-                    self.__sv_y = self.real_scale_y
-                    return self.__sv_x, self.__sv_y
-                else:
-                    if self.model is None:
-                        return 1, 1
-                    part = self.model.get_part_create(part_id)
-                    size_x, size_y = part.get_base_size(True)
-                    size_x *= self.real_scale_x
-                    size_y *= self.real_scale_y
-                    self.__sv_x = size_x * signum_x
-                    self.__sv_y = size_y * signum_y
-                    return self.__sv_x, self.__sv_y
+            self.__sv_x = signum_x
+            self.__sv_y = signum_y
+            return self.__sv_x, self.__sv_y
+        part_id = self.ints[0][0]
+        if part_id == -1:
+            self.__sv_x = self.real_scale_x
+            self.__sv_y = self.real_scale_y
+            return self.__sv_x, self.__sv_y
+        if part_id == self.index:
+            self.__sv_x = self.real_scale_x
+            self.__sv_y = self.real_scale_y
+            return self.__sv_x, self.__sv_y
+        if self.model is None:
+            return 1, 1
+        part = self.model.get_part_create(part_id)
+        size_x, size_y = part.get_base_size(True)
+        size_x *= self.real_scale_x
+        size_y *= self.real_scale_y
+        self.__sv_x = size_x * signum_x
+        self.__sv_y = size_y * signum_y
+        return self.__sv_x, self.__sv_y
 
     def get_recursive_scale(self) -> tuple[float, float]:
         """Gets the recursive scale of the part. Recursively calls the parent's

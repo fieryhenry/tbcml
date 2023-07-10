@@ -565,7 +565,7 @@ class AnimEditor(QtWidgets.QWidget):
 
 if __name__ == "__main__":
     cc = core.CountryCode.EN
-    gv = core.GameVersion.from_string_latest("12.3.0", cc)
+    gv = core.GameVersion.from_string_latest("12.4.0", cc)
     apk = core.Apk(gv, cc)
     apk.extract()
     apk.copy_server_files()
