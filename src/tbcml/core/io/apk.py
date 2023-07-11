@@ -601,7 +601,11 @@ class Apk:
         return apk_folder.parent().add(f"{cc.get_code()}_server")
 
     @staticmethod
-    def from_apk_path(apk_path: "core.Path") -> "Apk":
+    def from_apk_path(
+        apk_path: "core.Path",
+        cc: Optional["core.CountryCode"] = None,
+        gv: Optional["core.GameVersion"] = None,
+    ) -> "Apk":
         cmd = f'aapt dump badging "{apk_path}"'
         result = core.Command(cmd).run()
         output = result.result
@@ -612,14 +616,13 @@ class Apk:
                 version_name = line.split("versionName='")[1].split("'")[0]
             if "package: name=" in line:
                 package_name = line.split("name='")[1].split("'")[0]
-        if version_name == "" or package_name == "":
-            raise ValueError(
-                f"Could not get version name or package name from {apk_path}"
-            )
 
         cc_str = package_name.replace("jp.co.ponos.battlecats", "")
-        cc = core.CountryCode.from_patching_code(cc_str)
-        gv = core.GameVersion.from_string(version_name)
+        if cc is None:
+            cc = core.CountryCode.from_patching_code(cc_str)
+        if gv is None:
+            gv = core.GameVersion.from_string(version_name)
+
         apk = Apk(gv, cc)
         apk_path.copy(apk.apk_path)
         apk.original_extracted_path.remove_tree().generate_dirs()
