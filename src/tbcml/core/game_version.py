@@ -105,7 +105,10 @@ class GameVersion:
         final = ""
         for split in split_gv:
             final += split.zfill(2)
-        return GameVersion(int(final))
+        try:
+            return GameVersion(int(final))
+        except ValueError:
+            return GameVersion(0)
 
     @staticmethod
     def from_string_latest(
