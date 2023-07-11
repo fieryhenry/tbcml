@@ -3,7 +3,7 @@ from typing import Any
 from tbcml import core
 
 
-class OtotoAnim:
+class OtotoAnim(core.EditableClass):
     class FilePath(enum.Enum):
         IMGCUT = "castleCustom_mainChara_001.imgcut"
         MAMODEL = "castleCustom_mainChara_001.mamodel"
@@ -45,6 +45,7 @@ class OtotoAnim:
 
     def __init__(self, model: "core.Model"):
         self.model = model
+        super().__init__()
 
     @staticmethod
     def from_game_data(game_data: "core.GamePacks") -> "OtotoAnim":
@@ -64,26 +65,16 @@ class OtotoAnim:
     def to_game_data(self, game_data: "core.GamePacks"):
         self.model.save(game_data)
 
-    def apply_dict(self, dict_data: dict[str, Any]):
-        model = dict_data.get("ototo_model")
+    def apply_dict(
+        self,
+        dict_data: dict[str, Any],
+        mod_edit_key: str,
+        convert_int: bool = True,
+    ):
+        model = dict_data.get(mod_edit_key)
         if model is not None:
             self.model.apply_dict(model)
 
     @staticmethod
     def create_empty() -> "OtotoAnim":
         return OtotoAnim(core.Model.create_empty())
-
-    @staticmethod
-    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
-        """Apply a mod to a GamePacks object.
-
-        Args:
-            mod (core.Mod): The mod.
-            game_data (GamePacks): The GamePacks object.
-        """
-        ototo_model_data = mod.mod_edits.get("ototo_model")
-        if ototo_model_data is None:
-            return
-        ototo_model = OtotoAnim.from_game_data(game_data)
-        ototo_model.apply_dict(mod.mod_edits)
-        ototo_model.to_game_data(game_data)

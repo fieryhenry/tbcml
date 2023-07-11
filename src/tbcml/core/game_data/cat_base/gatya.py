@@ -428,12 +428,13 @@ class GatyaOptionsAll:
         self.gatya_options[type] = options
 
 
-class Gatya:
+class Gatya(core.EditableClass):
     def __init__(
         self, gatya_options: GatyaOptionsAll, gatya_data_sets: GatyaDataSetsAll
     ):
         self.gatya_options = gatya_options
         self.gatya_data_sets = gatya_data_sets
+        super().__init__()
 
     def get_gatya_options(self, type: GatyaType) -> GatyaOptions:
         return self.gatya_options.gatya_options[type]
@@ -455,8 +456,13 @@ class Gatya:
         self.gatya_options.to_game_data(game_data)
         self.gatya_data_sets.to_game_data(game_data)
 
-    def apply_dict(self, dict_data: dict[str, Any]):
-        gatya_data = dict_data.get("gatya", {})
+    def apply_dict(
+        self,
+        dict_data: dict[str, Any],
+        mod_edit_key: str,
+        convert_int: bool = True,
+    ):
+        gatya_data = dict_data.get(mod_edit_key, {})
         gatya_options = gatya_data.get("gatya_options")
         if gatya_options is not None:
             self.gatya_options.apply_dict(gatya_options)
@@ -471,18 +477,3 @@ class Gatya:
     def set_gatya(self, gatya: "Gatya"):
         self.gatya_options = gatya.gatya_options
         self.gatya_data_sets = gatya.gatya_data_sets
-
-    @staticmethod
-    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
-        """Apply a mod to a GamePacks object.
-
-        Args:
-            mod (core.Mod): The mod.
-            game_data (GamePacks): The GamePacks object.
-        """
-        gatya_data = mod.mod_edits.get("gatya")
-        if gatya_data is None:
-            return
-        gatya = Gatya.from_game_data(game_data)
-        gatya.apply_dict(mod.mod_edits)
-        gatya.to_game_data(game_data)

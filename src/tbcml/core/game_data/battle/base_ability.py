@@ -222,16 +222,12 @@ class BaseAbility:
         return BaseAbility(ability_id)
 
 
-class BaseAbilities:
+class BaseAbilities(core.EditableClass):
     """A collection of base abilities."""
 
     def __init__(self, abilities: dict[int, BaseAbility]):
-        """Create a collection of base abilities.
-
-        Args:
-            abilities (dict[int, BaseAbility]): The base abilities.
-        """
-        self.abilities = abilities
+        self.data = abilities
+        super().__init__(abilities)
 
     @staticmethod
     def from_game_data(game_data: "core.GamePacks") -> "BaseAbilities":
@@ -279,7 +275,7 @@ class BaseAbilities:
         if file is None:
             return
         csv = core.CSV(file.dec_data)
-        for ability in self.abilities.values():
+        for ability in self.data.values():
             if ability.data is None:
                 continue
             csv.init_setter(ability.ability_id, 5)
@@ -291,7 +287,7 @@ class BaseAbilities:
 
         game_data.set_file(self.get_ability_data_file_name(), csv.to_data())
 
-        for ability in self.abilities.values():
+        for ability in self.data.values():
             ability.to_game_data(game_data)
 
     @staticmethod
@@ -303,26 +299,6 @@ class BaseAbilities:
         """
         return "AbilityData.csv"
 
-    def apply_dict(self, dict_data: dict[str, Any]):
-        """Apply a dictionary to the collection of base abilities.
-
-        Args:
-            dict_data (dict[str, Any]): The dictionary.
-        """
-        abilities = dict_data.get("abilities")
-        if abilities is not None:
-            current_abilities = self.abilities.copy()
-            modded_abilities = core.ModEditDictHandler(
-                abilities, current_abilities
-            ).get_dict(convert_int=True)
-            for ability_id, modded_ability in modded_abilities.items():
-                ability = current_abilities.get(ability_id)
-                if ability is None:
-                    ability = BaseAbility.create_empty(ability_id)
-                    current_abilities[ability_id] = ability
-                ability.apply_dict(modded_ability)
-            self.abilities = current_abilities
-
     @staticmethod
     def create_empty() -> "BaseAbilities":
         """Create an empty collection of base abilities.
@@ -331,18 +307,3 @@ class BaseAbilities:
             BaseAbilities: The empty collection of base abilities.
         """
         return BaseAbilities({})
-
-    @staticmethod
-    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
-        """Apply a mod to the collection of base abilities in game data.
-
-        Args:
-            mod (core.Mod): The mod.
-            game_data (GamePacks): The GamePacks object.
-        """
-        abilities_data = mod.mod_edits.get("abilities")
-        if abilities_data is None:
-            return
-        abilities = BaseAbilities.from_game_data(game_data)
-        abilities.apply_dict(mod.mod_edits)
-        abilities.to_game_data(game_data)

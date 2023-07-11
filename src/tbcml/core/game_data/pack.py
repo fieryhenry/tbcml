@@ -625,30 +625,44 @@ class GamePacks:
         Args:
             mod (core.Mod): The mod.
         """
-        core.BaseAbilities.apply_mod_to_game_data(mod, self)
-        core.Bgs.apply_mod_to_game_data(mod, self)
-        core.CharaGroups.apply_mod_to_game_data(mod, self)
-        core.ShakeEffects.apply_mod_to_game_data(mod, self)
+        core.BaseAbilities.create_empty().apply_mod_to_game_data(mod, self, "abilities")
+        core.Bgs.create_empty().apply_mod_to_game_data(mod, self, "bgs")
+        core.CharaGroups.create_empty().apply_mod_to_game_data(
+            mod, self, "chara_groups"
+        )
+        core.ShakeEffects.create_empty().apply_mod_to_game_data(
+            mod, self, "shake_effects"
+        )
 
-        core.AdjustData.apply_mod_to_game_data(mod, self)
-        core.Cats.apply_mod_to_game_data(mod, self)
-        core.Enemies.apply_mod_to_game_data(mod, self)
-        core.Gatya.apply_mod_to_game_data(mod, self)
-        core.GatyaItems.apply_mod_to_game_data(mod, self)
-        core.ItemShop.apply_mod_to_game_data(mod, self)
-        core.MatatabiData.apply_mod_to_game_data(mod, self)
-        core.SchemeItems.apply_mod_to_game_data(mod, self)
-        core.UserRankReward.apply_mod_to_game_data(mod, self)
+        core.AdjustData.create_empty().apply_mod_to_game_data(mod, self, "adjust_data")
+        core.Cats.create_empty().apply_mod_to_game_data(mod, self, "cats")
+        core.Enemies.create_empty().apply_mod_to_game_data(mod, self, "enemies")
+        core.Gatya.create_empty().apply_mod_to_game_data(mod, self, "gatya")
+        core.GatyaItems.create_empty().apply_mod_to_game_data(mod, self, "gatya_items")
+        core.ItemShop.create_empty().apply_mod_to_game_data(mod, self, "item_shop")
+        core.MatatabiData.create_empty().apply_mod_to_game_data(
+            mod, self, "matatabi_data"
+        )
+        core.SchemeItems.create_empty().apply_mod_to_game_data(
+            mod, self, "scheme_items"
+        )
+        core.UserRankReward.create_empty().apply_mod_to_game_data(
+            mod, self, "user_rank_reward"
+        )
 
-        core.Castles.apply_mod_to_game_data(mod, self)
-        core.EngineerAnim.apply_mod_to_game_data(mod, self)
-        core.EngineerLimit.apply_mod_to_game_data(mod, self)
-        core.ItemPacks.apply_mod_to_game_data(mod, self)
-        core.OtotoAnim.apply_mod_to_game_data(mod, self)
+        core.Castles.create_empty().apply_mod_to_game_data(mod, self, "castles")
+        core.EngineerAnim.create_empty().apply_mod_to_game_data(
+            mod, self, "engineer_anim"
+        )
+        core.EngineerLimit.create_empty().apply_mod_to_game_data(
+            mod, self, "engineer_limit"
+        )
+        core.ItemPacks.create_empty().apply_mod_to_game_data(mod, self, "item_packs")
+        core.OtotoAnim.create_empty().apply_mod_to_game_data(mod, self, "ototo_anim")
 
-        core.Maps.apply_mod_to_game_data(mod, self)
+        core.Maps.create_empty().apply_mod_to_game_data(mod, self, "maps")
 
-        core.Localizable.apply_mod_to_game_data(mod, self)
+        core.Localizable.create_empty().apply_mod_to_game_data(mod, self, "localizable")
 
         for file_name, data in mod.game_files.items():
             self.set_file(file_name, data)

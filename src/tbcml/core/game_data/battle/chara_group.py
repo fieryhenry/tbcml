@@ -54,14 +54,15 @@ class CharaGroupSet:
         return CharaGroupSet(group_id)
 
 
-class CharaGroups:
+class CharaGroups(core.EditableClass):
     def __init__(self, groups: dict[int, CharaGroupSet]):
         """Initializes a new CharaGroups.
 
         Args:
             groups (dict[int, CharaGroupSet]): The groups in the CharaGroups.
         """
-        self.groups = groups
+        self.data = groups
+        super().__init__(groups)
 
     @staticmethod
     def get_file_name() -> str:
@@ -109,7 +110,7 @@ class CharaGroups:
         if file is None:
             return
         csv = core.CSV(file.dec_data)
-        for group in self.groups.values():
+        for group in self.data.values():
             csv.init_setter(group.group_id, 3, index_line_index=0)
             csv.set_str(group.group_id)
             csv.set_str(group.text_id)
@@ -126,33 +127,3 @@ class CharaGroups:
             CharaGroups: The empty CharaGroups.
         """
         return CharaGroups({})
-
-    def apply_dict(self, dict_data: dict[str, Any]):
-        groups = dict_data.get("chara_groups")
-        if groups is not None:
-            current_groups = self.groups.copy()
-            modded_groups = core.ModEditDictHandler(groups, current_groups).get_dict(
-                convert_int=True
-            )
-            for id, modded_group in modded_groups.items():
-                group = current_groups.get(id)
-                if group is None:
-                    group = CharaGroupSet.create_empty(id)
-                group.apply_dict(modded_group)
-                current_groups[id] = group
-            self.groups = current_groups
-
-    @staticmethod
-    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
-        """Apply a mod to a GamePacks object.
-
-        Args:
-            mod (core.Mod): The mod.
-            game_data (GamePacks): The GamePacks object.
-        """
-        chara_data = mod.mod_edits.get("chara_groups")
-        if chara_data is None:
-            return
-        groups = CharaGroups.from_game_data(game_data)
-        groups.apply_dict(mod.mod_edits)
-        groups.to_game_data(game_data)

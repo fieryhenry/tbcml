@@ -636,9 +636,10 @@ class Enemy:
         )
 
 
-class Enemies:
+class Enemies(core.EditableClass):
     def __init__(self, enemies: dict[int, Enemy]):
-        self.enemies = enemies
+        self.data = enemies
+        super().__init__(self.data)
 
     @staticmethod
     def from_game_data(game_data: "core.GamePacks") -> "Enemies":
@@ -662,28 +663,28 @@ class Enemies:
         stats = EnemyStatsData(
             {
                 enemy.enemy_id: enemy.stats
-                for enemy in self.enemies.values()
+                for enemy in self.data.values()
                 if enemy.stats is not None
             }
         )
         names = EnemyNames(
             {
                 enemy.enemy_id: enemy.name
-                for enemy in self.enemies.values()
+                for enemy in self.data.values()
                 if enemy.name is not None
             }
         )
         descriptions = EnemyDescriptions(
             {
                 enemy.enemy_id: enemy.description
-                for enemy in self.enemies.values()
+                for enemy in self.data.values()
                 if enemy.description is not None
             }
         )
         stats.to_game_data(game_data)
         names.to_game_data(game_data)
         descriptions.to_game_data(game_data, names.names)
-        for enemy in self.enemies.values():
+        for enemy in self.data.values():
             enemy.to_game_data(game_data)
 
     @staticmethod
@@ -691,30 +692,7 @@ class Enemies:
         return Enemies({})
 
     def get_enemy(self, enemy_id: int) -> Optional[Enemy]:
-        return self.enemies.get(enemy_id)
+        return self.data.get(enemy_id)
 
     def set_enemy(self, enemy: Enemy):
-        self.enemies[enemy.enemy_id] = enemy
-
-    @staticmethod
-    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
-        enemies_data = mod.mod_edits.get("enemies")
-        if enemies_data is None:
-            return
-
-        enemies_dict: dict[int, Enemy] = {}
-
-        current_enemies = Enemies.from_game_data(game_data)
-        mod_enemies = core.ModEditDictHandler(
-            enemies_data, current_enemies.enemies
-        ).get_dict(convert_int=True)
-
-        for enemy_id, enemy_data in mod_enemies.items():
-            game_enemy = current_enemies.get_enemy(enemy_id)
-            if game_enemy is None:
-                game_enemy = Enemy.create_empty(enemy_id)
-            game_enemy.apply_dict(enemy_data)
-            enemies_dict[enemy_id] = game_enemy
-
-        enemies = Enemies(enemies_dict)
-        enemies.to_game_data(game_data)
+        self.data[enemy.enemy_id] = enemy

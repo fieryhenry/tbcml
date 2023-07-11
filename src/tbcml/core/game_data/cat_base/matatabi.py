@@ -45,9 +45,10 @@ class Matatabi:
         )
 
 
-class MatatabiData:
+class MatatabiData(core.EditableClass):
     def __init__(self, matatabis: dict[int, Matatabi]):
-        self.matatabis = matatabis
+        self.data = matatabis
+        super().__init__(matatabis)
 
     @staticmethod
     def get_file_name() -> str:
@@ -104,10 +105,10 @@ class MatatabiData:
         if file is None:
             return
         csv = core.CSV(file.dec_data)
-        remaining_matatabis = self.matatabis.copy()
+        remaining_matatabis = self.data.copy()
         for i, line in enumerate(csv.lines[1:]):
             try:
-                matatabi = self.matatabis[i]
+                matatabi = self.data[i]
             except KeyError:
                 continue
             del remaining_matatabis[i]
@@ -125,55 +126,20 @@ class MatatabiData:
             csv.lines[i + 1] = line
         for i in remaining_matatabis:
             new_line: list[str] = [
-                str(self.matatabis[i].gatya_id),
-                str(int(self.matatabis[i].seed)),
-                str(self.matatabis[i].group),
-                str(self.matatabis[i].sort),
+                str(self.data[i].gatya_id),
+                str(int(self.data[i].seed)),
+                str(self.data[i].group),
+                str(self.data[i].sort),
             ]
-            if self.matatabis[i].require is not None:
-                new_line.append(str(self.matatabis[i].require))
-            text = self.matatabis[i].text
+            if self.data[i].require is not None:
+                new_line.append(str(self.data[i].require))
+            text = self.data[i].text
             if text is not None:
                 new_line.append(text)
-            growup = self.matatabis[i].growup
+            growup = self.data[i].growup
             if growup is not None:
                 for item in growup:
                     new_line.append(str(item))
             csv.lines.append(new_line)
 
         game_data.set_file(MatatabiData.get_file_name(), csv.to_data())
-
-    def apply_dict(self, dict_data: dict[str, Any]):
-        """Applies a dict to the MatatabiData object.
-
-        Args:
-            dict_data (dict[str, Any]): The dict to apply.
-        """
-        matatabi = dict_data.get("matatabi")
-        if matatabi is None:
-            return
-        current_matatabi = self.matatabis.copy()
-        modded_matatabi = core.ModEditDictHandler(matatabi, current_matatabi).get_dict(
-            convert_int=True
-        )
-        for id, modded_bg in modded_matatabi.items():
-            bg = self.matatabis.get(id)
-            if bg is None:
-                bg = Matatabi.create_empty(id)
-            bg.apply_dict(modded_bg)
-            self.matatabis[id] = bg
-
-    @staticmethod
-    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
-        """Apply a mod to a GamePacks object.
-
-        Args:
-            mod (core.Mod): The mod.
-            game_data (GamePacks): The GamePacks object.
-        """
-        matatabi_data = mod.mod_edits.get("matatabi")
-        if matatabi_data is None:
-            return
-        matatabi = MatatabiData.from_game_data(game_data)
-        matatabi.apply_dict(matatabi_data)
-        matatabi.to_game_data(game_data)

@@ -32,9 +32,10 @@ class CastleMixRecipe:
         return CastleMixRecipe(index, 0, 0, 0, 0, 0)
 
 
-class CastleMixRecipies:
+class CastleMixRecipies(core.EditableClass):
     def __init__(self, recipies: dict[int, CastleMixRecipe]):
-        self.recipies = recipies
+        self.data = recipies
+        super().__init__(recipies)
 
     @staticmethod
     def get_file_name() -> str:
@@ -68,9 +69,9 @@ class CastleMixRecipies:
         if file is None:
             return
         csv = core.CSV(file.dec_data)
-        remaining_recipies = self.recipies.copy()
+        remaining_recipies = self.data.copy()
         for i, line in enumerate(csv.lines):
-            recipe = self.recipies.get(i)
+            recipe = self.data.get(i)
             if recipe is None:
                 continue
             line[0] = str(recipe.product_id)
@@ -93,28 +94,6 @@ class CastleMixRecipies:
     @staticmethod
     def create_empty():
         return CastleMixRecipies({})
-
-    def apply_dict(self, dict_data: dict[str, Any]):
-        recipies = dict_data.get("recipies", {})
-        for index, recipe in recipies.items():
-            if index not in self.recipies:
-                self.recipies[index] = CastleMixRecipe.create_empty(index)
-            self.recipies[index].apply_dict(recipe)
-
-    @staticmethod
-    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
-        """Apply a mod to a GamePacks object.
-
-        Args:
-            mod (core.Mod): The mod.
-            game_data (GamePacks): The GamePacks object.
-        """
-        recipies_data = mod.mod_edits.get("recipies")
-        if recipies_data is None:
-            return
-        recipies = CastleMixRecipies.from_game_data(game_data)
-        recipies.apply_dict(mod.mod_edits)
-        recipies.to_game_data(game_data)
 
 
 class BaseDecoRecipeLevel:
@@ -1070,6 +1049,10 @@ class CastleEffectsData:
     def create_empty():
         return CastleEffectsData({})
 
+    def apply_dict(self, dict_data: dict[str, Any]):
+        for level, effect in self.effects.items():
+            effect.apply_dict(dict_data.get(str(level), {}))
+
 
 class RecipeDescriptionCastle:
     def __init__(
@@ -1425,14 +1408,15 @@ class Castle:
         )
 
 
-class Castles:
+class Castles(core.EditableClass):
     def __init__(
         self,
         castles: dict[int, Castle],
         castle_effect_data: CastleEffectsData,
     ):
-        self.castles = castles
+        self.data = castles
         self.castle_effects = castle_effect_data
+        super().__init__(self.data)
 
     @staticmethod
     def from_game_data(game_data: "core.GamePacks"):
@@ -1476,7 +1460,7 @@ class Castles:
         deco_effects_data = CannonEffectsData.create_empty()
         status_data = CannonStatusesData.create_empty()
 
-        for castle in self.castles.values():
+        for castle in self.data.values():
             castle.to_game_data(game_data)
             recipe_description_data.recipies[castle.id] = castle.recipe_description
             recipe_unlock_data.castles[castle.id] = castle.recipe_unlock
@@ -1495,26 +1479,21 @@ class Castles:
         status_data.to_game_data(game_data)
         self.castle_effects.to_game_data(game_data)
 
-    def apply_dict(self, data: dict[str, Any]):
-        castles = data.get("castles")
-        if castles is not None:
-            current_castles = self.castles.copy()
-            modded_castles = core.ModEditDictHandler(castles, current_castles).get_dict(
-                convert_int=True
-            )
-            for id, modded_castle in modded_castles.items():
-                castle = current_castles.get(id)
-                if castle is None:
-                    castle = Castle.create_empty(id)
-                    current_castles[id] = castle
-                castle.apply_dict(modded_castle)
-            self.castles = current_castles
+    def apply_dict(
+        self,
+        dict_data: dict[str, Any],
+        mod_edit_key: str,
+        convert_int: bool = True,
+    ):
+        data = dict_data.get(mod_edit_key)
+        if data is None:
+            return
+        super().apply_dict(data, "castles", convert_int=convert_int)
+
+        castle_effects = data.get("castle_effects")
+        if castle_effects is not None:
+            self.castle_effects.apply_dict(castle_effects)
 
     @staticmethod
-    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
-        if mod.mod_edits.get("castles") is None:
-            return
-        current_castles = Castles.from_game_data(game_data)
-        current_castles.apply_dict(mod.mod_edits)
-
-        current_castles.to_game_data(game_data)
+    def create_empty() -> "Castles":
+        return Castles({}, CastleEffectsData.create_empty())

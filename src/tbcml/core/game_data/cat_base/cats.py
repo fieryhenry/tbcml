@@ -1371,17 +1371,18 @@ class NyankoPictureBook:
 
         csv = core.CSV(file.dec_data)
         data: dict[int, NyankoPictureBookData] = {}
-        for cat_id, line in enumerate(csv):
+        for cat_id in range(len(csv.lines)):
+            csv.init_getter(cat_id)
             data[cat_id] = NyankoPictureBookData(
                 cat_id,
-                bool(int(line[0])),
-                bool(int(line[1])),
-                int(line[2]),
-                int(line[3]),
-                int(line[4]),
-                int(line[5]),
-                int(line[6]),
-                int(line[7]),
+                csv.get_bool(),
+                csv.get_bool(),
+                csv.get_int(),
+                csv.get_int(),
+                csv.get_int(),
+                csv.get_int(),
+                csv.get_int(),
+                csv.get_int(),
             )
         nypb = NyankoPictureBook(data)
         game_data.nyanko_picture_book = nypb
@@ -1394,16 +1395,15 @@ class NyankoPictureBook:
 
         csv = core.CSV(file.dec_data)
         for data in self.data.values():
-            line: list[str] = []
-            line.append("1" if data.is_displayed_in_catguide else "0")
-            line.append("1" if data.limited else "0")
-            line.append(str(data.total_forms))
-            line.append(str(data.hint_display_type))
-            line.append(str(data.scale_0))
-            line.append(str(data.scale_1))
-            line.append(str(data.scale_2))
-            line.append(str(data.scale_3))
-            csv.lines[data.cat_id] = line
+            csv.init_setter(data.cat_id, 8)
+            csv.set_str(data.is_displayed_in_catguide)
+            csv.set_str(data.limited)
+            csv.set_str(data.total_forms)
+            csv.set_str(data.hint_display_type)
+            csv.set_str(data.scale_0)
+            csv.set_str(data.scale_1)
+            csv.set_str(data.scale_2)
+            csv.set_str(data.scale_3)
 
         game_data.set_file(NyankoPictureBook.get_file_name(), csv.to_data())
 
@@ -1831,12 +1831,13 @@ class Cat:
         return new_form
 
 
-class Cats:
+class Cats(core.EditableClass):
     def __init__(
         self,
         cats: dict[int, Cat],
     ):
-        self.cats = cats
+        self.data = cats
+        super().__init__(self.data)
 
     @staticmethod
     def from_game_data(
@@ -1869,7 +1870,7 @@ class Cats:
         talents = Talents({})
         nyan = NyankoPictureBook({})
         evov_text = EvolveText({})
-        for cat in self.cats.values():
+        for cat in self.data.values():
             cat.to_game_data(game_data)
             unit_buy.set(cat)
             talents.set(cat)
@@ -1881,10 +1882,10 @@ class Cats:
         evov_text.to_game_data(game_data)
 
     def get_cat(self, cat_id: int) -> Optional[Cat]:
-        return self.cats.get(cat_id)
+        return self.data.get(cat_id)
 
     def set_cat(self, cat: Cat):
-        self.cats[cat.cat_id] = cat
+        self.data[cat.cat_id] = cat
 
     @staticmethod
     def create_empty() -> "Cats":
@@ -1893,26 +1894,3 @@ class Cats:
     @staticmethod
     def get_total_cats(game_data: "core.GamePacks") -> int:
         return len(NyankoPictureBook.from_game_data(game_data).data)
-
-    @staticmethod
-    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
-        cats_data = mod.mod_edits.get("cats")
-        if cats_data is None:
-            return
-
-        cats_dict: dict[int, Cat] = {}
-
-        current_cats = Cats.from_game_data(game_data)
-        mod_cats = core.ModEditDictHandler(cats_data, current_cats.cats).get_dict(
-            convert_int=True
-        )
-
-        for cat_id, cat_data in mod_cats.items():
-            game_cat = current_cats.get_cat(int(cat_id))
-            if game_cat is None:
-                game_cat = Cat.create_empty(int(cat_id))
-            game_cat.apply_dict(cat_data)
-            cats_dict[int(cat_id)] = game_cat
-
-        cats = Cats(cats_dict)
-        cats.to_game_data(game_data)

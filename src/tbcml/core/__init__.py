@@ -8,6 +8,7 @@ from .mods.bc_mod import (
 from .mods.smali import SmaliHandler, SmaliSet, Smali
 from .mods.frida_script import FridaScripts, FridaScript
 from .mods.mod_manager import ModManager
+from .mods.editable import EditableClass
 from .game_data.cat_base.unit import (
     unit_bool,
     unit_int,

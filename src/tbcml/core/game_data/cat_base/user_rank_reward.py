@@ -47,9 +47,10 @@ class RewardSet:
         return RewardSet(id, 0, [], "")
 
 
-class UserRankReward:
+class UserRankReward(core.EditableClass):
     def __init__(self, reward_sets: dict[int, RewardSet]):
-        self.reward_sets = reward_sets
+        self.data = reward_sets
+        super().__init__(self.data)
 
     @staticmethod
     def get_file_name() -> str:
@@ -107,11 +108,11 @@ class UserRankReward:
         tsv = core.CSV(name_text_data.dec_data, delimeter="\t")
 
         csv = core.CSV(csv_data.dec_data)
-        remaining_rewards = self.reward_sets.copy()
+        remaining_rewards = self.data.copy()
         for i, line in enumerate(csv):
             reward_threshold = int(line[0])
             try:
-                rewards = self.reward_sets[i].rewards
+                rewards = self.data[i].rewards
             except KeyError:
                 continue
             line_n: list[str] = []
@@ -125,7 +126,7 @@ class UserRankReward:
             csv.lines[i] = line_n
             del remaining_rewards[i]
 
-            tsv_line_n = [self.reward_sets[i].text]
+            tsv_line_n = [self.data[i].text]
             tsv.lines[i] = tsv_line_n
 
         for reward_set in remaining_rewards.values():
@@ -142,44 +143,13 @@ class UserRankReward:
         game_data.set_file(UserRankReward.get_file_name(), csv.to_data())
         game_data.set_file(UserRankReward.get_file_name_text(), tsv.to_data())
 
-    def apply_dict(self, dict_data: dict[str, Any]):
-        reward_sets = dict_data.get("user_rank_reward_sets")
-        if reward_sets is not None:
-            current_reward_sets = {
-                i: reward_set for i, reward_set in self.reward_sets.items()
-            }
-            modded_reward_sets = core.ModEditDictHandler(
-                reward_sets, current_reward_sets
-            ).get_dict(convert_int=True)
-            for reward_set_id, modded_reward_set in modded_reward_sets.items():
-                reward_set = current_reward_sets.get(reward_set_id)
-                if reward_set is None:
-                    reward_set = RewardSet.create_empty(reward_set_id)
-                    self.reward_sets[reward_set_id] = reward_set
-                reward_set.apply_dict(modded_reward_set)
-
     @staticmethod
     def create_empty() -> "UserRankReward":
         return UserRankReward({})
 
     def get_reward(self, index: int) -> Optional[RewardSet]:
-        return self.reward_sets.get(index)
+        return self.data.get(index)
 
     def set_reward(self, index: int, reward: RewardSet) -> None:
         reward.index = index
-        self.reward_sets[index] = reward
-
-    @staticmethod
-    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
-        """Apply a mod to a GamePacks object.
-
-        Args:
-            mod (core.Mod): The mod.
-            game_data (GamePacks): The GamePacks object.
-        """
-        user_rank_reward_sets_data = mod.mod_edits.get("user_rank_reward_sets")
-        if user_rank_reward_sets_data is None:
-            return
-        user_rank_reward_sets = UserRankReward.from_game_data(game_data)
-        user_rank_reward_sets.apply_dict(mod.mod_edits)
-        user_rank_reward_sets.to_game_data(game_data)
+        self.data[index] = reward

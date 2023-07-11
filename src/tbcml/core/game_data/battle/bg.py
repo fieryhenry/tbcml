@@ -229,7 +229,7 @@ class Bg:
         game_data.set_file(file_name, data)
 
 
-class Bgs:
+class Bgs(core.EditableClass):
     """A class that represents the background data."""
 
     def __init__(self, bgs: dict[int, Bg]):
@@ -238,7 +238,8 @@ class Bgs:
         Args:
             bgs (dict[int, Bg]): A dictionary of Bg objects.
         """
-        self.bgs = bgs
+        self.data = bgs
+        super().__init__(bgs)
 
     @staticmethod
     def get_file_name() -> str:
@@ -321,7 +322,7 @@ class Bgs:
         if file is None:
             return
         csv = core.CSV(file.dec_data)
-        for bg in self.bgs.values():
+        for bg in self.data.values():
             csv.init_setter(bg.id, 15, index_line_index=0)
             csv.set_str(bg.id)
             if bg.sky_top is not None:
@@ -344,30 +345,10 @@ class Bgs:
             csv.set_str(bg.is_upper_side_bg_enabled)
             csv.set_list(bg.extra)
 
-        for bg in self.bgs.values():
+        for bg in self.data.values():
             bg.to_game_data(game_data)
 
         game_data.set_file(Bgs.get_file_name(), csv.to_data())
-
-    def get_bg(self, id: int) -> Optional[Bg]:
-        """Gets a Bg by its id.
-
-        Args:
-            id (int): The id of the Bg to get.
-
-        Returns:
-            Bg: The Bg with the given id.
-        """
-        return self.bgs.get(id)
-
-    def set_bg(self, id: int, bg: Bg):
-        """Sets a Bg by its id.
-
-        Args:
-            id (int): The id of the Bg to set.
-            bg (Bg): The Bg to set.
-        """
-        self.bgs[id] = bg
 
     @staticmethod
     def create_empty() -> "Bgs":
@@ -377,38 +358,3 @@ class Bgs:
             Bgs: The created Bgs object.
         """
         return Bgs({})
-
-    def apply_dict(self, dict_data: dict[str, Any]):
-        """Applies a dict to the Bgs object.
-
-        Args:
-            dict_data (dict[str, Any]): The dict to apply.
-        """
-        bgs = dict_data.get("bgs")
-        if bgs is None:
-            return
-        current_bgs = self.bgs.copy()
-        modded_bgs = core.ModEditDictHandler(bgs, current_bgs).get_dict(
-            convert_int=True
-        )
-        for id, modded_bg in modded_bgs.items():
-            bg = self.bgs.get(id)
-            if bg is None:
-                bg = Bg.create_empty(id)
-            bg.apply_dict(modded_bg)
-            self.bgs[id] = bg
-
-    @staticmethod
-    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
-        """Apply a mod to a GamePacks object.
-
-        Args:
-            mod (core.Mod): The mod.
-            game_data (GamePacks): The GamePacks object.
-        """
-        bgs_data = mod.mod_edits.get("bgs")
-        if bgs_data is None:
-            return
-        bgs = Bgs.from_game_data(game_data)
-        bgs.apply_dict(bgs_data)
-        bgs.to_game_data(game_data)

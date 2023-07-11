@@ -60,14 +60,15 @@ class ShakeEffect:
         return ShakeEffect(id)
 
 
-class ShakeEffects:
+class ShakeEffects(core.EditableClass):
     def __init__(self, effects: dict[int, ShakeEffect]):
         """Initializes a new ShakeEffects object. This object is a collection of ShakeEffects.
 
         Args:
             effects (dict[int, ShakeEffect]): The ShakeEffects to add to the ShakeEffects object.
         """
-        self.effects = effects
+        self.data = effects
+        super().__init__(effects)
 
     @staticmethod
     def get_file_name() -> str:
@@ -127,7 +128,7 @@ class ShakeEffects:
         if file is None:
             return
         csv = core.CSV(file.dec_data)
-        for effect in self.effects.values():
+        for effect in self.data.values():
             csv.init_setter(effect.id, 7, index_line_index=0)
             csv.set_str(effect.id)
             csv.set_str(effect.start_distance)
@@ -147,39 +148,3 @@ class ShakeEffects:
             ShakeEffects: The empty ShakeEffects object.
         """
         return ShakeEffects({})
-
-    def apply_dict(self, dict_data: dict[str, Any]):
-        """Applies the data from a dictionary to the ShakeEffects.
-
-        Args:
-            dict_data (dict[str, Any]): The dictionary to apply the data from.
-        """
-        effects = dict_data.get("effects")
-        if effects is not None:
-            current_effects = self.effects.copy()
-            modded_effects = core.ModEditDictHandler(effects, current_effects).get_dict(
-                convert_int=True
-            )
-            for effect_id, effect_data in modded_effects.items():
-                if effect_id in current_effects:
-                    effect = current_effects[effect_id]
-                else:
-                    effect = ShakeEffect.create_empty(effect_id)
-                effect.apply_dict(effect_data)
-                current_effects[effect_id] = effect
-            self.effects = current_effects
-
-    @staticmethod
-    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
-        """Apply a mod to a GamePacks object.
-
-        Args:
-            mod (core.Mod): The mod.
-            game_data (GamePacks): The GamePacks object.
-        """
-        effect_data = mod.mod_edits.get("effects")
-        if effect_data is None:
-            return
-        effects = ShakeEffects.from_game_data(game_data)
-        effects.apply_dict(effect_data)
-        effects.to_game_data(game_data)

@@ -573,7 +573,7 @@ if __name__ == "__main__":
     game_packs = core.GamePacks.from_apk(apk)
     cat_id = 43
     cats = core.Cats.from_game_data(game_packs, [cat_id])
-    cat = cats.cats[cat_id]
+    cat = cats.data[cat_id]
     form = cat.forms[core.CatFormType.THIRD]
     model_ = form.anim.model
 

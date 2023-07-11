@@ -102,7 +102,7 @@ class GatyaTrackEvents:
         return GatyaTrackEvents(gatya_type, {})
 
 
-class GatyaTrackData:
+class GatyaTrackData(core.EditableClass):
     """A class to represent the gatya track data."""
 
     def __init__(self, data: dict["core.GatyaType", GatyaTrackEvents]):
@@ -112,28 +112,7 @@ class GatyaTrackData:
             data (dict[core.GatyaType, GatyaTrackEvents]): The data.
         """
         self.data = data
-
-    def apply_dict(self, dict_data: dict[str, Any]):
-        """Apply a dict to the GatyaTrackData.
-
-        Args:
-            dict_data (dict[str, Any]): The dict to apply.
-        """
-        data = dict_data.get("gatya_track_data")
-        if data is not None:
-            current_data = self.data.copy()
-            modded_data = core.ModEditDictHandler(data, current_data).get_dict(
-                convert_int=True
-            )
-            for id, modded_event in modded_data.items():
-                event = self.data.get(id)
-                if event is None:
-                    event = GatyaTrackEvents.create_empty(
-                        core.GatyaType(id),
-                    )
-                event.apply_dict(modded_event)
-                current_data[id] = event
-            self.data = current_data
+        super().__init__(self.data)
 
     @staticmethod
     def create_empty() -> "GatyaTrackData":
@@ -240,21 +219,6 @@ class GatyaTrackData:
             csv.to_data(),
         )
 
-    @staticmethod
-    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
-        """Apply gatya_track_data mod to the game data.
-
-        Args:
-            mod (core.Mod): The mod.
-            game_data (GamePacks): The GamePacks object.
-        """
-        gatya_data = mod.mod_edits.get("gatya_track_data")
-        if gatya_data is None:
-            return
-        gatya = GatyaTrackData.from_game_data(game_data)
-        gatya.apply_dict(mod.mod_edits)
-        gatya.to_game_data(game_data)
-
 
 class LegendStageTrack:
     """A LegendStageTrack event."""
@@ -342,7 +306,7 @@ class LegendStageTrackEvents:
         return LegendStageTrackEvents(map_id, {})
 
 
-class LegendStageTrackData:
+class LegendStageTrackData(core.EditableClass):
     """A LegendStageTrackData."""
 
     def __init__(self, events: dict[int, LegendStageTrackEvents]):
@@ -351,29 +315,8 @@ class LegendStageTrackData:
         Args:
             events (dict[int, LegendStageTrackEvents]): The events.
         """
-        self.events = events
-
-    def apply_dict(self, dict_data: dict[str, Any]):
-        """Apply the mod edits to the LegendStageTrackData.
-
-        Args:
-            dict_data (dict[str, Any]): The mod edits.
-        """
-        events = dict_data.get("legend_stage_track_data")
-        if events is not None:
-            current_events = self.events.copy()
-            modded_events = core.ModEditDictHandler(events, current_events).get_dict(
-                convert_int=True
-            )
-            for id, modded_event in modded_events.items():
-                event = self.events.get(id)
-                if event is None:
-                    event = LegendStageTrackEvents.create_empty(
-                        id,
-                    )
-                event.apply_dict(modded_event)
-                current_events[id] = event
-            self.events = current_events
+        self.data = events
+        super().__init__(self.data)
 
     @staticmethod
     def get_file_name(lang: str) -> str:
@@ -429,7 +372,7 @@ class LegendStageTrackData:
             return
         csv_data = core.CSV(file.dec_data, "\t")
 
-        remaining_events = self.events.copy()
+        remaining_events = self.data.copy()
         for i, line in enumerate(csv_data.lines):
             map_id = int(line[0])
             stage_index = int(line[1])
@@ -457,21 +400,6 @@ class LegendStageTrackData:
             LegendStageTrackData.get_file_name(game_data.localizable.get_lang()),
             csv_data.to_data(),
         )
-
-    @staticmethod
-    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
-        """Apply the mod legend_stage_track_data to the game data.
-
-        Args:
-            mod (core.Mod): The mod.
-            game_data (GamePacks): The GamePacks object.
-        """
-        track_data = mod.mod_edits.get("legend_stage_track_data")
-        if track_data is None:
-            return
-        track = LegendStageTrackData.from_game_data(game_data)
-        track.apply_dict(mod.mod_edits)
-        track.to_game_data(game_data)
 
     @staticmethod
     def create_empty() -> "LegendStageTrackData":
@@ -573,7 +501,7 @@ class StageClearTrackEvents:
         return StageClearTrackEvents(chapter_id, {})
 
 
-class StageClearTrackData:
+class StageClearTrackData(core.EditableClass):
     """StageClearTrackData."""
 
     def __init__(self, events: dict[int, StageClearTrackEvents]):
@@ -582,29 +510,8 @@ class StageClearTrackData:
         Args:
             events (dict[int, StageClearTrackEvents]): The events.
         """
-        self.events = events
-
-    def apply_dict(self, dict_data: dict[str, Any]):
-        """Apply the dict data to the StageClearTrackData.
-
-        Args:
-            dict_data (dict[str, Any]): The dict data.
-        """
-        events = dict_data.get("stage_clear_track_data")
-        if events is not None:
-            current_events = self.events.copy()
-            modded_events = core.ModEditDictHandler(events, current_events).get_dict(
-                convert_int=True
-            )
-            for id, modded_event in modded_events.items():
-                event = self.events.get(id)
-                if event is None:
-                    event = StageClearTrackEvents.create_empty(
-                        id,
-                    )
-                event.apply_dict(modded_event)
-                current_events[id] = event
-            self.events = current_events
+        self.data = events
+        super().__init__(self.data)
 
     @staticmethod
     def get_file_name(lang: str) -> str:
@@ -660,7 +567,7 @@ class StageClearTrackData:
             return
         csv_data = core.CSV(file.dec_data, "\t")
 
-        remaining_events = self.events.copy()
+        remaining_events = self.data.copy()
         for i, line in enumerate(csv_data.lines):
             chapter_id = int(line[0])
             stage_id = int(line[1])
@@ -685,21 +592,6 @@ class StageClearTrackData:
             StageClearTrackData.get_file_name(game_data.localizable.get_lang()),
             csv_data.to_data(),
         )
-
-    @staticmethod
-    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
-        """Apply the mod stage clear track data to the game data.
-
-        Args:
-            mod (core.Mod): The mod.
-            game_data (GamePacks): The GamePacks object.
-        """
-        track_data = mod.mod_edits.get("stage_clear_track_data")
-        if track_data is None:
-            return
-        track = StageClearTrackData.from_game_data(game_data)
-        track.apply_dict(mod.mod_edits)
-        track.to_game_data(game_data)
 
     @staticmethod
     def create_empty() -> "StageClearTrackData":
@@ -753,7 +645,7 @@ class PurchaseEvent:
         return PurchaseEvent(product_id)
 
 
-class PurchaseTrackData:
+class PurchaseTrackData(core.EditableClass):
     """Represents the PurchaseTrackData."""
 
     def __init__(self, events: dict[str, PurchaseEvent]):
@@ -762,27 +654,8 @@ class PurchaseTrackData:
         Args:
             events (dict[str, PurchaseEvent]): The events.
         """
-        self.events = events
-
-    def apply_dict(self, dict_data: dict[str, Any]):
-        """Apply the dict data to the PurchaseTrackData.
-
-        Args:
-            dict_data (dict[str, Any]): The dict data.
-        """
-        events = dict_data.get("purchase_track_data")
-        if events is not None:
-            current_events = self.events.copy()
-            modded_events = core.ModEditDictHandler(events, current_events).get_dict()
-            for id, modded_event in modded_events.items():
-                event = self.events.get(id)
-                if event is None:
-                    event = PurchaseEvent.create_empty(
-                        id,
-                    )
-                event.apply_dict(modded_event)
-                current_events[id] = event
-            self.events = current_events
+        self.data = events
+        super().__init__(self.data)
 
     @staticmethod
     def get_file_name(lang: str) -> str:
@@ -833,7 +706,7 @@ class PurchaseTrackData:
             return
         csv_data = core.CSV(file.dec_data, "\t")
 
-        remaining_events = self.events.copy()
+        remaining_events = self.data.copy()
         for line in csv_data.lines:
             product_id = line[0]
             event = remaining_events.get(product_id)
@@ -857,21 +730,6 @@ class PurchaseTrackData:
             PurchaseTrackData.get_file_name(game_data.localizable.get_lang()),
             csv_data.to_data(),
         )
-
-    @staticmethod
-    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
-        """Apply mod purchases to the game data.
-
-        Args:
-            mod (core.Mod): The mod.
-            game_data (GamePacks): The GamePacks object.
-        """
-        track_data = mod.mod_edits.get("purchase_track_data")
-        if track_data is None:
-            return
-        track = PurchaseTrackData.from_game_data(game_data)
-        track.apply_dict(mod.mod_edits)
-        track.to_game_data(game_data)
 
     @staticmethod
     def create_empty() -> "PurchaseTrackData":
@@ -921,7 +779,7 @@ class UserRankTrack:
         return UserRankTrack(user_rank)
 
 
-class UserRankTrackData:
+class UserRankTrackData(core.EditableClass):
     """Represents the UserRankTrackData."""
 
     def __init__(self, events: dict[int, UserRankTrack]):
@@ -930,27 +788,8 @@ class UserRankTrackData:
         Args:
             events (dict[int, UserRankTrack]): The events.
         """
-        self.events = events
-
-    def apply_dict(self, dict_data: dict[str, Any]):
-        """Apply the dict data to the UserRankTrackData.
-
-        Args:
-            dict_data (dict[str, Any]): The dict data.
-        """
-        events = dict_data.get("user_rank_track_data")
-        if events is not None:
-            current_events = self.events.copy()
-            modded_events = core.ModEditDictHandler(events, current_events).get_dict()
-            for id, modded_event in modded_events.items():
-                event = self.events.get(id)
-                if event is None:
-                    event = UserRankTrack.create_empty(
-                        id,
-                    )
-                event.apply_dict(modded_event)
-                current_events[id] = event
-            self.events = current_events
+        self.data = events
+        super().__init__(self.data)
 
     @staticmethod
     def get_file_name(lang: str) -> str:
@@ -1000,7 +839,7 @@ class UserRankTrackData:
             return
         csv_data = core.CSV(file.dec_data, "\t")
 
-        remaining_events = self.events.copy()
+        remaining_events = self.data.copy()
         for line in csv_data.lines:
             user_rank = int(line[0])
             event = remaining_events.get(user_rank)
@@ -1023,21 +862,6 @@ class UserRankTrackData:
         )
 
     @staticmethod
-    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
-        """Apply mod user_rank_track_data to the game data.
-
-        Args:
-            mod (core.Mod): The mod.
-            game_data (GamePacks): The GamePacks object.
-        """
-        track_data = mod.mod_edits.get("user_rank_track_data")
-        if track_data is None:
-            return
-        track = UserRankTrackData.from_game_data(game_data)
-        track.apply_dict(mod.mod_edits)
-        track.to_game_data(game_data)
-
-    @staticmethod
     def create_empty() -> "UserRankTrackData":
         """Create an empty UserRankTrackData.
 
@@ -1047,7 +871,7 @@ class UserRankTrackData:
         return UserRankTrackData({})
 
 
-class AdjustData:
+class AdjustData(core.EditableClass):
     """Represents the AdjustData."""
 
     def __init__(
@@ -1072,6 +896,7 @@ class AdjustData:
         self.stage_clear_track_data = stage_clear_track_data
         self.purchase_track_data = purchase_track_data
         self.user_rank_track_data = user_rank_track_data
+        super().__init__()
 
     def get_gatya_track_data(self) -> GatyaTrackData:
         """Get the GatyaTrackData.
@@ -1123,27 +948,30 @@ class AdjustData:
             return UserRankTrackData.create_empty()
         return self.user_rank_track_data
 
-    def apply_dict(self, dict_data: dict[str, Any]):
+    def apply_dict(
+        self,
+        dict_data: dict[str, Any],
+        mod_edit_key: str,
+        convert_int: bool = True,
+    ):
         """Apply a dict to the AdjustData.
 
         Args:
             dict_data (dict[str, Any]): The dict.
         """
-        gatya_track_data = dict_data.get("gatya_track_data")
-        if gatya_track_data is not None:
-            self.get_gatya_track_data().apply_dict(gatya_track_data)
-        legend_stage_track_data = dict_data.get("legend_stage_track_data")
-        if legend_stage_track_data is not None:
-            self.get_legend_stage_track_data().apply_dict(legend_stage_track_data)
-        stage_clear_track_data = dict_data.get("stage_clear_track_data")
-        if stage_clear_track_data is not None:
-            self.get_stage_clear_track_data().apply_dict(stage_clear_track_data)
-        purchase_track_data = dict_data.get("purchase_track_data")
-        if purchase_track_data is not None:
-            self.get_purchase_track_data().apply_dict(purchase_track_data)
-        user_rank_track_data = dict_data.get("user_rank_track_data")
-        if user_rank_track_data is not None:
-            self.get_user_rank_track_data().apply_dict(user_rank_track_data)
+        adjust_data = dict_data.get(mod_edit_key)
+        if adjust_data is None:
+            return
+
+        self.get_gatya_track_data().apply_dict(adjust_data, "gatya_track_data")
+        self.get_legend_stage_track_data().apply_dict(
+            adjust_data, "legend_stage_track_data"
+        )
+        self.get_stage_clear_track_data().apply_dict(
+            adjust_data, "stage_clear_track_data"
+        )
+        self.get_purchase_track_data().apply_dict(adjust_data, "purchase_track_data")
+        self.get_user_rank_track_data().apply_dict(adjust_data, "user_rank_track_data")
 
     @staticmethod
     def from_game_data(game_data: "core.GamePacks") -> "AdjustData":
@@ -1188,21 +1016,6 @@ class AdjustData:
             self.purchase_track_data.to_game_data(game_data)
         if self.user_rank_track_data is not None:
             self.user_rank_track_data.to_game_data(game_data)
-
-    @staticmethod
-    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
-        """Apply mod adjust_data to the game data.
-
-        Args:
-            mod (core.Mod): The mod.
-            game_data (GamePacks): The GamePacks object.
-        """
-        adjust_data = mod.mod_edits.get("adjust_data")
-        if adjust_data is None:
-            return
-        adjust = AdjustData.from_game_data(game_data)
-        adjust.apply_dict(adjust_data)
-        adjust.to_game_data(game_data)
 
     @staticmethod
     def create_empty() -> "AdjustData":

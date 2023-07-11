@@ -61,7 +61,7 @@ class Item:
         return Item(0, 0, 0, 0, False, "", 0)
 
 
-class ItemShop:
+class ItemShop(core.EditableClass):
     """Represents the Item Shop."""
 
     def __init__(self, items: dict[int, Item], tex: "core.Texture"):
@@ -71,8 +71,9 @@ class ItemShop:
             items (dict[int, Item]): The items in the shop.
             tex (core.Texture): The texture containing the icons for the items.
         """
-        self.items = items
+        self.data = items
         self.tex = tex
+        super().__init__(self.data)
 
     @staticmethod
     def get_file_name() -> str:
@@ -147,10 +148,10 @@ class ItemShop:
         if tsv_data is None:
             return
         tsv = core.CSV(tsv_data.dec_data, delimeter="\t")
-        remaning_items = self.items.copy()
+        remaning_items = self.data.copy()
         for i, line in enumerate(tsv.lines[1:]):
             try:
-                item = self.items[int(line[0])]
+                item = self.data[int(line[0])]
             except KeyError:
                 continue
             line[1] = str(item.gatya_item_id)
@@ -196,7 +197,7 @@ class ItemShop:
         Returns:
             Optional[Item]: The item.
         """
-        return self.items.get(shop_index)
+        return self.data.get(shop_index)
 
     def set_item(self, shop_index: int, item: Item):
         """Set an item in the ItemShop.
@@ -206,7 +207,7 @@ class ItemShop:
             item (Item): The item.
         """
         item.shop_id = shop_index
-        self.items[shop_index] = item
+        self.data[shop_index] = item
 
     def add_item(self, item: Item):
         """Add an item to the ItemShop.
@@ -222,7 +223,7 @@ class ItemShop:
         Args:
             shop_index (int): The index of the item in the ItemShop.
         """
-        self.items.pop(shop_index)
+        self.data.pop(shop_index)
         self.shift_items(shop_index + 1, -1)
 
     def shift_items(self, start_index: int, shift: int):
@@ -232,10 +233,10 @@ class ItemShop:
             start_index (int): The index to start shifting from.
             shift (int): The amount to shift by.
         """
-        for item in self.items.values():
+        for item in self.data.values():
             if item.shop_id >= start_index:
                 item.shop_id += shift
-        self.items = {item.shop_id: item for item in self.items.values()}
+        self.data = {item.shop_id: item for item in self.data.values()}
 
     def insert_item(self, shop_index: int, item: Item):
         """Insert an item into the ItemShop.
@@ -247,37 +248,22 @@ class ItemShop:
         self.shift_items(shop_index, 1)
         self.set_item(shop_index, item)
 
-    def apply_dict(self, dict_data: dict[str, Any]):
+    def apply_dict(
+        self,
+        dict_data: dict[str, Any],
+        mod_edit_key: str,
+        convert_int: bool = True,
+    ):
         """Apply a dictionary to the ItemShop.
 
         Args:
             dict_data (dict[str, Any]): The dictionary to apply.
         """
-
-        items = dict_data.get("items")
-        tex = dict_data.get("tex")
-        if items is not None:
-            current_items = self.items.copy()
-            mod_items = core.ModEditDictHandler(items, current_items).get_dict(
-                convert_int=True
-            )
-            for shop_id, data_item in mod_items.items():
-                shop_id = int(shop_id)
-                item = self.get_item(shop_id)
-                if item is None:
-                    item = Item.create_empty()
-                item.apply_dict(data_item)
-                self.set_item(shop_id, item)
+        data = dict_data.get(mod_edit_key)
+        if data is None:
+            return
+        super().apply_dict(data, "items", convert_int=convert_int)
+        tex = data.get("tex")
 
         if tex is not None:
             self.tex.apply_dict(tex)
-
-    @staticmethod
-    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
-        item_shop_data = mod.mod_edits.get("item_shop")
-        if item_shop_data is None:
-            return
-        item_shop = ItemShop.from_game_data(game_data)
-        if item_shop_data is not None:
-            item_shop.apply_dict(item_shop_data)
-            item_shop.to_game_data(game_data)

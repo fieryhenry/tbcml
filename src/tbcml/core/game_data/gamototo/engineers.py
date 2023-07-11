@@ -30,12 +30,13 @@ class Engineer:
 
     def apply_dict(self, dict_data: dict[str, Any]):
         self.limit.limit = dict_data.get("limit", self.limit.limit)
-        self.anim.apply_dict(dict_data["anim"])
+        self.anim.apply_dict(dict_data, "anim")
 
 
-class EngineerLimit:
+class EngineerLimit(core.EditableClass):
     def __init__(self, limit: int):
         self.limit = limit
+        super().__init__()
 
     @staticmethod
     def get_file_name() -> str:
@@ -67,26 +68,16 @@ class EngineerLimit:
     def create_empty() -> "EngineerLimit":
         return EngineerLimit(0)
 
-    def apply_dict(self, dict_data: dict[str, Any]):
-        self.limit = dict_data.get("engineer_limit", self.limit)
-
-    @staticmethod
-    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
-        """Apply a mod to a GamePacks object.
-
-        Args:
-            mod (core.Mod): The mod.
-            game_data (GamePacks): The GamePacks object.
-        """
-        engineer_limit_data = mod.mod_edits.get("engineer_limit")
-        if engineer_limit_data is None:
-            return
-        engineer_limit = EngineerLimit.from_game_data(game_data)
-        engineer_limit.apply_dict(mod.mod_edits)
-        engineer_limit.to_game_data(game_data)
+    def apply_dict(
+        self,
+        dict_data: dict[str, Any],
+        mod_edit_key: str,
+        convert_int: bool = True,
+    ):
+        self.limit = dict_data.get(mod_edit_key, self.limit)
 
 
-class EngineerAnim:
+class EngineerAnim(core.EditableClass):
     class FilePath(enum.Enum):
         IMGCUT = "castleCustom_researcher_001.imgcut"
         MAMODEL = "castleCustom_researcher_001.mamodel"
@@ -127,6 +118,7 @@ class EngineerAnim:
 
     def __init__(self, model: "core.Model"):
         self.model = model
+        super().__init__()
 
     @staticmethod
     def from_game_data(game_data: "core.GamePacks") -> "EngineerAnim":
@@ -151,20 +143,10 @@ class EngineerAnim:
         an = core.Model.create_empty()
         return EngineerAnim(an)
 
-    def apply_dict(self, dict_data: dict[str, Any]):
-        self.model.apply_dict(dict_data["engineer_model"])
-
-    @staticmethod
-    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
-        """Apply a mod to a GamePacks object.
-
-        Args:
-            mod (core.Mod): The mod.
-            game_data (GamePacks): The GamePacks object.
-        """
-        engineer_model_data = mod.mod_edits.get("engineer_model")
-        if engineer_model_data is None:
-            return
-        engineer_model = EngineerAnim.from_game_data(game_data)
-        engineer_model.apply_dict(mod.mod_edits)
-        engineer_model.to_game_data(game_data)
+    def apply_dict(
+        self,
+        dict_data: dict[str, Any],
+        mod_edit_key: str,
+        convert_int: bool = True,
+    ):
+        self.model.apply_dict(dict_data.get(mod_edit_key, {}))

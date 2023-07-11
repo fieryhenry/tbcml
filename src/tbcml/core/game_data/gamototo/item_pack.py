@@ -64,9 +64,10 @@ class ItemPack:
         )
 
 
-class ItemPacks:
+class ItemPacks(core.EditableClass):
     def __init__(self, packs: dict[int, ItemPack]):
-        self.packs = packs
+        self.data = packs
+        super().__init__(packs)
 
     @staticmethod
     def get_file_name() -> str:
@@ -95,10 +96,10 @@ class ItemPacks:
         if file is None:
             return None
         csv = core.CSV(file.dec_data)
-        remaining_item_packs = self.packs.copy()
+        remaining_item_packs = self.data.copy()
         for i, line in enumerate(csv.lines[1:]):
             try:
-                pack = self.packs[i]
+                pack = self.data[i]
             except KeyError:
                 continue
             line[0] = str(pack.type.value)
@@ -128,38 +129,9 @@ class ItemPacks:
             csv.lines.append(line)
         game_data.set_file(self.get_file_name(), csv.to_data())
 
-    def apply_dict(self, dict_data: dict[str, Any]):
-        packs = dict_data.get("item_packs")
-        if packs is not None:
-            current_packs = self.packs.copy()
-            modded_packs = core.ModEditDictHandler(packs, current_packs).get_dict(
-                convert_int=True
-            )
-            for pack_id, modded_pack in modded_packs:
-                pack = self.packs.get(pack_id)
-                if pack is None:
-                    pack = ItemPack.create_empty()
-                    self.packs[pack_id] = pack
-                pack.apply_dict(modded_pack)
-
     @staticmethod
     def create_empty() -> "ItemPacks":
         return ItemPacks({})
 
     def set_item_pack(self, pack: ItemPack):
-        self.packs[pack.user_rank] = pack
-
-    @staticmethod
-    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
-        """Apply a mod to a GamePacks object.
-
-        Args:
-            mod (core.Mod): The mod.
-            game_data (GamePacks): The GamePacks object.
-        """
-        item_packs_data = mod.mod_edits.get("item_packs")
-        if item_packs_data is None:
-            return
-        item_packs = ItemPacks.from_game_data(game_data)
-        item_packs.apply_dict(mod.mod_edits)
-        item_packs.to_game_data(game_data)
+        self.data[pack.user_rank] = pack

@@ -867,6 +867,8 @@ class StageStats:
         self.unused = dict_data.get("unused", self.unused)
         enemies = dict_data.get("enemies")
         if enemies is not None:
+            if self.enemies is None:
+                self.enemies = {}
             current_enemies = self.enemies.copy()
             modded_enemies = core.ModEditDictHandler(enemies, current_enemies).get_dict(
                 convert_int=True
@@ -1886,15 +1888,10 @@ class Map:
         )
 
 
-class Maps:
+class Maps(core.EditableClass):
     def __init__(self, maps: dict[int, Map]):
-        self.maps = maps
-
-    def get(self, stage_id: int) -> Optional[Map]:
-        return self.maps.get(stage_id)
-
-    def set(self, map: Map):
-        self.maps[map.map_option.stage_id] = map
+        self.data = maps
+        super().__init__(maps)
 
     @staticmethod
     def from_game_data(game_data: "core.GamePacks"):
@@ -1923,7 +1920,7 @@ class Maps:
         map_options = MapOptions({})
         stage_name_sets = StageNameSets({})
         stage_options = StageOption({})
-        for map in self.maps.values():
+        for map in self.data.values():
             map.to_game_data(game_data)
             map_options.set(map.map_option)
             stage_name_sets.set(map.map_option.stage_id, map.get_names())
@@ -1938,32 +1935,9 @@ class Maps:
     def get_maps_json_file_name() -> "core.Path":
         return core.Path("maps").add("maps.json")
 
-    def apply_dict(self, dict_data: dict[str, Any]):
-        maps = dict_data.get("maps")
-        if maps is not None:
-            current_maps = self.maps.copy()
-            modded_maps = core.ModEditDictHandler(maps, current_maps).get_dict(
-                convert_int=True
-            )
-            for stage_id, modded_map in modded_maps.items():
-                map = self.maps.get(stage_id)
-                if map is None:
-                    map = Map.create_empty(stage_id)
-                map.apply_dict(modded_map)
-                self.maps[stage_id] = map
-
     @staticmethod
     def create_empty() -> "Maps":
         return Maps({})
 
     def set_map(self, map: Map):
-        self.maps[map.map_option.stage_id] = map
-
-    @staticmethod
-    def apply_mod_to_game_data(mod: "core.Mod", game_data: "core.GamePacks"):
-        if not mod.mod_edits.get("maps"):
-            return
-        current_maps = Maps.from_game_data(game_data)
-        current_maps.apply_dict(mod.mod_edits)
-
-        current_maps.to_game_data(game_data)
+        self.data[map.map_option.stage_id] = map
