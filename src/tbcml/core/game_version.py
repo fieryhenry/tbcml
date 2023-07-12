@@ -70,26 +70,6 @@ class GameVersion:
         return f"game_version({self.game_version}) {self.to_string()}"
 
     @staticmethod
-    def read(data: "core.Data") -> "GameVersion":
-        """Reads a 4 byte int from a Data object.
-
-        Args:
-            data (core.Data): Data object to read from.
-
-        Returns:
-            GameVersion: Game version read from the Data object.
-        """
-        return GameVersion(data.read_int())
-
-    def write(self, data: "core.Data"):
-        """Writes the 4 byte game version to a Data object.
-
-        Args:
-            data (core.Data): Data object to write to.
-        """
-        data.write_int(self.game_version)
-
-    @staticmethod
     def from_string(game_version: str) -> "GameVersion":
         """Converts a string to a GameVersion object.
 
@@ -129,8 +109,7 @@ class GameVersion:
             if gv is None:
                 return GameVersion.from_string("1.0.0")
             return gv
-        else:
-            return GameVersion.from_string(game_version)
+        return GameVersion.from_string(game_version)
 
     @staticmethod
     def get_latest_version(
@@ -227,10 +206,10 @@ class GameVersion:
         return not self.__lt__(other)
 
     def is_java(self):
-        """Checks if the game version is a java version.
+        """Checks if the game version is from when the game was written in java version.
 
         Returns:
-            bool: True if the game version is a java version, False otherwise.
+            bool: True if the game version is from when the game was written in java version, False otherwise.
         """
 
         return self.game_version < core.GameVersion.from_string("7.0.0")
