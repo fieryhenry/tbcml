@@ -1,22 +1,22 @@
 from tbcml import core
-import lief  # type: ignore
+import lief
 
 
 class Lib:
     def __init__(self, architecture: str, path: "core.Path"):
         self.architecture = architecture
         self.path = path
-        self.lib = self.parse()  # type: ignore
+        self.lib = self.parse()
         self.data = path.read()
 
     def parse(self) -> lief.ELF.Binary:  # type: ignore
         return lief.parse(str(self.path))  # type: ignore
 
     def add_library(self, library_path: "core.Path"):
-        self.lib.add_library(library_path.basename())  # type: ignore
+        self.lib.add_library(library_path.basename())
 
     def write(self):
-        self.lib.write(str(self.path))  # type: ignore
+        self.lib.write(str(self.path))
 
     def search(self, search: "core.Data", start: int = 0):
         return self.data.search(search, start)
