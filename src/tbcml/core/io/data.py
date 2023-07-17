@@ -34,12 +34,21 @@ class Data:
             )
         self.pos = 0
 
+    @staticmethod
+    def from_hex(hex: str):
+        return Data(bytes.fromhex(hex))
+
     def is_empty(self) -> bool:
         return len(self.data) == 0
 
     def to_file(self, path: "core.Path"):
         with open(path.path, "wb") as f:
             f.write(self.data)
+
+    def write(self, data: "Data"):
+        pos = self.pos
+        self.data = self.data[:pos] + data.data + self.data[pos + len(data) :]
+        self.pos += len(data)
 
     def copy(self) -> "Data":
         return Data(self.data)
