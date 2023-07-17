@@ -235,8 +235,8 @@ class BCUForm:
         stats.base_destroyer = bool(self.get_proc_mult(procs, "ATKBASE") // 300)
         stats.wave.is_mini = bool(
             max(
-                self.get_proc_prob(procs, "WAVE").percent,
-                self.get_proc_prob(procs, "MINIWAVE").percent,
+                self.get_proc_prob(procs, "WAVE").percent or 0,
+                self.get_proc_prob(procs, "MINIWAVE").percent or 0,
             )
         )
         stats.wave.level = max(
@@ -574,8 +574,8 @@ class BCUEnemy:
         stats.base_destroyer = bool(BCUForm.get_proc_mult(procs, "ATKBASE") // 300)
         stats.wave.is_mini = bool(
             max(
-                BCUForm.get_proc_prob(procs, "WAVE").percent,
-                BCUForm.get_proc_prob(procs, "MINIWAVE").percent,
+                BCUForm.get_proc_prob(procs, "WAVE").percent or 0,
+                BCUForm.get_proc_prob(procs, "MINIWAVE").percent or 0,
             )
         )
         stats.wave.level = max(
@@ -717,7 +717,7 @@ class BCUFile:
     def decrypt(self) -> "core.Data":
         aes = core.AesCipher(self.key.to_bytes(), self.iv.to_bytes())
         data = aes.decrypt(self.enc_data)
-        return data[0 : self.size]
+        return data[: self.size]
 
 
 class BCUZip:
