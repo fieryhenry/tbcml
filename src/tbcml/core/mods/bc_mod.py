@@ -248,6 +248,7 @@ class Mod:
 
         self.init_audio()
         self.init_scripts()
+        self.init_patches()
         self.init_smali()
 
     def add_apk_file(self, file_name: str, data: "core.Data"):
@@ -308,6 +309,9 @@ class Mod:
             [],
         )
 
+    def init_patches(self):
+        self.patches = core.LibPatches([])
+
     def init_audio(self):
         """Initializes the audio of the mod."""
         self.audio = core.Audio.create_empty()
@@ -353,6 +357,7 @@ class Mod:
 
         self.audio.add_to_zip(zip_file)
         self.scripts.add_to_zip(zip_file)
+        self.patches.add_to_zip(zip_file)
         self.smali.add_to_zip(zip_file)
 
         orignal_mod_edits = copy.deepcopy(self.mod_edits)
@@ -552,6 +557,7 @@ class Mod:
 
         mod.audio = core.Audio.from_zip(zip_file)
         mod.scripts = core.FridaScripts.from_zip(zip_file, mod)
+        mod.patches = core.LibPatches.from_zip(zip_file)
         mod.smali = core.SmaliSet.from_zip(zip_file)
 
         mod.mod_edits = {}
@@ -616,6 +622,7 @@ class Mod:
         """
         self.audio.import_audio(other.audio)
         self.scripts.import_scripts(other.scripts)
+        self.patches.import_patches(other.patches)
         self.smali.import_smali(other.smali)
         self.game_files = self.merge_dicts(self.game_files, other.game_files)
         self.apk_files = self.merge_dicts(self.apk_files, other.apk_files)
@@ -707,6 +714,8 @@ class Mod:
             bool: True if the mod could contain malware, False otherwise
         """
         if not self.scripts.is_empty():
+            return True
+        if not self.patches.is_empty():
             return True
         if not self.smali.is_empty():
             return True

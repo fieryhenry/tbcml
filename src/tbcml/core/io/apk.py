@@ -752,6 +752,17 @@ class Apk:
         self.add_libgadget_scripts(scripts)
         self.add_libgadget_sos(used_arcs)
 
+    def add_patches(self, patches: "core.LibPatches"):
+        for patch in patches.lib_patches:
+            self.add_patch(patch)
+
+    def add_patch(self, patch: "core.LibPatch"):
+        lib = self.parse_libnative(patch.architecture)
+        if lib is None:
+            return
+        lib.apply_patch(patch)
+        lib.write()
+
     def has_script_mods(self, bc_mods: list["core.Mod"]):
         if not bc_mods:
             return False
@@ -762,10 +773,14 @@ class Apk:
         scripts.validate_scripts(self.country_code, self.game_version)
         return not scripts.is_empty()
 
+    @staticmethod
+    def is_allowed_script_mods() -> bool:
+        return core.Config().get(core.ConfigKey.ALLOW_SCRIPT_MODS)
+
     def add_script_mods(self, bc_mods: list["core.Mod"]):
         if not bc_mods:
             return
-        if not core.Config().get(core.ConfigKey.ALLOW_SCRIPT_MODS):
+        if not Apk.is_allowed_script_mods():
             return
         scripts = core.FridaScripts([])
         for mod in bc_mods:
@@ -774,6 +789,19 @@ class Apk:
         scripts.validate_scripts(self.country_code, self.game_version)
         if not scripts.is_empty():
             self.add_frida_scripts(scripts)
+
+    def add_patch_mods(self, bc_mods: list["core.Mod"]):
+        if not bc_mods:
+            return
+        if not Apk.is_allowed_script_mods():
+            return
+        patches = core.LibPatches([])
+        for mod in bc_mods:
+            patches.add_patches(mod.patches)
+
+        patches.validate_patches(self.country_code, self.game_version)
+        if not patches.is_empty():
+            self.add_patches(patches)
 
     def get_libs(self) -> dict[str, "core.Lib"]:
         if self.libs is not None:
@@ -1023,7 +1051,7 @@ class Apk:
         risky_extensions = self.get_risky_extensions()
         for file_name, data in mod.apk_files.items():
             if file_name.split(".")[-1] in risky_extensions:
-                if not core.Config().get(core.ConfigKey.ALLOW_SCRIPT_MODS):
+                if not Apk.is_allowed_script_mods():
                     skipped = True
                     continue
             self.extracted_path.add(file_name).write(data)
@@ -1034,7 +1062,7 @@ class Apk:
             self.add_mod_files(mod)
 
     def add_smali_mods(self, mods: list["core.Mod"]):
-        if not core.Config().get(core.ConfigKey.ALLOW_SCRIPT_MODS):
+        if not Apk.is_allowed_script_mods():
             return
         for mod in mods:
             self.apply_mod_smali(mod)
@@ -1053,6 +1081,7 @@ class Apk:
         self.set_modded_html(mods)
         self.add_audio_mods(mods)
         self.add_script_mods(mods)
+        self.add_patch_mods(mods)
         self.add_smali_mods(mods)
 
         self.load_packs_into_game(game_packs)

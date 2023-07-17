@@ -114,7 +114,15 @@ from .io.path import Path
 from .io.data import Data, PaddedInt
 from .io.command import Command, CommandResult
 from .io.config import Config, ConfigKey
-from .io.lib import LibFiles, Lib
+from .io.lib import (
+    LibFiles,
+    Lib,
+    LibPatch,
+    LibPatches,
+    Patch,
+    FuncPatch,
+    StringReplacePatch,
+)
 from .io.json_file import JsonFile
 from .io.file_handler import FileSize
 from .io.xml_parse import XML
