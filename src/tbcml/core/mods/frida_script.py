@@ -1,6 +1,7 @@
 """Module for handling Frida scripts"""
 
 from typing import Any, Optional
+import uuid
 
 from tbcml import core
 
@@ -15,6 +16,7 @@ class FridaScript:
         gv: "core.GameVersion",
         script: str,
         name: str,
+        id: str,
         mod: "core.Mod",
     ):
         """Initializes a new instance of the FridaScript class.
@@ -32,20 +34,25 @@ class FridaScript:
         self.gv = gv
         self.script = script
         self.name = name
+        self.id = id
         self.mod = mod
 
     @staticmethod
-    def get_file_path(arc: str, name: str) -> "core.Path":
+    def create_id() -> str:
+        return str(uuid.uuid4())
+
+    @staticmethod
+    def get_file_path(arc: str, id: str) -> "core.Path":
         """Gets the file path for a Frida script.
 
         Args:
             arc (str): Architecture the script is designed for
-            name (str): Name of the script
+            id (str): ID of the script
 
         Returns:
             core.Path: The file path for the Frida script
         """
-        return core.Path(f"scripts/{arc}/{name}.json")
+        return core.Path(f"scripts/{arc}/{id}.json")
 
     def add_to_zip(self, zip: "core.Zip"):
         """Adds the Frida script to a zip file.
@@ -56,7 +63,7 @@ class FridaScript:
         json_data = self.serialize()
         json_file = core.JsonFile.from_object(json_data)
         zip.add_file(
-            self.get_file_path(self.arc, self.name),
+            self.get_file_path(self.arc, self.id),
             json_file.to_data(),
         )
 
@@ -72,6 +79,7 @@ class FridaScript:
             "gv": self.gv.to_string(),
             "script": self.script,
             "name": self.name,
+            "id": self.id,
         }
 
     @staticmethod
@@ -91,6 +99,7 @@ class FridaScript:
             core.GameVersion.from_string(data["gv"]),
             data["script"],
             data["name"],
+            data["id"],
             mod,
         )
 
@@ -99,7 +108,7 @@ class FridaScript:
         zip: "core.Zip",
         mod: "core.Mod",
         arc: str,
-        name: str,
+        id: str,
     ) -> "FridaScript":
         """Creates a Frida script from a zip file.
 
@@ -107,7 +116,7 @@ class FridaScript:
             zip (core.Zip): Zip file to create the Frida script from
             mod (core.Mod): The mod the Frida script belongs to
             arc (str): Architecture the script is designed for
-            name (str): Name of the script
+            id (str): Id of the script
 
         Raises:
             ValueError: If the file is not found in the zip
@@ -115,7 +124,7 @@ class FridaScript:
         Returns:
             FridaScript: The Frida script created from the zip file
         """
-        file = zip.get_file(FridaScript.get_file_path(arc, name))
+        file = zip.get_file(FridaScript.get_file_path(arc, id))
         if file is None:
             raise ValueError("File not found in zip.")
         json_file = core.JsonFile.from_data(file)
@@ -247,7 +256,7 @@ class FridaScripts:
             script.add_to_zip(zip)
             if script.arc not in arcs:
                 arcs[script.arc] = []
-            arcs[script.arc].append(script.name)
+            arcs[script.arc].append(script.id)
         json_data = {
             "arcs": arcs,
         }
@@ -279,8 +288,8 @@ class FridaScripts:
         arcs = json_data["arcs"]
         scripts: list["FridaScript"] = []
         for arc in arcs:
-            for name in arcs[arc]:
-                scripts.append(FridaScript.from_zip(zip, mod, arc, name))
+            for id in arcs[arc]:
+                scripts.append(FridaScript.from_zip(zip, mod, arc, id))
         return FridaScripts(scripts)
 
     def import_scripts(self, other: "FridaScripts"):
