@@ -36,4 +36,4 @@ class AssetLoader:
 
     @staticmethod
     def from_config() -> "AssetLoader":
-        return AssetLoader(core.Config().get(core.ConfigKey.THEME))
+        return AssetLoader(core.config.get(core.ConfigKey.THEME))

@@ -142,5 +142,16 @@ from .game_data.pack import GamePacks, PackFile, GameFile
 from .country_code import CountryCode
 from .game_version import GameVersion
 
+config = Config()
+logger = Logger()
+local_manager = LocalManager()
 
-__all__ = []
+
+__all__ = [
+    "CountryCode",
+    "GameVersion",
+    "Apk",
+    "Path",
+    "Data",
+    "GamePacks",
+]

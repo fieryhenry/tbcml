@@ -54,9 +54,6 @@ class Apk:
 
     def init_paths(self):
         self.apk_folder.generate_dirs()
-        self.server_path = self.apk_folder.add(
-            f"{self.country_code.get_code()}_server_packs"
-        )
         self.output_path = self.apk_folder.add(
             f"{self.game_version}{self.country_code.get_code()}"
         )
@@ -200,7 +197,7 @@ class Apk:
             return
         if not self.check_display_keytool_error():
             return
-        password = core.Config().get(core.ConfigKey.KEYSTORE_PASSWORD)
+        password = core.config.get(core.ConfigKey.KEYSTORE_PASSWORD)
         key_store_name = "tbcml.keystore"
         key_store_path = core.Path.get_appdata_folder().add(key_store_name)
         if not key_store_path.exists():
@@ -285,7 +282,7 @@ class Apk:
         self.final_apk_path.copy(final_path)
 
     def get_final_apk_path(self) -> "core.Path":
-        final_path = core.Config().get(core.ConfigKey.APK_COPY_PATH)
+        final_path = core.config.get(core.ConfigKey.APK_COPY_PATH)
         if not final_path:
             return self.final_apk_path
         final_path = core.Path(final_path)
@@ -297,7 +294,7 @@ class Apk:
 
     @staticmethod
     def get_default_apk_folder() -> "core.Path":
-        folder = core.Path(core.Config().get(core.ConfigKey.APK_FOLDER)).generate_dirs()
+        folder = core.Path(core.config.get(core.ConfigKey.APK_FOLDER)).generate_dirs()
         return folder
 
     def get_package_name(self) -> str:
@@ -311,7 +308,7 @@ class Apk:
         Returns:
             list[APK]: List of APKs
         """
-        all_apk_dir = core.Path(core.Config().get(core.ConfigKey.APK_FOLDER))
+        all_apk_dir = core.Path(core.config.get(core.ConfigKey.APK_FOLDER))
         apks: list[Apk] = []
         for apk_folder in all_apk_dir.get_dirs():
             name = apk_folder.get_file_name()
@@ -430,7 +427,7 @@ class Apk:
             end="",
         )
 
-    def download_apk(self) -> bool:
+    def download(self) -> bool:
         if self.apk_path.exists():
             return True
         if (
@@ -724,7 +721,7 @@ class Apk:
 
     @staticmethod
     def get_libgadgets_path() -> "core.Path":
-        folder = core.Path(core.Config().get(core.ConfigKey.LIB_GADGETS_FOLDER))
+        folder = core.Path(core.config.get(core.ConfigKey.LIB_GADGETS_FOLDER))
         folder.generate_dirs()
         return folder
 
@@ -775,7 +772,7 @@ class Apk:
 
     @staticmethod
     def is_allowed_script_mods() -> bool:
-        return core.Config().get(core.ConfigKey.ALLOW_SCRIPT_MODS)
+        return core.config.get(core.ConfigKey.ALLOW_SCRIPT_MODS)
 
     def add_script_mods(self, bc_mods: list["core.Mod"]):
         if not bc_mods:
@@ -1012,8 +1009,8 @@ class Apk:
 
         for path in paths:
             data = path.read().to_str()
-            credit_message = core.LocalManager().get_key("html_credit_message")
-            mods_message = core.LocalManager().get_key("mods")
+            credit_message = core.local_manager.get_key("html_credit_message")
+            mods_message = core.local_manager.get_key("mods")
             inject_html = f"""
 <span class="midashi2">{credit_message}</span>
 <hr noshade width="97%" color="#E2AF27">

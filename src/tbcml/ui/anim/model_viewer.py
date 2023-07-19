@@ -97,26 +97,26 @@ class ModelViewer(QtWidgets.QOpenGLWidget):
     def add_context_actions(self):
         self.menu.clear()
         self.menu.addAction(
-            core.LocalManager().get_key("reset_view_position"), self.reset_position
+            core.local_manager.get_key("reset_view_position"), self.reset_position
         )
         if self.is_model_viewer:
             if self.should_bring_to_front:
                 self.menu.addAction(
-                    core.LocalManager().get_key("remove_selected_part_from_front"),
+                    core.local_manager.get_key("remove_selected_part_from_front"),
                     self.toggle_bring_to_front,
                 )
             else:
                 self.menu.addAction(
-                    core.LocalManager().get_key("bring_selected_part_to_front"),
+                    core.local_manager.get_key("bring_selected_part_to_front"),
                     self.toggle_bring_to_front,
                 )
             self.menu.addAction(
-                core.LocalManager().get_key("align_model_to_part"),
+                core.local_manager.get_key("align_model_to_part"),
                 self.align_part_view_to_model,
             )
         else:
             self.menu.addAction(
-                core.LocalManager().get_key("align_part_to_model"),
+                core.local_manager.get_key("align_part_to_model"),
                 self.align_part_view_to_model,
             )
 
@@ -448,7 +448,7 @@ class AnimControls(QtWidgets.QWidget):
         self.clock = clock
         self.link_anim_boxes = link_anim_boxes
         self.toggle_grid = toggle_grid
-        self.locale_handler = core.LocalManager()
+        self.locale_handler = core.local_manager
         self.setup()
 
     def setup(self):
