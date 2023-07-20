@@ -1,5 +1,8 @@
-from tbcml import core
+from typing import Optional
+
 import ffmpeg  # type: ignore
+
+from tbcml import core
 
 
 class AudioFile:
@@ -194,7 +197,7 @@ class Audio:
             audio_file.file_name: audio_file for audio_file in audio_files
         }
 
-    def get(self, file_name: str) -> AudioFile:
+    def get(self, file_name: str) -> Optional[AudioFile]:
         """Gets an audio file.
 
         Args:
@@ -203,4 +206,4 @@ class Audio:
         Returns:
             AudioFile: The audio file.
         """
-        return self.audio_files[file_name]
+        return self.audio_files.get(file_name)
