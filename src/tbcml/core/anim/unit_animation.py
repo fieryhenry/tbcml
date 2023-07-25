@@ -567,10 +567,6 @@ class UnitAnim:
         return UnitAnim(parts, meta_data, name)
 
     def save(self, game_packs: "core.GamePacks"):
-        file = game_packs.find_file(self.name)
-        if file is None:
-            return
-
         data = self.to_data()
 
         game_packs.set_file(self.name, data)

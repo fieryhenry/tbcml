@@ -1688,7 +1688,6 @@ class Cat:
         if isinstance(form, int):
             form = CatFormType.from_index(form)
         new_form = value.copy()
-        new_form.form = form
         new_form.set_form(form)
         new_form.set_cat_id(self.cat_id)
         self.forms[form] = new_form
@@ -1747,7 +1746,7 @@ class Cat:
                 current_form = self.get_form(form_type)
                 if current_form is None:
                     current_form = CatForm.create_empty(self.cat_id, form_type)
-                    self.set_form(form_type, current_form)
+                    current_form = self.set_form(form_type, current_form)
                 current_form.apply_dict(form)
 
         unit_buy = dict_data.get("unit_buy")
@@ -1797,14 +1796,15 @@ class Cat:
             else None,
         }
 
-    def add_fourth_form_cf_evolution(
+    def add_forth_form_cf_evolution(
         self,
         form: Optional[CatForm],
         evolve_items: "core.EvolveItems",
         evolve_id: int = 25000,
         evolve_cost: int = 100000,
         evolve_level: int = 40,
-    ):
+        evolve_text: Optional[list[str]] = None,
+    ) -> Optional[CatForm]:
         if form is not None:
             form = self.set_form(CatFormType.FOURTH, form)
         unitbuy = self.unit_buy_data or UnitBuyData.create_empty(self.cat_id)
@@ -1819,6 +1819,36 @@ class Cat:
         )
         nypbd.total_forms = 4
         self.nyanko_picture_book_data = nypbd
+        evov_text = self.evolve_text or EvolveTextCat.create_empty(self.cat_id)
+        evov_text.text[1] = EvolveTextText(1, evolve_text or ["", "", ""])
+        return form
+
+    def add_third_form_cf_evolution(
+        self,
+        form: Optional[CatForm],
+        evolve_items: "core.EvolveItems",
+        evolve_id: int = 15000,
+        evolve_cost: int = 100000,
+        evolve_level: int = 30,
+        evolve_text: Optional[list[str]] = None,
+    ) -> Optional[CatForm]:
+        if form is not None:
+            form = self.set_form(CatFormType.THIRD, form)
+        unitbuy = self.unit_buy_data or UnitBuyData.create_empty(self.cat_id)
+        unitbuy.evolve_items_tf = evolve_items
+        unitbuy.tf_id = evolve_id
+        unitbuy.evolve_cost_tf = evolve_cost
+        unitbuy.evolve_level_tf = evolve_level
+        self.unit_buy_data = unitbuy
+
+        nypbd = self.nyanko_picture_book_data or NyankoPictureBookData.create_empty(
+            self.cat_id
+        )
+        nypbd.total_forms = 3
+        self.nyanko_picture_book_data = nypbd
+        evov_text = self.evolve_text or EvolveTextCat.create_empty(self.cat_id)
+        evov_text.text[0] = EvolveTextText(0, evolve_text or ["", "", ""])
+        return form
 
     def copy_form_to_form(
         self, from_form_type: CatFormType, to_form_type: CatFormType

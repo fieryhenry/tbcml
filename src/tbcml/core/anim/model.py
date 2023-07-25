@@ -358,7 +358,7 @@ class Model:
 
     def copy(self) -> "Model":
         return Model(
-            self.tex,
+            self.tex.copy(),
             [anim.copy() for anim in self.anims],
             self.mamodel.copy(),
             self.name,
@@ -423,9 +423,6 @@ class Model:
                 anim.save(game_packs)
 
         if self.mamodel_loaded():
-            mamodel_file = game_packs.find_file(self.name)
-            if mamodel_file is None:
-                return
             csv = self.mamodel.meta_data.to_csv(self.get_total_parts())
             for part in self.mamodel.parts:
                 csv.lines.append(part.to_data())
@@ -474,6 +471,8 @@ class Model:
         parts = name.split("_")
         cat_id = parts[0]
         self.name = f"{cat_id}_{unit_form}.mamodel"
+        _ = self.mamodel
+        _ = self.anims
         for anim in self.anims:
             anim.set_unit_form(unit_form)
 

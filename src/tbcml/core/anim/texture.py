@@ -236,6 +236,7 @@ class Texture:
 
     def set_unit_form(self, form: str):
         self.metadata.set_unit_form(form)
+        self.imgcut_name = self.metadata.img_name.replace(".png", ".imgcut")
 
     def split_cuts(self):
         self.cuts: list[CutTexture] = []
