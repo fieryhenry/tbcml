@@ -1,6 +1,7 @@
 import base64
 import enum
 from io import BytesIO
+import lzma
 import struct
 import typing
 from typing import Any, Literal, Optional, Union
@@ -33,6 +34,9 @@ class Data:
                 f"data must be bytes, str, int, bool, Data, or None, not {type(data)}"
             )
         self.pos = 0
+
+    def decompress_xz(self) -> "Data":
+        return Data(lzma.decompress(self.data))
 
     @staticmethod
     def from_hex(hex: str):
