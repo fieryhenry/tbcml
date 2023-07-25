@@ -723,6 +723,9 @@ class Apk:
     def get_libgadgets_path() -> "core.Path":
         folder = core.Path(core.config.get(core.ConfigKey.LIB_GADGETS_FOLDER))
         folder.generate_dirs()
+        arcs = ["arm64-v8a", "armeabi-v7a", "x86", "x86_64"]
+        for arc in arcs:
+            folder.add(arc).generate_dirs()
         return folder
 
     def get_libgadgets(self) -> dict[str, "core.Path"]:
@@ -734,6 +737,7 @@ class Apk:
             files = arc.get_files(regex=so_regex)
             if len(files) == 0:
                 continue
+            files[0] = files[0].rename("libfrida-gadget.so")
             libgadgets[arc.basename()] = files[0]
         return libgadgets
 
