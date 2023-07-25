@@ -231,13 +231,14 @@ class Path:
             raise FileNotFoundError(f"File not found: {self.path}")
         new_path = self.change_name(name)
         if new_path.path == self.path:
-            return
+            return new_path
         if new_path.exists():
             if overwrite:
                 new_path.remove()
             else:
                 raise FileExistsError(f"File already exists: {new_path}")
         os.rename(self.path, new_path.path)
+        return new_path
 
     def parent(self) -> "Path":
         return Path(os.path.dirname(self.path))
