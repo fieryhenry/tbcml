@@ -317,3 +317,84 @@ class FridaScripts:
         for script in self.scripts:
             arcs.add(script.arc)
         return list(arcs)
+
+
+class FridaGadgetHelper:
+    def __init__(self):
+        self.repo = "frida/frida"
+
+    def get_latest_release(self) -> str:
+        """Gets the latest release of Frida.
+
+        Returns:
+            str: The latest release of Frida
+        """
+        return (
+            core.RequestHandler(
+                f"https://api.github.com/repos/{self.repo}/releases/latest"
+            )
+            .get()
+            .json()["tag_name"]
+        )
+
+    def get_gadget_download_url(self, version: str, arc: str) -> str:
+        """Gets the download URL for a Frida gadget.
+
+        Args:
+            version (str): The Frida version
+            arc (str): The architecture
+
+        Returns:
+            str: The download URL for the Frida gadget
+        """
+        return f"https://github.com/{self.repo}/releases/download/{version}/frida-gadget-{version}-android-{arc}.so.xz"
+
+    def get_true_arc(self, frida_arc: str):
+        if frida_arc == "arm":
+            return "armeabi-v7a"
+        elif frida_arc == "arm64":
+            return "arm64-v8a"
+        else:
+            return frida_arc
+
+    def download_gadget(self, version: str, arc: str):
+        """Downloads a Frida gadget.
+
+        Args:
+            version (str): The Frida version
+            arc (str): The architecture
+        """
+        path = self.get_path(arc)
+
+        url = self.get_gadget_download_url(version, arc)
+        data = core.RequestHandler(url).get_stream().raw.read()
+
+        data = core.Data(data)
+        data = data.decompress_xz()
+
+        path.write(data)
+
+    def get_path(self, arc: str) -> "core.Path":
+        """Gets the path to a Frida gadget.
+
+        Args:
+            arc (str): The architecture
+
+        Returns:
+            core.Path: The path to the Frida gadget
+        """
+        true_arc = self.get_true_arc(arc)
+        return core.Apk.get_libgadgets_path().add(true_arc).add("libfrida-gadget.so")
+
+    def is_downloaded(self, arc: str) -> bool:
+        return self.get_path(arc).exists()
+
+    def download_gadgets(self, redownload: bool = False):
+        """Downloads all Frida gadgets."""
+        version = None
+        for arc in ["arm", "arm64", "x86", "x86_64"]:
+            if self.is_downloaded(arc) and not redownload:
+                continue
+            if version is None:
+                version = self.get_latest_release()
+            self.download_gadget(version, arc)

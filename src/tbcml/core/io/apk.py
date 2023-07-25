@@ -728,8 +728,13 @@ class Apk:
             folder.add(arc).generate_dirs()
         return folder
 
+    @staticmethod
+    def download_libgadgets():
+        core.FridaGadgetHelper().download_gadgets()
+
     def get_libgadgets(self) -> dict[str, "core.Path"]:
         folder = Apk.get_libgadgets_path()
+        Apk.download_libgadgets()
         arcs = folder.get_dirs()
         libgadgets: dict[str, "core.Path"] = {}
         for arc in arcs:
