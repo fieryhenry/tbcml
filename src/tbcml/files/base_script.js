@@ -61,7 +61,6 @@ function log(message, level = "info") {
     }
 }
 
-log("Script loaded successfully.");
 
 function getBaseAddress() {
     return Module.findBaseAddress("libnative-lib.so").add(4096); // offset due to libgadget being added
@@ -99,4 +98,29 @@ function getJavaClass(className) {
     return classFactory.use(className);
 }
 
-// Mod scripts go here
+function getArcitecture() {
+    return Process.arch;
+}
+
+function getPackageName() {
+    return Java.use("android.app.ActivityThread").currentApplication().getPackageName();
+}
+
+function getPackageVersion() {
+    return Java.use("android.content.pm.PackageInfo").$new(Java.use("android.app.ActivityThread").currentApplication().getPackageManager().getPackageInfo(getPackageName(), 0)).versionName.value;
+}
+
+
+rpc.exports = {
+    init(stage, parameters) {
+        log(`Script loaded successfully\nStage: ${stage}\nParameters: ${JSON.stringify(parameters)}`);
+        log(`Base address: ${getBaseAddress()}`);
+        log(`Architecture: ${getArcitecture()}`);
+        log(`Package name: ${getPackageName()}`);
+        log(`Package version: ${getPackageVersion()}`);
+
+        // Mod scripts go here
+
+        // {{SCRIPTS}}
+    },
+};

@@ -238,12 +238,18 @@ class FridaScripts:
         Returns:
             core.Data: The combined Frida script
         """
-        script_text = self.get_base_script() + "\r\n"
+        base_script = self.get_base_script() + "\r\n"
+        script_text = ""
         for script in self.scripts:
             if script.arc == arc:
-                script_text += f"// {'-'*50}\r\n// {script.name} from mod {script.mod.name} by {script.mod.author}\r\n// {'-'*50}\r\n\r\n"
-                script_text += script.script
-        return core.Data(script_text)
+                text = ""
+                text += f"// {'-'*50}\r\n// {script.name} from mod {script.mod.name} by {script.mod.author}\r\n// {'-'*50}\r\n\r\n"
+                text += script.script
+                text += "\r\n\r\n"
+                script_text += text
+        script_text = "        ".join(script_text.splitlines(True))
+        base_script = base_script.replace("// {{SCRIPTS}}", script_text)
+        return core.Data(base_script)
 
     def add_to_zip(self, zip: "core.Zip"):
         """Adds the collection of Frida scripts to a zip file.
