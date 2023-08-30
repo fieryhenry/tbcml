@@ -1,12 +1,46 @@
 # TBCModLoader
 
-The Battle Cats Mod Loader (TBCML) is a python module for easily creating and managing mods for the mobile game The Battle Cats.
+The Battle Cats Mod Loader (TBCML) is a python module for easily creating and
+managing mods for the mobile game The Battle Cats.
 
-At the moment the tool is just a library, but I plan to make a GUI for it in the future.
+At the moment the tool is just a library and so you will need to have
+programming experience if you want to use it effectively.
 
-Join my [discord server](https://discord.gg/MZUYbQAzMZ) for help, getting the latest updates, reporting bugs, and suggesting features.
+The tool is very much still a work in progress, I decided to release it early
+because if I get a proper modding api working, this project will probably be
+obsolete.
 
-I've spent so much time working on this project, but due to all of the re-writes and refactors, it really doesn't look like it. So I would really appricate it if you considered donating to my kofi:
+## Functionality
+
+Note that most of these features a work in progress and may not work properly.
+
+- Downloading and extracting apks
+- Downloading server files and event data
+- Decryption and encryption of pack files
+- Parsing of various game data files
+- Modification of game data
+- Frida gadget hooking
+- Smali code injection
+- Java to smali code conversion
+- Patching of libnative-lib.so file
+- Modification of apk assets
+- Animation Viewer / Loader
+- BCU Pack Imports
+- Repacking and signing of modified apks
+
+Note that the scripting functionality is very limited, especially in later
+game versions. Once I finish the [game
+decompilation](https://github.com/fieryhenry/battlecats) I will be able to
+make a much more powerful modding api.
+
+Discord: <https://discord.gg/DvmMgvn5ZB> (The server is the same one which is
+used for save editing as I haven't made a modding specific one
+yet)
+
+I've spent so much time working on this project because I've changed my mind on
+what this tool should do and how to structure it, but due to all of the
+re-writes, it really doesn't look like it. So I would really appricate it if you
+considered donating to my kofi:
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/fieryhenry)
 
@@ -31,6 +65,13 @@ pip install -e .
 ```
 
 ### Basic Usage
+
+You can obviously do more advanced things with this tool, but this is just a
+basic example of how to use it.
+
+I don't have time to create a bunch of examples and the documentation is not
+finished, so you'll probably have to read the source code to figure out how to
+do more advanced things.
 
 Create `script.py`
 
@@ -119,6 +160,6 @@ Everything else
 python script.py
 ```
 
-## Documentation
+## Documentation (Not Finished)
 
 <https://tbcml-docs.readthedocs.io/en/latest/>
