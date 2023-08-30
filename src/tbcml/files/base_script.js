@@ -118,9 +118,10 @@ rpc.exports = {
         log(`Architecture: ${getArcitecture()}`);
         log(`Package name: ${getPackageName()}`);
         log(`Package version: ${getPackageVersion()}`);
-
-        // Mod scripts go here
-
-        // {{SCRIPTS}}
     },
 };
+
+
+// Mod scripts go here
+
+// {{SCRIPTS}}
