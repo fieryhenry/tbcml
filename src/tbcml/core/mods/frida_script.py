@@ -247,7 +247,6 @@ class FridaScripts:
                 text += script.script
                 text += "\r\n\r\n"
                 script_text += text
-        script_text = "        ".join(script_text.splitlines(True))
         base_script = base_script.replace("// {{SCRIPTS}}", script_text)
         return core.Data(base_script)
 
