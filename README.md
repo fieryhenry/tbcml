@@ -157,7 +157,7 @@ py script.py
 Everything else
 
 ```bash
-python script.py
+python3 script.py
 ```
 
 ## Documentation (Not Finished)
