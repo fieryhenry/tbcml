@@ -27,6 +27,8 @@ Note that most of these features a work in progress and may not work properly.
 - Animation Viewer / Loader
 - BCU Pack Imports
 - Repacking and signing of modified apks
+- Randomization of encryption keys so that your pack files cannot be easily
+  decrypted by other people
 
 Note that the scripting functionality is very limited, especially in later
 game versions. Once I finish the [game
