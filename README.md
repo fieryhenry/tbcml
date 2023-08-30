@@ -98,7 +98,7 @@ gv = GameVersion.from_string("12.3.0")
 
 # Get the apk
 apk = Apk(gv, cc)
-apk.download_apk()
+apk.download()
 apk.extract()
 
 # Download server files data
