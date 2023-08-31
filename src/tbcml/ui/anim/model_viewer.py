@@ -169,7 +169,7 @@ class ModelViewer(QtWidgets.QOpenGLWidget):
         painter.translate(self.x_pos, self.y_pos)
         if self.should_loop:
             self.model.set_action(self.clock.get_frame() % self.model.get_end_frame())
-        else
+        else:
             self.model.set_action(self.clock.get_frame())
         if self.show_grid:
             self.draw_grid(painter)
