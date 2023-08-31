@@ -287,7 +287,8 @@ class SmaliHandler:
             if orig_text != new_text:
                 smali_file.write(core.Data(new_text))
 
-    def get_data_load_smali(self) -> Smali:
+    @staticmethod
+    def get_data_load_smali() -> Smali:
         """Gets the smali code for the DataLoad class which is used to extract data.zip into the
         /data/data/jp.co.ponos.battlecats/files directory
 
