@@ -111,7 +111,7 @@
     move-result-object v1
 
     .line 43
-    const-string v0, "$url:"
+    const-string v0, "$url_"
 
     invoke-virtual {v1, v0}, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
 
@@ -132,7 +132,7 @@
     if-eqz v7, :cond_7a
 
     .line 47
-    const-string v0, "\\$url:"
+    const-string v0, "\\$url_"
 
     invoke-virtual {v1, v0}, Ljava/lang/String;->split(Ljava/lang/String;)[Ljava/lang/String;
 
@@ -156,7 +156,7 @@
     invoke-direct {v0, v7}, Ljava/lang/String;-><init>([B)V
 
     .line 50
-    const-string v7, "\\$url:"
+    const-string v7, "\\$url_"
 
     invoke-virtual {v1, v7}, Ljava/lang/String;->split(Ljava/lang/String;)[Ljava/lang/String;
 

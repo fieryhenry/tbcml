@@ -43,14 +43,14 @@ public class DataLoad {
                     boolean alwaysCopy = entryName.endsWith(".alwayscopy");
                     entryName = entryName.replace(".alwayscopy", "");
 
-                    Boolean isUrl = entryName.contains("$url:");
-                    // file_name$url:base64url
+                    Boolean isUrl = entryName.contains("$url_");
+                    // file_name$url_base64url
                     String url = "";
                     if (isUrl) {
-                        String burl = entryName.split("\\$url:")[1];
+                        String burl = entryName.split("\\$url_")[1];
                         url = new String(Base64.getUrlDecoder().decode(burl));
 
-                        entryName = entryName.split("\\$url:")[0];
+                        entryName = entryName.split("\\$url_")[0];
                     }
 
                     File gameFile = new File(gameDataPath + entryName);
