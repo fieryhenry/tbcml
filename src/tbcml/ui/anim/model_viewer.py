@@ -61,6 +61,7 @@ class ModelViewer(QtWidgets.QOpenGLWidget):
 
         self.always_align = False
         self.show_grid = False
+        self.should_loop = False
 
     def setup_model(self):
         self.model.set_required()
@@ -166,7 +167,10 @@ class ModelViewer(QtWidgets.QOpenGLWidget):
 
         # Draw the model
         painter.translate(self.x_pos, self.y_pos)
-        self.model.set_action(self.clock.get_frame())
+        if self.should_loop:
+            self.model.set_action(self.clock.get_frame() % self.model.get_end_frame())
+        else
+            self.model.set_action(self.clock.get_frame())
         if self.show_grid:
             self.draw_grid(painter)
         self.draw(painter)
@@ -565,7 +569,7 @@ class AnimEditor(QtWidgets.QWidget):
 
 if __name__ == "__main__":
     cc = core.CountryCode.EN
-    gv = core.GameVersion.from_string_latest("12.4.0", cc)
+    gv = core.GameVersion.from_string_latest("12.5.0", cc)
     apk = core.Apk(gv, cc)
     apk.extract()
     apk.copy_server_files()
