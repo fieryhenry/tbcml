@@ -10,6 +10,12 @@ The tool is very much still a work in progress, I decided to release it early
 because if I get a proper modding api working, this project will probably be
 obsolete.
 
+## Credits
+- EasyMoneko for the original keys for decrypting/encrypting: <https://www.reddit.com/r/battlecats/comments/41e4l1/is_there_anyone_able_to_access_bc_files_your_help/>
+- Battle Cats Ultimate for what some of the numbers mean in various csvs as well as animation rendering: <https://github.com/battlecatsultimate>
+- This resource for unit csvs: <https://pastebin.com/JrCTPnUV>
+- Vi for enemy csvs
+
 ## Functionality
 
 Note that most of these features a work in progress and may not work properly.
