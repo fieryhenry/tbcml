@@ -25,6 +25,7 @@ class BCImage:
             else:
                 self.__image = Image.open(self.data.to_bytes_io())
             self.__original_img = self.__image.copy()
+            self.__original_data = self.data.copy()
         if self.__original_img is None:
             self.__original_img = self.__image.copy()
         return self.__image
@@ -117,6 +118,7 @@ class BCImage:
 
     def apply_dict(self, dt: dict[str, Any]):
         self.data = core.Data.from_base_64(dt["__image__"])
+        self.__image = None
 
     def to_dict(self) -> dict[str, Any]:
         return {"__image__": self.to_base_64()}
