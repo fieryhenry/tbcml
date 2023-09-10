@@ -66,3 +66,13 @@ class Rect:
             "height": self.height,
             "name": self.name,
         }
+
+    @staticmethod
+    def from_dict(dict_data: dict[str, Any]) -> "Rect":
+        return Rect(
+            dict_data.get("x", 0),
+            dict_data.get("y", 0),
+            dict_data.get("width", 0),
+            dict_data.get("height", 0),
+            dict_data.get("name", ""),
+        )

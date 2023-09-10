@@ -260,6 +260,8 @@ class Texture:
             for i, data_rect in enumerate(rects):
                 if i < len(self.rects):
                     self.rects[i].apply_dict(data_rect)
+                else:
+                    self.rects.append(core.Rect.from_dict(data_rect))
 
         metadata = dict_data.get("metadata")
         if metadata is not None:
