@@ -880,23 +880,23 @@ class CatForm:
         if self.deploy_icon is not None:
             game_data.set_file(deploy_name, self.deploy_icon.to_data())
 
-    def set_cat_id(self, cat_id: int):
+    def set_cat_id(self, cat_id: int, force: bool = False):
         original_cat_id = self.cat_id
         self.cat_id = cat_id
         if self.stats is not None:
             self.stats.cat_id = cat_id
 
-        if original_cat_id != self.cat_id:
+        if original_cat_id != self.cat_id or force:
             if self.anim is None:
                 raise ValueError("Cannot set cat id without anim being loaded")
             self.get_anim().set_cat_id(cat_id)
 
-    def set_form(self, form: CatFormType):
+    def set_form(self, form: CatFormType, force: bool = False):
         original_form = self.form
         self.form = form
         if self.stats is not None:
             self.stats.form = form
-        if original_form != self.form:
+        if original_form != self.form or force:
             if self.anim is None:
                 raise ValueError("Cannot set form without anim being loaded")
             self.get_anim().set_form(form)

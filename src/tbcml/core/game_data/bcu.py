@@ -191,8 +191,8 @@ class BCUForm:
             self.upgrade_icon,
             self.deploy_icon,
         )
-        frm.set_cat_id(self.cat_id)
-        frm.set_form(self.form)
+        frm.set_cat_id(self.cat_id, force=True)
+        frm.set_form(self.form, force=True)
         return frm
 
     def to_stats(self) -> "core.CatStats":
@@ -432,12 +432,7 @@ class BCUCat:
             npbd,
             evov_text,
         )
-        unit.nyanko_picture_book_data.is_displayed_in_catguide = True
-        unit.unit_buy_data.game_version = (
-            0
-            if unit.unit_buy_data.game_version == -1
-            else unit.unit_buy_data.game_version
-        )
+        unit.set_is_displayed_in_catguide(True)
         unit.set_cat_id(cat_id)
         return unit
 
