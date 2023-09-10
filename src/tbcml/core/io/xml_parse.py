@@ -4,6 +4,8 @@ from tbcml import core
 
 
 class XML:
+    ET = ET
+
     def __init__(self, data: "core.Data"):
         self.data = data
         ET.register_namespace("android", "http://schemas.android.com/apk/res/android")
