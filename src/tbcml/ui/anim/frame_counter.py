@@ -16,6 +16,34 @@ class FrameClock:
         self.perm_timer.start(1000 // fps)
         self.timer.start(1000 // fps)
 
+    def advance_tick(self, frames: int):
+        self.frame += frames
+        for func in self.funcs:
+            func()
+
+    def advance_perm(self, frames: int):
+        self.perm_frame += frames
+        for func in self.perm_funcs:
+            func()
+
+    def advance(self, frames: int):
+        self.advance_tick(frames)
+        self.advance_perm(frames)
+
+    def go_back_tick(self, frames: int):
+        self.frame -= frames
+        for func in self.funcs:
+            func()
+
+    def go_back_perm(self, frames: int):
+        self.perm_frame -= frames
+        for func in self.perm_funcs:
+            func()
+
+    def go_back(self, frames: int):
+        self.go_back_tick(frames)
+        self.go_back_perm(frames)
+
     def tick(self):
         self.frame += 1
         for func in self.funcs:
@@ -43,6 +71,9 @@ class FrameClock:
 
     def get_perm_frame(self) -> int:
         return self.perm_frame
+
+    def is_stopped(self) -> bool:
+        return not self.timer.isActive()
 
     def start(self):
         self.timer.start(1000 // self.fps)
