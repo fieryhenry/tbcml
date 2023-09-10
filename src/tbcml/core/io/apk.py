@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 import bs4
 import cloudscraper  # type: ignore
@@ -427,7 +427,9 @@ class Apk:
             end="",
         )
 
-    def download(self) -> bool:
+    def download(
+        self, progress: Optional[Callable[[float, int, int, bool], None]] = progress
+    ) -> bool:
         if self.apk_path.exists():
             return True
         if (
@@ -436,6 +438,7 @@ class Apk:
         ):
             return self.download_apk_en(
                 self.country_code == core.CountryCode.EN,
+                progress,
             )
         else:
             url = self.get_download_url()
@@ -459,6 +462,8 @@ class Apk:
             for d in stream.iter_content(chunk_size=chunk_size):
                 dl += len(d)
                 buffer.append(d)
+                if progress is not None:
+                    progress(dl / _total_length, dl, _total_length, True)
 
             apk = core.Data(b"".join(buffer))
             apk.to_file(self.apk_path)
@@ -467,6 +472,7 @@ class Apk:
     def download_apk_en(
         self,
         is_en: bool = True,
+        progress: Optional[Callable[[float, int, int, bool], None]] = progress,
     ) -> bool:
         urls = Apk.get_en_apk_urls("the-battle-cats" if is_en else "the-battle-cats-jp")
         if not urls:
@@ -492,7 +498,21 @@ class Apk:
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
         }
         stream = core.RequestHandler(url, headers).get_stream()
-        apk = core.Data(stream.content)
+        try:
+            _total_length = int(stream.headers.get("content-length"))  # type: ignore
+        except TypeError:
+            _total_length = 0
+
+        dl = 0
+        chunk_size = 1024
+        buffer: list[bytes] = []
+        for d in stream.iter_content(chunk_size=chunk_size):
+            dl += len(d)
+            buffer.append(d)
+            if progress is not None:
+                progress(dl / _total_length, dl, _total_length, True)
+
+        apk = core.Data(b"".join(buffer))
         apk.to_file(self.apk_path)
         return True
 
@@ -955,23 +975,21 @@ class Apk:
             manifest.set_attribute(path, "android:debuggable", "false")
         self.set_manifest(manifest)
 
-    def load_strings_xml(self) -> "core.XML":
-        strings_xml = self.extracted_path.add("res").add("values").add("strings.xml")
+    def load_xml(self, name: str) -> "core.XML":
+        strings_xml = self.extracted_path.add("res").add("values").add(f"{name}.xml")
         return core.XML(strings_xml.read())
 
-    def save_strings_xml(self, strings_xml: "core.XML"):
-        strings_xml.to_file(
-            self.extracted_path.add("res").add("values").add("strings.xml")
-        )
+    def save_xml(self, name: str, xml: "core.XML"):
+        xml.to_file(self.extracted_path.add("res").add("values").add(f"{name}.xml"))
 
     def edit_xml_string(self, name: str, value: str):
-        strings_xml = self.load_strings_xml()
+        strings_xml = self.load_xml("strings")
         strings = strings_xml.get_elements("string")
         for string in strings:
             if string.get("name") == name:
                 string.text = value
                 break
-        self.save_strings_xml(strings_xml)
+        self.save_xml("strings", strings_xml)
 
     def set_app_name(self, name: str):
         self.edit_xml_string("app_name", name)
