@@ -349,7 +349,7 @@ class Model:
         return not isinstance(self.__tex, core.TexLoaderInfo)
 
     def anims_loaded(self) -> bool:
-        return all(
+        return any(
             not isinstance(anim, core.UnitAnimLoaderInfo) for anim in self.__anims
         )
 
@@ -517,6 +517,10 @@ class Model:
         if mamodel is not None:
             self.mamodel.apply_dict(mamodel)
 
+        name = dict_data.get("name")
+        if name is not None:
+            self.name = name
+
         tex = dict_data.get("tex")
         if tex is not None:
             self.tex.apply_dict(tex)
@@ -540,6 +544,7 @@ class Model:
             "mamodel": self.mamodel.to_dict(),
             "tex": self.tex.to_dict(),
             "anims": {i: anim.to_dict() for i, anim in enumerate(self.anims)},
+            "name": self.name,
         }
         return data
 
