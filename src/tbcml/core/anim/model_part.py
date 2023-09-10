@@ -198,6 +198,8 @@ class ModelPart:
         gsca = self.gsca / self.scale_unit
         self.real_scale_x = (self.scale_x / self.scale_unit) * gsca
         self.real_scale_y = (self.scale_y / self.scale_unit) * gsca
+        self.__scale_x = None
+        self.__scale_y = None
 
     def set_alpha(self, alpha: int):
         """Sets the alpha of the part.
@@ -478,7 +480,10 @@ class ModelPart:
             m2 += (m0 * t_pos_x) + (m1 * t_pos_y)
             m5 += (m3 * t_pos_x) + (m4 * t_pos_y)
         else:
-            data = self.ints[0]
+            if self.ints:
+                data = self.ints[0]
+            else:
+                data = [0, 0, 0, 0]
             p0_x, p0_y = self.get_base_size(False)
             shi_x = data[2] * p0_x
             shi_y = data[3] * p0_y
@@ -531,7 +536,10 @@ class ModelPart:
             self.__sv_x = signum_x
             self.__sv_y = signum_y
             return self.__sv_x, self.__sv_y
-        part_id = self.ints[0][0]
+        if self.ints:
+            part_id = self.ints[0][0]
+        else:
+            part_id = -1
         if part_id == -1:
             self.__sv_x = self.real_scale_x
             self.__sv_y = self.real_scale_y
