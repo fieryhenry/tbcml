@@ -75,6 +75,14 @@ class Apk:
 
         self.temp_path = self.output_path.add("temp").remove_tree().generate_dirs()
 
+        self.smali_original_path = self.output_path.add(
+            "smali-original"
+        ).generate_dirs()
+
+        self.smali_non_original_path = (
+            self.output_path.add("smali-new").remove_tree().generate_dirs()
+        )
+
     def get_packs_lists(self) -> list[tuple["core.Path", "core.Path"]]:
         files: list[tuple[core.Path, core.Path]] = []
         for file in self.packs_path.get_files():
@@ -543,9 +551,20 @@ class Apk:
         app_id = Apk.get_en_app_id(package_name)
         if app_id is None:
             return []
-        url = f"https://{package_name}.en.uptodown.com/android/apps/{app_id}/versions?page[limit]=200&page[offset]=0"
-        resp = core.RequestHandler(url).get()
-        return resp.json()["data"]
+        counter = 0
+        versions: list[dict[str, Any]] = []
+        while True:
+            url = f"https://{package_name}.en.uptodown.com/android/apps/{app_id}/versions/{counter}"
+            resp = core.RequestHandler(url).get()
+            versions_data = resp.json().get("data")
+            if versions_data is None:
+                break
+            if len(versions_data) == 0:
+                break
+            for version_data in versions_data:
+                versions.append(version_data)
+            counter += 1
+        return versions
 
     @staticmethod
     def get_en_apk_urls(package_name: str) -> Optional[dict[str, Any]]:
