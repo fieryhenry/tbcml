@@ -340,9 +340,9 @@ class SmaliHandler:
 
             dex_path = temp_folder.add("classes.dex")
 
-            all_class_files = temp_folder.add(*class_name.split(".")[:-1]).get_files(
-                r".*\.class"
-            )
+            all_class_files = temp_folder.add(
+                *class_name.split(".")[:-1]
+            ).recursive_glob("*.class")
             class_files: list[str] = []
             classes_string = ""
             for class_file in all_class_files:
@@ -387,3 +387,181 @@ class SmaliHandler:
                     smali_object = Smali(smali_code, class_name_, None)
                 smali_objects[class_name_] = smali_object
             return SmaliSet(smali_objects)
+
+    def get_dex2jar_classes_jar_path_original(self) -> "core.Path":
+        """Gets the path to the dex2jar classes.jar file
+
+        Returns:
+            core.Path: The path to the dex2jar classes.jar file
+        """
+        return self.apk.smali_original_path.add("d2j-classes.jar")
+
+    def get_dex2jar_classes_jar_path_new(self) -> "core.Path":
+        """Gets the path to the dex2jar classes.jar file
+
+        Returns:
+            core.Path: The path to the dex2jar classes.jar file
+        """
+        return self.apk.smali_non_original_path.add("d2j-classes.jar")
+
+    def copy_original_smali(self):
+        """Copies the original smali files to the smali_non_original folder"""
+        self.apk.smali_original_path.copy(self.apk.smali_non_original_path)
+
+    def get_dex2jar_classes_path_original(self) -> "core.Path":
+        """Gets the path to the dex2jar classes directory
+
+        Returns:
+            core.Path: The path to the dex2jar classes directory
+        """
+        path = self.apk.smali_original_path.add("d2j-classes")
+        path.generate_dirs()
+        return path
+
+    def get_dex2jar_classes_path_new(self) -> "core.Path":
+        """Gets the path to the dex2jar classes directory
+
+        Returns:
+            core.Path: The path to the dex2jar classes directory
+        """
+        path = self.apk.smali_non_original_path.add("d2j-classes")
+        path.generate_dirs()
+        return path
+
+    def set_dex2jar_script_path(self, dex2jar_script_path: "core.Path"):
+        """Sets the path to the dex2jar script
+
+        Args:
+            dex2jar_script_path (core.Path): The path to the dex2jar script
+        """
+        self.dex2jar_script_path = dex2jar_script_path
+
+    def dex2jar(self):
+        """Converts the apk to a jar file
+
+        Args:
+            dex2jar_script (core.Path): The path to the dex2jar script
+        """
+        if self.get_dex2jar_classes_jar_path_original().exists():
+            return
+        command = core.Command(
+            f"{self.dex2jar_script_path} -f -o '{self.get_dex2jar_classes_jar_path_original()}' '{self.apk.apk_path}'"
+        )
+        res = command.run()
+        if res.exit_code != 0:
+            print(res.result)
+            raise RuntimeError("dex2jar failed")
+
+    def java_folder_to_dot_class(
+        self, java_folder: "core.Path", android_sdk_path: "core.Path"
+    ):
+        for java_file in java_folder.recursive_glob("*.java"):
+            self.java_to_dot_class(java_file, android_sdk_path)
+
+    def java_to_dot_class(
+        self, java_code_path: "core.Path", android_sdk_path: "core.Path"
+    ):
+        """Converts java code to dot class files
+
+        Args:
+            java_code_path (core.Path): The path to the java code
+            class_name (str): The name of the class
+        """
+        # find package {package name} in java code
+        java_code_str = java_code_path.read().to_str()
+        package_name = ""
+        for line in java_code_str.split("\n"):
+            if line.startswith("package "):
+                package_name = line.split(" ")[1].replace(";", "")
+                break
+        package_name += "." + java_code_path.get_file_name_without_extension()
+
+        with core.TempFolder() as temp_folder:
+            java_path = temp_folder.add(*package_name.split(".")[:-1]).add(
+                package_name.split(".")[-1] + ".java"
+            )
+
+            java_path.parent().generate_dirs()
+            parents = len(package_name.split("."))
+            top_level_path = java_code_path
+            for _ in range(parents):
+                top_level_path = top_level_path.parent()
+            top_level_path.copy(temp_folder)
+            files_to_not_compile: list[str] = []
+            for file in temp_folder.recursive_glob("*.java"):
+                if file.read().to_str().splitlines()[0].strip() == "// DO NOT COMPILE":
+                    files_to_not_compile.append(
+                        file.path.replace(temp_folder.path, "").replace(".java", "")
+                    )
+
+            command = core.Command(
+                f"javac --source 7 --target 7 '{java_path}' -d '{temp_folder}' -bootclasspath '{android_sdk_path.add('android.jar')}' -classpath '{self.get_dex2jar_classes_jar_path_new()}'",
+                cwd=temp_folder,
+            )
+            result = command.run()
+            if result.exit_code != 0:
+                print(result.result)
+                raise RuntimeError("javac failed")
+
+            class_files = temp_folder.recursive_glob("*.class")
+            for class_file in class_files:
+                class_name = (
+                    class_file.path.replace(temp_folder.path, "")[1:]
+                    .split("$")[0]
+                    .replace(".class", "")
+                )
+                class_name = "/" + class_name
+                if class_name in files_to_not_compile:
+                    print(f"Skipping {class_name}")
+                    continue
+
+                path = self.get_dex2jar_classes_path_new().add(
+                    *class_name.split("/")[:-1]
+                )
+
+                class_file.copy(path)
+
+    def dex2jar_to_dot_class(self):
+        """Converts the dex2jar jar file to dot class files"""
+        if self.get_dex2jar_classes_path_original().get_files():
+            return
+        zip_file = core.Zip.from_file(self.get_dex2jar_classes_jar_path_original())
+        zip_file.extract(self.get_dex2jar_classes_path_original())
+
+    def get_output_classes_path(self) -> "core.Path":
+        """Gets the path to the output classes directory
+
+        Returns:
+            core.Path: The path to the output classes directory
+        """
+        path = self.apk.temp_path.add("output-classes")
+        path.generate_dirs()
+        return path
+
+    def jar_to_dex(self, jar_path: "core.Path"):
+        """Converts a jar file to dex files
+
+        Args:
+            jar_path (core.Path): The path to the jar file
+        """
+        zip_file = core.Zip.from_file(jar_path)
+        zip_file.extract(self.get_dex2jar_classes_path_new())
+
+        self.classes_to_dex()
+
+    def classes_to_dex(self):
+        """Converts dot class files to dex files
+
+        Args:
+            path (core.Path): The path to the dot class files
+        """
+        command = core.Command(
+            f"dx -JXmx2048m --dex --multi-dex --output='{self.get_output_classes_path()}' '{self.get_dex2jar_classes_path_new()}'"
+        )
+        res = command.run()
+        if res.exit_code != 0:
+            print(res.result)
+            raise RuntimeError("dx failed")
+
+        for dex_file in self.get_output_classes_path().recursive_glob("*.dex"):
+            dex_file.copy(self.apk.extracted_path)
