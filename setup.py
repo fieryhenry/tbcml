@@ -35,6 +35,7 @@ setuptools.setup(
         "PyQt5",
         "androguard",
         "qtawesome",
+        "moviepy",
     ],
     include_package_data=True,
     extras_require={
