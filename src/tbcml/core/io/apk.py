@@ -490,6 +490,14 @@ class Apk:
         if not url:
             print(f"Failed to get APK URL: {self.game_version.to_string()}")
             return False
+
+        response = core.RequestHandler(url).get()
+        soup = bs4.BeautifulSoup(response.text, "html.parser")
+        post_download_class = soup.find("div", {"class": "post-download"})
+        if not isinstance(post_download_class, bs4.element.Tag):
+            return False
+        data_url = post_download_class.get_attribute_list("data-url")[0]
+        url = data_url
         headers = {
             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
             "accept-encoding": "gzip, deflate, br",
