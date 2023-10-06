@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.1.1 (2023-10-06)
+
+### Fixed
+
+- Downloading from uptodown (1aa400b), they keep changing their website
+- moviepy not being installed (b784640)
+
 ## 1.0.1 (2023-10-04)
 
 ### Fixed
