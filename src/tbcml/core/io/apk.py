@@ -247,7 +247,7 @@ class Apk:
         self,
         packs: "core.GamePacks",
     ):
-        files = packs.to_packs_lists(self.randomize_key(), self.randomize_iv())
+        files = packs.to_packs_lists(self.key, self.iv)
         for pack_name, pack_data, list_data in files:
             if len(pack_name.split("_")) > 1:
                 continue
@@ -1128,6 +1128,8 @@ class Apk:
         self,
         mods: list["core.Mod"],
         game_packs: Optional["core.GamePacks"] = None,
+        key: Optional[str] = None,
+        iv: Optional[str] = None,
     ):
         if game_packs is None:
             game_packs = core.GamePacks.from_apk(self)
@@ -1140,5 +1142,10 @@ class Apk:
         self.add_script_mods(mods)
         self.add_patch_mods(mods)
         self.add_smali_mods(mods)
+
+        if key is not None:
+            self.set_key(key)
+        if iv is not None:
+            self.set_iv(iv)
 
         self.load_packs_into_game(game_packs)
