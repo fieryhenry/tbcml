@@ -486,10 +486,11 @@ class Apk:
         if not urls:
             print("Failed to get APK URLs")
             return False
-        url = self.get_en_apk_url(urls[self.game_version.to_string()])
+        url: str = urls[self.game_version.to_string()]
         if not url:
             print(f"Failed to get APK URL: {self.game_version.to_string()}")
             return False
+        url = url.replace("/android/download/", "/android/post-download/")
 
         response = core.RequestHandler(url).get()
         soup = bs4.BeautifulSoup(response.text, "html.parser")
