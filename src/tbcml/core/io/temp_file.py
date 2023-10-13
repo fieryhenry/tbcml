@@ -13,7 +13,7 @@ class TempFile:
             if not extension.startswith("."):
                 extension = f".{extension}"
         self.path = (
-            core.Path.get_appdata_folder()
+            core.Path.get_documents_folder()
             .add("temp")
             .add(f"{name}{extension}")
             .get_absolute_path()
@@ -36,7 +36,7 @@ class TempFolder:
         if name is None:
             name = str(uuid.uuid4())
         self.path = (
-            core.Path.get_appdata_folder().add("temp").add(name).get_absolute_path()
+            core.Path.get_documents_folder().add("temp").add(name).get_absolute_path()
         )
         self.path.generate_dirs()
 

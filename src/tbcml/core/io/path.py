@@ -63,17 +63,15 @@ class Path:
         return self.path.replace("\\", "/")
 
     @staticmethod
-    def get_appdata_folder() -> "Path":
+    def get_documents_folder() -> "Path":
         app_name = "tbcml"
         os_name = os.name
         if os_name == "nt":
-            path = Path.join(os.environ["APPDATA"], app_name)
+            path = Path.join(os.environ["USERPROFILE"], "Documents", app_name)
         elif os_name == "posix":
             path = Path.join(os.environ["HOME"], "Documents", app_name)
         elif os_name == "mac":
-            path = Path.join(
-                os.environ["HOME"], "Library", "Application Support", app_name
-            )
+            path = Path.join(os.environ["HOME"], "Documents", app_name)
         else:
             raise OSError("Unknown OS")
         path.generate_dirs()

@@ -13,7 +13,7 @@ class Logger:
         """
         Initializes a Logger object
         """
-        self.log_file = core.Path.get_appdata_folder().add("tbcml.log")
+        self.log_file = core.Path.get_documents_folder().add("tbcml.log")
         self.log_data = self.log_file.read(True).split(b"\n")
 
     def get_time(self) -> str:

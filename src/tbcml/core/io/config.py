@@ -19,7 +19,7 @@ class ConfigKey(enum.Enum):
 
 class Config:
     def __init__(self):
-        config = core.YamlFile(core.Path.get_appdata_folder().add("config.yaml"))
+        config = core.YamlFile(core.Path.get_documents_folder().add("config.yaml"))
         if config.yaml is None:  # type: ignore
             config.yaml = {}
         self.config: dict[ConfigKey, Any] = {}
@@ -42,14 +42,14 @@ class Config:
 
     def initialize_config(self):
         initial_values = {
-            ConfigKey.MOD_FOLDER: core.Path.get_appdata_folder().add("Mods").path,
-            ConfigKey.APK_FOLDER: core.Path.get_appdata_folder().add("APKs").path,
+            ConfigKey.MOD_FOLDER: core.Path.get_documents_folder().add("Mods").path,
+            ConfigKey.APK_FOLDER: core.Path.get_documents_folder().add("APKs").path,
             ConfigKey.APK_COPY_PATH: "",
             ConfigKey.KEYSTORE_PASSWORD: "TBCML_CUSTOM_APK",
             ConfigKey.UPDATE: True,
             ConfigKey.UPDATE_TO_BETA: False,
             ConfigKey.DEFAULT_AUTHOR: "",
-            ConfigKey.LIB_GADGETS_FOLDER: core.Path.get_appdata_folder()
+            ConfigKey.LIB_GADGETS_FOLDER: core.Path.get_documents_folder()
             .add("LibGadgets")
             .path,
             ConfigKey.LOCALE: "en",

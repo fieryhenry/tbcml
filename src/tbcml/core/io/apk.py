@@ -207,7 +207,7 @@ class Apk:
             return
         password = core.config.get(core.ConfigKey.KEYSTORE_PASSWORD)
         key_store_name = "tbcml.keystore"
-        key_store_path = core.Path.get_appdata_folder().add(key_store_name)
+        key_store_path = core.Path.get_documents_folder().add(key_store_name)
         if not key_store_path.exists():
             cmd = core.Command(
                 f'keytool -genkey -v -keystore {key_store_path} -alias tbcml -keyalg RSA -keysize 2048 -validity 10000 -storepass {password} -keypass {password} -dname "CN=, OU=, O=, L=, S=, C="',
