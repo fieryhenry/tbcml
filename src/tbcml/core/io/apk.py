@@ -498,7 +498,7 @@ class Apk:
         if not isinstance(post_download_class, bs4.element.Tag):
             return False
         data_url = post_download_class.get_attribute_list("data-url")[0]
-        url = data_url
+        url = "https://dw.uptodown.com/dwn/" + data_url
         headers = {
             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
             "accept-encoding": "gzip, deflate, br",
