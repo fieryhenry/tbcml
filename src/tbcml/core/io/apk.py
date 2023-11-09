@@ -372,6 +372,20 @@ class Apk:
         return max_version
 
     @staticmethod
+    def get_all_versions_v2(cc: "core.CountryCode") -> list["core.GameVersion"]:
+        base_url = "https://raw.githubusercontent.com/fieryhenry/BCData/master/APKs/"
+        url = base_url + cc.get_code() + "/versions.json"
+        response = core.RequestHandler(url).get()
+        json = response.json()
+        versions: list[core.GameVersion] = []
+        cc_versions = json.get(cc.get_code())
+        if cc_versions is None:
+            return []
+        for version in cc_versions:
+            versions.append(core.GameVersion.from_string(version))
+        return versions
+
+    @staticmethod
     def get_all_versions(
         cc: "core.CountryCode",
     ) -> list["core.GameVersion"]:
@@ -421,7 +435,7 @@ class Apk:
         total: int,
         is_file_size: bool = False,
     ):
-        total_bar_length = 70
+        total_bar_length = 50
         if is_file_size:
             current_str = core.FileSize(current).format()
             total_str = core.FileSize(total).format()
@@ -434,6 +448,41 @@ class Apk:
             f"\r[{bar}] {int(progress * 100)}% ({current_str}/{total_str})    ",
             end="",
         )
+
+    def get_download_stream(
+        self,
+        scraper: "cloudscraper.CloudScraper",
+        url: str,
+    ) -> Optional[requests.Response]:
+        stream = scraper.get(url, stream=True, timeout=10)
+        if stream.headers.get("content-length") is None:
+            return None
+        return stream
+
+    def download_v2(
+        self, progress: Optional[Callable[[float, int, int, bool], None]] = progress
+    ) -> bool:
+        base_url = "https://raw.githubusercontent.com/fieryhenry/BCData/master/APKs/"
+        version = self.game_version.to_string()
+        url = base_url + self.country_code.get_code() + "/" + version + ".apk"
+        stream = core.RequestHandler(url).get_stream()
+        if stream.headers.get("content-length") is None:
+            return False
+
+        _total_length = int(stream.headers.get("content-length"))  # type: ignore
+
+        dl = 0
+        chunk_size = 1024
+        buffer: list[bytes] = []
+        for d in stream.iter_content(chunk_size=chunk_size):
+            dl += len(d)
+            buffer.append(d)
+            if progress is not None:
+                progress(dl / _total_length, dl, _total_length, True)
+
+        apk = core.Data(b"".join(buffer))
+        apk.to_file(self.apk_path)
+        return True
 
     def download(
         self, progress: Optional[Callable[[float, int, int, bool], None]] = progress
@@ -456,13 +505,19 @@ class Apk:
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"
                 }
             )
-            stream = scraper.get(url, stream=True, timeout=10)
-            try:
-                _total_length = int(stream.headers.get("content-length"))  # type: ignore
-            except TypeError:
-                url = url[:-1] + "1"
-                stream = scraper.get(url, stream=True, timeout=10)
-                _total_length = int(stream.headers.get("content-length"))  # type: ignore
+            stream = self.get_download_stream(scraper, url)
+            if stream is None:
+                stream = self.get_download_stream(scraper, url[:-1] + "1")
+            # if stream is None:
+            #    stream = self.get_download_stream(scraper, url.replace("APK", "XAPK"))
+            # sif stream is None:
+            # stream = self.get_download_stream(
+            #    scraper, url.replace("APK", "XAPK")[:-1] + "1"
+            # )
+            if stream is None:
+                return False
+
+            _total_length = int(stream.headers.get("content-length"))  # type: ignore
 
             dl = 0
             chunk_size = 1024
