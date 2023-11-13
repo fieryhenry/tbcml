@@ -155,7 +155,7 @@ class Apk:
         print(message)
         return False
 
-    def extract(self):
+    def extract(self, decode_resources: bool = True):
         if self.original_extracted_path.has_files():
             self.copy_extracted()
             self.copy_packs()
@@ -163,8 +163,9 @@ class Apk:
 
         if not self.check_display_apktool_error():
             return
+        decode_resources_str = "-r" if not decode_resources else ""
         res = self.run_apktool(
-            f"d -f -s {self.apk_path} -o {self.original_extracted_path}"
+            f"d -f -s {decode_resources_str} {self.apk_path} -o {self.original_extracted_path}"
         )
         if res.exit_code != 0:
             print(f"Failed to extract APK: {res.result}")
@@ -933,8 +934,11 @@ class Apk:
     def get_manifest_path(self) -> "core.Path":
         return self.extracted_path.add("AndroidManifest.xml")
 
-    def parse_manifest(self) -> "core.XML":
-        return core.XML(self.get_manifest_path().read())
+    def parse_manifest(self) -> Optional["core.XML"]:
+        try:
+            return core.XML(self.get_manifest_path().read())
+        except Exception:
+            return None
 
     def set_manifest(self, manifest: "core.XML"):
         manifest.to_file(self.get_manifest_path())
@@ -1042,6 +1046,8 @@ class Apk:
 
     def set_allow_backup(self, allow_backup: bool):
         manifest = self.parse_manifest()
+        if manifest is None:
+            return
         path = "application"
         if allow_backup:
             manifest.set_attribute(path, "android:allowBackup", "true")
@@ -1051,6 +1057,8 @@ class Apk:
 
     def set_debuggable(self, debuggable: bool):
         manifest = self.parse_manifest()
+        if manifest is None:
+            return
         path = "application"
         if debuggable:
             manifest.set_attribute(path, "android:debuggable", "true")
@@ -1080,6 +1088,9 @@ class Apk:
     def set_package_name(self, package_name: str):
         self.package_name = package_name
         manifest = self.parse_manifest()
+        if manifest is None:
+            return
+
         manifest.set_attribute("manifest", "package", package_name)
 
         self.edit_xml_string("package_name", package_name)
@@ -1102,6 +1113,8 @@ class Apk:
 
     def set_clear_text_traffic(self, clear_text_traffic: bool):
         manifest = self.parse_manifest()
+        if manifest is None:
+            return
         path = "application"
         if clear_text_traffic:
             manifest.set_attribute(path, "android:usesCleartextTraffic", "true")
