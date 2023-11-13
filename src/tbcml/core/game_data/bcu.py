@@ -334,6 +334,7 @@ class BCUForm:
         stats.behemoth_dodge.prob = self.get_proc_prob(procs, "BSTHUNT")
         stats.behemoth_dodge.time = self.get_proc_time(procs, "BSTHUNT")
         stats.attack_1.use_ability = True
+        stats.counter_surge = self.check_ability(base_stats["abi"], 19)
 
         return stats
 
@@ -679,6 +680,7 @@ class BCUEnemy:
             - stats.attack_3.long_distance_start
         )
         stats.behemoth = BCUForm.get_trait_by_id(traits, 13)
+        stats.counter_surge = BCUForm.check_ability(base_stats["abi"], 19)
 
         return stats
 

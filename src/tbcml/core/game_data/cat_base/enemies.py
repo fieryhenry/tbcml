@@ -9,7 +9,7 @@ class EnemyStats:
         self.assign(raw_data)
 
     def extend(self, raw_data: list[Optional[int]]) -> list[Optional[int]]:
-        length = 102
+        length = 104
         raw_data = raw_data + [None] * (length - len(raw_data))
         return raw_data
 
@@ -96,6 +96,8 @@ class EnemyStats:
         self.aku = core.unit_bool(raw_data[93])
         self.baron = core.unit_bool(raw_data[94])
         self.behemoth = core.unit_bool(raw_data[101])
+        self.unknown_102 = raw_data[102]
+        self.counter_surge = core.unit_bool(raw_data[103])
 
         self.attack_1 = core.Attack.from_values(
             raw_data[3],
@@ -244,6 +246,8 @@ class EnemyStats:
             self.attack_3.long_distance_start,  # 99
             self.attack_3.long_distance_range,  # 100
             core.unit_int(self.behemoth),  # 101
+            self.unknown_102,  # 102
+            core.unit_int(self.counter_surge),  # 103
         ]
 
     def apply_dict(self, dict_data: dict[str, Any]):

@@ -281,6 +281,10 @@ class CatStats:
     Probability: Index 106
     Duration: Index 107
     """
+    unknown_108: Optional[int]
+    """Unknown. Index 108."""
+    counter_surge: Optional[bool]
+    """Whether the cat has the counter surge ability. Index 109."""
 
     def __init__(self, cat_id: int, form: CatFormType, raw_data: list[Optional[int]]):
         """Initialize a new Stats object.
@@ -304,7 +308,7 @@ class CatStats:
         Returns:
             list[int]: The extended raw stats data.
         """
-        length = 109
+        length = 110
         amount = length - len(raw_data)
         required = (
             [55, -1],
@@ -424,6 +428,7 @@ class CatStats:
             raw_data[106], raw_data[107]
         )
         self.unknown_108 = raw_data[108]
+        self.counter_surge = core.unit_bool(raw_data[109])
 
     def to_raw_data(self) -> list[Optional[int]]:
         return [
@@ -568,6 +573,7 @@ class CatStats:
             if self.behemoth_dodge.time is not None
             else None,  # 107
             self.unknown_108,  # 108
+            core.unit_int(self.counter_surge),  # 109
         ]
 
     def wipe(self):
@@ -652,6 +658,7 @@ class CatStats:
         self.surge_immunity = enemy_stats.surge_immunity
         self.curse = enemy_stats.curse.copy()
         self.target_aku = has_targeted_effect
+        self.counter_surge = enemy_stats.counter_surge
 
     def apply_dict(self, dict_data: dict[str, Any]):
         raw_stats = dict_data.get("raw_stats")
