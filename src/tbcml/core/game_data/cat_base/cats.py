@@ -1025,10 +1025,10 @@ class UnitBuyData:
         self.max_upgrade_level_no_catseye = raw_data[49]
         self.max_upgrade_level_catseye = raw_data[50]
         self.max_plus_upgrade_level = raw_data[51]
-        self.unknown_52 = raw_data[52]
-        self.unknown_53 = raw_data[53]
-        self.unknown_54 = raw_data[54]
-        self.unknown_55 = raw_data[55]
+        self.gatya_offset_y_1st = raw_data[52]
+        self.gatya_offset_y_2nd = raw_data[53]
+        self.gatya_offset_y_3rd = raw_data[54]
+        self.gatya_offset_y_4th = raw_data[55]
         self.catseye_usage_pattern = raw_data[56]
         self.game_version = raw_data[57]
         self.np_sell_price = raw_data[58]
@@ -1063,10 +1063,10 @@ class UnitBuyData:
             self.max_upgrade_level_no_catseye,
             self.max_upgrade_level_catseye,
             self.max_plus_upgrade_level,
-            self.unknown_52,
-            self.unknown_53,
-            self.unknown_54,
-            self.unknown_55,
+            self.gatya_offset_y_1st,
+            self.gatya_offset_y_2nd,
+            self.gatya_offset_y_3rd,
+            self.gatya_offset_y_4th,
             self.catseye_usage_pattern,
             self.game_version,
             self.np_sell_price,
@@ -1555,6 +1555,11 @@ class Cat:
         self.talent = talent
         self.nyanko_picture_book_data = nyanko_picture_book_data
         self.evolve_text = evolve_text
+
+    def get_final_form(self) -> Optional[CatForm]:
+        if len(self.forms) == 0:
+            return None
+        return self.get_form(len(self.forms) - 1)
 
     @staticmethod
     def get_stat_file_name(cat_id: int):
