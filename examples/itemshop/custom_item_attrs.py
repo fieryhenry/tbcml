@@ -16,6 +16,7 @@ item_shop = core.ItemShop.from_game_data(game_data)
 first_item = item_shop.get_item(0)
 if first_item is None:
     raise ValueError("Item 0 not found")
+
 first_item.count = 5000
 first_item.price = 1
 first_item.gatya_item_id = 22
@@ -38,5 +39,3 @@ apk.set_app_name("12.3.0")
 apk.set_package_name("jp.co.ponos.battlecatste")
 
 apk.load_mods([mod], game_data)
-
-game_data.extract(core.Path("dec_modded"))
