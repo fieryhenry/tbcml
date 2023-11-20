@@ -34,6 +34,21 @@ class Item:
         self.category_name = category_name
         self.rect_id = rect_id
 
+    def to_dict(self) -> dict[str, Any]:
+        """Convert the Item to a dictionary.
+
+        Returns:
+            dict[str, Any]: The dictionary.
+        """
+        return {
+            "gatya_item_id": self.gatya_item_id,
+            "count": self.count,
+            "price": self.price,
+            "draw_item_value": self.draw_item_value,
+            "category_name": self.category_name,
+            "rect_id": self.rect_id,
+        }
+
     def apply_dict(self, dict_data: dict[str, Any]):
         gatya_item_id = dict_data.get("gatya_item_id")
         if gatya_item_id is not None:
@@ -57,8 +72,8 @@ class Item:
             self.rect_id = core.ModEditValueHandler(rect_id, self.rect_id).get_value()
 
     @staticmethod
-    def create_empty() -> "Item":
-        return Item(0, 0, 0, 0, False, "", 0)
+    def create_empty(id: int) -> "Item":
+        return Item(id, 0, 0, 0, False, "", 0)
 
 
 class ItemShop(core.EditableClass):
@@ -129,6 +144,17 @@ class ItemShop(core.EditableClass):
         item_shop = ItemShop(items, tex)
         game_data.item_shop = item_shop
         return item_shop
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert the ItemShop to a dictionary.
+
+        Returns:
+            dict[str, Any]: The dictionary.
+        """
+        return {
+            "items": {id: item.to_dict() for id, item in self.data.items()},
+            "tex": self.tex.to_dict(),
+        }
 
     def get_texture(self) -> "core.Texture":
         """Get the Imgcut of the ItemShop.
@@ -267,3 +293,15 @@ class ItemShop(core.EditableClass):
 
         if tex is not None:
             self.tex.apply_dict(tex)
+
+    @staticmethod
+    def create_empty_from_id(id: Any) -> Any:
+        """Create an empty Item.
+
+        Args:
+            id (Any): The id of the Item.
+
+        Returns:
+            Any: The empty Item.
+        """
+        return Item.create_empty(id)

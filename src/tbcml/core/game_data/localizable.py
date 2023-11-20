@@ -1,5 +1,5 @@
 """This module contains the Localizable class."""
-from typing import Optional
+from typing import Any, Optional
 from tbcml import core
 
 
@@ -15,6 +15,22 @@ class LocalItem:
         """
         self.key = key
         self.value = value
+
+    def to_dict(self) -> dict[str, str]:
+        """Convert the LocalItem to a dictionary.
+
+        Returns:
+            dict[str, str]: The dictionary.
+        """
+        return {"key": self.key, "value": self.value}
+
+    def apply_dict(self, dict_data: dict[str, str]):
+        key = dict_data.get("key")
+        if key is not None:
+            self.key = key
+        value = dict_data.get("value")
+        if value is not None:
+            self.value = value
 
 
 class Localizable(core.EditableClass):
@@ -173,3 +189,23 @@ class Localizable(core.EditableClass):
         """Sort the localizable items by key alphabetically in ascending order."""
 
         self.data = dict(sorted(self.data.items()))
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert the Localizable object to a dictionary.
+
+        Returns:
+            dict[str, Any]: The dictionary.
+        """
+        return {key: item.to_dict() for key, item in self.data.items()}
+
+    @staticmethod
+    def create_empty_from_id(id: Any) -> LocalItem:
+        """Create an empty LocalItem object.
+
+        Args:
+            id (Any): The id of the LocalItem.
+
+        Returns:
+            Any: The empty LocalItem object.
+        """
+        return LocalItem(id, "")
