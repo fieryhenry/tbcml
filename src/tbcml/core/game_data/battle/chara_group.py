@@ -127,3 +127,7 @@ class CharaGroups(core.EditableClass):
             CharaGroups: The empty CharaGroups.
         """
         return CharaGroups({})
+
+    @staticmethod
+    def create_empty_from_id(id: Any) -> Any:
+        return CharaGroupSet.create_empty(id)

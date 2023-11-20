@@ -143,3 +143,7 @@ class MatatabiData(core.EditableClass):
             csv.lines.append(new_line)
 
         game_data.set_file(MatatabiData.get_file_name(), csv.to_data())
+
+    @staticmethod
+    def create_empty_from_id(id: Any) -> Any:
+        return Matatabi.create_empty(id)

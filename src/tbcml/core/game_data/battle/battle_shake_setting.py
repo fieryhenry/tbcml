@@ -148,3 +148,15 @@ class ShakeEffects(core.EditableClass):
             ShakeEffects: The empty ShakeEffects object.
         """
         return ShakeEffects({})
+
+    @staticmethod
+    def create_empty_from_id(id: Any) -> Any:
+        """Creates an empty ShakeEffect object from an ID.
+
+        Args:
+            id (Any): The ID to create the ShakeEffect from.
+
+        Returns:
+            Any: The empty ShakeEffect object.
+        """
+        return ShakeEffect.create_empty(id)

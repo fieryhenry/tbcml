@@ -219,6 +219,10 @@ class GatyaTrackData(core.EditableClass):
             csv.to_data(),
         )
 
+    @staticmethod
+    def create_empty_from_id(id: Any) -> Any:
+        return GatyaTrackEvents.create_empty(id)
+
 
 class LegendStageTrack:
     """A LegendStageTrack event."""
@@ -409,6 +413,10 @@ class LegendStageTrackData(core.EditableClass):
             LegendStageTrackData: The LegendStageTrackData.
         """
         return LegendStageTrackData({})
+
+    @staticmethod
+    def create_empty_from_id(id: Any) -> Any:
+        return LegendStageTrackEvents.create_empty(id)
 
 
 class StageClearTrack:
@@ -602,6 +610,10 @@ class StageClearTrackData(core.EditableClass):
         """
         return StageClearTrackData({})
 
+    @staticmethod
+    def create_empty_from_id(id: Any) -> Any:
+        return StageClearTrackEvents.create_empty(id)
+
 
 class PurchaseEvent:
     """Represents a PurchaseEvent."""
@@ -740,6 +752,10 @@ class PurchaseTrackData(core.EditableClass):
         """
         return PurchaseTrackData({})
 
+    @staticmethod
+    def create_empty_from_id(id: Any) -> Any:
+        return PurchaseEvent.create_empty(id)
+
 
 class UserRankTrack:
     """Represents a UserRankTrack."""
@@ -869,6 +885,10 @@ class UserRankTrackData(core.EditableClass):
             UserRankTrackData: The empty UserRankTrackData.
         """
         return UserRankTrackData({})
+
+    @staticmethod
+    def create_empty_from_id(id: Any) -> Any:
+        return UserRankTrack.create_empty(id)
 
 
 class AdjustData(core.EditableClass):
@@ -1025,3 +1045,7 @@ class AdjustData(core.EditableClass):
             AdjustData: The empty AdjustData.
         """
         return AdjustData()
+
+    @staticmethod
+    def create_empty_from_id(id: Any) -> Any:
+        return AdjustData.create_empty()

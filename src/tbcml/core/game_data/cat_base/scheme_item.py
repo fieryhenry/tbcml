@@ -141,3 +141,7 @@ class SchemeItems(core.EditableClass):
     def set_item(self, item: SchemeItem, id: int):
         item.id = id
         self.data[item.id] = item
+
+    @staticmethod
+    def create_empty_from_id(id: Any) -> Any:
+        return SchemeItem.create_empty(id)

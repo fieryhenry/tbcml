@@ -700,3 +700,7 @@ class Enemies(core.EditableClass):
 
     def set_enemy(self, enemy: Enemy):
         self.data[enemy.enemy_id] = enemy
+
+    @staticmethod
+    def create_empty_from_id(id: Any) -> Any:
+        return Enemy.create_empty(id)

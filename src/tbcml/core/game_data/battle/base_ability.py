@@ -307,3 +307,15 @@ class BaseAbilities(core.EditableClass):
             BaseAbilities: The empty collection of base abilities.
         """
         return BaseAbilities({})
+
+    @staticmethod
+    def create_empty_from_id(id: Any) -> Any:
+        """Create an empty base ability from an ID.
+
+        Args:
+            id (Any): The ID of the base ability.
+
+        Returns:
+            Any: The empty base ability.
+        """
+        return BaseAbility.create_empty(id)

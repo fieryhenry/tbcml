@@ -1936,3 +1936,7 @@ class Cats(core.EditableClass):
     @staticmethod
     def get_total_cats(game_data: "core.GamePacks") -> int:
         return len(NyankoPictureBook.from_game_data(game_data).data)
+
+    @staticmethod
+    def create_empty_from_id(id: Any) -> Any:
+        return Cat.create_empty(id)

@@ -445,3 +445,7 @@ class GatyaItems(core.EditableClass):
         if item.gatya_item_buy_item is None:
             return None
         return item.gatya_item_buy_item.stage_drop_item_id
+
+    @staticmethod
+    def create_empty_from_id(id: Any) -> Any:
+        return GatyaItem.create_empty(id)

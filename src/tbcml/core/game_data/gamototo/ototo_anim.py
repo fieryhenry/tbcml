@@ -78,3 +78,7 @@ class OtotoAnim(core.EditableClass):
     @staticmethod
     def create_empty() -> "OtotoAnim":
         return OtotoAnim(core.Model.create_empty())
+
+    @staticmethod
+    def create_empty_from_id(id: Any) -> Any:
+        return OtotoAnim.create_empty()

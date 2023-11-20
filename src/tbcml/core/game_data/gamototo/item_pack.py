@@ -55,10 +55,10 @@ class ItemPack:
                 item.apply_dict(modded_item)
 
     @staticmethod
-    def create_empty() -> "ItemPack":
+    def create_empty(user_rank: int) -> "ItemPack":
         return ItemPack(
             DropType.ITEM_PACK,
-            0,
+            user_rank,
             0,
             {},
         )
@@ -135,3 +135,7 @@ class ItemPacks(core.EditableClass):
 
     def set_item_pack(self, pack: ItemPack):
         self.data[pack.user_rank] = pack
+
+    @staticmethod
+    def create_empty_from_id(id: Any) -> Any:
+        return ItemPack.create_empty(id)

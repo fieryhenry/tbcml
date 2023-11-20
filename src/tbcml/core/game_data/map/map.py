@@ -1941,3 +1941,7 @@ class Maps(core.EditableClass):
 
     def set_map(self, map: Map):
         self.data[map.map_option.stage_id] = map
+
+    @staticmethod
+    def create_empty_from_id(id: Any) -> Any:
+        return Map.create_empty(id)

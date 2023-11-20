@@ -358,3 +358,15 @@ class Bgs(core.EditableClass):
             Bgs: The created Bgs object.
         """
         return Bgs({})
+
+    @staticmethod
+    def create_empty_from_id(id: Any) -> Any:
+        """Creates an empty Bg object from an ID.
+
+        Args:
+            id (Any): The ID to create the Bg from.
+
+        Returns:
+            Any: The empty Bg object.
+        """
+        return Bg.create_empty(id)

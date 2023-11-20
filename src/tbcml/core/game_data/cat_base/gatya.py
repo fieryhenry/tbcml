@@ -477,3 +477,7 @@ class Gatya(core.EditableClass):
     def set_gatya(self, gatya: "Gatya"):
         self.gatya_options = gatya.gatya_options
         self.gatya_data_sets = gatya.gatya_data_sets
+
+    @staticmethod
+    def create_empty_from_id(id: Any) -> Any:
+        return Gatya.create_empty()

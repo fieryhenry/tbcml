@@ -35,7 +35,7 @@ class EditableClass:
         for id, modded_item in modded_data.items():
             current_item = current_data.get(id)
             if current_item is None:
-                current_item = self.create_empty()
+                current_item = self.create_empty_from_id(id)
             try:
                 current_item.apply_dict(modded_item, mod_edit_key)
             except TypeError:
@@ -67,3 +67,7 @@ class EditableClass:
         if self.data is None:
             raise ValueError("EditableClass.data is None!")
         self.data[key] = value
+
+    @staticmethod
+    def create_empty_from_id(id: Any) -> Any:
+        ...

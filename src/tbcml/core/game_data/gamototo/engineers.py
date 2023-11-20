@@ -76,6 +76,10 @@ class EngineerLimit(core.EditableClass):
     ):
         self.limit = dict_data.get(mod_edit_key, self.limit)
 
+    @staticmethod
+    def create_empty_from_id(id: Any) -> Any:
+        return EngineerLimit.create_empty()
+
 
 class EngineerAnim(core.EditableClass):
     class FilePath(enum.Enum):
@@ -150,3 +154,7 @@ class EngineerAnim(core.EditableClass):
         convert_int: bool = True,
     ):
         self.model.apply_dict(dict_data.get(mod_edit_key, {}))
+
+    @staticmethod
+    def create_empty_from_id(id: Any) -> Any:
+        return EngineerAnim.create_empty()

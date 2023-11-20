@@ -153,3 +153,7 @@ class UserRankReward(core.EditableClass):
     def set_reward(self, index: int, reward: RewardSet) -> None:
         reward.index = index
         self.data[index] = reward
+
+    @staticmethod
+    def create_empty_from_id(id: Any) -> Any:
+        return RewardSet.create_empty(id)

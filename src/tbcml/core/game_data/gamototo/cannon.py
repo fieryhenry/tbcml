@@ -95,6 +95,10 @@ class CastleMixRecipies(core.EditableClass):
     def create_empty():
         return CastleMixRecipies({})
 
+    @staticmethod
+    def create_empty_from_id(id: Any) -> Any:
+        return CastleMixRecipe.create_empty(id)
+
 
 class BaseDecoRecipeLevel:
     def __init__(
@@ -1497,3 +1501,7 @@ class Castles(core.EditableClass):
     @staticmethod
     def create_empty() -> "Castles":
         return Castles({}, CastleEffectsData.create_empty())
+
+    @staticmethod
+    def create_empty_from_id(id: Any) -> Any:
+        return Castle.create_empty(id)
