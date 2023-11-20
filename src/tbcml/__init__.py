@@ -1,3 +1,8 @@
-from tbcml import core, ui
+from tbcml import core
 
-__all__ = ["core", "ui"]
+try:
+    from tbcml import ui
+except ImportError:
+    __all__ = ["core"]
+else:
+    __all__ = ["core", "ui"]
