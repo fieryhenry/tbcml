@@ -155,8 +155,8 @@ class Apk:
         print(message)
         return False
 
-    def extract(self, decode_resources: bool = True):
-        if self.original_extracted_path.has_files():
+    def extract(self, decode_resources: bool = True, force: bool = False):
+        if self.original_extracted_path.has_files() and not force:
             self.copy_extracted()
             self.copy_packs()
             return
