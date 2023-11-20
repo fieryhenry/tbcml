@@ -463,11 +463,21 @@ class Apk:
     def download_v2(
         self, progress: Optional[Callable[[float, int, int, bool], None]] = progress
     ) -> bool:
-        base_url = "https://raw.githubusercontent.com/fieryhenry/BCData/master/APKs/"
-        version = self.game_version.to_string()
-        url = base_url + self.country_code.get_code() + "/" + version + ".apk"
-        stream = core.RequestHandler(url).get_stream()
-        if stream.headers.get("content-length") is None:
+        base_url = (
+            "https://raw.githubusercontent.com/fieryhenry/BCData/master/apk_list.json"
+        )
+
+        response = core.RequestHandler(base_url).get()
+        json = response.json()
+        cc_versions = json.get(self.country_code.get_code())
+        if cc_versions is None:
+            return False
+        url = cc_versions.get(self.game_version.to_string())
+        if url is None:
+            return False
+        scraper = cloudscraper.create_scraper()  # type: ignore
+        stream = self.get_download_stream(scraper, url)
+        if stream is None:
             return False
 
         _total_length = int(stream.headers.get("content-length"))  # type: ignore
@@ -548,7 +558,7 @@ class Apk:
             return False
         url = url.replace("/android/download/", "/android/post-download/")
 
-        response = core.RequestHandler(url).get()
+        response = core.RequestHandler(url, Apk.get_uptdown_headers()).get()
         soup = bs4.BeautifulSoup(response.text, "html.parser")
         post_download_class = soup.find("div", {"class": "post-download"})
         if not isinstance(post_download_class, bs4.element.Tag):
@@ -598,10 +608,16 @@ class Apk:
         return str(download_button.get_attribute_list("data-url")[0])
 
     @staticmethod
+    def get_uptdown_headers() -> dict[str, Any]:
+        return {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }
+
+    @staticmethod
     def get_en_app_id(package_name: str) -> Optional[str]:
         url = f"https://{package_name}.en.uptodown.com/android/versions"
         try:
-            resp = core.RequestHandler(url).get()
+            resp = core.RequestHandler(url, Apk.get_uptdown_headers()).get()
         except requests.RequestException:
             return None
         soup = bs4.BeautifulSoup(resp.text, "html.parser")
@@ -620,7 +636,7 @@ class Apk:
         versions: list[dict[str, Any]] = []
         while True:
             url = f"https://{package_name}.en.uptodown.com/android/apps/{app_id}/versions/{counter}"
-            resp = core.RequestHandler(url).get()
+            resp = core.RequestHandler(url, Apk.get_uptdown_headers()).get()
             versions_data = resp.json().get("data")
             if versions_data is None:
                 break
