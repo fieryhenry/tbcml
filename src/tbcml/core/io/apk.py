@@ -461,8 +461,12 @@ class Apk:
         return stream
 
     def download_v2(
-        self, progress: Optional[Callable[[float, int, int, bool], None]] = progress
+        self,
+        progress: Optional[Callable[[float, int, int, bool], None]] = progress,
+        force: bool = False,
     ) -> bool:
+        if self.apk_path.exists() and not force:
+            return True
         base_url = (
             "https://raw.githubusercontent.com/fieryhenry/BCData/master/apk_list.json"
         )
@@ -496,9 +500,11 @@ class Apk:
         return True
 
     def download(
-        self, progress: Optional[Callable[[float, int, int, bool], None]] = progress
+        self,
+        progress: Optional[Callable[[float, int, int, bool], None]] = progress,
+        force: bool = False,
     ) -> bool:
-        if self.apk_path.exists():
+        if self.apk_path.exists() and not force:
             return True
         if (
             self.country_code == core.CountryCode.EN
