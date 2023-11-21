@@ -1,7 +1,11 @@
 """A module for injecting smali code into the APK."""
 from typing import Optional
 
-from androguard.core.bytecodes.apk import APK  # type: ignore
+try:
+    from androguard.core.bytecodes.apk import APK  # type: ignore
+except ImportError:
+    APK = None
+    pass
 
 from tbcml import core
 
@@ -158,9 +162,14 @@ class SmaliHandler:
 
         Raises:
             FileNotFoundError: If the main activity could not be found
+            ImportError: If the androguard module could not be imported
         """
         self.apk = apk
         self.apk.extract_smali()
+        if APK is None:
+            raise ImportError(
+                "Please pip install tbcml[scripting] to use the smali module"
+            )
         self.andro_apk = APK(self.apk.apk_path.path)
         main_activity: str = self.andro_apk.get_main_activity()  # type: ignore
         if main_activity is None:  # type: ignore
