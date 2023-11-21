@@ -68,6 +68,20 @@ considered donating to my kofi:
 pip install tbcml
 ```
 
+If you want scripting (frida or smali patching or libnative patching), you will
+also need to install tbcml[scripting]
+
+```bash
+pip install tbcml[scripting]
+```
+
+If you want to use the model viewer, you will also need to install
+tbcml[ui]
+
+```bash
+pip install tbcml[ui]
+```
+
 #### From source
 
 ```bash
@@ -156,6 +170,15 @@ apk.load_mods([mod], game_packs)
 # open the apk folder in the file explorer (optional)
 apk.output_path.open()
 
+```
+
+If you want to do some script modding, you will also need to add the following
+code at the top of the script. Note that this only has to be done once as it is
+saved in the config file.
+
+```python
+from tbcml.core import ConfigKey, config
+config.set(ConfigKey.ALLOW_SCRIPT_MODS, True)
 ```
 
 Run the script
