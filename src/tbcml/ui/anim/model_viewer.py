@@ -3,11 +3,15 @@ from typing import Optional, Callable
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
+
 from tbcml import core
 from tbcml.ui.anim import frame_counter
 from tbcml.ui.utils import fontawsome
 
-import moviepy.video.io.ImageSequenceClip
+try:
+    import moviepy.video.io.ImageSequenceClip
+except ImportError:
+    moviepy = None
 
 
 class ModelViewer(QtWidgets.QOpenGLWidget):
@@ -289,6 +293,8 @@ class ModelViewer(QtWidgets.QOpenGLWidget):
     def create_video(
         self, paths: list[core.Path], out_path: "core.Path", codec: str = "libx264"
     ) -> None:
+        if moviepy is None:
+            raise ImportError("Please pip install tbcml[ui] to use this feature")
         image_files = [path.to_str() for path in paths]
         clip = moviepy.video.io.ImageSequenceClip.ImageSequenceClip(
             image_files, fps=self.clock.fps
