@@ -280,16 +280,25 @@ class Lib:
         self.lib = self.parse()
         self.write()
 
-    def parse(self) -> "lief.ELF.Binary":  # type: ignore
+    def parse(self) -> Optional["lief.ELF.Binary"]:  # type: ignore
         if lief is None:
-            raise ImportError("Please pip install tbcml[scripting] to use lib patching")
+            return None
 
         return lief.parse(str(self.path))  # type: ignore
 
+    def not_installed_error(self):
+        print("Please pip install tbcml[scripting] to use this feature")
+
     def add_library(self, library_path: "core.Path"):
+        if self.lib is None:
+            self.not_installed_error()
+            return
+
         self.lib.add_library(library_path.basename())
 
     def write(self):
+        if self.lib is None:
+            return
         self.lib.write(str(self.path))
 
     def search(self, search: "core.Data", start: int = 0):
@@ -300,9 +309,13 @@ class Lib:
         return self.data.read_int_list(length)
 
     def get_export_functions(self) -> list[Any]:
+        if self.lib is None:
+            self.not_installed_error()
+            return []
         return self.lib.exported_functions
 
     def get_export_function(self, name: str) -> Any:
+        self.not_installed_error()
         funcs = self.lib.exported_functions
         for func in funcs:
             if func.name == name:
