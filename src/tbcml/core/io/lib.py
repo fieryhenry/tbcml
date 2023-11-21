@@ -1,7 +1,11 @@
 from typing import Any, Optional
 import uuid
 from tbcml import core
-import lief
+
+try:
+    import lief
+except ImportError:
+    lief = None
 
 
 class Patch:
@@ -276,7 +280,10 @@ class Lib:
         self.lib = self.parse()
         self.write()
 
-    def parse(self) -> lief.ELF.Binary:  # type: ignore
+    def parse(self) -> "lief.ELF.Binary":  # type: ignore
+        if lief is None:
+            raise ImportError("Please pip install tbcml[scripting] to use lib patching")
+
         return lief.parse(str(self.path))  # type: ignore
 
     def add_library(self, library_path: "core.Path"):
