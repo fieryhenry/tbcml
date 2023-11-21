@@ -2,7 +2,11 @@
 import math
 from typing import Any, Optional
 
-from PyQt5 import QtCore, QtGui
+pyqt_load_failed = False
+try:
+    from PyQt5 import QtCore, QtGui
+except ImportError:
+    pyqt_load_failed = True
 
 from tbcml import core
 
@@ -309,6 +313,9 @@ class ModelPart:
             draw_overlay (bool, optional): Whether to draw the overlay. Defaults to False.
             just_overlay (bool, optional): Whether to only draw the overlay. Defaults to False.
         """
+        if pyqt_load_failed:
+            print("Please pip install tbcml[ui] to use this feature")
+            return
         self.__scale_x = None
         self.__scale_y = None
         in_valid = self.parent_id < 0 or self.unit_id < 0
@@ -375,6 +382,9 @@ class ModelPart:
             sc_w (float): The width of the part.
             sc_h (float): The height of the part.
         """
+        if pyqt_load_failed:
+            print("Please pip install tbcml[ui] to use this feature")
+            return
         radius = 50
 
         x_pos1 = -t_piv_x
@@ -416,6 +426,9 @@ class ModelPart:
             glow (int): The composition mode of the image. -1, 1, 2, or 3 is plus
             painter (QtGui.QPainter): The painter to use to draw the image on.
         """
+        if pyqt_load_failed:
+            print("Please pip install tbcml[ui] to use this feature")
+            return
         painter.setOpacity(alpha)
 
         if self.glow_support:
