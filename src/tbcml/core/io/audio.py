@@ -1,6 +1,9 @@
 from typing import Optional
 
-import ffmpeg  # type: ignore
+try:
+    import ffmpeg  # type: ignore
+except ImportError:
+    ffmpeg = None
 
 from tbcml import core
 
@@ -103,6 +106,9 @@ class AudioFile:
         Returns:
             AudioFile: The audio file.
         """
+        if ffmpeg is None:
+            print("ffmpeg not installed, skipping conversion")
+            return self
         extension = self.get_extension()
         if extension != "caf":
             return self
