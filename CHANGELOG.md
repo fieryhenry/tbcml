@@ -21,7 +21,7 @@
 - Allow custom keys and ivs to be used when encrypting instead of being random
   (8444407)
 - Apks can now be downloaded from a url specified in the BCData git repo instead
-  of scraping from uptodown and other sites (download_v2()) (b1b5b3a)
+  of scraping from uptodown and other sites (download_v2()) (c6522df)
 
 ## 1.0.1.1 (2023-10-06)
 
