@@ -381,9 +381,10 @@ class Apk:
 
     @staticmethod
     def get_all_versions_v2(cc: "core.CountryCode") -> list["core.GameVersion"]:
-        base_url = "https://raw.githubusercontent.com/fieryhenry/BCData/master/APKs/"
-        url = base_url + cc.get_code() + "/versions.json"
-        response = core.RequestHandler(url).get()
+        base_url = (
+            "https://raw.githubusercontent.com/fieryhenry/BCData/master/apk_list.json"
+        )
+        response = core.RequestHandler(base_url).get()
         json = response.json()
         versions: list[core.GameVersion] = []
         cc_versions = json.get(cc.get_code())
@@ -429,8 +430,20 @@ class Apk:
     @staticmethod
     def get_latest_version(cc: "core.CountryCode"):
         versions = Apk.get_all_versions(cc)
+        if not versions:
+            versions = Apk.get_all_versions_v2(cc)
+            if not versions:
+                return None
+        versions.sort(key=lambda version: version.game_version, reverse=True)
+
+        return versions[0]
+
+    @staticmethod
+    def get_latest_version_v2(cc: "core.CountryCode"):
+        versions = Apk.get_all_versions_v2(cc)
         if len(versions) == 0:
             return None
+        versions.sort(key=lambda version: version.game_version, reverse=True)
         return versions[0]
 
     def format(self):
