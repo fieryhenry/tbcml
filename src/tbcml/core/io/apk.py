@@ -173,12 +173,19 @@ class Apk:
         self.copy_extracted()
         self.copy_packs()
 
-    def extract_smali(self):
+    def extract_smali(
+        self,
+        decode_resources: bool = True,
+    ):
         if not self.check_display_apktool_error():
             return
 
+        decode_resources_str = "-r" if not decode_resources else ""
+
         with core.TempFolder() as temp_folder:
-            res = self.run_apktool(f"d -f {self.apk_path} -o {temp_folder}")
+            res = self.run_apktool(
+                f"d -f {decode_resources_str} {self.apk_path} -o {temp_folder}"
+            )
             if res.exit_code != 0:
                 print(f"Failed to extract APK: {res.result}")
                 return
