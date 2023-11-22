@@ -428,12 +428,10 @@ class Apk:
         return versions
 
     @staticmethod
-    def get_latest_version(cc: "core.CountryCode"):
+    def get_latest_version_v1(cc: "core.CountryCode"):
         versions = Apk.get_all_versions(cc)
         if not versions:
-            versions = Apk.get_all_versions_v2(cc)
-            if not versions:
-                return None
+            return None
         versions.sort(key=lambda version: version.game_version, reverse=True)
 
         return versions[0]
@@ -445,6 +443,23 @@ class Apk:
             return None
         versions.sort(key=lambda version: version.game_version, reverse=True)
         return versions[0]
+
+    @staticmethod
+    def get_latest_version(cc: "core.CountryCode", v2: bool = True, v1: bool = True):
+        version_v1 = None
+        version_v2 = None
+        if v1:
+            version_v1 = Apk.get_latest_version_v1(cc)
+        if v2:
+            version_v2 = Apk.get_latest_version_v2(cc)
+
+        if version_v1 is None:
+            return version_v2
+        if version_v2 is None:
+            return version_v1
+        if version_v1.game_version > version_v2.game_version:
+            return version_v1
+        return version_v2
 
     def format(self):
         return f"{self.country_code.name} {self.game_version.format()} APK"
