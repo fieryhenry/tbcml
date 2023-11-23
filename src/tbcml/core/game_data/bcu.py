@@ -704,12 +704,17 @@ class BCUFile:
         self.offset = file_info["offset"]
         self.name = os.path.basename(self.path)
         self.type_str = self.path.split("/")[1]
-        self.type = BCUFileTypes(self.type_str)
         self.key = key
         self.iv = iv
         self.padded_size = self.size + (16 - self.size % 16)
         self.enc_data = enc_data[self.offset : self.offset + self.padded_size]
         self.data = self.decrypt()
+
+    def get_type(self) -> Optional[BCUFileTypes]:
+        try:
+            return BCUFileTypes(self.type_str)
+        except ValueError:
+            return None
 
     def decrypt(self) -> "core.Data":
         aes = core.AesCipher(self.key.to_bytes(), self.iv.to_bytes())
@@ -790,7 +795,7 @@ class BCUZip:
     def get_files_by_type(self, type: BCUFileTypes) -> list[BCUFile]:
         files: list[BCUFile] = []
         for file in self.files:
-            if file.type == type:
+            if file.get_type() == type:
                 files.append(file)
         return files
 
