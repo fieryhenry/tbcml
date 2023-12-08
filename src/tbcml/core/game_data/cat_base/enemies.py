@@ -281,7 +281,7 @@ class EnemyStatsData:
 
     @staticmethod
     def get_file_name() -> str:
-        return "t_core.csv"
+        return "t_unit.csv"
 
     @staticmethod
     def from_game_data(game_data: "core.GamePacks") -> "EnemyStatsData":
