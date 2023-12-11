@@ -407,8 +407,6 @@ class Apk:
         Returns:
             game_version.GameVersion: List of APK versions
         """
-        if cc == core.CountryCode.EN or cc == core.CountryCode.JP:
-            return Apk.get_all_versions_en(cc)
         url = Apk.get_apk_version_url(cc)
         scraper = cloudscraper.create_scraper()  # type: ignore
         resp = scraper.get(url)
@@ -539,93 +537,25 @@ class Apk:
         progress: Optional[Callable[[float, int, int, bool], None]] = progress,
         force: bool = False,
     ) -> bool:
-        if self.apk_path.exists() and not force:
-            return True
-        if (
-            self.country_code == core.CountryCode.EN
-            or self.country_code == core.CountryCode.JP
-        ):
-            return self.download_apk_en(
-                self.country_code == core.CountryCode.EN,
-                progress,
-            )
-        else:
-            url = self.get_download_url()
-            scraper = cloudscraper.create_scraper()  # type: ignore
-            scraper.headers.update(
-                {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"
-                }
-            )
-            stream = self.get_download_stream(scraper, url)
-            if stream is None:
-                stream = self.get_download_stream(scraper, url[:-1] + "1")
-            # if stream is None:
-            #    stream = self.get_download_stream(scraper, url.replace("APK", "XAPK"))
-            # sif stream is None:
-            # stream = self.get_download_stream(
-            #    scraper, url.replace("APK", "XAPK")[:-1] + "1"
-            # )
-            if stream is None:
-                return False
-
-            _total_length = int(stream.headers.get("content-length"))  # type: ignore
-
-            dl = 0
-            chunk_size = 1024
-            buffer: list[bytes] = []
-            for d in stream.iter_content(chunk_size=chunk_size):
-                dl += len(d)
-                buffer.append(d)
-                if progress is not None:
-                    progress(dl / _total_length, dl, _total_length, True)
-
-            apk = core.Data(b"".join(buffer))
-            apk.to_file(self.apk_path)
-            return True
-
-    def download_apk_en(
-        self,
-        is_en: bool = True,
-        progress: Optional[Callable[[float, int, int, bool], None]] = progress,
-    ) -> bool:
-        urls = Apk.get_en_apk_urls("the-battle-cats" if is_en else "the-battle-cats-jp")
-        if not urls:
-            print("Failed to get APK URLs")
+        url = self.get_download_url()
+        scraper = cloudscraper.create_scraper()  # type: ignore
+        scraper.headers.update(
+            {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"
+            }
+        )
+        stream = self.get_download_stream(scraper, url)
+        if stream is None:
+            stream = self.get_download_stream(scraper, url[:-1] + "1")
+        # if stream is None:
+        #    stream = self.get_download_stream(scraper, url.replace("APK", "XAPK"))
+        # sif stream is None:
+        # stream = self.get_download_stream(
+        #    scraper, url.replace("APK", "XAPK")[:-1] + "1"
+        # )
+        if stream is None:
             return False
-        url: str = urls[self.game_version.to_string()]
-        if not url:
-            print(f"Failed to get APK URL: {self.game_version.to_string()}")
-            return False
-        url = url.replace("/android/download/", "/android/post-download/")
-
-        response = core.RequestHandler(url, Apk.get_uptdown_headers()).get()
-        soup = bs4.BeautifulSoup(response.text, "html.parser")
-        post_download_class = soup.find("div", {"class": "post-download"})
-        if not isinstance(post_download_class, bs4.element.Tag):
-            return False
-        data_url = post_download_class.get_attribute_list("data-url")[0]
-        url = "https://dw.uptodown.com/dwn/" + data_url
-        headers = {
-            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
-            "accept-encoding": "gzip, deflate, br",
-            "accept-language": "en-GB,en;q=0.9",
-            "connection": "keep-alive",
-            "sec-ch-ua": '"Google Chrome"',
-            "sec-ch-ua-mobile": "?0",
-            "sec-ch-ua-platform": "Widnows",
-            "sec-fetch-dest": "document",
-            "sec-fetch-mode": "navigate",
-            "sec-fetch-site": "none",
-            "sec-fetch-user": "?1",
-            "upgrade-insecure-requests": "1",
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
-        }
-        stream = core.RequestHandler(url, headers).get_stream()
-        try:
-            _total_length = int(stream.headers.get("content-length"))  # type: ignore
-        except TypeError:
-            _total_length = 0
+        _total_length = int(stream.headers.get("content-length"))  # type: ignore
 
         dl = 0
         chunk_size = 1024
@@ -640,85 +570,19 @@ class Apk:
         apk.to_file(self.apk_path)
         return True
 
-    def get_en_apk_url(self, apk_url: str):
-        resp = core.RequestHandler(apk_url).get()
-        soup = bs4.BeautifulSoup(resp.text, "html.parser")
-        download_button = soup.find("button", {"class": "button download"})
-        if not isinstance(download_button, bs4.element.Tag):
-            return None
-        return str(download_button.get_attribute_list("data-url")[0])
-
-    @staticmethod
-    def get_uptdown_headers() -> dict[str, Any]:
-        return {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-        }
-
-    @staticmethod
-    def get_en_app_id(package_name: str) -> Optional[str]:
-        url = f"https://{package_name}.en.uptodown.com/android/versions"
-        try:
-            resp = core.RequestHandler(url, Apk.get_uptdown_headers()).get()
-        except requests.RequestException:
-            return None
-        soup = bs4.BeautifulSoup(resp.text, "html.parser")
-        app_details = soup.find("h1", {"id": "detail-app-name"})
-        if not isinstance(app_details, bs4.element.Tag):
-            return None
-        app_id = app_details.get_attribute_list("code")[0]
-        return app_id
-
-    @staticmethod
-    def get_en_apk_json(package_name: str) -> list[dict[str, Any]]:
-        app_id = Apk.get_en_app_id(package_name)
-        if app_id is None:
-            return []
-        counter = 0
-        versions: list[dict[str, Any]] = []
-        while True:
-            url = f"https://{package_name}.en.uptodown.com/android/apps/{app_id}/versions/{counter}"
-            resp = core.RequestHandler(url, Apk.get_uptdown_headers()).get()
-            versions_data = resp.json().get("data")
-            if versions_data is None:
-                break
-            if len(versions_data) == 0:
-                break
-            for version_data in versions_data:
-                versions.append(version_data)
-            counter += 1
-        return versions
-
-    @staticmethod
-    def get_en_apk_urls(package_name: str) -> Optional[dict[str, Any]]:
-        json_data = Apk.get_en_apk_json(package_name)
-        versions: list[str] = []
-        urls: list[str] = []
-        for data in json_data:
-            versions.append(data["version"])
-            urls.append(data["versionURL"])
-        return dict(zip(versions, urls))
-
     def get_download_url(self) -> str:
-        return f"https://d.apkpure.com/b/APK/jp.co.ponos.battlecats{self.country_code.get_patching_code()}?versionCode={self.game_version.game_version}0"
-
-    @staticmethod
-    def get_all_versions_en(
-        cc: "core.CountryCode",
-    ) -> list["core.GameVersion"]:
-        apk_urls = Apk.get_en_apk_urls(
-            "the-battle-cats-jp" if cc == core.CountryCode.JP else "the-battle-cats"
-        )
-        if apk_urls is None:
-            return []
-        versions: list[core.GameVersion] = []
-        for version in apk_urls.keys():
-            versions.append(core.GameVersion.from_string(version))
-        return versions
+        if self.country_code.get_patching_code() == "jp":
+            cc = ""
+        else:
+            cc = self.country_code.get_patching_code()
+        return f"https://d.apkpure.com/b/APK/jp.co.ponos.battlecats{cc}?versionCode={self.game_version.game_version}0"
 
     @staticmethod
     def get_apk_version_url(cc: "core.CountryCode") -> str:
         if cc == core.CountryCode.JP:
             url = "https://m.apkpure.com/%E3%81%AB%E3%82%83%E3%82%93%E3%81%93%E5%A4%A7%E6%88%A6%E4%BA%89/jp.co.ponos.battlecats/versions"
+        elif cc == core.CountryCode.EN:
+            url = "https://apkpure.com/the-battle-cats/jp.co.ponos.battlecatsen/versions"
         elif cc == core.CountryCode.KR:
             url = "https://m.apkpure.com/%EB%83%A5%EC%BD%94-%EB%8C%80%EC%A0%84%EC%9F%81/jp.co.ponos.battlecatskr/versions"
         elif cc == core.CountryCode.TW:
