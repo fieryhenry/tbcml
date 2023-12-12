@@ -1,7 +1,11 @@
 from typing import Any, Optional
 
 from PIL import Image, ImageDraw
-from PyQt5.QtGui import QImage, QIcon, QPixmap
+
+try:
+    from PyQt5.QtGui import QImage, QIcon, QPixmap
+except ImportError:
+    pass
 
 from tbcml import core
 
@@ -13,7 +17,7 @@ class BCImage:
         else:
             self.data = dt
         self.__image: Optional[Image.Image] = None
-        self._qimg: Optional[QImage] = None
+        self._qimg: Optional["QImage"] = None
         self.__original_data = self.data.copy()
         self.__original_img: Optional[Image.Image] = None
 
@@ -144,13 +148,13 @@ class BCImage:
 
         return self
 
-    def to_qimage(self) -> QImage:
+    def to_qimage(self) -> "QImage":
         if self._qimg:
             return self._qimg
         self._qimg = QImage.fromData(self.to_data().to_bytes())
         return self._qimg
 
-    def to_qicon(self) -> QIcon:
+    def to_qicon(self) -> "QIcon":
         return QIcon(QPixmap.fromImage(self.to_qimage()))
 
     def force_q_refresh(self):
