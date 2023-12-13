@@ -135,6 +135,12 @@ class Apk:
         return res.exit_code == 0
 
     @staticmethod
+    def check_zipalign_installed() -> bool:
+        cmd = core.Command("zipalign", False)
+        res = cmd.run()
+        return res.exit_code == 2
+
+    @staticmethod
     def check_keytool_installed() -> bool:
         cmd = core.Command("keytool", False)
         res = cmd.run()
@@ -158,6 +164,13 @@ class Apk:
         if self.check_apksigner_installed():
             return True
         message = "Apksigner or android sdk is not installed. Please install it and add it to your PATH."
+        print(message)
+        return False
+
+    def check_display_zipalign_error(self) -> bool:
+        if self.check_zipalign_installed():
+            return True
+        message = "Zipalign or android sdk is not installed. Please install it and add it to your PATH."
         print(message)
         return False
 
@@ -221,7 +234,7 @@ class Apk:
             print(f"Failed to pack APK: {res.result}")
             return
 
-    def sign(self, use_jarsigner: bool = False):
+    def sign(self, use_jarsigner: bool = False, zip_align: bool = True):
         if use_jarsigner:
             if not self.check_display_jarsigner_error():
                 return
@@ -257,6 +270,21 @@ class Apk:
         if res.exit_code != 0:
             print(f"Failed to sign APK: {res.result}")
             return
+        if zip_align:
+            self.zip_align()
+
+    def zip_align(self):
+        if not self.check_display_zipalign_error():
+            return
+        apk_path = self.final_apk_path.change_name(
+            self.final_apk_path.get_file_name_without_extension() + "-aligned.apk"
+        )
+        cmd = core.Command(f"zipalign -f -p 4 {self.final_apk_path} {apk_path}")
+        cmd.run()
+        apk_path.copy(self.final_apk_path)
+        cmd.run()
+        apk_path.copy(self.final_apk_path)
+        apk_path.remove()
 
     def set_key(self, key: str):
         self.key = key
