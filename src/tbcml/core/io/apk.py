@@ -129,6 +129,12 @@ class Apk:
         return res.exit_code == 0
 
     @staticmethod
+    def check_apksigner_installed() -> bool:
+        cmd = core.Command("apksigner", False)
+        res = cmd.run()
+        return res.exit_code == 0
+
+    @staticmethod
     def check_keytool_installed() -> bool:
         cmd = core.Command("keytool", False)
         res = cmd.run()
@@ -145,6 +151,13 @@ class Apk:
         if self.check_jarsigner_installed():
             return True
         message = "Jarsigner or java is not installed. Please install it and add it to your PATH."
+        print(message)
+        return False
+
+    def check_display_apk_signer_error(self) -> bool:
+        if self.check_apksigner_installed():
+            return True
+        message = "Apksigner or android sdk is not installed. Please install it and add it to your PATH."
         print(message)
         return False
 
@@ -208,9 +221,13 @@ class Apk:
             print(f"Failed to pack APK: {res.result}")
             return
 
-    def sign(self):
-        if not self.check_display_jarsigner_error():
-            return
+    def sign(self, use_jarsigner: bool = False):
+        if use_jarsigner:
+            if not self.check_display_jarsigner_error():
+                return
+        else:
+            if not self.check_display_apk_signer_error():
+                return
         if not self.check_display_keytool_error():
             return
         password = core.config.get(core.ConfigKey.KEYSTORE_PASSWORD)
@@ -226,11 +243,17 @@ class Apk:
                 print(f"Failed to generate keystore: {res.result}")
                 return
 
-        cmd = core.Command(
-            f"jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore {key_store_path} {self.final_apk_path} tbcml",
-            True,
-        )
-        res = cmd.run(password)
+        if use_jarsigner:
+            cmd = core.Command(
+                f"jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore {key_store_path} {self.final_apk_path} tbcml",
+                True,
+            )
+            res = cmd.run(password)
+        else:
+            cmd = core.Command(
+                f"apksigner sign --ks {key_store_path} --ks-key-alias tbcml --ks-pass pass:{password} --key-pass pass:{password} {self.final_apk_path}"
+            )
+            res = cmd.run()
         if res.exit_code != 0:
             print(f"Failed to sign APK: {res.result}")
             return
