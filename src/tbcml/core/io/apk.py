@@ -797,9 +797,10 @@ class Apk:
     def download_server_files(
         self,
         copy: bool = True,
+        display: bool = False,
     ):
         sfh = core.ServerFileHandler(self)
-        sfh.extract_all()
+        sfh.extract_all(display=display)
         if copy:
             self.copy_server_files()
 

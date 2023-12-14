@@ -165,6 +165,7 @@ class ServerFileHandler:
     def extract_all(
         self,
         force: bool = False,
+        display: bool = False,
     ):
         """Extracts all game versions
 
@@ -172,7 +173,8 @@ class ServerFileHandler:
             force (bool, optional): Whether to force extraction even if the files already exist. Defaults to False.
         """
         for i in range(len(self.tsv_paths)):
-            self.extract(i, force)
+            if self.extract(i, force) and display:
+                print(f"Downloaded server file {i+1}/{len(self.tsv_paths)}")
 
     def find_game_versions(self) -> list[int]:
         """Finds all game versions in the libnative.so file
