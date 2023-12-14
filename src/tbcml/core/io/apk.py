@@ -235,6 +235,8 @@ class Apk:
             return
 
     def sign(self, use_jarsigner: bool = False, zip_align: bool = True):
+        if zip_align:
+            self.zip_align()
         if use_jarsigner:
             if not self.check_display_jarsigner_error():
                 return
@@ -270,8 +272,6 @@ class Apk:
         if res.exit_code != 0:
             print(f"Failed to sign APK: {res.result}")
             return
-        if zip_align:
-            self.zip_align()
 
     def zip_align(self):
         if not self.check_display_zipalign_error():
