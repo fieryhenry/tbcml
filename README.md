@@ -195,6 +195,56 @@ Everything else
 python3 script.py
 ```
 
+## Install on Android
+
+### Requirements
+
+- Termux (via [F-Droid](https://f-droid.org/en/packages/com.termux/)) You cannot
+  use the play store version as it doesn't work
+- Make sure you download "Termux Terminal emulator with packages"
+- Then run the following commands:
+  
+  ```bash
+  termux-setup-storage
+  termux-change-repo
+  ```
+
+  When prompted for a mirror, any of them should work, but I picked "GH Mirrors
+  by Kcubeterm"
+
+  Then run the following commands:
+
+  ```bash
+  pkg install python
+  pkg install binutils
+  pkg install rust
+  pkg install openjdk-17
+  pkg install aapt
+  pkg install apksigner
+  ```
+
+  rust and binutils are needed to build the cryptography package btw, the tool
+  is not written in it.
+
+  You can then install the tool, so you can use pip, or install the tool from
+  source (need to do `pkg install git`). (see above for the tutorials).
+
+  I recommend adding
+  
+  ```python
+  print(apk.get_final_apk_path())
+  ```
+
+  to the end of your script so that you can easily find the apk. Then you can
+  copy the file to the Documents folder with the following
+  command:
+
+  ```bash
+  cp path/to/apk /sdcard/Documents
+  ```
+
+  Then you can install it with a file manager.
+
 ## Documentation (Not Finished)
 
 <https://tbcml-docs.readthedocs.io/en/latest/>
