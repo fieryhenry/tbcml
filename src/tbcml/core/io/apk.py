@@ -1315,7 +1315,7 @@ class Apk:
         self.add_mods_files(mods)
         self.set_allow_backup(True)
         self.set_debuggable(True)
-        self.set_modded_html(mods)
+        # self.set_modded_html(mods)
         self.add_audio_mods(mods)
         self.add_script_mods(mods)
         self.add_patch_mods(mods)
