@@ -47,6 +47,8 @@ class GameFile:
         pack_name: str,
         cc: "core.CountryCode",
         gv: "core.GameVersion",
+        key: Optional[str] = None,
+        iv: Optional[str] = None,
     ) -> "GameFile":
         """Create a GameFile from encrypted data.
 
@@ -60,7 +62,7 @@ class GameFile:
         Returns:
             GameFile: The GameFile object.
         """
-        cipher = PackFile.get_cipher(cc, pack_name, gv)
+        cipher = PackFile.get_cipher(cc, pack_name, gv, key=key, iv=iv)
         data = cipher.decrypt(enc_data)
         try:
             data = data.unpad_pkcs7()
@@ -292,6 +294,8 @@ class PackFile:
         country_code: "core.CountryCode",
         pack_name: str,
         gv: "core.GameVersion",
+        key: Optional[str] = None,
+        iv: Optional[str] = None,
     ) -> Optional["PackFile"]:
         """Create a PackFile from a pack file.
 
@@ -305,8 +309,10 @@ class PackFile:
         Returns:
             Optional[PackFile]: The PackFile if it was created successfully, None otherwise.
         """
-        key = core.Hash(core.HashAlgorithm.MD5).get_hash(core.Data("pack"), 8).to_hex()
-        ls_dec_data = core.AesCipher(key.encode("utf-8")).decrypt(enc_list_data)
+        list_key = (
+            core.Hash(core.HashAlgorithm.MD5).get_hash(core.Data("pack"), 8).to_hex()
+        )
+        ls_dec_data = core.AesCipher(list_key.encode("utf-8")).decrypt(enc_list_data)
         ls_data = core.CSV(ls_dec_data)
 
         total_files = ls_data.read_line()
@@ -328,6 +334,8 @@ class PackFile:
                 pack_name,
                 country_code,
                 gv,
+                key=key,
+                iv=iv,
             )
         pack_file.set_files(files)
         return pack_file
@@ -612,7 +620,13 @@ class GamePacks:
             list_data = list_file.read()
             pack_name = list_file.get_file_name_without_extension()
             pack = PackFile.from_pack_file(
-                list_data, pack_data, apk.country_code, pack_name, apk.game_version
+                list_data,
+                pack_data,
+                apk.country_code,
+                pack_name,
+                apk.game_version,
+                key=apk.key,
+                iv=apk.iv,
             )
             if pack is None:
                 continue
