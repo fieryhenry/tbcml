@@ -62,6 +62,8 @@ considered donating to my kofi:
 
 ### Installation
 
+To install on android see [Install on Android](#install-on-android)
+
 #### From pypi
 
 ```bash
@@ -226,8 +228,9 @@ python3 script.py
   rust and binutils are needed to build the cryptography package btw, the tool
   is not written in it.
 
-  You can then install the tool, so you can use pip, or install the tool from
-  source (need to do `pkg install git`). (see above for the tutorials).
+  You can then install the tool from pypi [here](#from-pypi), or
+  install the tool from
+  source (need to do `pkg install git`) [here](#from-source)
 
   I recommend adding
   
