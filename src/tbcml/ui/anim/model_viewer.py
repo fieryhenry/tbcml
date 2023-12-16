@@ -638,6 +638,8 @@ class AnimControls(QtWidgets.QWidget):
         if was_stopped:
             self.clock.stop()
         path = core.Path(path)
+        if path.get_extension() != "mp4":
+            path = path.change_extension("mp4")
         paths = temp_folder.path.glob("frame_*.png")
         paths.sort(key=lambda x: int(x.basename().split("_")[1].split(".")[0]))
         self.model_box.create_video(paths, path)
