@@ -120,29 +120,29 @@ class ModelViewer(QtWidgets.QOpenGLWidget):
 
     def add_context_actions(self):
         self.menu.clear()
-        self.menu.addAction(
-            core.local_manager.get_key("reset_view_position"), self.reset_position
-        )
-        if self.is_model_viewer:
-            if self.should_bring_to_front:
-                self.menu.addAction(
-                    core.local_manager.get_key("remove_selected_part_from_front"),
-                    self.toggle_bring_to_front,
-                )
-            else:
-                self.menu.addAction(
-                    core.local_manager.get_key("bring_selected_part_to_front"),
-                    self.toggle_bring_to_front,
-                )
-            self.menu.addAction(
-                core.local_manager.get_key("align_model_to_part"),
-                self.align_part_view_to_model,
-            )
-        else:
-            self.menu.addAction(
-                core.local_manager.get_key("align_part_to_model"),
-                self.align_part_view_to_model,
-            )
+        # self.menu.addAction(
+        #    core.local_manager.get_key("reset_view_position"), self.reset_position
+        # )
+        # if self.is_model_viewer:
+        #    if self.should_bring_to_front:
+        #        self.menu.addAction(
+        #            core.local_manager.get_key("remove_selected_part_from_front"),
+        #            self.toggle_bring_to_front,
+        #        )
+        #    else:
+        #        self.menu.addAction(
+        #            core.local_manager.get_key("bring_selected_part_to_front"),
+        #            self.toggle_bring_to_front,
+        #        )
+        #    self.menu.addAction(
+        #        core.local_manager.get_key("align_model_to_part"),
+        #        self.align_part_view_to_model,
+        #    )
+        # else:
+        #    self.menu.addAction(
+        #        core.local_manager.get_key("align_part_to_model"),
+        #        self.align_part_view_to_model,
+        #    )
 
     def context_menu(self, pos: QtCore.QPoint) -> None:
         self.menu.exec_(self.mapToGlobal(pos))
@@ -538,7 +538,7 @@ class AnimControls(QtWidgets.QWidget):
         self.clock = clock
         self.link_anim_boxes = link_anim_boxes
         self.toggle_grid = toggle_grid
-        self.locale_handler = core.local_manager
+        # self.locale_handler = core.local_manager
         self.model_box = model_box
         self.setup()
 
@@ -555,10 +555,10 @@ class AnimControls(QtWidgets.QWidget):
         self.link_check_box = QtWidgets.QCheckBox(self)
 
         self.link_icon = fontawsome.get_icon("link")
-        self.link_tt = self.locale_handler.get_key("link_tt")
+        # self.link_tt = self.locale_handler.get_key("link_tt")
 
         self.link_check_box.setIcon(self.link_icon)
-        self.link_check_box.setToolTip(self.link_tt)
+        # self.link_check_box.setToolTip(self.link_tt)
 
         self.link_check_box.stateChanged.connect(self.link)
         self.check_layout.addWidget(self.link_check_box)
@@ -566,10 +566,10 @@ class AnimControls(QtWidgets.QWidget):
         self.grid_check_box = QtWidgets.QCheckBox(self)
 
         self.grid_icon = fontawsome.get_icon("th")
-        self.grid_tt = self.locale_handler.get_key("grid_tt")
+        # self.grid_tt = self.locale_handler.get_key("grid_tt")
 
         self.grid_check_box.setIcon(self.grid_icon)
-        self.grid_check_box.setToolTip(self.grid_tt)
+        # self.grid_check_box.setToolTip(self.grid_tt)
 
         self.grid_check_box.stateChanged.connect(self.toggle_grid)
         self.check_layout.addWidget(self.grid_check_box)
