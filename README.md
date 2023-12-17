@@ -175,7 +175,7 @@ apk.output_path.open()
 ```
 
 If you want to do some script modding, you will also need to set
-allowed_script_mods to True when creating the apk object
+`allowed_script_mods` to `True` when creating the apk object
 
 ```python
 
