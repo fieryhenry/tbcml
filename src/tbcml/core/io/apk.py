@@ -330,30 +330,23 @@ class Apk:
     def load_packs_into_game(
         self,
         packs: "core.GamePacks",
+        copy_path: Optional["core.Path"] = None,
     ):
         self.add_packs_lists(packs)
         core.LibFiles(self).patch()
         self.copy_modded_packs()
         self.pack()
         self.sign()
-        self.copy_final_apk()
+        if copy_path is not None:
+            self.copy_final_apk(copy_path)
 
-    def copy_final_apk(self):
-        final_path = self.get_final_apk_path()
-        if final_path == self.final_apk_path:
+    def copy_final_apk(self, path: "core.Path"):
+        if path == self.get_final_apk_path():
             return
-        self.final_apk_path.copy(final_path)
+        self.final_apk_path.copy(path)
 
     def get_final_apk_path(self) -> "core.Path":
-        final_path = core.config.get(core.ConfigKey.APK_COPY_PATH)
-        if not final_path:
-            return self.final_apk_path
-        final_path = core.Path(final_path)
-        if final_path.get_extension() == "apk":
-            final_path.parent().generate_dirs()
-        else:
-            final_path.add(self.final_apk_path.basename())
-        return final_path
+        return self.final_apk_path
 
     @staticmethod
     def get_default_apk_folder() -> "core.Path":
@@ -1099,7 +1092,9 @@ class Apk:
             if not file.get_extension() == "caf" and not file.get_extension() == "ogg":
                 continue
             audio_files[file.basename()] = core.AudioFile.from_file(file)
-        for file in self.get_server_path(self.country_code, self.apk_folder).get_files():
+        for file in self.get_server_path(
+            self.country_code, self.apk_folder
+        ).get_files():
             if not file.get_extension() == "caf" and not file.get_extension() == "ogg":
                 continue
             audio_files[file.basename()] = core.AudioFile.from_file(file)
@@ -1112,7 +1107,9 @@ class Apk:
                 continue
             if file.basename() == audio.get_apk_name():
                 return file
-        for file in self.get_server_path(self.country_code, self.apk_folder).get_files():
+        for file in self.get_server_path(
+            self.country_code, self.apk_folder
+        ).get_files():
             if not file.get_extension() == "caf" and not file.get_extension() == "ogg":
                 continue
             if file.basename() == audio.get_apk_name():
