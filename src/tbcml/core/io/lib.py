@@ -423,19 +423,30 @@ class LibFiles:
             dict[pathHandler.Path, list[pathHandler.Path]]: Duplicate packs
         """
         duplicates: dict[core.Path, list[core.Path]] = {}
+        original_data_dict: dict[str, core.Data] = {}
         for pack in self.modified_packs:
             duplicates[pack] = []
-            original_pack_path = self.get_pack_folder_original().add(pack.basename())
-            if pack.basename().endswith("1.pack") and self.apk.is_java():
+            pack_base_name = pack.basename()
+            original_pack_path = self.get_pack_folder_original().add(pack_base_name)
+            if pack_base_name.endswith("1.pack") and self.apk.is_java():
                 original_pack_path = self.get_pack_folder_original().add(
-                    pack.basename().replace("1.pack", "2.pack")
+                    pack_base_name.replace("1.pack", "2.pack")
                 )
             for original in self.get_pack_folder_original().get_files(
                 regex=".*\\.pack|.*\\.list"
             ):
-                if original.basename() == pack.basename():
+                original_base_name = original.basename()
+                if original_base_name == pack_base_name:
                     continue
-                if original_pack_path.read().to_bytes() == original.read().to_bytes():
+                original_data = original_data_dict.get(original_base_name)
+                orignal_pack_path_data = original_data_dict.get(pack_base_name)
+                if original_data is None:
+                    original_data = original.read()
+                    original_data_dict[original_base_name] = original_data
+                if orignal_pack_path_data is None:
+                    orignal_pack_path_data = original_pack_path.read()
+                    original_data_dict[pack_base_name] = orignal_pack_path_data
+                if orignal_pack_path_data.to_bytes() == original_data.to_bytes():
                     duplicates[pack].append(original)
 
         return duplicates

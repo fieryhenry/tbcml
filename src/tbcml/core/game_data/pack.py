@@ -7,41 +7,8 @@ from tbcml import core
 
 
 class GameFile:
-    """Represents a single game file."""
-
     def __init__(
         self,
-        dec_data: "core.Data",
-        file_name: str,
-        pack_name: str,
-        cc: "core.CountryCode",
-        gv: "core.GameVersion",
-    ):
-        """Initialize a new GameFile.
-
-        Args:
-            dec_data (core.Data): Decrypted data.
-            file_name (str): Name of the file.
-            pack_name (str): Name of the pack the file is in.
-            cc (country_code.CountryCode): Country code of the game data.
-            gv (game_version.GameVersion): Game version of the game data.
-        """
-        self.dec_data = dec_data
-        self.file_name = file_name
-        self.pack_name = pack_name
-        self.cc = cc
-        self.gv = gv
-
-    def set_data(self, data: "core.Data"):
-        """Set the decrypted data.
-
-        Args:
-            data (core.Data): Decrypted data.
-        """
-        self.dec_data = data
-
-    @staticmethod
-    def from_enc_data(
         enc_data: "core.Data",
         file_name: str,
         pack_name: str,
@@ -49,26 +16,36 @@ class GameFile:
         gv: "core.GameVersion",
         key: Optional[str] = None,
         iv: Optional[str] = None,
-    ) -> "GameFile":
-        """Create a GameFile from encrypted data.
+    ):
+        self.enc_data = enc_data
+        self.file_name = file_name
+        self.pack_name = pack_name
+        self.cc = cc
+        self.gv = gv
+        self.key = key
+        self.iv = iv
+        self.__dec_data: Optional["core.Data"] = None
+        self.original_dec_data: Optional["core.Data"] = None
 
-        Args:
-            enc_data (core.Data): Encrypted data.
-            file_name (str): The name of the file.
-            pack_name (str): The name of the pack the file is in.
-            cc (country_code.CountryCode): The country code of the game data.
-            gv (game_version.GameVersion): The game version of the game data.
+    @property
+    def dec_data(self):
+        if self.__dec_data is not None:
+            return self.__dec_data
 
-        Returns:
-            GameFile: The GameFile object.
-        """
-        cipher = PackFile.get_cipher(cc, pack_name, gv, key=key, iv=iv)
-        data = cipher.decrypt(enc_data)
+        cipher = PackFile.get_cipher(
+            self.cc, self.pack_name, self.gv, key=self.key, iv=self.iv
+        )
+        data = cipher.decrypt(self.enc_data)
         try:
             data = data.unpad_pkcs7()
         except ValueError:
             pass
-        return GameFile(data, file_name, pack_name, cc, gv)
+        self.__dec_data = data
+        return self.__dec_data
+
+    @dec_data.setter
+    def dec_data(self, data: "core.Data"):
+        self.__dec_data = data
 
     def encrypt(
         self,
@@ -81,12 +58,15 @@ class GameFile:
         Returns:
             core.Data: The encrypted data.
         """
+        if self.__dec_data is None or self.__dec_data == self.original_dec_data:
+            return self.enc_data
         if PackFile.is_image_data_local_pack(self.pack_name) and not force_server:
-            return self.dec_data
+            return self.enc_data
+
         cipher = PackFile.get_cipher(
             self.cc, self.pack_name, self.gv, force_server, key, iv
         )
-        data = self.dec_data.pad_pkcs7()
+        data = self.__dec_data.pad_pkcs7()
         return cipher.encrypt(data)
 
     def extract(self, path: "core.Path", encrypt: bool = False):
@@ -309,9 +289,7 @@ class PackFile:
         Returns:
             Optional[PackFile]: The PackFile if it was created successfully, None otherwise.
         """
-        list_key = (
-            core.Hash(core.HashAlgorithm.MD5).get_hash(core.Data("pack"), 8).to_hex()
-        )
+        list_key = "b484857901742afc"
         ls_dec_data = core.AesCipher(list_key.encode("utf-8")).decrypt(enc_list_data)
         ls_data = core.CSV(ls_dec_data)
 
@@ -328,7 +306,7 @@ class PackFile:
             file_name = line[0]
             start = int(line[1])
             size = int(line[2])
-            files[file_name] = GameFile.from_enc_data(
+            files[file_name] = GameFile(
                 enc_pack_data[start : start + size],
                 file_name,
                 pack_name,
