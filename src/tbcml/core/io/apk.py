@@ -65,7 +65,6 @@ class Apk:
             self.output_path.add("extracted").remove_tree().generate_dirs()
         )
         self.decrypted_path = self.output_path.add("decrypted").generate_dirs()
-        self.packs_path = self.output_path.add("packs").generate_dirs()
         self.modified_packs_path = (
             self.output_path.add("modified_packs").remove_tree().generate_dirs()
         )
@@ -83,9 +82,15 @@ class Apk:
             self.output_path.add("smali-new").remove_tree().generate_dirs()
         )
 
+    def get_packs_from_dir(self) -> list["core.Path"]:
+        return (
+            self.get_pack_location().get_files()
+            + self.get_server_path(self.country_code).get_files()
+        )
+
     def get_packs_lists(self) -> list[tuple["core.Path", "core.Path"]]:
         files: list[tuple[core.Path, core.Path]] = []
-        for file in self.packs_path.get_files():
+        for file in self.get_packs_from_dir():
             if file.get_extension() != "pack":
                 continue
             list_file = file.change_extension("list")
@@ -100,13 +105,6 @@ class Apk:
     def get_packs(self) -> list["core.Path"]:
         packs_list = self.get_packs_lists()
         return [pack[0] for pack in packs_list]
-
-    def copy_packs(self):
-        self.packs_path.remove_tree().generate_dirs()
-        packs = self.get_pack_location().get_files()
-        for pack in packs:
-            if pack.get_extension() == "pack" or pack.get_extension() == "list":
-                pack.copy(self.packs_path)
 
     def copy_extracted(self):
         self.extracted_path.remove_tree().generate_dirs()
@@ -184,7 +182,6 @@ class Apk:
     def extract(self, decode_resources: bool = True, force: bool = False):
         if self.original_extracted_path.has_files() and not force:
             self.copy_extracted()
-            self.copy_packs()
             return
 
         if not self.check_display_apktool_error():
@@ -197,7 +194,6 @@ class Apk:
             print(f"Failed to extract APK: {res.result}")
             return
         self.copy_extracted()
-        self.copy_packs()
 
     def extract_smali(
         self,
@@ -794,20 +790,10 @@ class Apk:
 
     def download_server_files(
         self,
-        copy: bool = True,
         display: bool = False,
     ):
         sfh = core.ServerFileHandler(self)
         sfh.extract_all(display=display)
-        if copy:
-            self.copy_server_files()
-
-    def copy_server_files(self):
-        server_path = self.get_server_path(self.country_code)
-        if not server_path.exists():
-            return
-        for file in server_path.get_files():
-            file.copy(self.packs_path.add(file.basename()))
 
     @staticmethod
     def get_server_path(cc: "core.CountryCode") -> "core.Path":

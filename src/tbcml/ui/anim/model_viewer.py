@@ -756,17 +756,17 @@ def view_model(
 
 
 if __name__ == "__main__":
-    cc = core.CountryCode.JP
-    gv = core.GameVersion.from_string_latest("12.6.1", cc)
+    cc = core.CountryCode.EN
+    gv = core.GameVersion.from_string_latest("12.3.0", cc)
     apk = core.Apk(gv, cc)
+    apk.download()
     apk.extract()
-    apk.copy_server_files()
 
     game_packs = core.GamePacks.from_apk(apk)
-    cat_id = 207
+    cat_id = 43
     cats = core.Cats.from_game_data(game_packs, [cat_id])
     cat = cats.data[cat_id]
-    form = cat.forms[core.CatFormType.SECOND]
+    form = cat.forms[core.CatFormType.THIRD]
     model_ = form.get_anim().model
 
     spawn_anim = form.get_stats().spawn_anim
@@ -787,7 +787,7 @@ if __name__ == "__main__":
             game_packs,
         )
 
-    anim_id = 4
+    anim_id = 2
 
     if other_model is not None and anim_id == 4:
         view_model(game_packs, model_, anim_id, other_models=[(other_model, 0)])
