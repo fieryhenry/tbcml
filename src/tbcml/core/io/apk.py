@@ -431,11 +431,11 @@ class Apk:
         return max_version
 
     @staticmethod
-    def get_all_versions_v2(cc: "core.CountryCode") -> list["core.GameVersion"]:
-        base_url = (
-            "https://raw.githubusercontent.com/fieryhenry/BCData/master/apk_list.json"
-        )
-        response = core.RequestHandler(base_url).get()
+    def get_all_versions_v2(
+        cc: "core.CountryCode",
+        apk_list_url: str = "https://raw.githubusercontent.com/fieryhenry/BCData/master/apk_list.json",
+    ) -> list["core.GameVersion"]:
+        response = core.RequestHandler(apk_list_url).get()
         json = response.json()
         versions: list[core.GameVersion] = []
         cc_versions = json.get(cc.get_code())
@@ -550,14 +550,12 @@ class Apk:
         self,
         progress: Optional[Callable[[float, int, int, bool], None]] = progress,
         force: bool = False,
+        apk_list_url: str = "https://raw.githubusercontent.com/fieryhenry/BCData/master/apk_list.json",
     ) -> bool:
         if self.apk_path.exists() and not force:
             return True
-        base_url = (
-            "https://raw.githubusercontent.com/fieryhenry/BCData/master/apk_list.json"
-        )
 
-        response = core.RequestHandler(base_url).get()
+        response = core.RequestHandler(apk_list_url).get()
         json = response.json()
         cc_versions = json.get(self.country_code.get_code())
         if cc_versions is None:
