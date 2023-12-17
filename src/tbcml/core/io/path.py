@@ -21,6 +21,9 @@ class Path:
     def get_relative_path(self, path: str) -> str:
         return os.path.join(self.get_files_folder().path, path)
 
+    def replace(self, old: str, new: str) -> "Path":
+        return Path(self.path.replace(old, new))
+
     @staticmethod
     def get_files_folder() -> "Path":
         file = Path(os.path.realpath(__file__))
@@ -31,7 +34,10 @@ class Path:
         return path
 
     def strip_trailing_slash(self) -> "Path":
-        return Path(self.path.rstrip("/"))
+        return Path(self.path.rstrip(os.sep))
+
+    def strip_leading_slash(self) -> "Path":
+        return Path(self.path.lstrip(os.sep))
 
     def open(self):
         self.generate_dirs()
@@ -206,6 +212,22 @@ class Path:
                 for file in os.listdir(self.path):
                     if re.search(regex, file):
                         files.append(self.add(file))
+                return files
+        return []
+
+    def get_files_recursive(self, regex: typing.Optional[str] = None) -> list["Path"]:
+        if self.exists():
+            if regex is None:
+                files: list["Path"] = []
+                for root, _, files_str in os.walk(self.path):
+                    files.extend([self.add(root, file) for file in files_str])
+                return files
+            else:
+                files: list["Path"] = []
+                for root, _, files_str in os.walk(self.path):
+                    for file in files:
+                        if re.search(regex, file.path):
+                            files.append(self.add(root, file.path))
                 return files
         return []
 
