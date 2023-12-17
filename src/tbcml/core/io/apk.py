@@ -3,6 +3,7 @@ from typing import Any, Callable, Optional
 import bs4
 import cloudscraper  # type: ignore
 import requests
+import filecmp
 
 from tbcml import core
 
@@ -63,9 +64,7 @@ class Apk:
         self.final_apk_path = self.output_path.add(f"{self.package_name}-modded.apk")
         self.apk_path = self.output_path.add(f"{self.package_name}-original.apk")
 
-        self.extracted_path = (
-            self.output_path.add("extracted").remove_tree().generate_dirs()
-        )
+        self.extracted_path = self.output_path.add("extracted").generate_dirs()
         self.decrypted_path = self.output_path.add("decrypted").generate_dirs()
         self.modified_packs_path = (
             self.output_path.add("modified_packs").remove_tree().generate_dirs()
@@ -114,9 +113,32 @@ class Apk:
         packs_list = self.get_packs_lists()
         return [pack[0] for pack in packs_list]
 
-    def copy_extracted(self):
-        self.extracted_path.remove_tree().generate_dirs()
-        self.original_extracted_path.copy(self.extracted_path)
+    def get_original_extracted_path(self, extracted_path: "core.Path") -> "core.Path":
+        return self.original_extracted_path.add(
+            extracted_path.replace(self.extracted_path.path, "").strip_leading_slash()
+        )
+
+    def get_extracted_path(self, original_extracted_path: "core.Path") -> "core.Path":
+        return self.extracted_path.add(
+            original_extracted_path.replace(
+                self.original_extracted_path.path, ""
+            ).strip_leading_slash()
+        )
+
+    def copy_extracted(self, force: bool = False):
+        if force:
+            self.extracted_path.remove_tree().generate_dirs()
+            self.original_extracted_path.copy(self.extracted_path)
+            return
+        for original_file in self.original_extracted_path.get_files_recursive():
+            extracted_file = self.get_extracted_path(original_file)
+            if not extracted_file.parent().exists():
+                extracted_file.parent().generate_dirs()
+            if not extracted_file.exists():
+                original_file.copy(extracted_file)
+                continue
+            if not filecmp.cmp(extracted_file.path, original_file.path):
+                original_file.copy(extracted_file)
 
     @staticmethod
     def run_apktool(command: str) -> "core.CommandResult":
