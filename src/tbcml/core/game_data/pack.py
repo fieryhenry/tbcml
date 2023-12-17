@@ -9,13 +9,14 @@ from tbcml import core
 class GameFile:
     def __init__(
         self,
-        enc_data: "core.Data",
+        enc_data: Optional["core.Data"],
         file_name: str,
         pack_name: str,
         cc: "core.CountryCode",
         gv: "core.GameVersion",
         key: Optional[str] = None,
         iv: Optional[str] = None,
+        dec_data: Optional["core.Data"] = None,
     ):
         self.enc_data = enc_data
         self.file_name = file_name
@@ -24,7 +25,7 @@ class GameFile:
         self.gv = gv
         self.key = key
         self.iv = iv
-        self.__dec_data: Optional["core.Data"] = None
+        self.__dec_data: Optional["core.Data"] = dec_data
         self.original_dec_data: Optional["core.Data"] = None
 
     @property
@@ -35,6 +36,8 @@ class GameFile:
         cipher = PackFile.get_cipher(
             self.cc, self.pack_name, self.gv, key=self.key, iv=self.iv
         )
+        if self.enc_data is None:
+            raise ValueError("No enc_data or dec_data specified")
         data = cipher.decrypt(self.enc_data)
         try:
             data = data.unpad_pkcs7()
@@ -58,10 +61,13 @@ class GameFile:
         Returns:
             core.Data: The encrypted data.
         """
-        if self.__dec_data is None or self.__dec_data == self.original_dec_data:
-            return self.enc_data
-        if PackFile.is_image_data_local_pack(self.pack_name) and not force_server:
-            return self.enc_data
+        if self.enc_data is not None:
+            if self.__dec_data is None or self.__dec_data == self.original_dec_data:
+                return self.enc_data
+            if PackFile.is_image_data_local_pack(self.pack_name) and not force_server:
+                return self.enc_data
+        if self.__dec_data is None:
+            raise ValueError("dec data or enc data need to be provided")
 
         cipher = PackFile.get_cipher(
             self.cc, self.pack_name, self.gv, force_server, key, iv
@@ -231,7 +237,12 @@ class PackFile:
         file = self.files.get(file_name)
         if file is None:
             file = GameFile(
-                file_data, file_name, self.pack_name, self.country_code, self.gv
+                None,
+                file_name,
+                self.pack_name,
+                self.country_code,
+                self.gv,
+                dec_data=file_data,
             )
             self.add_file(file)
         else:
@@ -307,7 +318,7 @@ class PackFile:
             start = int(line[1])
             size = int(line[2])
             files[file_name] = GameFile(
-                enc_pack_data[start : start + size],
+                core.Data(enc_pack_data.data[start : start + size]),
                 file_name,
                 pack_name,
                 country_code,
@@ -546,7 +557,14 @@ class GamePacks:
                 pack = self.get_pack_gv("DataLocal")
             if pack is None:
                 raise FileNotFoundError(f"Could not find pack for {file_name}")
-            file = GameFile(data, file_name, pack.pack_name, self.country_code, self.gv)
+            file = GameFile(
+                None,
+                file_name,
+                pack.pack_name,
+                self.country_code,
+                self.gv,
+                dec_data=data,
+            )
         else:
             if file.dec_data == data:
                 return file
