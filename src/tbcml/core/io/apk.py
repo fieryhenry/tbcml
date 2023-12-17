@@ -13,6 +13,7 @@ class Apk:
         game_version: "core.GameVersion",
         country_code: "core.CountryCode",
         apk_folder: Optional["core.Path"] = None,
+        allowed_script_mods: bool = False,
     ):
         self.game_version = game_version
         self.country_code = country_code
@@ -21,7 +22,6 @@ class Apk:
         if apk_folder is None:
             apk_folder = self.get_default_apk_folder()
         self.apk_folder = apk_folder
-        self.locale_manager = core.LocalManager.from_config()
 
         self.smali_handler: Optional[core.SmaliHandler] = None
 
@@ -31,6 +31,8 @@ class Apk:
         self.iv = None
 
         self.libs: Optional[dict[str, core.Lib]] = None
+
+        self.allowed_script_mods = allowed_script_mods
 
     def replace_lib_string(self, original: str, new: str, pad: str = "\x00") -> str:
         return core.LibFiles(self).replace_str(original, new, pad)
@@ -81,6 +83,12 @@ class Apk:
         self.smali_non_original_path = (
             self.output_path.add("smali-new").remove_tree().generate_dirs()
         )
+
+        self.lib_gadgets_folder = self.get_defualt_libgadgets_folder()
+
+    @staticmethod
+    def get_defualt_libgadgets_folder() -> "core.Path":
+        return core.Path.get_documents_folder().add("LibGadgets").generate_dirs()
 
     def get_packs_from_dir(self) -> list["core.Path"]:
         return (
@@ -922,20 +930,23 @@ class Apk:
             script_path.remove()
 
     @staticmethod
-    def get_libgadgets_path() -> "core.Path":
-        folder = core.Path(core.config.get(core.ConfigKey.LIB_GADGETS_FOLDER))
-        folder.generate_dirs()
+    def get_libgadgets_path(
+        lib_gadgets_folder: Optional["core.Path"] = None,
+    ) -> "core.Path":
+        if lib_gadgets_folder is None:
+            lib_gadgets_folder = Apk.get_defualt_libgadgets_folder()
+        lib_gadgets_folder.generate_dirs()
         arcs = ["arm64-v8a", "armeabi-v7a", "x86", "x86_64"]
         for arc in arcs:
-            folder.add(arc).generate_dirs()
-        return folder
+            lib_gadgets_folder.add(arc).generate_dirs()
+        return lib_gadgets_folder
 
     @staticmethod
     def download_libgadgets():
         core.FridaGadgetHelper().download_gadgets()
 
     def get_libgadgets(self) -> dict[str, "core.Path"]:
-        folder = Apk.get_libgadgets_path()
+        folder = Apk.get_libgadgets_path(self.lib_gadgets_folder)
         Apk.download_libgadgets()
         arcs = folder.get_dirs()
         libgadgets: dict[str, "core.Path"] = {}
@@ -954,7 +965,10 @@ class Apk:
                 continue
             self.add_library(architecture, libgadget)
 
-    def add_frida_scripts(self, scripts: "core.FridaScripts"):
+    def add_frida_scripts(
+        self,
+        scripts: "core.FridaScripts",
+    ):
         used_arcs = scripts.get_used_arcs()
         self.add_libgadget_config(used_arcs)
         self.add_libgadget_scripts(scripts)
@@ -981,14 +995,16 @@ class Apk:
         scripts.validate_scripts(self.country_code, self.game_version)
         return not scripts.is_empty()
 
-    @staticmethod
-    def is_allowed_script_mods() -> bool:
-        return core.config.get(core.ConfigKey.ALLOW_SCRIPT_MODS)
+    def is_allowed_script_mods(self) -> bool:
+        return self.allowed_script_mods
+
+    def set_allowed_script_mods(self, allowed: bool):
+        self.allowed_script_mods = allowed
 
     def add_script_mods(self, bc_mods: list["core.Mod"]):
         if not bc_mods:
             return
-        if not Apk.is_allowed_script_mods():
+        if not self.is_allowed_script_mods():
             return
         scripts = core.FridaScripts([])
         for mod in bc_mods:
@@ -1001,7 +1017,7 @@ class Apk:
     def add_patch_mods(self, bc_mods: list["core.Mod"]):
         if not bc_mods:
             return
-        if not Apk.is_allowed_script_mods():
+        if not self.is_allowed_script_mods():
             return
         patches = core.LibPatches([])
         for mod in bc_mods:
@@ -1224,38 +1240,6 @@ class Apk:
         )
         return files
 
-    def set_modded_html(self, mods: list["core.Mod"]):
-        paths = self.get_mod_html_files()
-
-        mod_html = ""
-        for mod in mods:
-            mod_url = f"https://tbcml.net/mod/{mod.mod_id}"
-            mod_html += f'<a class="Buttonbig" href="{mod_url}">{mod.name}</a><br><br>'
-
-        for path in paths:
-            data = path.read().to_str()
-            credit_message = core.local_manager.get_key("html_credit_message")
-            mods_message = core.local_manager.get_key("mods")
-            inject_html = f"""
-<span class="midashi2">{credit_message}</span>
-<hr noshade width="97%" color="#E2AF27">
-<span class="midashi2">{mods_message}</span><br>
-<span style="font-size:small">
-{{modlist}}
-</span>"""
-            inject_after = '<img src="img_friend03.png" width="100%"><br>'
-
-            pos = data.find(inject_after)
-            if pos == -1:
-                return
-            pos += len(inject_after)
-            new_data = data[:pos] + inject_html + data[pos:]
-
-            template_file = new_data.replace("{{modlist}}", mod_html)
-            self.extracted_path.add("assets", path.basename()).write(
-                core.Data(template_file)
-            )
-
     def get_risky_extensions(self) -> list[str]:
         """Get extensions that if modified could contain malware.
 
@@ -1273,7 +1257,7 @@ class Apk:
         risky_extensions = self.get_risky_extensions()
         for file_name, data in mod.apk_files.items():
             if file_name.split(".")[-1] in risky_extensions:
-                if not Apk.is_allowed_script_mods():
+                if not self.is_allowed_script_mods():
                     skipped = True
                     continue
             self.extracted_path.add(file_name).write(data)
@@ -1284,7 +1268,7 @@ class Apk:
             self.add_mod_files(mod)
 
     def add_smali_mods(self, mods: list["core.Mod"]):
-        if not Apk.is_allowed_script_mods():
+        if not self.is_allowed_script_mods():
             return
         for mod in mods:
             self.apply_mod_smali(mod)
@@ -1302,7 +1286,6 @@ class Apk:
         self.add_mods_files(mods)
         self.set_allow_backup(True)
         self.set_debuggable(True)
-        # self.set_modded_html(mods)
         self.add_audio_mods(mods)
         self.add_script_mods(mods)
         self.add_patch_mods(mods)
