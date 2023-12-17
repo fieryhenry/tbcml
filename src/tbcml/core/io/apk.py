@@ -230,7 +230,12 @@ class Apk:
             print(f"Failed to pack APK: {res.result}")
             return
 
-    def sign(self, use_jarsigner: bool = False, zip_align: bool = True):
+    def sign(
+        self,
+        use_jarsigner: bool = False,
+        zip_align: bool = True,
+        password: str = "TBCML_CUSTOM_APK",
+    ):
         if zip_align:
             self.zip_align()
         if use_jarsigner:
@@ -241,7 +246,6 @@ class Apk:
                 return
         if not self.check_display_keytool_error():
             return
-        password = core.config.get(core.ConfigKey.KEYSTORE_PASSWORD)
         key_store_name = "tbcml.keystore"
         key_store_path = core.Path.get_documents_folder().add(key_store_name)
         if not key_store_path.exists():

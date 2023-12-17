@@ -4,7 +4,6 @@ from tbcml import core
 
 
 class ConfigKey(enum.Enum):
-    KEYSTORE_PASSWORD = "keystore_password"
     UPDATE = "update"
     UPDATE_TO_BETA = "update_to_beta"
     DEFAULT_AUTHOR = "default_author"
@@ -39,7 +38,6 @@ class Config:
 
     def initialize_config(self):
         initial_values = {
-            ConfigKey.KEYSTORE_PASSWORD: "TBCML_CUSTOM_APK",
             ConfigKey.UPDATE: True,
             ConfigKey.UPDATE_TO_BETA: False,
             ConfigKey.DEFAULT_AUTHOR: "",
