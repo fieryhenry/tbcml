@@ -113,7 +113,6 @@ from .io.apk import Apk
 from .io.path import Path
 from .io.data import Data, PaddedInt
 from .io.command import Command, CommandResult
-from .io.config import Config, ConfigKey
 from .io.lib import (
     LibFiles,
     Lib,
@@ -137,7 +136,6 @@ from .crypto import AesCipher, Hash, HashAlgorithm, Random, Hmac
 from .langs import Languages
 from .request import RequestHandler
 from .server_handler import ServerFileHandler, EventData
-from .locale_handler import LocalManager
 from .game_data.pack import GamePacks, PackFile, GameFile
 from .country_code import CountryCode
 from .game_version import GameVersion
@@ -151,15 +149,12 @@ from . import (
     langs,
     request,
     server_handler,
-    locale_handler,
     game_version,
     country_code,
     mods,
 )
 
-config = Config()
 logger = Logger()
-local_manager = LocalManager()
 
 __all__ = [
     "ModEditDictHandler",
@@ -272,8 +267,6 @@ __all__ = [
     "PaddedInt",
     "Command",
     "CommandResult",
-    "Config",
-    "ConfigKey",
     "LibFiles",
     "Lib",
     "LibPatch",
@@ -302,7 +295,6 @@ __all__ = [
     "RequestHandler",
     "ServerFileHandler",
     "EventData",
-    "LocalManager",
     "GamePacks",
     "PackFile",
     "GameFile",
@@ -317,7 +309,6 @@ __all__ = [
     "langs",
     "request",
     "server_handler",
-    "locale_handler",
     "game_version",
     "country_code",
 ]
