@@ -85,7 +85,7 @@ class Apk:
     def get_packs_from_dir(self) -> list["core.Path"]:
         return (
             self.get_pack_location().get_files()
-            + self.get_server_path(self.country_code).get_files()
+            + self.get_server_path(self.country_code, self.apk_folder).get_files()
         )
 
     def get_packs_lists(self) -> list[tuple["core.Path", "core.Path"]]:
@@ -357,21 +357,21 @@ class Apk:
 
     @staticmethod
     def get_default_apk_folder() -> "core.Path":
-        folder = core.Path(core.config.get(core.ConfigKey.APK_FOLDER)).generate_dirs()
-        return folder
+        return core.Path.get_documents_folder().add("APKs").generate_dirs()
 
     def get_package_name(self) -> str:
         return f"jp.co.ponos.battlecats{self.country_code.get_patching_code()}"
 
     @staticmethod
-    def get_all_downloaded() -> list["Apk"]:
+    def get_all_downloaded(all_apk_dir: Optional["core.Path"] = None) -> list["Apk"]:
         """
         Get all downloaded APKs
 
         Returns:
             list[APK]: List of APKs
         """
-        all_apk_dir = core.Path(core.config.get(core.ConfigKey.APK_FOLDER))
+        if all_apk_dir is None:
+            all_apk_dir = Apk.get_default_apk_folder()
         apks: list[Apk] = []
         for apk_folder in all_apk_dir.get_dirs():
             name = apk_folder.get_file_name()
@@ -390,7 +390,9 @@ class Apk:
         return apks
 
     @staticmethod
-    def get_all_apks_cc(cc: "core.CountryCode") -> list["Apk"]:
+    def get_all_apks_cc(
+        cc: "core.CountryCode", apk_folder: Optional["core.Path"] = None
+    ) -> list["Apk"]:
         """
         Get all APKs for a country code
 
@@ -400,7 +402,7 @@ class Apk:
         Returns:
             list[APK]: List of APKs
         """
-        apks = Apk.get_all_downloaded()
+        apks = Apk.get_all_downloaded(apk_folder)
         apks_cc: list[Apk] = []
         for apk in apks:
             if apk.country_code == cc:
@@ -409,7 +411,7 @@ class Apk:
 
     @staticmethod
     def get_latest_downloaded_version_cc(
-        cc: "core.CountryCode",
+        cc: "core.CountryCode", apk_folder: Optional["core.Path"] = None
     ) -> "core.GameVersion":
         """
         Get latest downloaded APK version for a country code
@@ -421,7 +423,7 @@ class Apk:
             game_version.GameVersion: Latest APK version
         """
         max_version = core.GameVersion(0)
-        for apk in Apk.get_all_apks_cc(cc):
+        for apk in Apk.get_all_apks_cc(cc, apk_folder):
             if apk.game_version > max_version:
                 max_version = apk.game_version
         return max_version
@@ -779,8 +781,8 @@ class Apk:
         self.output_path.remove_tree()
 
     @staticmethod
-    def clean_up():
-        for apk in Apk.get_all_downloaded():
+    def clean_up(apk_folder: Optional["core.Path"] = None):
+        for apk in Apk.get_all_downloaded(apk_folder):
             if apk.is_downloaded():
                 continue
             apk.delete()
@@ -796,8 +798,11 @@ class Apk:
         sfh.extract_all(display=display)
 
     @staticmethod
-    def get_server_path(cc: "core.CountryCode") -> "core.Path":
-        apk_folder = Apk.get_default_apk_folder()
+    def get_server_path(
+        cc: "core.CountryCode", apk_folder: Optional["core.Path"] = None
+    ) -> "core.Path":
+        if apk_folder is None:
+            apk_folder = Apk.get_default_apk_folder()
         return apk_folder.parent().add(f"{cc.get_code()}_server")
 
     @staticmethod
@@ -906,13 +911,10 @@ class Apk:
 
     def add_libgadget_config(self, used_arcs: list[str]):
         config = self.create_libgadget_config()
-        temp_file = self.temp_path.add("libfrida-gadget.config")
-        config.to_data().to_file(temp_file)
-
-        for architecture in used_arcs:
-            self.add_to_lib_folder(architecture, temp_file)
-
-        temp_file.remove()
+        with core.TempFile("libfrida-gadget.config") as temp_file:
+            config.to_data().to_file(temp_file)
+            for architecture in used_arcs:
+                self.add_to_lib_folder(architecture, temp_file)
 
     def add_libgadget_scripts(self, scripts: "core.FridaScripts"):
         for architecture in scripts.get_used_arcs():
@@ -1097,7 +1099,7 @@ class Apk:
             if not file.get_extension() == "caf" and not file.get_extension() == "ogg":
                 continue
             audio_files[file.basename()] = core.AudioFile.from_file(file)
-        for file in self.get_server_path(self.country_code).get_files():
+        for file in self.get_server_path(self.country_code, self.apk_folder).get_files():
             if not file.get_extension() == "caf" and not file.get_extension() == "ogg":
                 continue
             audio_files[file.basename()] = core.AudioFile.from_file(file)
@@ -1110,7 +1112,7 @@ class Apk:
                 continue
             if file.basename() == audio.get_apk_name():
                 return file
-        for file in self.get_server_path(self.country_code).get_files():
+        for file in self.get_server_path(self.country_code, self.apk_folder).get_files():
             if not file.get_extension() == "caf" and not file.get_extension() == "ogg":
                 continue
             if file.basename() == audio.get_apk_name():

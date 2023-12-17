@@ -143,7 +143,9 @@ class ServerFileHandler:
                 name = row[0].strip()
                 if not name or ord(name[0]) == 65279 or name.isdigit():
                     continue
-                path = core.Apk.get_server_path(self.apk.country_code).add(name)
+                path = core.Apk.get_server_path(
+                    self.apk.country_code, self.apk.apk_folder
+                ).add(name)
                 if not path.exists():
                     found = False
                     break
@@ -158,7 +160,7 @@ class ServerFileHandler:
             if found and hashes_equal:
                 return False
         zipf = self.download(index)
-        path = core.Apk.get_server_path(self.apk.country_code)
+        path = core.Apk.get_server_path(self.apk.country_code, self.apk.apk_folder)
         zipf.extract(path)
         return True
 
