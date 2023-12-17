@@ -7,10 +7,12 @@ from tbcml import core
 class ModManager:
     """A class to manage mods."""
 
-    def __init__(self):
+    def __init__(self, mod_folder: Optional["core.Path"] = None):
         """Initializes a new instance of the ModManager class."""
+        if mod_folder is None:
+            mod_folder = core.Path.get_documents_folder().add("Mods").generate_dirs()
         self.__mods: Optional[dict[str, core.Mod]] = None
-        self.mod_folder = core.Path(core.config.get(core.ConfigKey.MOD_FOLDER))
+        self.mod_folder = mod_folder
         self.mod_folder.generate_dirs()
         self.mod_info_json = self.mod_folder.add("mod_info.json")
         self.load_mod_json()

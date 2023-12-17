@@ -4,7 +4,6 @@ from tbcml import core
 
 
 class ConfigKey(enum.Enum):
-    MOD_FOLDER = "mod_folder"
     APK_FOLDER = "apk_folder"
     APK_COPY_PATH = "apk_copy_path"
     KEYSTORE_PASSWORD = "keystore_password"
@@ -42,7 +41,6 @@ class Config:
 
     def initialize_config(self):
         initial_values = {
-            ConfigKey.MOD_FOLDER: core.Path.get_documents_folder().add("Mods").path,
             ConfigKey.APK_FOLDER: core.Path.get_documents_folder().add("APKs").path,
             ConfigKey.APK_COPY_PATH: "",
             ConfigKey.KEYSTORE_PASSWORD: "TBCML_CUSTOM_APK",
