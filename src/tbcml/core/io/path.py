@@ -127,6 +127,9 @@ class Path:
         _paths: list[str] = [str(path) for path in paths]
         return Path(os.path.join(self.path, *_paths))
 
+    def relative_to(self, path: "Path") -> "Path":
+        return Path(os.path.relpath(self.path, path.path))
+
     def __str__(self) -> str:
         return self.path
 
