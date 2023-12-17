@@ -174,13 +174,13 @@ apk.output_path.open()
 
 ```
 
-If you want to do some script modding, you will also need to add the following
-code at the top of the script. Note that this only has to be done once as it is
-saved in the config file.
+If you want to do some script modding, you will also need to set
+allowed_script_mods to True when creating the apk object
 
 ```python
-from tbcml.core import ConfigKey, config
-config.set(ConfigKey.ALLOW_SCRIPT_MODS, True)
+
+apk = Apk(gv, cc, allowed_script_mods=True)
+
 ```
 
 Run the script
