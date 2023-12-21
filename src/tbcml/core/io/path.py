@@ -14,6 +14,11 @@ class Path:
         else:
             self.path = path
 
+    def run(self, arg: str = "", display_output: bool = False) -> "core.CommandResult":
+        cmd_text = self.path + " " + arg
+        cmd = core.Command(cmd_text, display_output=display_output)
+        return cmd.run()
+
     @staticmethod
     def get_lib(lib_name: str) -> "Path":
         return Path("lib", is_relative=True).add(lib_name)
