@@ -933,7 +933,7 @@ class Apk:
         json_data = {
             "interaction": {
                 "type": "script",
-                "path": f"/data/data/{self.package_name}/lib/libbc_script.js.so",
+                "path": "libbc_script.js.so",
                 "on_change": "reload",
             }
         }
