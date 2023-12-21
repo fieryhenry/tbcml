@@ -301,6 +301,7 @@ __all__ = [
     "GameFile",
     "CountryCode",
     "GameVersion",
+    "AdbHandler",
     "mods",
     "game_data",
     "io",
