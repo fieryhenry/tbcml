@@ -835,8 +835,8 @@ class Apk:
     @staticmethod
     def from_apk_path(
         apk_path: "core.Path",
-        cc: Optional["core.CountryCode"] = None,
-        gv: Optional["core.GameVersion"] = None,
+        cc_overwrite: Optional["core.CountryCode"] = None,
+        gv_overwrite: Optional["core.GameVersion"] = None,
     ) -> "Apk":
         cmd = f'aapt dump badging "{apk_path}"'
         result = core.Command(cmd).run()
@@ -850,10 +850,14 @@ class Apk:
                 package_name = line.split("name='")[1].split("'")[0]
 
         cc_str = package_name.replace("jp.co.ponos.battlecats", "")
-        if cc is None:
+        if cc_overwrite is None:
             cc = core.CountryCode.from_patching_code(cc_str)
-        if gv is None:
+        else:
+            cc = cc_overwrite
+        if gv_overwrite is None:
             gv = core.GameVersion.from_string(version_name)
+        else:
+            gv = gv_overwrite
 
         apk = Apk(gv, cc)
         apk_path.copy(apk.apk_path)
