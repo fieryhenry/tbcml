@@ -15,6 +15,10 @@ class CommandResult:
     def __repr__(self) -> str:
         return f"Result({self.result!r}, {self.exit_code!r})"
 
+    @property
+    def success(self) -> bool:
+        return self.exit_code == 0
+
 
 class Command:
     def __init__(
