@@ -81,6 +81,17 @@ class KeyFrame:
     def create_empty() -> "KeyFrame":
         return KeyFrame(0, 0, 0, 0)
 
+    def get_keyframe_progress(
+        self,
+        local_frame: float,
+        current_keyframe_start_frame: int,
+        next_keyframe_start_frame: int,
+    ) -> float:
+        ti = (local_frame - current_keyframe_start_frame) / (
+            next_keyframe_start_frame - current_keyframe_start_frame
+        )
+        return ti
+
     def ease_linear(
         self,
         next_keyframe: "KeyFrame",
@@ -88,8 +99,8 @@ class KeyFrame:
         current_keyframe_start_frame: int,
         next_keyframe_start_frame: int,
     ) -> float:
-        ti = (local_frame - current_keyframe_start_frame) / (
-            next_keyframe_start_frame - current_keyframe_start_frame
+        ti = self.get_keyframe_progress(
+            local_frame, current_keyframe_start_frame, next_keyframe_start_frame
         )
         change_in_value = (ti * (next_keyframe.change - self.change)) + self.change
         return change_in_value
@@ -104,6 +115,9 @@ class KeyFrame:
         current_keyframe_start_frame: int,
         next_keyframe_start_frame: int,
     ) -> float:
+        ti = self.get_keyframe_progress(
+            local_frame, current_keyframe_start_frame, next_keyframe_start_frame
+        )
         if self.ease_power >= 0:
             change_in_value = (
                 (
@@ -111,13 +125,7 @@ class KeyFrame:
                     - math.sqrt(
                         1
                         - math.pow(
-                            (((local_frame - current_keyframe_start_frame)))
-                            / (
-                                (
-                                    next_keyframe_start_frame
-                                    - current_keyframe_start_frame
-                                )
-                            ),
+                            ti,
                             self.ease_power,
                         )
                     )
@@ -129,16 +137,7 @@ class KeyFrame:
                 math.sqrt(
                     1
                     - math.pow(
-                        1
-                        - (
-                            (((local_frame - current_keyframe_start_frame)))
-                            / (
-                                (
-                                    next_keyframe_start_frame
-                                    - current_keyframe_start_frame
-                                )
-                            )
-                        ),
+                        1 - ti,
                         -self.ease_power,
                     )
                 )
@@ -153,8 +152,8 @@ class KeyFrame:
         current_keyframe_start_frame: int,
         next_keyframe_start_frame: int,
     ) -> float:
-        ti = (local_frame - current_keyframe_start_frame) / (
-            next_keyframe_start_frame - current_keyframe_start_frame
+        ti = self.get_keyframe_progress(
+            local_frame, current_keyframe_start_frame, next_keyframe_start_frame
         )
         change_in_value = (
             ((next_keyframe.change - self.change) * (1 - math.cos(ti * math.pi / 2)))
