@@ -407,6 +407,7 @@ class PartBox(QtWidgets.QWidget):
         self.get_box_scale = get_box_scale
         self.align_other_box = align_other_box
         self.clock = clock
+        self.part = self.model.get_part(self.part_id)
         self.setup()
 
     def setup(self):
@@ -424,23 +425,144 @@ class PartBox(QtWidgets.QWidget):
             self,
         )
 
-        self.test_label = QtWidgets.QLabel(self)
-        self.test_label.setText("Test")
-
         self.split = QtWidgets.QSplitter(QtCore.Qt.Orientation.Vertical, self)
         self.split.setHandleWidth(2)
         self.split.mouseDoubleClickEvent = self.reset_splitter_event
         self.split.addWidget(self.part_box)
-        self.split.addWidget(self.test_label)
+
+        if self.part is not None:
+            self.keyframe_viewer = KeyFrameViewer(
+                self.game_data, self.part.keyframes_sets, self.clock, self
+            )
+            self.split.addWidget(self.keyframe_viewer)
 
         self.layout_box.addWidget(self.split)
         self.reset_splitter()
 
-    def reset_splitter_event(self, a0: QtGui.QMouseEvent) -> None:
+    def reset_splitter_event(self, a0: Optional[QtGui.QMouseEvent]) -> None:
         self.reset_splitter()
 
     def reset_splitter(self) -> None:
         self.split.setSizes([self.split.width() // 2] * 2)
+
+
+class KeyFrameViewer(QtWidgets.QWidget):
+    def __init__(
+        self,
+        game_data: core.GamePacks,
+        keyframe_sets: list[core.KeyFrames],
+        clock: frame_counter.FrameClock,
+        parent: Optional[QtWidgets.QWidget] = None,
+    ):
+        super().__init__(parent)
+        self.game_data = game_data
+        self.keyframe_sets = keyframe_sets
+        self.clock = clock
+        self.setup()
+
+    def setup(self):
+        self.layout_box = QtWidgets.QVBoxLayout(self)
+        self.layout_box.setContentsMargins(0, 0, 0, 0)
+        self.layout_box.setSpacing(0)
+
+        self.keyframe_title = QtWidgets.QLabel(self)
+        self.keyframe_title.setText("Keyframe Sets")
+        self.layout_box.addWidget(self.keyframe_title)
+
+        self.keyframe_list = QtWidgets.QListWidget(self)
+        self.layout_box.addWidget(self.keyframe_list)
+
+        for keyframe_set in self.keyframe_sets:
+            item_widget = QtWidgets.QListWidgetItem(self.keyframe_list)
+            key_frame_set_viewer = KeyFrameSetViewer(
+                self.game_data, keyframe_set, self.clock, self
+            )
+            item_widget.setSizeHint(key_frame_set_viewer.sizeHint())
+            self.keyframe_list.addItem(item_widget)
+            self.keyframe_list.setItemWidget(item_widget, key_frame_set_viewer)
+
+
+class KeyFrameSetViewer(QtWidgets.QWidget):
+    def __init__(
+        self,
+        game_data: core.GamePacks,
+        keyframe_set: core.KeyFrames,
+        clock: frame_counter.FrameClock,
+        parent: Optional[QtWidgets.QWidget] = None,
+    ):
+        super().__init__(parent)
+        self.game_data = game_data
+        self.keyframe_set = keyframe_set
+        self.clock = clock
+        self.setup()
+
+    def setup(self):
+        self.layout_box = QtWidgets.QHBoxLayout(self)
+        self.layout_box.setContentsMargins(0, 0, 0, 0)
+        self.layout_box.setSpacing(0)
+
+        self.splitter = QtWidgets.QSplitter(QtCore.Qt.Orientation.Horizontal, self)
+        self.splitter.setHandleWidth(2)
+        # self.splitter.mouseDoubleClickEvent = self.reset_splitter_event
+        self.layout_box.addWidget(self.splitter)
+
+        self.info_box = QtWidgets.QGroupBox(self)
+        self.info_box_layout = QtWidgets.QVBoxLayout(self.info_box)
+        self.splitter.addWidget(self.info_box)
+
+        self.keyframe_name = QtWidgets.QLabel(self)
+        self.keyframe_name.setText(self.keyframe_set.name)
+        self.info_box_layout.addWidget(self.keyframe_name)
+
+        self.loop_count_layout = QtWidgets.QHBoxLayout()
+        self.info_box_layout.addLayout(self.loop_count_layout)
+
+        self.loop_count_label = QtWidgets.QLabel(self)
+        self.loop_count_label.setText(f"Loop Count:")
+        self.loop_count_layout.addWidget(self.loop_count_label)
+
+        self.loop_count_spinbox = QtWidgets.QSpinBox(self)
+        self.loop_count_spinbox.setMinimum(-1)
+        self.loop_count_spinbox.setMaximum(1000)
+        self.loop_count_spinbox.setValue(self.keyframe_set.loop)
+        self.loop_count_layout.addWidget(self.loop_count_spinbox)
+
+        self.modification_layout = QtWidgets.QHBoxLayout()
+        self.info_box_layout.addLayout(self.modification_layout)
+
+        self.modification_label = QtWidgets.QLabel(self)
+        self.modification_label.setText(f"Modification:")
+        self.modification_layout.addWidget(self.modification_label)
+
+        self.modification_dropdown = QtWidgets.QComboBox(self)
+        self.modification_dropdown.addItems(
+            [
+                "Parent",
+                "ID",
+                "Sprite",
+                "Z Order",
+                "X Pos",
+                "Y Pos",
+                "X Pivot",
+                "Y Pivot",
+                "Scale",
+                "X Scale",
+                "Y Scale",
+                "Rotation",
+                "Opacity",
+                "Flip Horizontally",
+                "Flip Vertically",
+            ]
+        )
+        self.modification_dropdown.setCurrentIndex(
+            self.keyframe_set.modification_type.value
+        )
+        self.modification_layout.addWidget(self.modification_dropdown)
+
+        self.info_box_layout.addStretch(1)
+
+        self.keyframe_list = QtWidgets.QListWidget(self)
+        self.splitter.addWidget(self.keyframe_list)
 
 
 class AnimBox(QtWidgets.QWidget):
@@ -763,10 +885,10 @@ if __name__ == "__main__":
     apk.extract()
 
     game_packs = core.GamePacks.from_apk(apk)
-    cat_id = 43
+    cat_id = 0
     cats = core.Cats.from_game_data(game_packs, [cat_id])
     cat = cats.data[cat_id]
-    form = cat.forms[core.CatFormType.THIRD]
+    form = cat.forms[core.CatFormType.FIRST]
     model_ = form.get_anim().model
 
     spawn_anim = form.get_stats().spawn_anim
@@ -787,7 +909,7 @@ if __name__ == "__main__":
             game_packs,
         )
 
-    anim_id = 2
+    anim_id = 0
 
     if other_model is not None and anim_id == 4:
         view_model(game_packs, model_, anim_id, other_models=[(other_model, 0)])
