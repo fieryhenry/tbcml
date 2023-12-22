@@ -384,6 +384,13 @@ class PartViewer(ModelViewer):
             painter, self.scale, self.scale, draw_overlay=self.should_draw_overlay
         )
 
+    def set_part_id(self, part_id: int):
+        self.part_id = part_id
+        part = self.model.get_part(part_id)
+        if part is None:
+            raise ValueError(f"Part with id {part_id} not found")
+        self.part = part
+
 
 class PartBox(QtWidgets.QWidget):
     def __init__(
@@ -445,6 +452,18 @@ class PartBox(QtWidgets.QWidget):
     def reset_splitter(self) -> None:
         self.split.setSizes([self.split.width() // 2] * 2)
 
+    def set_part_id(self, part_id: int) -> bool:
+        part = self.model.get_part(part_id)
+        if part is None:
+            return False
+        self.part_id = part_id
+        self.part = part
+        self.part_box.set_part_id(part_id)
+        self.keyframe_viewer.keyframe_list.clear()
+        self.keyframe_viewer.keyframe_sets = part.keyframes_sets
+        self.keyframe_viewer.add_key_frames()
+        return True
+
 
 class KeyFrameViewer(QtWidgets.QWidget):
     def __init__(
@@ -472,6 +491,9 @@ class KeyFrameViewer(QtWidgets.QWidget):
         self.keyframe_list = QtWidgets.QListWidget(self)
         self.layout_box.addWidget(self.keyframe_list)
 
+        self.add_key_frames()
+
+    def add_key_frames(self):
         for keyframe_set in self.keyframe_sets:
             item_widget = QtWidgets.QListWidgetItem(self.keyframe_list)
             key_frame_set_viewer = KeyFrameSetViewer(
@@ -645,6 +667,12 @@ class AnimBox(QtWidgets.QWidget):
 
     def align_part_box(self) -> None:
         self.part_box.part_box.align_part_view_to_model()
+
+    def set_part_id(self, part_id: int) -> bool:
+        success = self.part_box.set_part_id(part_id)
+        if success:
+            self.model_box.set_overlay_part(part_id)
+        return success
 
 
 class AnimControls(QtWidgets.QWidget):
@@ -850,6 +878,23 @@ class AnimEditor(QtWidgets.QWidget):
             not self.anim_box.part_box.part_box.show_grid
         )
         self.anim_box.model_box.show_grid = not self.anim_box.model_box.show_grid
+
+    def keyPressEvent(self, a0: Optional[QtGui.QKeyEvent]) -> None:
+        # if ctrl + right arrow key, go to next part
+        if a0 is None:
+            return
+
+        if a0.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier:
+            current_part_id = self.anim_box.part_box.part_box.part_id
+            if a0.key() == QtCore.Qt.Key.Key_Right:
+                self.anim_box.part_box.part_box.part_id += 1
+
+            if a0.key() == QtCore.Qt.Key.Key_Left:
+                self.anim_box.part_box.part_box.part_id -= 1
+
+            success = self.anim_box.set_part_id(self.anim_box.part_box.part_box.part_id)
+            if not success:
+                self.anim_box.part_box.part_box.part_id = current_part_id
 
 
 def view_model(
