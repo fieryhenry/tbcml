@@ -774,6 +774,12 @@ class CatModel:
     def create_empty(cat_id: int, form: CatFormType) -> "CatModel":
         return CatModel(cat_id, form, core.Model.create_empty())
 
+    def import_enemy(self, enemy: "core.EnemyModel"):
+        self.model = enemy.model.copy()
+        self.model.flip_x()
+        self.model.set_unit_form(self.form.value)
+        self.model.set_unit_id(self.cat_id)
+
 
 class CatForm:
     def __init__(
@@ -913,7 +919,7 @@ class CatForm:
             self.name = enemy.name
         if enemy.description is not None:
             self.description = enemy.description[1:]
-        # self.anim.import_enemy_anim(enemy.anim)
+        self.get_anim().import_enemy(enemy.get_anim())
         if enemy.stats is not None:
             self.get_stats().import_enemy_stats(enemy.stats)
 
