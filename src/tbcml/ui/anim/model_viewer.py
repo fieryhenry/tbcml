@@ -2,6 +2,7 @@ import math
 from typing import Optional, Callable
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtGui import QKeyEvent, QMouseEvent, QPaintEvent
 
 
 from tbcml import core
@@ -438,8 +439,15 @@ class PartBox(QtWidgets.QWidget):
         self.split.addWidget(self.part_box)
 
         if self.part is not None:
+            all_keyframe_sets = self.part.get_all_keyframe_sets_recursive()
+
             self.keyframe_viewer = KeyFrameViewer(
-                self.game_data, self.part.keyframes_sets, self.clock, self
+                self.game_data,
+                all_keyframe_sets,
+                self.clock,
+                self.model,
+                self.part_id,
+                self,
             )
             self.split.addWidget(self.keyframe_viewer)
 
@@ -459,9 +467,9 @@ class PartBox(QtWidgets.QWidget):
         self.part_id = part_id
         self.part = part
         self.part_box.set_part_id(part_id)
-        self.keyframe_viewer.keyframe_list.clear()
-        self.keyframe_viewer.keyframe_sets = part.keyframes_sets
-        self.keyframe_viewer.add_key_frames()
+        self.keyframe_viewer.set_part_id(
+            part_id, part.get_all_keyframe_sets_recursive()
+        )
         return True
 
 
@@ -471,12 +479,16 @@ class KeyFrameViewer(QtWidgets.QWidget):
         game_data: core.GamePacks,
         keyframe_sets: list[core.KeyFrames],
         clock: frame_counter.FrameClock,
+        model: core.Model,
+        part_id: int,
         parent: Optional[QtWidgets.QWidget] = None,
     ):
         super().__init__(parent)
         self.game_data = game_data
         self.keyframe_sets = keyframe_sets
         self.clock = clock
+        self.model = model
+        self.part_id = part_id
         self.setup()
 
     def setup(self):
@@ -488,20 +500,84 @@ class KeyFrameViewer(QtWidgets.QWidget):
         self.keyframe_title.setText("Keyframe Sets")
         self.layout_box.addWidget(self.keyframe_title)
 
+        self.part_id_label = QtWidgets.QLabel(self)
+        self.part_id_label.setText(f"Part ID: {self.part_id}")
+        self.layout_box.addWidget(self.part_id_label)
+
         self.keyframe_list = QtWidgets.QListWidget(self)
         self.layout_box.addWidget(self.keyframe_list)
 
+        self.max_spacing = 0
+
         self.add_key_frames()
 
+    def clear_key_frames(self):
+        for i in range(self.keyframe_list.count()):
+            # remove update func
+            widget = self.get_keyframe_set_viewer(i)
+            if widget is None:
+                continue
+            widget.remove_clock_func()
+
+        self.keyframe_list.clear()
+
     def add_key_frames(self):
-        for keyframe_set in self.keyframe_sets:
+        for i, keyframe_set in enumerate(self.keyframe_sets):
             item_widget = QtWidgets.QListWidgetItem(self.keyframe_list)
             key_frame_set_viewer = KeyFrameSetViewer(
-                self.game_data, keyframe_set, self.clock, self
+                self.game_data,
+                keyframe_set,
+                self.clock,
+                self.model,
+                self.part_id,
+                self.get_selected_keyframe_set_viewers,
+                self.update_spacing,
+                i,
+                self,
             )
-            item_widget.setSizeHint(key_frame_set_viewer.sizeHint())
+            # disable selection
+            item_widget.setSizeHint(
+                key_frame_set_viewer.sizeHint()
+                + QtCore.QSize(0, key_frame_set_viewer.get_height_needed())
+            )
+
             self.keyframe_list.addItem(item_widget)
             self.keyframe_list.setItemWidget(item_widget, key_frame_set_viewer)
+
+            key_frame_set_viewer.set_splitter(self.width())
+
+        self.keyframe_list.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
+
+        self.keyframe_list.setSelectionMode(
+            QtWidgets.QAbstractItemView.SelectionMode.ExtendedSelection
+        )
+
+    def get_selected_keyframe_set_viewers(self) -> list["KeyFrameSetViewer"]:
+        selected_items = self.keyframe_list.selectedItems()
+        return [self.keyframe_list.itemWidget(item) for item in selected_items]
+
+    def set_part_id(self, part_id: int, keyframe_sets: list[core.KeyFrames]):
+        self.part_id = part_id
+        self.keyframe_sets = keyframe_sets
+        self.clear_key_frames()
+        self.add_key_frames()
+
+        self.part_id_label.setText(f"Part ID: {self.part_id}")
+
+    def get_keyframe_set_viewer(self, index: int) -> Optional["KeyFrameSetViewer"]:
+        item = self.keyframe_list.item(index)
+        widget = self.keyframe_list.itemWidget(item)
+        if widget is None:
+            return None
+        return widget
+
+    def update_spacing(self, spacing: int):
+        self.max_spacing = max(self.max_spacing, spacing)
+        for i in range(self.keyframe_list.count()):
+            widget = self.get_keyframe_set_viewer(i)
+            if widget is None:
+                continue
+            widget.set_spacing(self.max_spacing)
 
 
 class KeyFrameSetViewer(QtWidgets.QWidget):
@@ -510,31 +586,106 @@ class KeyFrameSetViewer(QtWidgets.QWidget):
         game_data: core.GamePacks,
         keyframe_set: core.KeyFrames,
         clock: frame_counter.FrameClock,
+        model: core.Model,
+        part_id: int,
+        get_selected_keyframe_set_viewers: Callable[[], list["KeyFrameSetViewer"]],
+        update_spacing: Callable[[int], None],
+        index: int,
         parent: Optional[QtWidgets.QWidget] = None,
     ):
         super().__init__(parent)
         self.game_data = game_data
         self.keyframe_set = keyframe_set
         self.clock = clock
+        self.model = model
+        self.part_id = part_id
+        self.get_selected_keyframe_set_viewers = get_selected_keyframe_set_viewers
+        self.update_spacing = update_spacing
+        self.index = index
+
         self.setup()
 
+    def is_parent(self) -> bool:
+        return self.keyframe_set.part_id != self.part_id
+
+    def keyframe_name_key_press_event(self, a0: Optional[QKeyEvent]) -> None:
+        QtWidgets.QLineEdit.keyPressEvent(self.keyframe_name, a0)
+        if a0 is None:
+            return
+        if a0.key() == QtCore.Qt.Key.Key_Return:
+            self.keyframe_set.name = self.keyframe_name.text()
+            self.keyframe_name.clearFocus()
+
     def setup(self):
+        self.previous_value = 0
         self.layout_box = QtWidgets.QHBoxLayout(self)
         self.layout_box.setContentsMargins(0, 0, 0, 0)
         self.layout_box.setSpacing(0)
 
         self.splitter = QtWidgets.QSplitter(QtCore.Qt.Orientation.Horizontal, self)
         self.splitter.setHandleWidth(2)
-        # self.splitter.mouseDoubleClickEvent = self.reset_splitter_event
+        self.splitter.mouseDoubleClickEvent = self.reset_splitter_event
+        self.splitter.splitterMoved.connect(self.splitter_moved)
+
         self.layout_box.addWidget(self.splitter)
 
+        self.info_layout_box = QtWidgets.QGroupBox(self)
+
+        self.info_layout = QtWidgets.QHBoxLayout()
+        self.info_layout.setContentsMargins(0, 0, 0, 0)
+        self.info_layout.setSpacing(0)
+
+        self.info_layout_box.setLayout(self.info_layout)
+        self.splitter.addWidget(self.info_layout_box)
+
+        self.add_info_box()
+        self.add_previous_keyframe_info_box()
+        self.add_next_keyframe_info_box()
+
+        self.keyframe_box = KeyFrameBox(
+            self.keyframe_set,
+            self.clock,
+            self.model,
+            self.part_id,
+            self.update_spacing,
+            self.index,
+            self,
+        )
+        self.splitter.addWidget(self.keyframe_box)
+
+        self.width_splitter = self.width()
+
+        self.clock.add_perm_func(self.update_info)
+
+    def add_info_box(self):
         self.info_box = QtWidgets.QGroupBox(self)
         self.info_box_layout = QtWidgets.QVBoxLayout(self.info_box)
-        self.splitter.addWidget(self.info_box)
+        self.info_layout.addWidget(self.info_box)
 
-        self.keyframe_name = QtWidgets.QLabel(self)
+        self.keyframe_name = QtWidgets.QLineEdit(self)
         self.keyframe_name.setText(self.keyframe_set.name)
+        self.keyframe_name.keyPressEvent = self.keyframe_name_key_press_event
         self.info_box_layout.addWidget(self.keyframe_name)
+
+        self.current_value_layout = QtWidgets.QHBoxLayout()
+        self.info_box_layout.addLayout(self.current_value_layout)
+
+        self.current_value_label = QtWidgets.QLabel(self)
+        self.current_value_label.setText(f"Current Value:")
+        self.current_value_layout.addWidget(self.current_value_label)
+
+        self.current_value_group = QtWidgets.QGroupBox(self)
+        self.current_value_layout.addWidget(self.current_value_group)
+
+        self.current_value_group_layout = QtWidgets.QVBoxLayout(
+            self.current_value_group
+        )
+
+        self.current_value_group.setLayout(self.current_value_group_layout)
+
+        self.previous_value_label_text = QtWidgets.QLabel(self)
+        self.previous_value_label_text.setText(f"{self.previous_value}")
+        self.current_value_group_layout.addWidget(self.previous_value_label_text)
 
         self.loop_count_layout = QtWidgets.QHBoxLayout()
         self.info_box_layout.addLayout(self.loop_count_layout)
@@ -581,10 +732,440 @@ class KeyFrameSetViewer(QtWidgets.QWidget):
         )
         self.modification_layout.addWidget(self.modification_dropdown)
 
-        self.info_box_layout.addStretch(1)
+        self.add_parent_layout()
+        self.apply_parent_changes()
 
-        self.keyframe_list = QtWidgets.QListWidget(self)
-        self.splitter.addWidget(self.keyframe_list)
+        self.info_box_layout.addStretch()
+
+    def add_previous_keyframe_info_box(self):
+        self.previous_keyframe_info_box = QtWidgets.QGroupBox(self)
+        self.previous_keyframe_info_box_layout = QtWidgets.QVBoxLayout(
+            self.previous_keyframe_info_box
+        )
+        self.info_layout.addWidget(self.previous_keyframe_info_box)
+
+        self.previous_keyframe_layout = QtWidgets.QHBoxLayout()
+        self.previous_keyframe_info_box_layout.addLayout(self.previous_keyframe_layout)
+
+        self.keyframe_label = QtWidgets.QLabel(self)
+        self.keyframe_label.setText(f"Previous Keyframe:")
+        self.previous_keyframe_layout.addWidget(self.keyframe_label)
+
+        self.previous_keyframe_group = QtWidgets.QGroupBox(self)
+        self.previous_keyframe_layout.addWidget(self.previous_keyframe_group)
+
+        self.previous_keyframe_group_layout = QtWidgets.QVBoxLayout(
+            self.previous_keyframe_group
+        )
+
+        self.previous_keyframe_group.setLayout(self.previous_keyframe_group_layout)
+
+        self.previous_keyframe_label_text = QtWidgets.QLabel(self)
+        self.previous_keyframe_label_text.setText(f"{0}")
+        self.previous_keyframe_group_layout.addWidget(self.previous_keyframe_label_text)
+
+        self.previous_frame_layout = QtWidgets.QHBoxLayout()
+        self.previous_keyframe_info_box_layout.addLayout(self.previous_frame_layout)
+
+        self.previous_frame_label = QtWidgets.QLabel(self)
+        self.previous_frame_label.setText(f"Start Frame:")
+        self.previous_frame_layout.addWidget(self.previous_frame_label)
+
+        self.previous_frame_spinbox = QtWidgets.QSpinBox(self)
+        self.previous_frame_spinbox.setMinimum(0)
+        self.previous_frame_spinbox.setMaximum(2**31 - 1)
+        self.previous_frame_spinbox.setValue(0)
+        self.previous_frame_layout.addWidget(self.previous_frame_spinbox)
+
+        self.previous_keyframe_info_box_layout.addStretch()
+
+    def add_next_keyframe_info_box(self):
+        self.next_keyframe_info_box = QtWidgets.QGroupBox(self)
+        self.next_keyframe_info_box_layout = QtWidgets.QVBoxLayout(
+            self.next_keyframe_info_box
+        )
+        self.info_layout.addWidget(self.next_keyframe_info_box)
+
+        self.next_keyframe_layout = QtWidgets.QHBoxLayout()
+        self.next_keyframe_info_box_layout.addLayout(self.next_keyframe_layout)
+
+        self.keyframe_label = QtWidgets.QLabel(self)
+        self.keyframe_label.setText(f"Next Keyframe:")
+        self.next_keyframe_layout.addWidget(self.keyframe_label)
+
+        self.next_keyframe_group = QtWidgets.QGroupBox(self)
+        self.next_keyframe_layout.addWidget(self.next_keyframe_group)
+
+        self.next_keyframe_group_layout = QtWidgets.QVBoxLayout(
+            self.next_keyframe_group
+        )
+
+        self.next_keyframe_group.setLayout(self.next_keyframe_group_layout)
+
+        self.next_keyframe_label_text = QtWidgets.QLabel(self)
+        self.next_keyframe_label_text.setText(f"{0}")
+        self.next_keyframe_group_layout.addWidget(self.next_keyframe_label_text)
+
+        self.next_frame_layout = QtWidgets.QHBoxLayout()
+        self.next_keyframe_info_box_layout.addLayout(self.next_frame_layout)
+
+        self.next_frame_label = QtWidgets.QLabel(self)
+        self.next_frame_label.setText(f"Start frame:")
+        self.next_frame_layout.addWidget(self.next_frame_label)
+
+        self.next_frame_spinbox = QtWidgets.QSpinBox(self)
+        self.next_frame_spinbox.setMinimum(0)
+        self.next_frame_spinbox.setMaximum(2**31 - 1)
+        self.next_frame_spinbox.setValue(0)
+        self.next_frame_layout.addWidget(self.next_frame_spinbox)
+
+        self.next_keyframe_info_box_layout.addStretch()
+
+    def update_info(self):
+        frame = self.clock.get_frame()
+        frame_loop = frame % (self.model.get_end_frame() + 1)
+        self.previous_value = self.keyframe_set.set_action(frame)
+        self.previous_value_label_text.setText(f"{self.previous_value}")
+
+        next_index = None
+        for i, keyframe in enumerate(self.keyframe_set.keyframes):
+            if keyframe.frame > frame_loop:
+                next_index = i
+                break
+
+        if next_index is None:
+            next_index = len(self.keyframe_set.keyframes)
+
+        previous_index = next_index - 1
+        previous_keyframe = self.keyframe_set.keyframes[previous_index]
+
+        if next_index == len(self.keyframe_set.keyframes):
+            next_index = 0
+        next_keyframe = self.keyframe_set.keyframes[next_index]
+
+        self.previous_frame_spinbox.setValue(previous_keyframe.frame)
+        self.previous_keyframe_label_text.setText(f"{previous_index}")
+
+        self.next_frame_spinbox.setValue(next_keyframe.frame)
+        self.next_keyframe_label_text.setText(f"{next_index}")
+
+    def set_spacing(self, spacing: int):
+        self.keyframe_box.set_spacing(spacing)
+
+    def set_splitter(self, width: int):
+        self.width_splitter = width
+        self.splitter.setSizes([50, (width - 50 // 2), (width - 50 // 2)])
+
+    def reset_splitter_event(self, a0: Optional[QtGui.QMouseEvent]) -> None:
+        self.set_splitter(self.width_splitter)
+        for viewer in self.get_selected_keyframe_set_viewers():
+            viewer.set_splitter(viewer.width_splitter)
+
+    def add_parent_layout(self):
+        self.parent_layout = QtWidgets.QHBoxLayout()
+
+        self.info_box_layout.addLayout(self.parent_layout)
+
+        self.parent_label = QtWidgets.QLabel(self)
+        self.parent_label.setText(f"Inherited From:")
+        self.parent_layout.addWidget(self.parent_label)
+
+        self.parent_box = QtWidgets.QGroupBox(self)
+        self.parent_layout.addWidget(self.parent_box)
+
+        self.parent_box_layout = QtWidgets.QVBoxLayout(self.parent_box)
+        self.parent_box.setLayout(self.parent_box_layout)
+
+        self.parent_label_text = QtWidgets.QLabel(self)
+        part = self.model.get_part(self.keyframe_set.part_id)
+        if part is None:
+            raise ValueError(f"Part with id {self.keyframe_set.part_id} not found")
+
+        self.parent_label_text.setText(f"{self.keyframe_set.part_id}: {part.name}")
+        self.parent_box_layout.addWidget(self.parent_label_text)
+
+    def remove_clock_func(self):
+        self.keyframe_box.remove_func()
+        self.clock.remove_perm_func(self.update_info)
+
+    def set_part_id(self, part_id: int):
+        self.part_id = part_id
+        self.keyframe_box.set_part_id(part_id)
+        self.apply_parent_changes()
+
+    def remove_parent_layout(self):
+        if hasattr(self, "parent_layout"):
+            self.deleteItemsOfLayout(self.parent_layout)
+
+    @staticmethod
+    def deleteItemsOfLayout(layout: Optional[QtWidgets.QLayout]) -> None:
+        if layout is not None:
+            while layout.count():
+                item = layout.takeAt(0)
+                if item is not None:
+                    widget = item.widget()
+                    if widget is not None:
+                        widget.setParent(None)
+                    else:
+                        KeyFrameSetViewer.deleteItemsOfLayout(item.layout())
+
+    def apply_parent_changes(self):
+        self.remove_parent_layout()
+        if self.is_parent():
+            self.add_parent_layout()
+
+        # self.setEnabled(not self.is_parent())
+
+    def splitter_moved(self, pos: int, index: int) -> None:
+        if index == 1:
+            for viewer in self.get_selected_keyframe_set_viewers():
+                viewer.splitter.setSizes([pos, viewer.width() - pos])
+
+    def get_height_needed(self) -> int:
+        return max(self.keyframe_box.get_height_needed(), self.height())
+
+
+class KeyFrameBox(QtWidgets.QWidget):
+    def __init__(
+        self,
+        keyframes: core.KeyFrames,
+        clock: frame_counter.FrameClock,
+        model: core.Model,
+        part_id: int,
+        update_spacing: Callable[[int], None],
+        index: int,
+        parent: Optional[QtWidgets.QWidget] = None,
+    ):
+        super().__init__(parent)
+        self.keyframes = keyframes
+        self.clock = clock
+        self.model = model
+        self.part_id = part_id
+        self.part = self.model.get_part(self.part_id)
+        self.update_spacing = update_spacing
+        self.index = index
+        self.setup()
+
+    def set_spacing(self, spacing: int):
+        self.spacing = spacing
+
+    def set_part_id(self, part_id: int):
+        self.part_id = part_id
+        self.part = self.model.get_part(self.part_id)
+
+    def setup(self):
+        self.spacing = 20
+        self.max_height = 0
+
+        self.mouse_pos = QtCore.QPoint(0, 0)
+
+        self.setMouseTracking(True)
+
+        self.clock.add_perm_func(self.update)
+
+    def remove_func(self):
+        self.clock.remove_perm_func(self.update)
+
+    def paintEvent(self, a0: QPaintEvent | None) -> None:
+        painter = QtGui.QPainter(self)
+        painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
+        painter.setRenderHint(QtGui.QPainter.RenderHint.SmoothPixmapTransform)
+
+        background_color = QtGui.QColor(0, 0, 0, 50)
+        painter.fillRect(self.rect(), background_color)
+
+        self.vline_pen = QtGui.QPen(QtGui.QColor(255, 255, 255))
+        self.vline_pen.setWidth(1)
+        self.vline_pen.setStyle(QtCore.Qt.PenStyle.DashLine)
+
+        self.keyframe_pen = QtGui.QPen(QtGui.QColor(255, 255, 255))
+        self.keyframe_pen.setWidth(4)
+
+        self.marker_pen = QtGui.QPen(QtGui.QColor(255, 255, 255))
+        self.marker_pen.setWidth(1)
+
+        self.marker_pen_color = QtGui.QPen(QtGui.QColor(255, 0, 0))
+        self.marker_pen_color.setWidth(1)
+
+        self.marker_text_pen = QtGui.QPen(QtGui.QColor(255, 255, 255))
+        self.marker_text_pen.setWidth(1)
+
+        self.draw_cursor(painter)
+        self.draw_keyframes(painter)
+        self.draw_frame_markings(painter)
+
+    def get_frame_x_pos(self, frame: int) -> int:
+        width = self.width() - self.spacing
+        return self.spacing // 2 + int((frame / self.keyframes.get_end_frame()) * width)
+
+    def draw_cursor(self, painter: QtGui.QPainter) -> None:
+        current_frame = self.clock.get_frame() % (self.model.get_end_frame() + 1)
+        height = self.height()
+        x_pos = self.get_frame_x_pos(current_frame)
+        painter.setPen(self.vline_pen)
+        painter.drawLine(x_pos, 0, x_pos, height)
+
+    def draw_keyframes(self, painter: QtGui.QPainter) -> None:
+        self.key_frame_coords: list[tuple[int, int]] = []
+        dist = 20
+        for keyframe in self.keyframes.keyframes:
+            frame = keyframe.frame
+            height = self.height()
+            x_pos = self.get_frame_x_pos(frame)
+            y_pos = height // 2
+
+            mouse_x = self.mouse_pos.x()
+            # if abs(mouse_x - x_pos) < dist:
+            #    self.draw_keyframe_info(painter, keyframe, x_pos, y_pos)
+            # else:
+            painter.setPen(self.keyframe_pen)
+            painter.drawEllipse(x_pos - 2, y_pos, 3, 3)
+            if self.keyframes.modification_type == core.AnimModificationType.SPRITE:
+                self.draw_sprite_keyframe(painter, keyframe)
+
+            self.key_frame_coords.append((x_pos, y_pos))
+
+    def draw_keyframe_info(
+        self, painter: QtGui.QPainter, keyframe: core.KeyFrame, x_pos: int, y_pos: int
+    ) -> None:
+        frame = keyframe.frame
+        change_in_value = keyframe.change
+        ease_mode = keyframe.ease_mode
+        ease_power = keyframe.ease_power
+
+        text = ["Frame: " + str(frame), "Change In Value: " + str(change_in_value)]
+        if ease_mode == core.EaseMode.INSTANT.value:
+            text.append("Ease Mode: Instant")
+        elif ease_mode == core.EaseMode.LINEAR.value:
+            text.append("Ease Mode: Linear")
+        elif ease_mode == core.EaseMode.EXPONENTIAL.value:
+            text.append("Ease Mode: Exponential")
+            text.append("Ease Power: " + str(ease_power))
+        elif ease_mode == core.EaseMode.POLYNOMIAL.value:
+            text.append("Ease Mode: Polynomial")
+        elif ease_mode == core.EaseMode.SINE.value:
+            text.append("Ease Mode: Sine")
+
+        text_width = 0
+        text_height = 0
+        for text_line in text:
+            text_width = max(text_width, painter.fontMetrics().width(text_line))
+            text_height += painter.fontMetrics().height()
+
+        text_height += 10
+        text_width += 20
+
+        x_pos = max(0, x_pos - text_width // 2)
+        y_pos = max(0, y_pos - text_height // 2)
+
+        painter.setPen(self.keyframe_pen)
+        painter.drawRect(x_pos + 10, y_pos, text_width, text_height)
+
+        painter.setPen(self.keyframe_pen)
+        for i, text_line in enumerate(text):
+            painter.drawText(
+                x_pos
+                + 10
+                + text_width // 2
+                - painter.fontMetrics().width(text_line) // 2,
+                y_pos + painter.fontMetrics().height() * (i + 1),
+                text_line,
+            )
+
+        self.spacing = max(self.spacing, text_width + 20)
+        self.update_spacing(self.spacing)
+
+    def draw_frame_markings(self, painter: QtGui.QPainter) -> None:
+        all_frames: list[int] = self.get_all_frames()
+        for i in range(self.keyframes.get_end_frame() + 1):
+            x_pos = self.get_frame_x_pos(i)
+            if i in all_frames:
+                painter.setPen(self.marker_pen_color)
+            else:
+                painter.setPen(self.marker_pen)
+            painter.drawLine(x_pos, 0, x_pos, 10)
+
+            if i % 5 == 0:
+                painter.setPen(self.marker_text_pen)
+                text = str(i)
+                text_width = painter.fontMetrics().width(text)
+                text_height = painter.fontMetrics().height()
+                painter.drawText(x_pos - text_width // 2, 10 + text_height, text)
+
+    def apply_keyframe_modification(self, keyframe: core.KeyFrame) -> int:
+        if self.part is None:
+            return 0
+        frame = keyframe.frame
+        current_frame = self.part.current_frame
+        self.part.set_action(frame, self.keyframes)
+        return current_frame
+
+    def reset_keyframe_modification(self, current_frame: int) -> None:
+        if self.part is None:
+            return
+        self.part.set_action(current_frame, self.keyframes)
+
+    def draw_sprite_keyframe(self, painter: QtGui.QPainter, keyframe: core.KeyFrame):
+        if self.part is None:
+            return
+        current_frame = self.apply_keyframe_modification(keyframe)
+
+        frame = keyframe.frame
+        height = self.height()
+
+        img = self.part.image.to_qimage()
+
+        xscale = self.width() / img.width() / 2
+        yscale = self.height() / img.height() / 2
+
+        scale = min(xscale, yscale)
+
+        x_pos = self.get_frame_x_pos(frame) - img.width() // 2
+        y_pos = height // 2 - img.height() // 2
+
+        original_transform = painter.transform()
+
+        painter.scale(scale, scale)
+        painter.translate(x_pos / scale, y_pos / scale)
+
+        painter.drawImage(0, 0, img)
+
+        painter.setTransform(original_transform)
+
+        self.reset_keyframe_modification(current_frame)
+
+        self.spacing = max(self.spacing, img.width() + 10)
+
+        self.update_spacing(self.spacing)
+
+        self.max_height = max(self.max_height, img.height())
+
+    def get_height_needed(self) -> int:
+        return self.height() + self.max_height
+
+    def get_all_frames(self) -> list[int]:
+        return [keyframe.frame for keyframe in self.keyframes.keyframes]
+
+    def mousePressEvent(self, a0: QMouseEvent | None) -> None:
+        if a0 is None:
+            return
+        if a0.button() == QtCore.Qt.MouseButton.LeftButton:
+            self.set_frame(a0.x())
+
+    def mouseMoveEvent(self, a0: QMouseEvent | None) -> None:
+        if a0 is None:
+            return
+        if a0.buttons() == QtCore.Qt.MouseButton.LeftButton:
+            self.set_frame(a0.x())
+
+        self.mouse_pos = a0.pos()
+
+    def set_frame(self, x_pos: int) -> None:
+        width = self.width() - self.spacing
+        frame = int(
+            ((x_pos - self.spacing // 2) / width) * self.keyframes.get_end_frame()
+        )
+        self.clock.set(frame)
 
 
 class AnimBox(QtWidgets.QWidget):
@@ -619,7 +1200,7 @@ class AnimBox(QtWidgets.QWidget):
             self,
             other_models=self.other_models,
         )
-        part_id = 1
+        part_id = 0
         self.model_box.set_overlay_part(part_id)
 
         self.part_box = PartBox(
@@ -813,6 +1394,12 @@ class AnimControls(QtWidgets.QWidget):
         self.pause_button.clicked.connect(self.play)
         self.pause_button.clicked.disconnect(self.pause)
 
+    def toggle_play(self):
+        if self.clock.is_stopped():
+            self.play()
+        else:
+            self.pause()
+
     def link(self):
         self.link_anim_boxes()
 
@@ -880,18 +1467,23 @@ class AnimEditor(QtWidgets.QWidget):
         self.anim_box.model_box.show_grid = not self.anim_box.model_box.show_grid
 
     def keyPressEvent(self, a0: Optional[QtGui.QKeyEvent]) -> None:
-        # if ctrl + right arrow key, go to next part
         if a0 is None:
             return
 
-        if a0.modifiers() == QtCore.Qt.KeyboardModifier.ControlModifier:
-            current_part_id = self.anim_box.part_box.part_box.part_id
-            if a0.key() == QtCore.Qt.Key.Key_Right:
-                self.anim_box.part_box.part_box.part_id += 1
+        if a0.key() == QtCore.Qt.Key.Key_Space:
+            self.anim_controls.toggle_play()
 
-            if a0.key() == QtCore.Qt.Key.Key_Left:
-                self.anim_box.part_box.part_box.part_id -= 1
+        current_part_id = self.anim_box.part_box.part_box.part_id
+        should_update = False
+        if a0.key() == QtCore.Qt.Key.Key_Right:
+            self.anim_box.part_box.part_box.part_id += 1
+            should_update = True
 
+        if a0.key() == QtCore.Qt.Key.Key_Left:
+            self.anim_box.part_box.part_box.part_id -= 1
+            should_update = True
+
+        if should_update:
             success = self.anim_box.set_part_id(self.anim_box.part_box.part_box.part_id)
             if not success:
                 self.anim_box.part_box.part_box.part_id = current_part_id
@@ -930,7 +1522,7 @@ if __name__ == "__main__":
     apk.extract()
 
     game_packs = core.GamePacks.from_apk(apk)
-    cat_id = 0
+    cat_id = 43
     cats = core.Cats.from_game_data(game_packs, [cat_id])
     cat = cats.data[cat_id]
     form = cat.forms[core.CatFormType.FIRST]
