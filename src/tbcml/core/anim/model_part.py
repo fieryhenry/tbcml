@@ -844,3 +844,16 @@ class ModelPart:
             self.scale_y_orig = -self.scale_y_orig
         self.rotation = -self.rotation
         self.rotation_orig = -self.rotation_orig
+
+    def get_all_keyframe_sets_recursive(self) -> list["core.KeyFrames"]:
+        """Gets all the keyframe sets of the part and its parents.
+
+        Returns:
+            list[core.KeyFrames]: The list of all the keyframe sets of the part and its parents.
+        """
+
+        keyframes_sets: list["core.KeyFrames"] = []
+        if self.parent is not None:
+            keyframes_sets.extend(self.parent.get_all_keyframe_sets_recursive())
+        keyframes_sets.extend(self.keyframes_sets)
+        return keyframes_sets
