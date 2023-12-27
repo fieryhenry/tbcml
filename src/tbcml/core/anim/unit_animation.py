@@ -184,6 +184,14 @@ class KeyFrame:
         }
 
 
+class EaseMode(enum.Enum):
+    LINEAR = 0
+    INSTANT = 1
+    EXPONENTIAL = 2
+    POLYNOMIAL = 3
+    SINE = 4
+
+
 class KeyFrames:
     def __init__(
         self,
@@ -364,25 +372,25 @@ class KeyFrames:
         next_keyframe = self.keyframes[keyframe_index + 1]
         current_keyframe_start_frame = current_keyframe.frame
         next_keyframe_start_frame = next_keyframe.frame
-        if current_keyframe.ease_mode == 0:
+        if current_keyframe.ease_mode == EaseMode.LINEAR.value:
             return current_keyframe.ease_linear(
                 next_keyframe,
                 local_frame,
                 current_keyframe_start_frame,
                 next_keyframe_start_frame,
             )
-        elif current_keyframe.ease_mode == 1:
+        elif current_keyframe.ease_mode == EaseMode.INSTANT.value:
             return current_keyframe.ease_instant()
-        elif current_keyframe.ease_mode == 2:
+        elif current_keyframe.ease_mode == EaseMode.EXPONENTIAL.value:
             return current_keyframe.ease_exponential(
                 next_keyframe,
                 local_frame,
                 current_keyframe_start_frame,
                 next_keyframe_start_frame,
             )
-        elif current_keyframe.ease_mode == 3:
+        elif current_keyframe.ease_mode == EaseMode.POLYNOMIAL.value:
             return self.ease_polynomial(keyframe_index, local_frame)
-        elif current_keyframe.ease_mode == 4:
+        elif current_keyframe.ease_mode == EaseMode.SINE.value:
             return current_keyframe.ease_sine(
                 next_keyframe,
                 local_frame,

@@ -100,6 +100,8 @@ from .anim.model_part import ModelPart
 from .anim.unit_animation import (
     AnimType,
     KeyFrames,
+    KeyFrame,
+    EaseMode,
     AnimModificationType,
     UnitAnim,
     UnitAnimLoaderInfo,
@@ -253,6 +255,8 @@ __all__ = [
     "ModelPart",
     "AnimType",
     "KeyFrames",
+    "KeyFrame",
+    "EaseMode",
     "AnimModificationType",
     "UnitAnim",
     "UnitAnimLoaderInfo",
