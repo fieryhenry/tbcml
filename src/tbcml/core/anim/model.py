@@ -275,6 +275,9 @@ class Model:
     def get_sorted_parts(self) -> list["core.ModelPart"]:
         return sorted(self.mamodel.parts, key=lambda part: part.z_depth)
 
+    def get_parts(self) -> list["core.ModelPart"]:
+        return self.mamodel.parts
+
     def set_models(self):
         for part in self.mamodel.parts:
             part.set_model(self)
