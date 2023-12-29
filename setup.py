@@ -10,7 +10,7 @@ setuptools.setup(
     name="tbcml",
     version=version,
     author="fieryhenry",
-    description="A mod loader for The Battle Cats",
+    description="A modding library for The Battle Cats",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/fieryhenry/TBCModLoader",
