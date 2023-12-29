@@ -104,6 +104,8 @@ class ModelPart:
         self.__sv_x = None
         self.__sv_y = None
 
+        self.current_frame = 0
+
         self.ints: list[list[int]] = []
 
         self.units_set = False
@@ -149,6 +151,7 @@ class ModelPart:
             frame_counter (int): The current frame of the animation.
             keyframes (core.KeyFrames): The collection of keyframes to use for the animation.
         """
+        self.current_frame = frame_counter
         change_in_value = keyframes.set_action(frame_counter)
         if change_in_value is None:
             return
@@ -510,6 +513,31 @@ class ModelPart:
             y = py - p3_y
             m2 += (m0 * x) + (m1 * y)
             m5 += (m3 * x) + (m4 * y)
+
+        if self.rotation != 0:
+            degrees = self.real_rotation * 360
+            radians = math.radians(degrees)
+            sin = math.sin(radians)
+            cos = math.cos(radians)
+            f = (m0 * cos) + (m1 * sin)
+            f2 = (m0 * -sin) + (m1 * cos)
+            f3 = (m3 * cos) + (m4 * sin)
+            f4 = (m3 * -sin) + (m4 * cos)
+            m0 = f
+            m1 = f2
+            m3 = f3
+            m4 = f4
+
+        return [m0, m1, m2, m3, m4, m5]
+
+    def transform_rot(
+        self,
+        matrix: list[float],
+    ) -> list[float]:
+        if self.parent is not None:
+            matrix = self.parent.transform_rot(matrix)
+
+        m0, m1, m2, m3, m4, m5 = matrix
 
         if self.rotation != 0:
             degrees = self.real_rotation * 360
