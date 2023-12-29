@@ -121,6 +121,10 @@ function getArcitecture() {
     return Process.arch;
 }
 
+function is_64_bit() {
+    return Process.pointerSize === 8;
+}
+
 function getPackageName() {
     return Java.use("android.app.ActivityThread").currentApplication().getPackageName();
 }
