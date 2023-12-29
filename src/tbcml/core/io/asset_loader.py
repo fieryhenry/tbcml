@@ -20,7 +20,8 @@ class AssetLoader:
     def load_svg(self, path: str) -> "QtGui.QIcon":
         return QtGui.QIcon(str(self.get_stlye_file_path(path)))
 
-    def get_asset_file_path(self, local_path: str) -> "core.Path":
+    @staticmethod
+    def get_asset_file_path(local_path: str) -> "core.Path":
         return core.Path(is_relative=True).add("assets", local_path)
 
     def load_icon(self, path: str) -> "QtGui.QIcon":
@@ -37,7 +38,3 @@ class AssetLoader:
         data = data.replace(f"url({self.theme}:", f"url({str(style_path.parent())}/")
 
         widget.setStyleSheet(data)
-
-    @staticmethod
-    def from_config() -> "AssetLoader":
-        return AssetLoader(core.config.get(core.ConfigKey.THEME))
