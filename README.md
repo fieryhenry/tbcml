@@ -89,8 +89,13 @@ pip install tbcml[ui]
 ```bash
 git clone https://github.com/fieryhenry/tbcml.git
 cd tbcml
+pip install -r requirements_scripting.txt
+pip install -r requirements_ui.txt
 pip install -e .
 ```
+
+You don't need to install the requirements if you don't want to use the
+scripting or ui features.
 
 ### Basic Usage
 
