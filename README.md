@@ -1,7 +1,7 @@
 # TBCML
 
-The Battle Cats Modding Library (TBCML) is a python module for easily creating and
-managing mods for the mobile game The Battle Cats.
+The Battle Cats Modding Library (TBCML) is a python library designed to make
+modding The Battle Cats easier, more automated, and more powerful.
 
 Because the package is a library and you will need to have
 programming experience if you want to use it effectively.
