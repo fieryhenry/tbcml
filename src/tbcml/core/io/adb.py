@@ -1,20 +1,15 @@
-from typing import Optional
+from typing import Any, Callable, Optional
 from tbcml import core
 
 
-class DeviceIDNotSet(Exception):
-    pass
-
-
 class AdbHandler:
-    def __init__(self, package_name: str, adb_path: Optional["core.Path"] = None):
+    def __init__(self, adb_path: Optional["core.Path"] = None):
         if adb_path is None:
             adb_path = core.Path("adb")
         self.adb_path = adb_path
-        self.package_name = package_name
         self.start_server()
         self.device_id = None
-        self.cc = None
+        self.package_name = None
 
     def adb_root_success(self) -> bool:
         return (
@@ -40,9 +35,17 @@ class AdbHandler:
         self.device_id = device_id
         self.root_result = self.root()
 
+    def set_package_name(self, package_name: str):
+        self.package_name = package_name
+
+    def get_package_name(self) -> str:
+        if self.package_name is None:
+            raise ValueError("Package name is not set")
+        return self.package_name
+
     def get_device(self) -> str:
         if self.device_id is None:
-            raise DeviceIDNotSet("Device ID is not set")
+            raise ValueError("Device ID is not set")
         return self.device_id
 
     def get_device_name(self) -> str:
@@ -52,11 +55,11 @@ class AdbHandler:
         return self.adb_path.run(f'-s {self.get_device()} shell "{command}"')
 
     def close_game(self) -> "core.CommandResult":
-        return self.run_shell(f"am force-stop {self.package_name}")
+        return self.run_shell(f"am force-stop {self.get_package_name()}")
 
     def run_game(self) -> "core.CommandResult":
         return self.run_shell(
-            f"monkey -p {self.package_name} -c android.intent.category.LAUNCHER 1"
+            f"monkey -p {self.get_package_name()} -c android.intent.category.LAUNCHER 1"
         )
 
     def install_apk(self, apk_path: "core.Path") -> "core.CommandResult":
@@ -86,7 +89,9 @@ class AdbHandler:
 
     def get_apk_path(self) -> "core.Path":
         return core.Path(
-            self.run_shell(f"pm path {self.package_name}").result.strip().split(":")[1]
+            self.run_shell(f"pm path {self.get_package_name()}")
+            .result.strip()
+            .split(":")[1]
         )
 
     def pull_apk_to_file(self, local_path: "core.Path") -> "core.CommandResult":
@@ -103,3 +108,71 @@ class AdbHandler:
                 print(result)
                 return None
             return core.Apk.from_apk_path(temp_file, cc_overwrite, gv_overwrite)
+
+
+class BulkAdbHandler:
+    def __init__(
+        self,
+        default_package_name: Optional[str] = None,
+        adb_path: Optional["core.Path"] = None,
+    ):
+        self.default_package_name = default_package_name
+        if adb_path is None:
+            adb_path = core.Path("adb")
+        self.adb_path = adb_path
+        self.adb_handlers: list[AdbHandler] = []
+
+    def add_handler(self, adb_handler: AdbHandler):
+        self.adb_handlers.append(adb_handler)
+
+    def remove_handler(self, adb_handler: AdbHandler):
+        self.adb_handlers.remove(adb_handler)
+
+    def add_device(self, device_id: str, use_default_package_name: bool = True):
+        adb_handler = AdbHandler()
+        adb_handler.set_device(device_id)
+        if use_default_package_name:
+            adb_handler.set_package_name(self.get_default_package_name())
+        self.add_handler(adb_handler)
+
+    def add_devices(self, device_ids: list[str], use_default_package_name: bool = True):
+        for device_id in device_ids:
+            self.add_device(device_id, use_default_package_name)
+
+    def add_all_connected_devices(self, use_default_package_name: bool = True) -> bool:
+        devices = self.adb_path.run("devices").result.split("\n")
+        devices = [device.split("\t")[0] for device in devices[1:-2]]
+        if len(devices) == 0:
+            return False
+        self.add_devices(devices, use_default_package_name)
+        return True
+
+    def remove_device(self, device_id: str):
+        adb_handler = self.get_handler(device_id)
+        self.remove_handler(adb_handler)
+
+    def remove_devices(self, device_ids: list[str]):
+        for device_id in device_ids:
+            self.remove_device(device_id)
+
+    def get_handler(self, device_id: str) -> AdbHandler:
+        for adb_handler in self.adb_handlers:
+            if adb_handler.get_device() == device_id:
+                return adb_handler
+        raise ValueError("Device ID not found")
+
+    def set_default_package_name(self, package_name: str):
+        self.default_package_name = package_name
+
+    def get_default_package_name(self) -> str:
+        if self.default_package_name is None:
+            raise ValueError("Default package name is not set")
+        return self.default_package_name
+
+    def run_adb_handler_function(
+        self, function: Callable[..., Any], *args: Any, **kwargs: Any
+    ) -> list[Any]:
+        results: list[Any] = []
+        for adb_handler in self.adb_handlers:
+            results.append(function(adb_handler, *args, **kwargs))
+        return results
