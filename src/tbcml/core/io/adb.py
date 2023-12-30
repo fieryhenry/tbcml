@@ -26,6 +26,10 @@ class AdbHandler:
     def root(self) -> "core.CommandResult":
         return self.adb_path.run(f"-s {self.get_device()} root")
 
+    @staticmethod
+    def get_battlecats_path(package_name: str) -> "core.Path":
+        return core.Path.get_root().add("data").add("data").add(package_name)
+
     def get_connected_devices(self) -> list[str]:
         devices = self.adb_path.run("devices").result.split("\n")
         devices = [device.split("\t")[0] for device in devices[1:-2]]
@@ -86,6 +90,51 @@ class AdbHandler:
             if result2.exit_code != 0:
                 return result2
         return result
+
+    def push_file(
+        self, local_path: "core.Path", device_path: "core.Path"
+    ) -> "core.CommandResult":
+        orignal_device_path = device_path.copy_object()
+        if not self.adb_root_success():
+            device_path = core.Path("/sdcard/").add(device_path.basename())
+
+        result = self.adb_path.run(
+            f'-s {self.get_device()} push "{local_path}" "{device_path.to_str_forwards()}"'
+        )
+        if not result.success:
+            return result
+        if not self.adb_root_success():
+            result2 = self.run_shell(
+                f"su -c 'cp /sdcard/{device_path.basename()} {orignal_device_path.to_str_forwards()} && chmod o+rw {orignal_device_path.to_str_forwards()}'"
+            )
+            if result2.exit_code != 0:
+                return result2
+            result3 = self.run_shell(f"su -c 'rm /sdcard/{device_path.basename()}'")
+            if result3.exit_code != 0:
+                return result3
+
+        return result
+
+    def push_files(
+        self, local_paths: list["core.Path"], device_paths: list["core.Path"]
+    ) -> list["core.CommandResult"]:
+        results: list["core.CommandResult"] = []
+        for local_path, device_path in zip(local_paths, device_paths):
+            results.append(self.push_file(local_path, device_path))
+        return results
+
+    def push_file_to_folder(
+        self, local_path: "core.Path", device_folder_path: "core.Path"
+    ) -> "core.CommandResult":
+        return self.push_file(local_path, device_folder_path.add(local_path.basename()))
+
+    def push_files_to_folder(
+        self, local_paths: list["core.Path"], device_folder_path: "core.Path"
+    ) -> list["core.CommandResult"]:
+        results: list["core.CommandResult"] = []
+        for local_path in local_paths:
+            results.append(self.push_file_to_folder(local_path, device_folder_path))
+        return results
 
     def get_apk_path(self) -> "core.Path":
         return core.Path(

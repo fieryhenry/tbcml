@@ -116,7 +116,7 @@ from .io.apk import Apk
 from .io.path import Path
 from .io.data import Data, PaddedInt
 from .io.command import Command, CommandResult
-from .io.adb import AdbHandler, DeviceIDNotSet
+from .io.adb import AdbHandler, BulkAdbHandler
 from .io.lib import (
     LibFiles,
     Lib,
@@ -308,6 +308,7 @@ __all__ = [
     "CountryCode",
     "GameVersion",
     "AdbHandler",
+    "BulkAdbHandler",
     "mods",
     "game_data",
     "io",
