@@ -938,7 +938,9 @@ class CatForm:
                 raise ValueError("Cannot set form without anim being loaded")
             self.get_anim().set_form(form)
 
-    def import_enemy(self, enemy: "core.Enemy", deploy_icon_offset: tuple[int, int] = (-20, -20)):
+    def import_enemy(
+        self, enemy: "core.Enemy", deploy_icon_offset: tuple[int, int] = (-20, -20)
+    ):
         if enemy.name is not None:
             self.name = enemy.name
         if enemy.description is not None:
