@@ -1,4 +1,16 @@
-from tbcml.core import CountryCode, GameVersion, Mod, Apk, ModEdit, GamePacks, Cat, GatyaItems, EvolveItem, ItemShop, Localizable
+from tbcml.core import (
+    CountryCode,
+    GameVersion,
+    Mod,
+    Apk,
+    ModEdit,
+    GamePacks,
+    Cat,
+    GatyaItems,
+    EvolveItem,
+    ItemShop,
+    Localizable,
+)
 from typing import List
 from tbcml.core.game_data.cat_base.gatya_item import GatyaItem
 from tbcml.core.game_data.cat_base.item_shop import Item
@@ -6,7 +18,8 @@ from tbcml.core.game_data.cat_base.item_shop import Item
 
 from shop.shop import CustomShop
 
-class ModLoader():
+
+class ModLoader:
     """
     The ModLoader class is responsible for loading and managing mods in the game.
 
@@ -71,7 +84,7 @@ class ModLoader():
         edit = ModEdit(["localizable"], localizable.to_dict())
 
         self.__add_mod_edit(edit)
-        
+
     def __add_mod_edit(self, edit: ModEdit):
         self.mod.add_mod_edit(edit)
 

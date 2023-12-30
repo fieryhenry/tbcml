@@ -9,6 +9,7 @@ from .mods.smali import SmaliHandler, SmaliSet, Smali
 from .mods.frida_script import FridaScripts, FridaScript, FridaGadgetHelper
 from .mods.mod_manager import ModManager
 from .mods.editable import EditableClass
+from .mods.loader import ModLoader
 from .game_data.cat_base.unit import (
     unit_bool,
     unit_int,
@@ -112,7 +113,6 @@ from .anim.texture import TexLoaderInfo, Texture
 
 from .io.bc_csv import CSV, Delimeter, to_str
 from .io.apk import Apk
-from io.loader import ModLoader
 from .io.path import Path
 from .io.data import Data, PaddedInt
 from .io.command import Command, CommandResult
@@ -174,6 +174,7 @@ __all__ = [
     "FridaGadgetHelper",
     "ModManager",
     "EditableClass",
+    "ModLoader",
     "unit_bool",
     "unit_int",
     "Frames",
