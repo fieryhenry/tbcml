@@ -14,6 +14,13 @@ class Path:
         else:
             self.path = path
 
+    def copy_object(self) -> "Path":
+        return Path(self.path)
+
+    @staticmethod
+    def get_root() -> "Path":
+        return Path(os.path.abspath(os.sep))
+
     def run(self, arg: str = "", display_output: bool = False) -> "core.CommandResult":
         cmd_text = self.path + " " + arg
         cmd = core.Command(cmd_text, display_output=display_output)
