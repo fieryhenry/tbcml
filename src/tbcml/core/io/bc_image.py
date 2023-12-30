@@ -130,6 +130,9 @@ class BCImage:
     def paste(self, image: "BCImage", x: int, y: int):
         self.image.paste(image.image, (x, y), image.image)
 
+    def convert_to_rgba(self):
+        self.__image = self.image.convert("RGBA")
+
     def paste_rect(self, image: "BCImage", rect: "core.Rect"):
         self.image.paste(
             image.image,
