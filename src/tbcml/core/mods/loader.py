@@ -6,17 +6,10 @@ from tbcml.core import (
     ModEdit,
     GamePacks,
     Cat,
-    GatyaItems,
-    EvolveItem,
     ItemShop,
     Localizable,
 )
 from typing import List
-from tbcml.core.game_data.cat_base.gatya_item import GatyaItem
-from tbcml.core.game_data.cat_base.item_shop import Item
-
-
-from shop.shop import CustomShop
 
 
 class ModLoader:
@@ -89,9 +82,10 @@ class ModLoader:
         self.mod.add_mod_edit(edit)
 
     def compile(self, open_path: bool):
+        if self.apk is None:
+            raise Exception("APK not initialized. Call initialize() first.")
+
         self.apk.load_mods([self.mod], self.game_packs)
 
         if open_path:
             self.apk.output_path.open()
-
-        print("APK successfully compiled.")
