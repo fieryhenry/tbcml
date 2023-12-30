@@ -139,7 +139,7 @@ from .log import Logger
 from .crypto import AesCipher, Hash, HashAlgorithm, Random, Hmac
 from .langs import Languages
 from .request import RequestHandler
-from .server_handler import ServerFileHandler, EventData
+from .server_handler import ServerFileHandler, EventData, GameVersionSearchError
 from .game_data.pack import GamePacks, PackFile, GameFile
 from .country_code import CountryCode
 from .game_version import GameVersion
@@ -302,6 +302,7 @@ __all__ = [
     "RequestHandler",
     "ServerFileHandler",
     "EventData",
+    "GameVersionSearchError",
     "GamePacks",
     "PackFile",
     "GameFile",

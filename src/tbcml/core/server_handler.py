@@ -13,6 +13,11 @@ from cryptography.hazmat.primitives.asymmetric import padding
 from tbcml import core
 
 
+class GameVersionSearchError(Exception):
+    def __init__(self, message: str):
+        super().__init__(message)
+
+
 class ServerFileHandler:
     """Class for handling downloading game files from the game server"""
 
@@ -251,9 +256,9 @@ class ServerFileHandler:
                 arc = ac
                 break
         if lib is None:
-            raise ValueError("Could not find libnative.so")
+            raise GameVersionSearchError("Could not find libnative.so")
         if arc is None:
-            raise ValueError("Could not find architecture")
+            raise GameVersionSearchError("Could not find architecture")
         lib_file = core.Lib(arc, lib)
         if self.apk.country_code == core.CountryCode.JP:
             list_to_search = [5, 5, 5, 7000000]
@@ -264,10 +269,10 @@ class ServerFileHandler:
         elif self.apk.country_code == core.CountryCode.TW:
             list_to_search = [2, 3, 1, 6100000]
         else:
-            raise ValueError("Unknown country code")
+            raise GameVersionSearchError("Country code not supported")
         start_index = lib_file.search(core.Data.from_int_list(list_to_search, "little"))
         if start_index == -1:
-            raise ValueError("Could not find game version")
+            raise GameVersionSearchError("Could not find game versions")
         length = len(self.tsv_paths)
         data = lib_file.read_int_list(start_index, length)
         return data

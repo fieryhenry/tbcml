@@ -53,10 +53,10 @@ class ModLoader:
         self.apk: Optional[core.Apk] = None
         self.adb_handler: Optional[core.BulkAdbHandler] = None
 
-    def initialize(self, decode_resources: bool = True):
-        self.__get_apk(decode_resources=decode_resources)
+    def initialize(self, decode_resources: bool = True, print_errors: bool = True):
+        self.__get_apk(decode_resources=decode_resources, print_errors=print_errors)
 
-    def __get_apk(self, decode_resources: bool = True):
+    def __get_apk(self, decode_resources: bool = True, print_errors: bool = True):
         self.apk = core.Apk(
             game_version=self.game_version, country_code=self.country_code
         )
@@ -65,8 +65,11 @@ class ModLoader:
         # older versions don't have server files
         try:
             self.apk.download_server_files()
-        except:
-            pass
+        except core.GameVersionSearchError:
+            if print_errors:
+                print(
+                    "Please use a newer version of the game to download server files."
+                )
 
         self.game_packs = core.GamePacks.from_apk(self.apk)
 
