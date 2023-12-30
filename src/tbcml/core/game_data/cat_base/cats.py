@@ -1728,6 +1728,7 @@ class Cat:
         if isinstance(form, int):
             form = CatFormType.from_index(form)
         return self.forms.get(form)
+    
 
     def set_form(self, form: Union[CatFormType, int], value: CatForm):
         if isinstance(form, int):
@@ -1740,8 +1741,17 @@ class Cat:
             self.nyanko_picture_book_data = NyankoPictureBookData.create_empty(
                 self.cat_id
             )
+            self.nyanko_picture_book_data.total_forms = len(self.forms)
 
         return new_form
+    
+    def remove_form(self, form_type: CatFormType):
+        if form_type in self.forms:
+            del self.forms[form_type]
+
+        if self.nyanko_picture_book_data is not None:
+            self.nyanko_picture_book_data.total_forms = len(self.forms)
+             
 
     def set_cat_id(self, cat_id: int):
         self.cat_id = cat_id
