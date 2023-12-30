@@ -94,6 +94,7 @@ class CSV:
         self.str_index = 0
 
     def __iter__(self):
+        self.reset_index()
         return self
 
     def __next__(self) -> list[str]:
