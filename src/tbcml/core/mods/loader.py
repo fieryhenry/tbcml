@@ -49,18 +49,19 @@ class ModLoader:
         self.mod = mod_instance
 
         # not initialized in constructor
-        self.game_packs = None
-        self.apk = None
+        self.game_packs: Optional[core.GamePacks] = None
+        self.apk: Optional[core.Apk] = None
+        self.adb_handler: Optional[core.BulkAdbHandler] = None
 
-    def initialize(self):
-        self.__get_apk()
+    def initialize(self, decode_resources: bool = True):
+        self.__get_apk(decode_resources=decode_resources)
 
-    def __get_apk(self):
+    def __get_apk(self, decode_resources: bool = True):
         self.apk = core.Apk(
             game_version=self.game_version, country_code=self.country_code
         )
         self.apk.download()
-        self.apk.extract()
+        self.apk.extract(decode_resources=decode_resources)
         # older versions don't have server files
         try:
             self.apk.download_server_files()
@@ -92,8 +93,10 @@ class ModLoader:
     def __add_mod_edit(self, edit: "core.ModEdit"):
         self.mod.add_mod_edit(edit)
 
-    def load(
-        self, open_path: bool = False, other_mods: Optional[List["core.Mod"]] = None
+    def apply(
+        self,
+        other_mods: Optional[List["core.Mod"]] = None,
+        open_path: bool = False,
     ):
         if self.apk is None:
             raise Exception("APK not initialized. Call initialize() first.")
@@ -107,3 +110,44 @@ class ModLoader:
 
         if open_path:
             self.apk.output_path.open()
+
+    def get_apk(self) -> "core.Apk":
+        if self.apk is None:
+            raise Exception("APK not initialized. Call initialize() first.")
+        return self.apk
+
+    def initialize_adb(self, device_id: Optional[str] = None):
+        self.adb_handler = core.BulkAdbHandler(self.get_apk().package_name)
+        if device_id is not None:
+            self.adb_handler.add_device(device_id)
+        else:
+            success = self.adb_handler.add_all_connected_devices()
+            if not success:
+                raise Exception("No devices connected.")
+
+    def install_adb(self, run_game: bool = False):
+        self.get_adb_handler().run_adb_handler_function(
+            core.AdbHandler.install_apk, self.get_apk().get_final_apk_path()
+        )
+
+        if run_game:
+            self.run_game_adb()
+
+    def get_adb_handler(self) -> "core.BulkAdbHandler":
+        if self.adb_handler is None:
+            raise Exception("ADB handler not initialized. Call initialize_adb() first.")
+        return self.adb_handler
+
+    def run_game_adb(self):
+        self.get_adb_handler().run_adb_handler_function(core.AdbHandler.run_game)
+
+    def close_game_adb(self):
+        self.get_adb_handler().run_adb_handler_function(core.AdbHandler.close_game)
+
+    def push_server_files_adb(self):
+        apk = self.get_apk()
+        self.get_adb_handler().run_adb_handler_function(
+            core.AdbHandler.push_files_to_folder,
+            apk.get_server_path(apk.country_code, apk.apk_folder).get_files(),
+            core.AdbHandler.get_battlecats_path(apk.package_name).add("files"),
+        )
