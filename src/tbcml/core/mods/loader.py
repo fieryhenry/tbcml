@@ -81,7 +81,7 @@ class ModLoader:
 
         self.__add_mod_edit(edit)
 
-    def add_item(self, localizable: Localizable):
+    def add_localizable(self, localizable: Localizable):
         edit = ModEdit(["localizable"], localizable.to_dict())
 
         self.__add_mod_edit(edit)
