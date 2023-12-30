@@ -778,6 +778,7 @@ class CatModel:
 
     def import_enemy(self, enemy: "core.EnemyModel"):
         self.model = enemy.model.copy()
+        self.model.mamodel.fix_ints()
         self.model.flip_x()
         self.model.set_unit_form(self.form.value)
         self.model.set_unit_id(self.cat_id)

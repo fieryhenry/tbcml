@@ -115,6 +115,10 @@ class Mamodel:
             self.comments.copy(),
         )
 
+    def fix_ints(self):
+        if len(self.ints) == 1:
+            self.ints.append(self.ints[0])
+
     @staticmethod
     def create_empty() -> "Mamodel":
         return Mamodel(ModelMetaData.create_empty(), 0, 0, 0, [], [], [])
@@ -440,8 +444,9 @@ class Model:
             csv.lines.append([str(len(self.mamodel.ints))])
             for i, ints in enumerate(self.mamodel.ints):
                 csv.lines.append([str(x) for x in ints])
-                if self.mamodel.comments[i]:
-                    csv.lines[-1].append(self.mamodel.comments[i])
+                if i < len(self.mamodel.comments):
+                    if self.mamodel.comments[i]:
+                        csv.lines[-1].append(self.mamodel.comments[i])
 
             game_packs.set_file(self.name, csv.to_data())
 
