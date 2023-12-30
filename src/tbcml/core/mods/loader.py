@@ -1,14 +1,4 @@
-from tbcml.core import (
-    CountryCode,
-    GameVersion,
-    Mod,
-    Apk,
-    ModEdit,
-    GamePacks,
-    Cat,
-    ItemShop,
-    Localizable,
-)
+from tbcml import core
 from typing import List, Union
 
 
@@ -40,13 +30,13 @@ class ModLoader:
 
     def __init__(
         self,
-        country_code: CountryCode,
-        game_version: Union[str, GameVersion],
-        mod_instance: Mod,
+        country_code: "core.CountryCode",
+        game_version: Union[str, "core.GameVersion"],
+        mod_instance: "core.Mod",
     ):
         self.country_code = country_code
         if isinstance(game_version, str):
-            self.game_version = GameVersion.from_string(game_version)
+            self.game_version = core.GameVersion.from_string(game_version)
         else:
             self.game_version = game_version
         self.mod = mod_instance
@@ -54,13 +44,15 @@ class ModLoader:
         # not initialized in constructor
         self.game_packs = None
         self.apk = None
-        self.mods = List[Mod]
+        self.mods = List[core.Mod]
 
     def initialize(self):
         self.__get_apk()
 
     def __get_apk(self):
-        self.apk = Apk(game_version=self.game_version, country_code=self.country_code)
+        self.apk = core.Apk(
+            game_version=self.game_version, country_code=self.country_code
+        )
         self.apk.download()
         self.apk.extract()
         # older versions don't have server files
@@ -69,24 +61,24 @@ class ModLoader:
         except:
             pass
 
-        self.game_packs = GamePacks.from_apk(self.apk)
+        self.game_packs = core.GamePacks.from_apk(self.apk)
 
-    def add_cat(self, cat: Cat):
-        edit = ModEdit(["cats", cat.cat_id], cat.to_dict())
-
-        self.__add_mod_edit(edit)
-
-    def add_shop(self, shop: ItemShop):
-        edit = ModEdit(["item_shop"], shop.to_dict())
+    def add_cat(self, cat: "core.Cat"):
+        edit = core.ModEdit(["cats", cat.cat_id], cat.to_dict())
 
         self.__add_mod_edit(edit)
 
-    def add_localizable(self, localizable: Localizable):
-        edit = ModEdit(["localizable"], localizable.to_dict())
+    def add_shop(self, shop: "core.ItemShop"):
+        edit = core.ModEdit(["item_shop"], shop.to_dict())
 
         self.__add_mod_edit(edit)
 
-    def __add_mod_edit(self, edit: ModEdit):
+    def add_localizable(self, localizable: "core.Localizable"):
+        edit = core.ModEdit(["localizable"], localizable.to_dict())
+
+        self.__add_mod_edit(edit)
+
+    def __add_mod_edit(self, edit: "core.ModEdit"):
         self.mod.add_mod_edit(edit)
 
     def compile(self, open_path: bool):
