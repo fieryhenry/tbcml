@@ -75,12 +75,31 @@ function readStdString(address) {
     return address.add(2 * Process.pointerSize).readPointer().readUtf8String();
 }
 
+function readJString(address) {
+    return Java.cast(address, Java.use("java.lang.String"));
+
+}
+
 function writeStdString(address, content) {
     const isTiny = (address.readU8() & 1) === 0;
     if (isTiny)
         address.add(1).writeUtf8String(content);
     else
         address.add(2 * Process.pointerSize).readPointer().writeUtf8String(content);
+}
+
+function writeJString(address, content) {
+    Java.cast(address, Java.use("java.lang.String")).$new(content);
+}
+
+function readByteBuffer(address) {
+    let bb = Java.cast(address, Java.use("java.nio.ByteBuffer"));
+    let limit = bb.limit();
+    let data = "";
+    for (let i = 0; i < limit; i++) {
+        data += String.fromCharCode(bb.get(i));
+    }
+    return data;
 }
 
 function getJavaClass(className) {
@@ -100,6 +119,10 @@ function getJavaClass(className) {
 
 function getArcitecture() {
     return Process.arch;
+}
+
+function is_64_bit() {
+    return Process.pointerSize === 8;
 }
 
 function getPackageName() {
