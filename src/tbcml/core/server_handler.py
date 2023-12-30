@@ -25,6 +25,8 @@ class ServerFileHandler:
         self.apk = apk
         self.tsv_paths = self.apk.get_download_tsvs()
         self.game_versions = self.find_game_versions()
+        self.tsvs: dict[int, "core.CSV"] = {}
+        self.file_map = self.create_file_map()
 
     def parse_tsv(self, index: int) -> "core.CSV":
         """Parses a TSV file from the APK
@@ -40,9 +42,39 @@ class ServerFileHandler:
         """
         if index >= len(self.tsv_paths) or index < 0:
             raise ValueError("Invalid TSV index")
+        if index in self.tsvs:
+            return self.tsvs[index]
         tsv_path = self.tsv_paths[index]
         tsv = core.CSV(tsv_path.read(), delimeter="\t")
+        self.tsvs[index] = tsv
         return tsv
+
+    def create_file_map(self) -> dict[str, int]:
+        """Creates a file map for the server files
+
+        Returns:
+            dict[str, int]: The file map. Key is the file name, value is the index of the tsv file that contains the file
+        """
+        tsvs = self.parse_tsvs()
+        file_map: dict[str, int] = {}
+        for i in range(len(tsvs)):
+            tsv = tsvs[i]
+            for row in tsv:
+                name = row[0].strip()
+                if not self.is_valid_name(name):
+                    continue
+                file_map[name] = i
+        return file_map
+
+    def parse_tsvs(self) -> dict[int, "core.CSV"]:
+        """Parses all TSV files from the APK
+
+        Returns:
+            dict[int, core.CSV]: The parsed TSV files
+        """
+        for i in range(len(self.tsv_paths)):
+            self.parse_tsv(i)
+        return self.tsvs
 
     def get_game_version(self, index: int) -> int:
         """Gets the game version from the libnative.so file
@@ -121,6 +153,20 @@ class ServerFileHandler:
             raise ValueError("Invalid zip data") from exc
         return zipf
 
+    @staticmethod
+    def is_valid_name(name: str) -> bool:
+        """Checks if a given name is valid
+
+        Args:
+            name (str): The name to check
+
+        Returns:
+            bool: Whether the name is valid
+        """
+        if not name or ord(name[0]) == 65279 or name.isdigit():
+            return False
+        return True
+
     def extract(
         self,
         index: int,
@@ -138,10 +184,15 @@ class ServerFileHandler:
         tsv = self.parse_tsv(index)
         if not force:
             found = True
-            hashes_equal = False
+            hashes_equal = True
             for row in tsv:
                 name = row[0].strip()
-                if not name or ord(name[0]) == 65279 or name.isdigit():
+                if not self.is_valid_name(name):
+                    continue
+                if name not in self.file_map:
+                    found = False
+                    break
+                if self.file_map[name] != index:
                     continue
                 path = core.Apk.get_server_path(
                     self.apk.country_code, self.apk.apk_folder
@@ -153,8 +204,8 @@ class ServerFileHandler:
                 file_hash = (
                     core.Hash(core.HashAlgorithm.MD5).get_hash(path.read()).to_hex()
                 )
-                if md5_hash == file_hash:
-                    hashes_equal = True
+                if md5_hash != file_hash:
+                    hashes_equal = False
                     break
 
             if found and hashes_equal:
