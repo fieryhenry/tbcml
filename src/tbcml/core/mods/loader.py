@@ -9,7 +9,7 @@ from tbcml.core import (
     ItemShop,
     Localizable,
 )
-from typing import List
+from typing import List, Union
 
 
 class ModLoader:
@@ -18,7 +18,7 @@ class ModLoader:
 
     Args:
         country_code (CountryCode): The country code for the game.
-        game_version (str): The version of the game.
+        game_version (str | GameVersion): The version of the game.
         mod_instance (Mod): An instance of the Mod class.
 
     Attributes:
@@ -38,9 +38,17 @@ class ModLoader:
 
     """
 
-    def __init__(self, country_code: CountryCode, game_version: str, mod_instance: Mod):
+    def __init__(
+        self,
+        country_code: CountryCode,
+        game_version: Union[str, GameVersion],
+        mod_instance: Mod,
+    ):
         self.country_code = country_code
-        self.game_version = GameVersion.from_string(game_version)
+        if isinstance(game_version, str):
+            self.game_version = GameVersion.from_string(game_version)
+        else:
+            self.game_version = game_version
         self.mod = mod_instance
 
         # not initialized in constructor
