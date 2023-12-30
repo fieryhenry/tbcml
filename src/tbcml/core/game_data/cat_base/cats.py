@@ -836,9 +836,33 @@ class CatForm:
         deploy_icon = self.get_deploy_icon()
         if deploy_icon.width == 128 and deploy_icon.height == 128:
             return
+        deploy_icon.convert_to_rgba()
         base_image = core.BCImage.from_size(128, 128)
         base_image.paste(deploy_icon, 9, 21)
         self.deploy_icon = base_image
+
+    def get_deploy_border(self) -> "core.BCImage":
+        path = core.AssetLoader.get_asset_file_path(f"uni_{self.form.value}.png")
+        return core.BCImage(path.read())
+
+    def import_enemy_deploy_icon(
+        self, enemy: "core.Enemy", offset: tuple[int, int] = (-20, -20)
+    ):
+        icon = enemy.get_enemy_icon()
+        icon.scale(2, 2)
+        icon.convert_to_rgba()
+        base_image = core.BCImage.from_size(128, 128)
+        base_image.paste(icon, offset[0], offset[1])
+        base_image = base_image.crop_rect(
+            14,
+            26,
+            113,
+            101,
+        )
+        border_img = self.get_deploy_border()
+        border_img.convert_to_rgba()
+        border_img.paste(base_image, 14, 26)
+        self.deploy_icon = border_img
 
     def format_upgrade_icon(self):
         upgrade_icon = self.get_upgrade_icon()
@@ -914,7 +938,7 @@ class CatForm:
                 raise ValueError("Cannot set form without anim being loaded")
             self.get_anim().set_form(form)
 
-    def import_enemy(self, enemy: "core.Enemy"):
+    def import_enemy(self, enemy: "core.Enemy", deploy_icon_offset: tuple[int, int] = (-20, -20)):
         if enemy.name is not None:
             self.name = enemy.name
         if enemy.description is not None:
@@ -922,6 +946,7 @@ class CatForm:
         self.get_anim().import_enemy(enemy.get_anim())
         if enemy.stats is not None:
             self.get_stats().import_enemy_stats(enemy.stats)
+        self.import_enemy_deploy_icon(enemy, deploy_icon_offset)
 
     def copy(self) -> "CatForm":
         return CatForm(
