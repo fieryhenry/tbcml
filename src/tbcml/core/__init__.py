@@ -112,6 +112,7 @@ from .anim.texture import TexLoaderInfo, Texture
 
 from .io.bc_csv import CSV, Delimeter, to_str
 from .io.apk import Apk
+from io.loader import ModLoader
 from .io.path import Path
 from .io.data import Data, PaddedInt
 from .io.command import Command, CommandResult
