@@ -608,6 +608,8 @@ class CatStats:
         self.speed = enemy_stats.speed
         self.attack_1 = enemy_stats.attack_1.copy()
         self.range = enemy_stats.range
+        if enemy_stats.attack_interval is not None:
+            self.attack_interval = enemy_stats.attack_interval.copy()
         self.cost = (enemy_stats.money_drop or 0) // 2
         self.recharge_time = core.Frames(0)
         self.collision_start = enemy_stats.collision_start
@@ -1728,7 +1730,6 @@ class Cat:
         if isinstance(form, int):
             form = CatFormType.from_index(form)
         return self.forms.get(form)
-    
 
     def set_form(self, form: Union[CatFormType, int], value: CatForm):
         if isinstance(form, int):
@@ -1744,14 +1745,13 @@ class Cat:
             self.nyanko_picture_book_data.total_forms = len(self.forms)
 
         return new_form
-    
+
     def remove_form(self, form_type: CatFormType):
         if form_type in self.forms:
             del self.forms[form_type]
 
         if self.nyanko_picture_book_data is not None:
             self.nyanko_picture_book_data.total_forms = len(self.forms)
-             
 
     def set_cat_id(self, cat_id: int):
         self.cat_id = cat_id
