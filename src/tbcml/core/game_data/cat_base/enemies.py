@@ -585,7 +585,7 @@ class Enemy:
 
     def get_enemy_icon(self) -> "core.BCImage":
         if self.enemy_icon is None:
-            self.enemy_icon = core.BCImage.create_empty()
+            self.enemy_icon = core.BCImage.from_size(64, 64)
         return self.enemy_icon
 
     def set_enemy_id(self, enemy_id: int):
