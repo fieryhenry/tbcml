@@ -132,12 +132,12 @@ class CustomCatStats(core.Modification):
     def apply_csv(self, form_type: "core.CatFormType", csv: "core.CSV"):
         index = form_type.get_index()
         csv.index = index
-        required = (
-            [55, -1],
-            [57, -1],
-            [63, 1],
-            [66, -1],
-        )
+        required = [
+            (55, -1),
+            (57, -1),
+            (63, 1),
+            (66, -1),
+        ]
         core.Modification.apply_csv_fields(self, csv, required)
 
 

@@ -1,5 +1,5 @@
 import enum
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, Optional, Sequence, TypeVar, Union
 from tbcml import core
 from dataclasses import fields
 
@@ -31,7 +31,7 @@ class Modification:
     def apply_csv_fields(
         obj: Any,
         csv: "core.CSV",
-        required_values: Optional[list[tuple[int, Union[str, int]]]] = None,
+        required_values: Optional[Sequence[tuple[int, Union[str, int]]]] = None,
     ):
         if not hasattr(obj, "__dataclass_fields__"):
             raise ValueError("obj is not a dataclass!")
