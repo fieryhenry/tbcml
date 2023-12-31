@@ -256,6 +256,7 @@ class Texture:
             self.image.apply_dict(image)
 
         rects = dict_data.get("rects")
+        self.rects.clear()
         if rects is not None:
             for i, data_rect in enumerate(rects):
                 if i < len(self.rects):

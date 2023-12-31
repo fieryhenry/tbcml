@@ -346,6 +346,12 @@ class Model:
                 anims.append(anim)
         return anims
 
+    def clear_anims(self):
+        self.__anims = []
+
+    def add_anim(self, anim: "core.UnitAnim"):
+        self.__anims.append(anim)
+
     @property
     def mamodel(self) -> Mamodel:
         if isinstance(self.__mamodel, MamodelLoaderInfo):
@@ -534,6 +540,7 @@ class Model:
             self.tex.apply_dict(tex)
 
         anims = dict_data.get("anims")
+        self.clear_anims()
         if anims is not None:
             current_anims = {i: anim for i, anim in enumerate(self.anims)}
             mod_anims = core.ModEditDictHandler(anims, current_anims).get_dict(
@@ -543,7 +550,7 @@ class Model:
                 anim = self.get_anim(anim_id)
                 if anim is None:
                     anim = core.UnitAnim.create_empty()
-                    self.anims.append(anim)
+                    self.add_anim(anim)
                 anim.apply_dict(data_anim)
 
     def to_dict(self) -> dict[str, Any]:
