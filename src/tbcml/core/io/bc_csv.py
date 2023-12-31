@@ -1,5 +1,6 @@
 import enum
 from typing import Any, Optional, Union
+
 from tbcml import core
 
 
@@ -142,6 +143,11 @@ class CSV:
             self.extend(index - len(self.lines) + 1)
         self.lines[index] = line
 
+    def get_line(self, index: int):
+        if index >= len(self.lines):
+            self.extend(index - len(self.lines) + 1)
+        return self.lines[index]
+
     def init_setter(
         self,
         index: Optional[int] = None,
@@ -184,7 +190,10 @@ class CSV:
     def set_str(
         self,
         item: Optional[Union[str, int, enum.Enum, bool]],
+        index: Optional[int] = None,
     ):
+        if index is not None:
+            self.str_index = index
         line = self.get_current_line()
         if line is None:
             raise ValueError("No line to set")
@@ -204,7 +213,9 @@ class CSV:
 
         return line
 
-    def get_str(self):
+    def get_str(self, index: Optional[int] = None):
+        if index is not None:
+            self.str_index = index
         line = self.get_current_line()
         if line is None:
             return ""
@@ -214,22 +225,34 @@ class CSV:
         self.str_index += 1
         return item
 
-    def get_int(self):
+    def get_int(self, index: Optional[int] = None):
         try:
-            return int(self.get_str())
+            return int(self.get_str(index))
         except ValueError:
             return 0
 
-    def get_bool(self):
-        return bool(self.get_int())
+    def get_bool(self, index: Optional[int] = None):
+        return bool(self.get_int(index))
 
-    def get_str_list(self) -> list[str]:
+    def get_str_list(
+        self, index: Optional[int] = None, length: Optional[int] = None
+    ) -> list[str]:
+        if index is not None:
+            self.str_index = index
         line = self.get_current_line()
         if line is None:
             return []
         if self.str_index >= len(line):
             return []
-        item = line[self.str_index :]
+        if length is None:
+            item = line[self.str_index :]
+        else:
+            item = line[self.str_index :]
+            if len(item) > length:
+                item = item[:length]
+            else:
+                item.extend([""] * (length - len(item)))
+
         self.str_index += len(item)
         return item
 
@@ -249,8 +272,12 @@ class CSV:
                 lst.append(0)
         return lst
 
-    def set_list(self, item: Optional[list[Any]]):
+    def set_list(self, item: Optional[list[Any]], index: Optional[int] = None):
         if item is None:
             return
-        for i in item:
-            self.set_str(i)
+        for i, string in enumerate(item):
+            if index:
+                ind = index + i
+            else:
+                ind = None
+            self.set_str(string, ind)
