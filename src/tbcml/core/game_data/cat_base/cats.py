@@ -192,7 +192,7 @@ class CatStats:
     Attack: Index 59
     Foreswing: Index 61
     Use Ability: Index 64
-    LogDistanceFlag: Index 99
+    LongDistanceFlag: Index 99
     LongDistanceStartRange: Index 100
     LongDistanceRangeRange: Index 101"""
     attack_3: "core.Attack"
