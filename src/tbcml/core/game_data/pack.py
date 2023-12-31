@@ -1,6 +1,6 @@
 """Module for handling game data."""
 
-from typing import Optional
+from typing import Optional, Union
 import copy
 
 from tbcml import core
@@ -438,6 +438,30 @@ class GamePacks:
         """
         return self.packs.get(pack_name, None)
 
+    def get_csv(
+        self,
+        file_name: str,
+        delimeter: Optional[Union["core.Delimeter", str]] = ",",
+        country_code: Optional["core.CountryCode"] = None,
+        show_error: bool = False,
+    ) -> Optional["core.CSV"]:
+        if country_code is not None:
+            delimeter = core.Delimeter.from_country_code_res(country_code)
+        if delimeter is None:
+            raise ValueError("delimeter and country_code cannot both be None!")
+        file = self.find_file(file_name, show_error)
+        if file is None:
+            return
+        csv = core.CSV(file.dec_data, delimeter=delimeter)
+        return csv
+
+    def set_csv(
+        self, file_name: str, csv: Optional["core.CSV"] = None
+    ) -> Optional["GameFile"]:
+        if csv is None:
+            return None
+        return self.set_file(file_name, csv.to_data())
+
     def find_file(
         self, file_name: str, show_error: bool = False
     ) -> Optional["GameFile"]:
@@ -697,6 +721,12 @@ class GamePacks:
                 if pack.is_server_pack(pack.pack_name):
                     continue
             pack.extract(path)
+
+    def apply_mods_new(self, mods: list["core.NewMod"]):
+        if not mods:
+            return
+        for mod in mods:
+            mod.apply_modifications(self)
 
     def apply_mods(self, mods: list["core.Mod"]):
         """Apply a list of mods to the game packs.

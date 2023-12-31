@@ -5,6 +5,11 @@ from .mods.bc_mod import (
     Dependency,
     ModEdit,
 )
+from .mods.new_bc_mod import (
+    NewMod,
+    Modification,
+    ModificationType,
+)
 from .mods.smali import SmaliHandler, SmaliSet, Smali
 from .mods.frida_script import FridaScripts, FridaScript, FridaGadgetHelper
 from .mods.mod_manager import ModManager
@@ -47,6 +52,7 @@ from .game_data.cat_base.unit import (
 )
 
 from .game_data.cat_base.item_shop import ItemShop
+from .game_data.cat_base.new_cats import CustomCat, CustomForm, CustomCatStats
 from .game_data.cat_base.cats import (
     UnitBuy,
     Talents,
@@ -111,7 +117,18 @@ from .anim.rect import Rect
 from .anim.texture import TexLoaderInfo, Texture
 
 
-from .io.bc_csv import CSV, Delimeter, to_str
+from .io.bc_csv import (
+    CSV,
+    Delimeter,
+    to_str,
+)
+from .io.csv_fields import (
+    CSVField,
+    IntCSVField,
+    BoolCSVField,
+    StringCSVField,
+    StrListCSVField,
+)
 from .io.apk import Apk
 from .io.path import Path
 from .io.data import Data, PaddedInt
@@ -163,6 +180,14 @@ logger = Logger()
 __all__ = [
     "ModEditDictHandler",
     "Mod",
+    "ModificationType",
+    "CSVField",
+    "IntCSVField",
+    "BoolCSVField",
+    "StringCSVField",
+    "StrListCSVField",
+    "Modification",
+    "NewMod",
     "ModEditValueHandler",
     "Dependency",
     "ModEdit",
@@ -209,6 +234,9 @@ __all__ = [
     "Toxic",
     "Shield",
     "ItemShop",
+    "CustomCat",
+    "CustomForm",
+    "CustomCatStats",
     "UnitBuy",
     "Talents",
     "NyankoPictureBook",

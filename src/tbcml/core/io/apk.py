@@ -1299,6 +1299,26 @@ class Apk:
         for mod in mods:
             self.apply_mod_smali(mod)
 
+    def load_mods_new(
+        self,
+        mods: list["core.NewMod"],
+        game_packs: Optional["core.GamePacks"] = None,
+        key: Optional[str] = None,
+        iv: Optional[str] = None,
+    ):
+        if game_packs is None:
+            game_packs = core.GamePacks.from_apk(self)
+        game_packs.apply_mods_new(mods)
+        self.set_allow_backup(True)
+        self.set_debuggable(True)
+
+        if key is not None:
+            self.set_key(key)
+        if iv is not None:
+            self.set_iv(iv)
+
+        self.load_packs_into_game(game_packs)
+
     def load_mods(
         self,
         mods: list["core.Mod"],

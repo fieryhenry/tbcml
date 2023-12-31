@@ -31,6 +31,7 @@ setuptools.setup(
         "PyYAML",
         "requests",
         "ffmpeg-python",
+        "marshmallow-dataclass",
     ],
     include_package_data=True,
     extras_require={
