@@ -47,7 +47,7 @@ class Modification:
                         continue
                     csv.set_str(val, ind)
 
-                value.set(csv)
+                value.write_to_csv(csv)
 
 
 class NewMod:

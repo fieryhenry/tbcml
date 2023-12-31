@@ -17,15 +17,15 @@ class CSVField(Generic[F]):
         self.col_index: int = 0
         self.always_write: bool = False
 
-    def get(self, csv: "core.CSV") -> F:
+    def read_from_csv(self, csv: "core.CSV") -> F:
         ...
 
-    def set(self, csv: "core.CSV"):
+    def write_to_csv(self, csv: "core.CSV"):
         if self.value is None and not self.always_write:
             return
         csv.set_str(self.value, self.col_index)
 
-    def set_value(self, value: F):
+    def set(self, value: F):
         self.value = value
 
     def set_col_index(self, col_index: int):
@@ -47,7 +47,7 @@ class IntCSVField(CSVField[int]):
         self.set_col_index(col_index)
         self.set_always_write(always_write)
 
-    def get(self, csv: "core.CSV") -> int:
+    def read_from_csv(self, csv: "core.CSV") -> int:
         return csv.get_int(self.col_index)
 
 
@@ -59,7 +59,7 @@ class BoolCSVField(CSVField[bool]):
         self.set_col_index(col_index)
         self.set_always_write(always_write)
 
-    def get(self, csv: "core.CSV") -> bool:
+    def read_from_csv(self, csv: "core.CSV") -> bool:
         return csv.get_bool(self.col_index)
 
 
@@ -71,7 +71,7 @@ class StringCSVField(CSVField[str]):
         self.set_col_index(col_index)
         self.set_always_write(always_write)
 
-    def get(self, csv: "core.CSV") -> str:
+    def read_from_csv(self, csv: "core.CSV") -> str:
         return csv.get_str(self.col_index)
 
 
@@ -89,10 +89,10 @@ class StrListCSVField(CSVField[list[str]]):
         self.set_always_write(always_write)
         self.length = length
 
-    def get(self, csv: "core.CSV") -> list[str]:
+    def read_from_csv(self, csv: "core.CSV") -> list[str]:
         return csv.get_str_list(self.col_index, self.length)
 
-    def set(self, csv: "core.CSV"):
+    def write_to_csv(self, csv: "core.CSV"):
         if self.value is None and not self.always_write:
             return
         if self.length is None:
