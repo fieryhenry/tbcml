@@ -63,6 +63,7 @@ class KeyFrame:
         change_in_value = int(data[1])
         ease = int(data[2])
         ease_power = int(data[3])
+
         return KeyFrame(frame, change_in_value, ease, ease_power)
 
     def copy(self):
@@ -267,12 +268,9 @@ class KeyFrames:
         ]
         if self.name:
             ls[0].append(self.name)
-        new_ls: list[list[str]] = []
-        for item in ls:
-            new_ls.append(item)
         for keyframe in self.keyframes:
-            new_ls.append(keyframe.to_data())
-        return new_ls
+            ls.append(keyframe.to_data())
+        return ls
 
     @staticmethod
     def create_empty() -> "KeyFrames":
