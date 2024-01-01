@@ -219,10 +219,8 @@ class CustomNyankoPictureBook:
 @dataclass
 class CustomForm:
     form_type: "core.CatFormType" = field(metadata={"required": True})
-    name: StringCSVField = CSVField.to_field(StringCSVField, col_index=0)
-    description: StrListCSVField = CSVField.to_field(
-        StrListCSVField, col_index=1, length=3
-    )
+    name: StringCSVField = CSVField.to_field(StringCSVField, 0)
+    description: StrListCSVField = CSVField.to_field(StrListCSVField, 1, length=3)
     stats: Optional[CustomCatStats] = None
     anim: Optional["core.CustomModel"] = None
     upgrade_icon: Optional["core.NewBCImage"] = None
@@ -347,6 +345,40 @@ class CustomForm:
         self.upgrade_icon = game_data.get_img(self.get_upgrade_icon_file_name(cat_id))
         self.deploy_icon = game_data.get_img(self.get_deploy_icon_file_name(cat_id))
 
+    def on_add_to_mod(self):
+        if self.deploy_icon is not None:
+            self.deploy_icon.save_b64()
+        if self.upgrade_icon is not None:
+            self.upgrade_icon.save_b64()
+        if self.anim is not None:
+            self.anim.texture.save_b64()
+
+
+@dataclass
+class CustomEvolveText:
+    first_evol: StrListCSVField = CSVField.to_field(
+        StrListCSVField,
+        0,
+        length=3,
+        blank="＠",
+    )
+    blank: StringCSVField = CSVField.to_field(StringCSVField, 3)
+    second_evol: StrListCSVField = CSVField.to_field(
+        StrListCSVField,
+        4,
+        length=3,
+        blank="＠",
+    )
+    comment: StringCSVField = CSVField.to_field(StringCSVField, 7)
+
+    def apply_csv(self, cat_id: int, csv: "core.CSV"):
+        csv.index = cat_id
+        core.Modification.apply_csv_fields(self, csv, remove_others=False)
+
+    def read_csv(self, cat_id: int, csv: "core.CSV"):
+        csv.index = cat_id
+        core.Modification.read_csv_fields(self, csv)
+
 
 @dataclass
 class CustomCat(core.Modification):
@@ -355,11 +387,17 @@ class CustomCat(core.Modification):
     unitbuy: Optional[CustomUnitBuy] = None
     nyanko_picture_book: Optional[CustomNyankoPictureBook] = None
     modification_type: core.ModificationType = core.ModificationType.CAT
+    evolve_text: Optional[CustomEvolveText] = None
 
     def __post_init__(
         self,
     ):  # This is required for CustomCat.Schema to not be a string for some reason
         CustomCat.Schema()
+
+    def get_evolve_text(self) -> CustomEvolveText:
+        if self.evolve_text is None:
+            self.evolve_text = CustomEvolveText()
+        return self.evolve_text
 
     def get_unitbuy(self) -> "CustomUnitBuy":
         if self.unitbuy is None:
@@ -382,9 +420,14 @@ class CustomCat(core.Modification):
         self.apply_nyanko_picture_book(csv)
         game_data.set_csv(name, csv)
 
+        name, csv = self.get_evolve_text_csv(game_data)
+        self.apply_evolve_text(csv)
+        game_data.set_csv(name, csv)
+
     def read(self, game_data: "core.GamePacks"):
         self.read_forms(game_data)
         self.read_unit_buy(game_data)
+        self.read_nyanko_picture_book(game_data)
 
     @staticmethod
     def get_cat_id_str(cat_id: int) -> str:
@@ -429,6 +472,15 @@ class CustomCat(core.Modification):
 
         return file_name, csv
 
+    @staticmethod
+    def get_evolve_text_csv(
+        game_data: "core.GamePacks",
+    ) -> tuple[str, Optional["core.CSV"]]:
+        file_name = f"unitevolve_{game_data.localizable.get_lang()}.csv"
+        csv = game_data.get_csv(file_name, country_code=game_data.country_code)
+
+        return file_name, csv
+
     def apply_unit_buy(self, unit_buy_csv: Optional["core.CSV"]):
         if self.unitbuy is not None and unit_buy_csv is not None:
             self.unitbuy.apply_csv(self.cat_id, unit_buy_csv)
@@ -436,6 +488,10 @@ class CustomCat(core.Modification):
     def apply_nyanko_picture_book(self, nyanko_picture_book_csv: Optional["core.CSV"]):
         if self.nyanko_picture_book is not None and nyanko_picture_book_csv is not None:
             self.nyanko_picture_book.apply_csv(self.cat_id, nyanko_picture_book_csv)
+
+    def apply_evolve_text(self, evolve_text_csv: Optional["core.CSV"]):
+        if self.evolve_text is not None and evolve_text_csv is not None:
+            self.evolve_text.apply_csv(self.cat_id, evolve_text_csv)
 
     def apply_forms(self, game_data: "core.GamePacks"):
         file_name_desc, name_csv = CustomCat.get_name_csv(game_data, self.cat_id)
@@ -458,6 +514,11 @@ class CustomCat(core.Modification):
             return
         self.get_nyanko_picture_book().read_csv(self.cat_id, csv)
 
+    def read_evolve_text_csv(self, csv: Optional["core.CSV"]):
+        if csv is None:
+            return
+        self.get_evolve_text().read_csv(self.cat_id, csv)
+
     def read_unit_buy(self, game_data: "core.GamePacks"):
         self.read_unit_buy_csv(self.get_unit_buy_csv(game_data)[1])
 
@@ -465,6 +526,9 @@ class CustomCat(core.Modification):
         self.read_nyanko_picture_book_csv(
             self.get_nyanko_picture_book_data_csv(game_data)[1]
         )
+
+    def read_evolve_text(self, game_data: "core.GamePacks"):
+        self.read_evolve_text_csv(self.get_evolve_text_csv(game_data)[1])
 
     def read_forms(self, game_data: "core.GamePacks"):
         _, name_csv = self.get_name_csv(game_data, self.cat_id)
@@ -502,3 +566,7 @@ class CustomCat(core.Modification):
             form_type = form.form_type
 
         self.forms[form_type] = form
+
+    def on_add_to_mod(self):
+        for form in (self.forms or {}).values():
+            form.on_add_to_mod()
