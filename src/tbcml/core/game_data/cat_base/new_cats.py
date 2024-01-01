@@ -152,25 +152,45 @@ class CustomForm:
     )
     stats: Optional[CustomCatStats] = None
     anim: Optional["core.CustomModel"] = None
+    upgrade_icon: Optional["core.NewBCImage"] = None
+    deploy_icon: Optional["core.NewBCImage"] = None
 
     def get_anim(self) -> "core.CustomModel":
-        return self.anim or core.CustomModel()
+        if self.anim is None:
+            self.anim = core.CustomModel()
+        return self.anim
+
+    def get_deploy_icon(self) -> "core.NewBCImage":
+        if self.deploy_icon is None:
+            self.deploy_icon = core.NewBCImage.from_size(128, 128)
+        return self.deploy_icon
+
+    def get_upgrade_icon(self) -> "core.NewBCImage":
+        if self.upgrade_icon is None:
+            self.upgrade_icon = core.NewBCImage.from_size(512, 128)
+        return self.upgrade_icon
 
     def apply_game_data(self, cat_id: int, game_data: "core.GamePacks"):
         name_file_name, name_csv = CustomCat.get_name_csv(game_data, cat_id)
         stats_file_name, stats_csv = CustomCat.get_stats_csv(game_data, cat_id)
-        self.apply_csv(name_csv, stats_csv)
+        self.apply_csv(name_csv, stats_csv, game_data, cat_id)
         game_data.set_csv(name_file_name, name_csv)
         game_data.set_csv(stats_file_name, stats_csv)
 
-        if self.anim is not None:
-            self.anim.apply(game_data)
+    def set_icons(self, cat_id: int, game_data: "core.GamePacks"):
+        game_data.set_img(self.get_upgrade_icon_file_name(cat_id), self.upgrade_icon)
+        game_data.set_img(self.get_deploy_icon_file_name(cat_id), self.deploy_icon)
 
     def read_game_data(self, cat_id: int, game_data: "core.GamePacks"):
         _, name_csv = CustomCat.get_name_csv(game_data, cat_id)
         _, stats_csv = CustomCat.get_stats_csv(game_data, cat_id)
-        self.read_csv(name_csv, stats_csv)
-        self.read_anim(cat_id, game_data)
+        self.read_csv(name_csv, stats_csv, cat_id, game_data)
+
+    def get_upgrade_icon_file_name(self, cat_id: int):
+        return f"udi{CustomCat.get_cat_id_str(cat_id)}_{self.form_type.value}.png"
+
+    def get_deploy_icon_file_name(self, cat_id: int):
+        return f"uni{CustomCat.get_cat_id_str(cat_id)}_{self.form_type.value}00.png"
 
     def get_sprite_file_name(self, cat_id: int):
         return f"{CustomCat.get_cat_id_str(cat_id)}_{self.form_type.value}.png"
@@ -208,9 +228,10 @@ class CustomForm:
 
     def apply_csv(
         self,
-        name_csv: Optional["core.CSV"] = None,
-        stat_csv: Optional["core.CSV"] = None,
-        game_data: Optional["core.GamePacks"] = None,
+        name_csv: Optional["core.CSV"],
+        stat_csv: Optional["core.CSV"],
+        game_data: Optional["core.GamePacks"],
+        cat_id: Optional[int],
     ):
         if name_csv is not None:
             self.apply_name_desc(name_csv)
@@ -218,6 +239,8 @@ class CustomForm:
             self.stats.apply_csv(self.form_type, stat_csv)
         if self.anim is not None and game_data is not None:
             self.anim.apply(game_data)
+        if cat_id is not None and game_data is not None:
+            self.set_icons(cat_id, game_data)
 
     def apply_name_desc(self, csv: "core.CSV"):
         index = self.form_type.get_index()
@@ -233,10 +256,10 @@ class CustomForm:
 
     def read_csv(
         self,
-        name_csv: Optional["core.CSV"] = None,
-        stat_csv: Optional["core.CSV"] = None,
-        cat_id: Optional[int] = None,
-        game_data: Optional["core.GamePacks"] = None,
+        name_csv: Optional["core.CSV"],
+        stat_csv: Optional["core.CSV"],
+        cat_id: Optional[int],
+        game_data: Optional["core.GamePacks"],
     ):
         if name_csv is not None:
             self.read_name_desc(name_csv)
@@ -245,6 +268,11 @@ class CustomForm:
             self.stats.read_csv(self.form_type, stat_csv)
         if game_data is not None and cat_id is not None:
             self.read_anim(cat_id, game_data)
+            self.read_icons(cat_id, game_data)
+
+    def read_icons(self, cat_id: int, game_data: "core.GamePacks"):
+        self.upgrade_icon = game_data.get_img(self.get_upgrade_icon_file_name(cat_id))
+        self.deploy_icon = game_data.get_img(self.get_deploy_icon_file_name(cat_id))
 
 
 @dataclass
@@ -295,7 +323,7 @@ class CustomCat(core.Modification):
 
         if self.forms:
             for form in self.forms.values():
-                form.apply_csv(name_csv, stat_csv, game_data)
+                form.apply_csv(name_csv, stat_csv, game_data, self.cat_id)
 
         game_data.set_csv(file_name_desc, name_csv)
         game_data.set_csv(file_name_stat, stat_csv)
