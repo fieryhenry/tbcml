@@ -15,6 +15,7 @@ from .mods.frida_script import FridaScripts, FridaScript, FridaGadgetHelper
 from .mods.mod_manager import ModManager
 from .mods.editable import EditableClass
 from .mods.loader import ModLoader
+from .mods.new_loader import NewModLoader
 from .game_data.cat_base.unit import (
     unit_bool,
     unit_int,
@@ -201,6 +202,7 @@ __all__ = [
     "FridaGadgetHelper",
     "ModManager",
     "EditableClass",
+    "NewModLoader",
     "ModLoader",
     "unit_bool",
     "unit_int",
