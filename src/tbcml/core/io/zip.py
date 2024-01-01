@@ -117,9 +117,9 @@ class Zip:
     def get_paths(self) -> list["core.Path"]:
         return [core.Path(name) for name in self.zip.namelist()]
 
-    def get_paths_in_folder(self, folder_name: str) -> list["core.Path"]:
+    def get_paths_in_folder(self, folder_name: "core.Path") -> list["core.Path"]:
         return [
             core.Path(name)
             for name in self.zip.namelist()
-            if name.startswith(folder_name)
+            if name.startswith(folder_name.to_str_forwards())
         ]
