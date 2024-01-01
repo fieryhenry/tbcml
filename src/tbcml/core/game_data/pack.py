@@ -462,6 +462,20 @@ class GamePacks:
             return None
         return self.set_file(file_name, csv.to_data())
 
+    def get_img(
+        self, file_name: str, show_error: bool = False
+    ) -> Optional["core.NewBCImage"]:
+        file = self.find_file(file_name, show_error)
+        if file is None:
+            return None
+        return core.NewBCImage(file.dec_data.to_base_64())
+
+    def set_img(self, file_name: str, img: Optional["core.NewBCImage"]):
+        if img is None:
+            return
+        file = self.set_file(file_name, img.to_data())
+        return file
+
     def find_file(
         self, file_name: str, show_error: bool = False
     ) -> Optional["GameFile"]:
