@@ -1,6 +1,7 @@
 import enum
 from typing import Any, Optional, Sequence, TypeVar, Union
 from tbcml import core
+import json
 from dataclasses import fields
 
 
@@ -77,8 +78,67 @@ class Modification:
 
 
 class NewMod:
-    def __init__(self):
+    def __init__(self, name: str, description: str, author: str):
+        self.name = name
+        self.description = description
+        self.author = author
         self.modifications: list[Modification] = []
+
+    def metadata_to_json(self) -> str:
+        data = {
+            "name": self.name,
+            "description": self.description,
+            "author": self.author,
+        }
+        return json.dumps(data)
+
+    @staticmethod
+    def metadata_from_json(data: str):
+        obj = json.loads(data)
+        name = obj.get("name", "unknown")
+        description = obj.get("description", "corrupted metadata")
+        author = obj.get("author", "unknown")
+        return NewMod(name, description, author)
+
+    def to_zip(self) -> "core.Data":
+        zipfile = core.Zip()
+        metadata_json = self.metadata_to_json()
+        metadata_file_name = core.Path("metadata.json")
+        zipfile.add_file(metadata_file_name, core.Data(metadata_json))
+
+        for i, modification in enumerate(self.modifications):
+            filepath = (
+                core.Path("modifications")
+                .add(modification.modification_type.value)
+                .add(f"{i}.json")
+            )
+            json_data = modification.to_json()
+            zipfile.add_file(filepath, core.Data(json_data))
+
+        return zipfile.to_data()
+
+    @staticmethod
+    def from_zip(data: "core.Data") -> "NewMod":
+        zipfile = core.Zip(data)
+        metadata_file_name = core.Path("metadata.json")
+        metadata_json = zipfile.get_file(metadata_file_name)
+        if metadata_json is None:
+            return NewMod("unknown", "corrupted metadata", "unknown")
+        mod = NewMod.metadata_from_json(metadata_json.to_str())
+
+        for path in zipfile.get_paths_in_folder(core.Path("modifications")):
+            if not path.get_extension() == "json":
+                continue
+            modification_type = path.parent().basename()
+            dt = zipfile.get_file(path)
+            if dt is None:
+                continue
+            modifiction = NewMod.modification_from_json(
+                (modification_type, dt.to_str())
+            )
+            mod.add_modification(modifiction)
+
+        return mod
 
     def add_modification(self, modification: "Modification"):
         self.modifications.append(modification)
@@ -93,17 +153,21 @@ class NewMod:
             data.append((modification.modification_type.value, modification.to_json()))
         return data
 
-    def modifications_from_json(self, data: list[tuple[str, str]]):
+    @staticmethod
+    def modifications_from_json(data: list[tuple[str, str]]):
         modifications: list[Modification] = []
-        for mod_type, modification_dt in data:
-            cls = None
+        for dt in data:
+            modifications.append(NewMod.modification_from_json(dt))
 
-            if mod_type == ModificationType.CAT.value:
-                cls = core.CustomCat
+    @staticmethod
+    def modification_from_json(data: tuple[str, str]):
+        mod_type, modification_dt = data
+        cls = None
 
-            if cls is None:
-                raise ValueError("Invalid Modification")
+        if mod_type == ModificationType.CAT.value:
+            cls = core.CustomCat
 
-            modification = Modification.from_json(cls, modification_dt)
-            modifications.append(modification)
-        return modifications
+        if cls is None:
+            raise ValueError("Invalid Modification")
+
+        return Modification.from_json(cls, modification_dt)
