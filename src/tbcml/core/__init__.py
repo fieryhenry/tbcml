@@ -102,6 +102,7 @@ from .game_data.gamototo.item_pack import ItemPacks
 from .game_data.bcu import BCUZip
 
 from .game_data.map.map import Maps
+from .anim.new_anim import CustomModel
 from .anim.model import Model
 from .anim.model_part import ModelPart
 from .anim.unit_animation import (
@@ -148,6 +149,7 @@ from .io.file_handler import FileSize
 from .io.xml_parse import XML
 from .io.audio import AudioFile, Audio
 from .io.bc_image import BCImage
+from .io.new_bc_image import NewBCImage
 from .io.zip import Zip
 from .io.asset_loader import AssetLoader
 from .io.temp_file import TempFile, TempFolder
@@ -281,6 +283,7 @@ __all__ = [
     "ItemPacks",
     "BCUZip",
     "Maps",
+    "CustomModel",
     "Model",
     "ModelPart",
     "AnimType",
@@ -315,6 +318,7 @@ __all__ = [
     "AudioFile",
     "Audio",
     "BCImage",
+    "NewBCImage",
     "Zip",
     "AssetLoader",
     "TempFile",

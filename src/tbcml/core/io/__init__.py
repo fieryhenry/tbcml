@@ -16,6 +16,7 @@ from tbcml.core.io import (
     asset_loader,
     adb,
     csv_fields,
+    new_bc_image,
 )
 
 __all__ = [
@@ -36,4 +37,5 @@ __all__ = [
     "asset_loader",
     "adb",
     "csv_fields",
+    "new_bc_image",
 ]
