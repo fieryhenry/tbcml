@@ -14,7 +14,7 @@ class Apk:
         game_version: "core.GameVersion",
         country_code: "core.CountryCode",
         apk_folder: Optional["core.Path"] = None,
-        allowed_script_mods: bool = False,
+        allowed_script_mods: bool = True,
     ):
         self.game_version = game_version
         self.country_code = country_code
