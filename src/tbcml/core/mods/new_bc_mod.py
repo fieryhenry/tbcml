@@ -32,22 +32,34 @@ class Modification:
         obj: Any,
         csv: "core.CSV",
         required_values: Optional[Sequence[tuple[int, Union[str, int]]]] = None,
+        remove_others: bool = True,
     ):
         if not hasattr(obj, "__dataclass_fields__"):
             raise ValueError("obj is not a dataclass!")
         if required_values is None:
             required_values = []
+
+        csv_fields: list[core.CSVField[Any]] = []
         for field in fields(obj):
             name = field.name
             value = getattr(obj, name)
             if isinstance(value, core.CSVField):
-                original_len = len(csv.get_current_line() or [])
-                for ind, val in required_values:
-                    if ind < original_len:
-                        continue
-                    csv.set_str(val, ind)
+                csv_fields.append(value)  # type: ignore
 
-                value.write_to_csv(csv)
+        if remove_others:
+            for value in csv_fields:
+                value.initialize_csv(csv, writing=True)
+                csv.set_line([], csv.index)
+                value.uninitialize_csv(csv)
+
+        for value in csv_fields:
+            original_len = len(csv.get_current_line() or [])
+            for ind, val in required_values:
+                if ind < original_len:
+                    continue
+                csv.set_str(val, ind)
+
+            value.write_to_csv(csv)
 
     @staticmethod
     def read_csv_fields(
