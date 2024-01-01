@@ -7,21 +7,18 @@ from tbcml import core
 
 
 F = TypeVar("F")
+T = TypeVar("T")
 
 
 @dataclass
 class CSVField(Generic[F]):
-    value: Optional[Any] = None  # marshmallow_dataclass can't do generics atm
+    value: Optional[Any] = None  # marshmallow_dataclass can't do generics in fields atm
 
     def __post_init__(self):
-        self.col_index: int = 0
-        self.always_write: bool = False
-        self.row_index: Optional[int] = None
-        self.row_offset: int = 0
         self.original_index: int = 0
 
-    def read_from_csv(self, csv: "core.CSV"):
-        ...
+    def read_from_csv(self, csv: "core.CSV") -> None:
+        raise NotImplementedError
 
     def initialize_csv(self, csv: "core.CSV", writing: bool) -> bool:
         if self.value is None and not self.always_write and writing:
@@ -53,7 +50,7 @@ class CSVField(Generic[F]):
         self.set(value)
 
     def get_value(self) -> F:
-        ...
+        raise NotImplementedError
 
     def set_col_index(self, col_index: int):
         self.col_index = col_index
@@ -68,25 +65,18 @@ class CSVField(Generic[F]):
         self.row_offset = row_offset
 
     @staticmethod
-    def to_field(type: Any, *args: Any, **kwargs: Any):
-        return field(default_factory=lambda: type(*args, **kwargs))
+    def to_field(type: type[T], *args: Any, **kwargs: Any) -> T:
+        f = field(default_factory=lambda: type(None, *args, **kwargs))
+        return f
 
 
+@dataclass
 class IntCSVField(CSVField[int]):
     value: Optional[int] = None
-
-    def __init__(
-        self,
-        col_index: int,
-        always_write: bool = False,
-        row_index: Optional[int] = None,
-        row_offset: int = 0,
-    ):
-        super().__init__()
-        self.set_col_index(col_index)
-        self.set_always_write(always_write)
-        self.set_row_index(row_index)
-        self.set_row_offset(row_offset)
+    col_index: int = 0
+    always_write: bool = False
+    row_index: Optional[int] = None
+    row_offset: int = 0
 
     def read_from_csv(self, csv: "core.CSV"):
         if not self.initialize_csv(csv, writing=False):
@@ -98,21 +88,13 @@ class IntCSVField(CSVField[int]):
         return self.value or 0
 
 
+@dataclass
 class BoolCSVField(CSVField[bool]):
     value: Optional[bool] = None
-
-    def __init__(
-        self,
-        col_index: int,
-        always_write: bool = False,
-        row_index: Optional[int] = None,
-        row_offset: int = 0,
-    ):
-        super().__init__()
-        self.set_col_index(col_index)
-        self.set_always_write(always_write)
-        self.set_row_index(row_index)
-        self.set_row_offset(row_offset)
+    col_index: int = 0
+    always_write: bool = False
+    row_index: Optional[int] = None
+    row_offset: int = 0
 
     def read_from_csv(self, csv: "core.CSV"):
         if not self.initialize_csv(csv, writing=False):
@@ -120,22 +102,17 @@ class BoolCSVField(CSVField[bool]):
         self.value = csv.get_bool(self.col_index)
         self.uninitialize_csv(csv)
 
+    def get_value(self) -> bool:
+        return self.value or False
 
+
+@dataclass
 class StringCSVField(CSVField[str]):
     value: Optional[str] = None
-
-    def __init__(
-        self,
-        col_index: int,
-        always_write: bool = False,
-        row_index: Optional[int] = None,
-        row_offset: int = 0,
-    ):
-        super().__init__()
-        self.set_col_index(col_index)
-        self.set_always_write(always_write)
-        self.set_row_index(row_index)
-        self.set_row_offset(row_offset)
+    col_index: int = 0
+    always_write: bool = False
+    row_index: Optional[int] = None
+    row_offset: int = 0
 
     def read_from_csv(self, csv: "core.CSV"):
         if not self.initialize_csv(csv, writing=False):
@@ -147,23 +124,15 @@ class StringCSVField(CSVField[str]):
         return self.value or ""
 
 
+@dataclass
 class StrListCSVField(CSVField[list[str]]):
     value: Optional[list[str]] = None
-
-    def __init__(
-        self,
-        col_index: int,
-        always_write: bool = False,
-        length: Optional[int] = None,
-        row_index: Optional[int] = None,
-        row_offset: int = 0,
-    ):
-        super().__init__()
-        self.set_col_index(col_index)
-        self.set_always_write(always_write)
-        self.set_row_index(row_index)
-        self.set_row_offset(row_offset)
-        self.length = length
+    col_index: int = 0
+    always_write: bool = False
+    length: Optional[int] = None
+    row_index: Optional[int] = None
+    row_offset: int = 0
+    blank: str = ""
 
     def read_from_csv(self, csv: "core.CSV"):
         if not self.initialize_csv(csv, writing=False):
@@ -180,29 +149,26 @@ class StrListCSVField(CSVField[list[str]]):
         else:
             length = self.length
         if self.value is None:
-            self.value = [""] * length
+            self.value = [self.blank] * length
+        remaining = length - len(self.value)
+        if remaining > 0:
+            self.value.extend([self.blank] * remaining)
+        elif remaining < 0:
+            self.value = self.value[:length]
         csv.set_list(self.value, self.col_index)
 
         self.uninitialize_csv(csv)
 
 
+@dataclass
 class IntListCSVField(CSVField[list[int]]):
     value: Optional[list[int]] = None
-
-    def __init__(
-        self,
-        col_index: int,
-        always_write: bool = False,
-        length: Optional[int] = None,
-        row_index: Optional[int] = None,
-        row_offset: int = 0,
-    ):
-        super().__init__()
-        self.set_col_index(col_index)
-        self.set_always_write(always_write)
-        self.set_row_index(row_index)
-        self.set_row_offset(row_offset)
-        self.length = length
+    col_index: int = 0
+    always_write: bool = False
+    length: Optional[int] = None
+    row_index: Optional[int] = None
+    row_offset: int = 0
+    blank: int = 0
 
     def read_from_csv(self, csv: "core.CSV"):
         if not self.initialize_csv(csv, writing=False):
@@ -219,7 +185,13 @@ class IntListCSVField(CSVField[list[int]]):
         else:
             length = self.length
         if self.value is None:
-            self.value = [0] * length
+            self.value = [self.blank] * length
+
+        remaining = length - len(self.value)
+        if remaining > 0:
+            self.value.extend([self.blank] * remaining)
+        elif remaining < 0:
+            self.value = self.value[:length]
         csv.set_list(self.value, self.col_index)
 
         self.uninitialize_csv(csv)
