@@ -345,7 +345,7 @@ class CustomForm:
         self.upgrade_icon = game_data.get_img(self.get_upgrade_icon_file_name(cat_id))
         self.deploy_icon = game_data.get_img(self.get_deploy_icon_file_name(cat_id))
 
-    def on_add_to_mod(self):
+    def pre_to_json(self):
         if self.deploy_icon is not None:
             self.deploy_icon.save_b64()
         if self.upgrade_icon is not None:
@@ -567,6 +567,6 @@ class CustomCat(core.Modification):
 
         self.forms[form_type] = form
 
-    def on_add_to_mod(self):
+    def pre_to_json(self):
         for form in (self.forms or {}).values():
-            form.on_add_to_mod()
+            form.pre_to_json()

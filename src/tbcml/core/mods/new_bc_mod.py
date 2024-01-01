@@ -19,6 +19,7 @@ class Modification:
         self.modification_type = modification_type
 
     def to_json(self) -> str:
+        self.pre_to_json()
         return self.Schema().dumps(self)  # type: ignore
 
     @staticmethod
@@ -76,32 +77,41 @@ class Modification:
             if isinstance(value, core.CSVField):
                 value.read_from_csv(csv)
 
-    def on_add_to_mod(self):
-        pass
+    def pre_to_json(self) -> None:
+        raise NotImplementedError
 
 
 class NewMod:
-    def __init__(self, name: str, description: str, author: str):
+    def __init__(
+        self,
+        name: str = "",
+        author: str = "",
+        description: str = "",
+    ):
         self.name = name
-        self.description = description
         self.author = author
+        self.description = description
         self.modifications: list[Modification] = []
 
     def metadata_to_json(self) -> str:
         data = {
             "name": self.name,
-            "description": self.description,
             "author": self.author,
+            "description": self.description,
         }
         return json.dumps(data)
 
     @staticmethod
     def metadata_from_json(data: str):
         obj = json.loads(data)
-        name = obj.get("name", "unknown")
-        description = obj.get("description", "corrupted metadata")
-        author = obj.get("author", "unknown")
-        return NewMod(name, description, author)
+        name = obj.get("name", "")
+        author = obj.get("author", "")
+        description = obj.get("description", "")
+        return NewMod(
+            name=name,
+            author=author,
+            description=description,
+        )
 
     def to_zip(self) -> "core.Data":
         zipfile = core.Zip()
@@ -126,7 +136,7 @@ class NewMod:
         metadata_file_name = core.Path("metadata.json")
         metadata_json = zipfile.get_file(metadata_file_name)
         if metadata_json is None:
-            return NewMod("unknown", "corrupted metadata", "unknown")
+            return NewMod()
         mod = NewMod.metadata_from_json(metadata_json.to_str())
 
         for path in zipfile.get_paths_in_folder(core.Path("modifications")):
@@ -147,7 +157,6 @@ class NewMod:
         self.to_zip().to_file(path)
 
     def add_modification(self, modification: "Modification"):
-        modification.on_add_to_mod()
         self.modifications.append(modification)
 
     def apply_modifications(self, game_packs: "core.GamePacks"):
