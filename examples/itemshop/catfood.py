@@ -9,7 +9,7 @@ class CatFoodItem(Item):
         self.count = 25
         self.price = 1
         self.gachya_item_id = 22
-        self.category_name = "shop_category1"
+        self.category_name = "catfood"
         self.game_data = game_data
         self.localizable = self.__get_localizable()
 
