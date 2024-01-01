@@ -196,7 +196,10 @@ class CSV:
             self.str_index = index
         line = self.get_current_line()
         if line is None:
-            raise ValueError("No line to set")
+            self.extend_to(
+                self.index + 1,
+            )
+            line = []
         if self.ignore_none and item is None:
             return line
         if isinstance(item, enum.Enum):
@@ -204,11 +207,12 @@ class CSV:
         try:
             line[self.str_index] = to_str(item, self.is_int)
         except IndexError:
-            if self.is_int:
+            if isinstance(item, int):
                 line.extend(["0"] * (self.str_index - len(line)))
             else:
                 line.extend([""] * (self.str_index - len(line)))
             line.append(to_str(item, self.is_int))
+        self.set_line(line, self.index)
         self.str_index += 1
 
         return line
@@ -256,21 +260,19 @@ class CSV:
         self.str_index += len(item)
         return item
 
-    def get_int_list(self) -> list[int]:
-        line = self.get_current_line()
-        if line is None:
-            return []
-        if self.str_index >= len(line):
-            return []
-        item = line[self.str_index :]
-        self.str_index += len(item)
-        lst: list[int] = []
-        for i in item:
+    def get_int_list(
+        self,
+        index: Optional[int] = None,
+        length: Optional[int] = None,
+    ) -> list[int]:
+        str_list = self.get_str_list(index, length)
+        int_list: list[int] = []
+        for item in str_list:
             try:
-                lst.append(int(i))
+                int_list.append(int(item))
             except ValueError:
-                lst.append(0)
-        return lst
+                int_list.append(0)
+        return int_list
 
     def set_list(self, item: Optional[list[Any]], index: Optional[int] = None):
         if item is None:
