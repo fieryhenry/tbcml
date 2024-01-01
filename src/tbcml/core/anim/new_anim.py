@@ -52,6 +52,10 @@ class CustomTexture:
     rects: list[CustomRect] = field(default_factory=lambda: [])
     imgcut_name: str = ""
 
+    def save_b64(self):
+        if self.image is not None:
+            self.image.save_b64()
+
     def read_csv(self, csv: "core.CSV"):
         self.rects = []
         self.metadata.read_csv(csv)

@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Optional
 
 from PIL import Image, ImageDraw
 
@@ -21,6 +21,9 @@ class NewBCImage:
         self._qimg: Optional["QImage"] = None
         self.__original_data = core.Data.from_base_64(self.b64)
         self.__original_img: Optional[Image.Image] = None
+
+    def save_b64(self):
+        self.to_data()
 
     @property
     def image(self) -> Image.Image:
@@ -111,7 +114,9 @@ class NewBCImage:
             return self.__original_data
         bytes_io = core.Data().to_bytes_io()
         self.image.save(bytes_io, format="PNG")
-        return core.Data(bytes_io.getvalue())
+        data = core.Data(bytes_io.getvalue())
+        self.b64 = data.to_base_64()
+        return data
 
     @staticmethod
     def from_base_64(base_64: str) -> "NewBCImage":
@@ -119,13 +124,6 @@ class NewBCImage:
 
     def to_base_64(self) -> str:
         return self.to_data().to_base_64()
-
-    def apply_dict(self, dt: dict[str, Any]):
-        self.b64 = dt["__image__"]
-        self.__image = None
-
-    def to_dict(self) -> dict[str, Any]:
-        return {"__image__": self.to_base_64()}
 
     def paste(self, image: "NewBCImage", x: int, y: int):
         self.image.paste(image.image, (x, y), image.image)

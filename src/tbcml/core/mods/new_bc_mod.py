@@ -76,6 +76,9 @@ class Modification:
             if isinstance(value, core.CSVField):
                 value.read_from_csv(csv)
 
+    def on_add_to_mod(self):
+        pass
+
 
 class NewMod:
     def __init__(self, name: str, description: str, author: str):
@@ -140,7 +143,11 @@ class NewMod:
 
         return mod
 
+    def save(self, path: "core.Path"):
+        self.to_zip().to_file(path)
+
     def add_modification(self, modification: "Modification"):
+        modification.on_add_to_mod()
         self.modifications.append(modification)
 
     def apply_modifications(self, game_packs: "core.GamePacks"):
