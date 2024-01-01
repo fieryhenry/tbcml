@@ -49,6 +49,20 @@ class Modification:
 
                 value.write_to_csv(csv)
 
+    @staticmethod
+    def read_csv_fields(
+        obj: Any,
+        csv: "core.CSV",
+    ):
+        if not hasattr(obj, "__dataclass_fields__"):
+            raise ValueError("obj is not a dataclass!")
+
+        for field in fields(obj):
+            name = field.name
+            value = getattr(obj, name)
+            if isinstance(value, core.CSVField):
+                value.read_from_csv(csv)
+
 
 class NewMod:
     def __init__(self):
