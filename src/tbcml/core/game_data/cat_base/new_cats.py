@@ -197,6 +197,26 @@ class CustomUnitBuy:
 
 
 @dataclass
+class CustomNyankoPictureBook:
+    is_displayed_in_cat_guide: BoolCSVField = CSVField.to_field(BoolCSVField, 0)
+    limited: BoolCSVField = CSVField.to_field(BoolCSVField, 1)
+    total_forms: IntCSVField = CSVField.to_field(IntCSVField, 2)
+    hint_display_type: IntCSVField = CSVField.to_field(IntCSVField, 3)
+    scale_1st: IntCSVField = CSVField.to_field(IntCSVField, 4)
+    scale_2nd: IntCSVField = CSVField.to_field(IntCSVField, 5)
+    scale_3rd: IntCSVField = CSVField.to_field(IntCSVField, 6)
+    scale_4th: IntCSVField = CSVField.to_field(IntCSVField, 7)
+
+    def apply_csv(self, cat_id: int, csv: "core.CSV"):
+        csv.index = cat_id
+        core.Modification.apply_csv_fields(self, csv, remove_others=False)
+
+    def read_csv(self, cat_id: int, csv: "core.CSV"):
+        csv.index = cat_id
+        core.Modification.read_csv_fields(self, csv)
+
+
+@dataclass
 class CustomForm:
     form_type: "core.CatFormType" = field(metadata={"required": True})
     name: StringCSVField = CSVField.to_field(StringCSVField, col_index=0)
@@ -333,6 +353,7 @@ class CustomCat(core.Modification):
     cat_id: int = field(metadata={"required": True})
     forms: Optional[dict["core.CatFormType", CustomForm]] = None
     unitbuy: Optional[CustomUnitBuy] = None
+    nyanko_picture_book: Optional[CustomNyankoPictureBook] = None
     modification_type: core.ModificationType = core.ModificationType.CAT
 
     def __post_init__(
@@ -345,13 +366,20 @@ class CustomCat(core.Modification):
             self.unitbuy = CustomUnitBuy()
         return self.unitbuy
 
+    def get_nyanko_picture_book(self) -> "CustomNyankoPictureBook":
+        if self.nyanko_picture_book is None:
+            self.nyanko_picture_book = CustomNyankoPictureBook()
+        return self.nyanko_picture_book
+
     def apply(self, game_data: "core.GamePacks"):
         self.apply_forms(game_data)
 
         name, csv = self.get_unit_buy_csv(game_data)
-
         self.apply_unit_buy(csv)
+        game_data.set_csv(name, csv)
 
+        name, csv = self.get_nyanko_picture_book_data_csv(game_data)
+        self.apply_nyanko_picture_book(csv)
         game_data.set_csv(name, csv)
 
     def read(self, game_data: "core.GamePacks"):
@@ -387,7 +415,16 @@ class CustomCat(core.Modification):
     def get_unit_buy_csv(
         game_data: "core.GamePacks",
     ) -> tuple[str, Optional["core.CSV"]]:
-        file_name = f"unitbuy.csv"
+        file_name = "unitbuy.csv"
+        csv = game_data.get_csv(file_name)
+
+        return file_name, csv
+
+    @staticmethod
+    def get_nyanko_picture_book_data_csv(
+        game_data: "core.GamePacks",
+    ) -> tuple[str, Optional["core.CSV"]]:
+        file_name = "nyankoPictureBookData.csv"
         csv = game_data.get_csv(file_name)
 
         return file_name, csv
@@ -395,6 +432,10 @@ class CustomCat(core.Modification):
     def apply_unit_buy(self, unit_buy_csv: Optional["core.CSV"]):
         if self.unitbuy is not None and unit_buy_csv is not None:
             self.unitbuy.apply_csv(self.cat_id, unit_buy_csv)
+
+    def apply_nyanko_picture_book(self, nyanko_picture_book_csv: Optional["core.CSV"]):
+        if self.nyanko_picture_book is not None and nyanko_picture_book_csv is not None:
+            self.nyanko_picture_book.apply_csv(self.cat_id, nyanko_picture_book_csv)
 
     def apply_forms(self, game_data: "core.GamePacks"):
         file_name_desc, name_csv = CustomCat.get_name_csv(game_data, self.cat_id)
@@ -412,8 +453,18 @@ class CustomCat(core.Modification):
             return
         self.get_unitbuy().read_csv(self.cat_id, csv)
 
+    def read_nyanko_picture_book_csv(self, csv: Optional["core.CSV"]):
+        if csv is None:
+            return
+        self.get_nyanko_picture_book().read_csv(self.cat_id, csv)
+
     def read_unit_buy(self, game_data: "core.GamePacks"):
         self.read_unit_buy_csv(self.get_unit_buy_csv(game_data)[1])
+
+    def read_nyanko_picture_book(self, game_data: "core.GamePacks"):
+        self.read_nyanko_picture_book_csv(
+            self.get_nyanko_picture_book_data_csv(game_data)[1]
+        )
 
     def read_forms(self, game_data: "core.GamePacks"):
         _, name_csv = self.get_name_csv(game_data, self.cat_id)
@@ -444,7 +495,17 @@ class CustomCat(core.Modification):
         if self.forms is None:
             self.forms = {}
 
+        if form_type is not None:
+            form.form_type = form_type
+
         if form_type is None:
             form_type = form.form_type
 
+        original_len = len(self.forms)
+
         self.forms[form_type] = form
+
+        new_len = len(self.forms)
+
+        if original_len != new_len:
+            self.get_nyanko_picture_book().total_forms.set(new_len)
