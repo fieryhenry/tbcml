@@ -501,11 +501,4 @@ class CustomCat(core.Modification):
         if form_type is None:
             form_type = form.form_type
 
-        original_len = len(self.forms)
-
         self.forms[form_type] = form
-
-        new_len = len(self.forms)
-
-        if original_len != new_len:
-            self.get_nyanko_picture_book().total_forms.set(new_len)
