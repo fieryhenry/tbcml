@@ -14,7 +14,7 @@ from marshmallow_dataclass import dataclass
 
 
 @dataclass
-class CustomCatStats(core.Modification):
+class CustomCatStats:
     hp: IntCSVField = CSVField.to_field(IntCSVField, 0)
     kbs: IntCSVField = CSVField.to_field(IntCSVField, 1)
     speed: IntCSVField = CSVField.to_field(IntCSVField, 2)
@@ -126,9 +126,6 @@ class CustomCatStats(core.Modification):
     unknown_108: IntCSVField = CSVField.to_field(IntCSVField, 108)
     counter_surge: BoolCSVField = CSVField.to_field(BoolCSVField, 109)
 
-    def __post_init__(self):
-        CustomCatStats.Schema()
-
     def apply_csv(self, form_type: "core.CatFormType", csv: "core.CSV"):
         index = form_type.get_index()
         csv.index = index
@@ -140,34 +137,114 @@ class CustomCatStats(core.Modification):
         ]
         core.Modification.apply_csv_fields(self, csv, required)
 
+    def read_csv(self, form_type: "core.CatFormType", csv: "core.CSV"):
+        index = form_type.get_index()
+        csv.index = index
+        core.Modification.read_csv_fields(self, csv)
+
 
 @dataclass
-class CustomForm(core.Modification):
+class CustomForm:
     form_type: "core.CatFormType" = field(metadata={"required": True})
     name: StringCSVField = CSVField.to_field(StringCSVField, col_index=0)
     description: StrListCSVField = CSVField.to_field(
         StrListCSVField, col_index=1, length=3
     )
     stats: Optional[CustomCatStats] = None
+    anim: Optional["core.CustomModel"] = None
 
-    def __post_init__(self):
-        CustomForm.Schema()
+    def get_anim(self) -> "core.CustomModel":
+        return self.anim or core.CustomModel()
+
+    def apply_game_data(self, cat_id: int, game_data: "core.GamePacks"):
+        name_file_name, name_csv = CustomCat.get_name_csv(game_data, cat_id)
+        stats_file_name, stats_csv = CustomCat.get_stats_csv(game_data, cat_id)
+        self.apply_csv(name_csv, stats_csv)
+        game_data.set_csv(name_file_name, name_csv)
+        game_data.set_csv(stats_file_name, stats_csv)
+
+        if self.anim is not None:
+            self.anim.apply(game_data)
+
+    def read_game_data(self, cat_id: int, game_data: "core.GamePacks"):
+        _, name_csv = CustomCat.get_name_csv(game_data, cat_id)
+        _, stats_csv = CustomCat.get_stats_csv(game_data, cat_id)
+        self.read_csv(name_csv, stats_csv)
+        self.read_anim(cat_id, game_data)
+
+    def get_sprite_file_name(self, cat_id: int):
+        return f"{CustomCat.get_cat_id_str(cat_id)}_{self.form_type.value}.png"
+
+    def get_imgcut_file_name(self, cat_id: int):
+        return self.get_sprite_file_name(cat_id).replace(".png", ".imgcut")
+
+    def get_mamodel_file_name(self, cat_id: int):
+        return self.get_sprite_file_name(cat_id).replace(".png", ".mamodel")
+
+    def get_maanim_file_name(self, cat_id: int, anim_type: "core.AnimType"):
+        anim_type_str = core.PaddedInt(anim_type.value, 2).to_str()
+        return self.get_sprite_file_name(cat_id).replace(
+            ".png", f"{anim_type_str}.maanim"
+        )
+
+    def get_maanim_paths(self, cat_id: int) -> list[str]:
+        maanim_paths: list[str] = []
+        for anim_type in core.AnimType:
+            maanim_paths.append(self.get_maanim_file_name(cat_id, anim_type))
+        cat_id_str = CustomCat.get_cat_id_str(cat_id)
+        maanim_paths.append(f"{cat_id_str}_{self.form_type.value}_entry.maanim")
+        maanim_paths.append(f"{cat_id_str}_{self.form_type.value}_soul.maanim")
+        return maanim_paths
+
+    def read_anim(self, cat_id: int, game_data: "core.GamePacks"):
+        self.anim = core.CustomModel()
+        self.anim.read(
+            game_data,
+            self.get_sprite_file_name(cat_id),
+            self.get_imgcut_file_name(cat_id),
+            self.get_maanim_paths(cat_id),
+            self.get_mamodel_file_name(cat_id),
+        )
 
     def apply_csv(
         self,
         name_csv: Optional["core.CSV"] = None,
         stat_csv: Optional["core.CSV"] = None,
+        game_data: Optional["core.GamePacks"] = None,
     ):
         if name_csv is not None:
             self.apply_name_desc(name_csv)
         if self.stats is not None and stat_csv is not None:
             self.stats.apply_csv(self.form_type, stat_csv)
+        if self.anim is not None and game_data is not None:
+            self.anim.apply(game_data)
 
     def apply_name_desc(self, csv: "core.CSV"):
         index = self.form_type.get_index()
         csv.index = index
 
         core.Modification.apply_csv_fields(self, csv)
+
+    def read_name_desc(self, csv: "core.CSV"):
+        index = self.form_type.get_index()
+        csv.index = index
+
+        core.Modification.read_csv_fields(self, csv)
+
+    def read_csv(
+        self,
+        name_csv: Optional["core.CSV"] = None,
+        stat_csv: Optional["core.CSV"] = None,
+        cat_id: Optional[int] = None,
+        game_data: Optional["core.GamePacks"] = None,
+    ):
+        if name_csv is not None:
+            self.read_name_desc(name_csv)
+        if stat_csv is not None:
+            self.stats = CustomCatStats()
+            self.stats.read_csv(self.form_type, stat_csv)
+        if game_data is not None and cat_id is not None:
+            self.read_anim(cat_id, game_data)
 
 
 @dataclass
@@ -184,23 +261,67 @@ class CustomCat(core.Modification):
     def apply(self, game_data: "core.GamePacks"):
         return self.apply_forms(game_data)
 
-    def apply_forms(self, game_data: "core.GamePacks"):
+    def read(self, game_data: "core.GamePacks"):
+        return self.read_forms(game_data)
+
+    @staticmethod
+    def get_cat_id_str(cat_id: int) -> str:
+        return core.PaddedInt(cat_id, 3).to_str()
+
+    @staticmethod
+    def get_name_csv(
+        game_data: "core.GamePacks", cat_id: int
+    ) -> tuple[str, Optional["core.CSV"]]:
         file_name_desc = (
-            f"Unit_Explanation{self.cat_id+1}_{game_data.localizable.get_lang()}.csv"
+            f"Unit_Explanation{cat_id+1}_{game_data.localizable.get_lang()}.csv"
         )
         name_csv = game_data.get_csv(
             file_name_desc, country_code=game_data.country_code
         )
+        return file_name_desc, name_csv
 
-        file_name_stat = f"unit{core.PaddedInt(self.cat_id+1,3 )}.csv"
+    @staticmethod
+    def get_stats_csv(
+        game_data: "core.GamePacks", cat_id: int
+    ) -> tuple[str, Optional["core.CSV"]]:
+        file_name_stat = f"unit{core.PaddedInt(cat_id+1,3 )}.csv"
         stat_csv = game_data.get_csv(file_name_stat)
+
+        return file_name_stat, stat_csv
+
+    def apply_forms(self, game_data: "core.GamePacks"):
+        file_name_desc, name_csv = CustomCat.get_name_csv(game_data, self.cat_id)
+        file_name_stat, stat_csv = CustomCat.get_stats_csv(game_data, self.cat_id)
 
         if self.forms:
             for form in self.forms.values():
-                form.apply_csv(name_csv, stat_csv)
+                form.apply_csv(name_csv, stat_csv, game_data)
 
         game_data.set_csv(file_name_desc, name_csv)
         game_data.set_csv(file_name_stat, stat_csv)
+
+    def read_forms(self, game_data: "core.GamePacks"):
+        _, name_csv = self.get_name_csv(game_data, self.cat_id)
+        _, stat_csv = self.get_stats_csv(game_data, self.cat_id)
+
+        total_forms = None
+
+        if stat_csv is not None:
+            total_forms = len(stat_csv.lines)
+        elif name_csv is not None:
+            total_forms = len(name_csv.lines)
+
+        if total_forms is None:
+            raise ValueError("Could not find name or stat csv!")
+
+        self.forms = {}
+
+        for form_index in range(total_forms):
+            form_type = core.CatFormType.from_index(form_index)
+            self.forms[form_type] = CustomForm(form_type)
+
+        for form in self.forms.values():
+            form.read_csv(name_csv, stat_csv, self.cat_id, game_data)
 
     def set_form(
         self, form: CustomForm, form_type: Optional["core.CatFormType"] = None
