@@ -8,6 +8,7 @@ from tbcml.core.io.csv_fields import (
     BoolCSVField,
     StringCSVField,
     StrListCSVField,
+    IntListCSVField,
 )
 
 from marshmallow_dataclass import dataclass
@@ -129,17 +130,69 @@ class CustomCatStats:
     def apply_csv(self, form_type: "core.CatFormType", csv: "core.CSV"):
         index = form_type.get_index()
         csv.index = index
-        required = [
+        required: list[tuple[int, int]] = [
             (55, -1),
             (57, -1),
             (63, 1),
             (66, -1),
         ]
-        core.Modification.apply_csv_fields(self, csv, required)
+        core.Modification.apply_csv_fields(self, csv, required, remove_others=False)
 
     def read_csv(self, form_type: "core.CatFormType", csv: "core.CSV"):
         index = form_type.get_index()
         csv.index = index
+        core.Modification.read_csv_fields(self, csv)
+
+
+@dataclass
+class CustomUnitBuy:
+    stage_unlock: IntCSVField = CSVField.to_field(IntCSVField, 0)
+    purchase_cost: IntCSVField = CSVField.to_field(IntCSVField, 1)
+    upgrade_costs: IntListCSVField = CSVField.to_field(IntListCSVField, 2, length=10)
+    unlock_source: IntCSVField = CSVField.to_field(IntCSVField, 12)
+    rarity: IntCSVField = CSVField.to_field(IntCSVField, 13)
+    position_order: IntCSVField = CSVField.to_field(IntCSVField, 14)
+    chapter_unlock: IntCSVField = CSVField.to_field(IntCSVField, 15)
+    sell_price: IntCSVField = CSVField.to_field(IntCSVField, 16)
+    gatya_rarity: IntCSVField = CSVField.to_field(IntCSVField, 17)
+    original_max_base: IntCSVField = CSVField.to_field(IntCSVField, 18)
+    original_max_plus: IntCSVField = CSVField.to_field(IntCSVField, 19)
+    force_tf_level: IntCSVField = CSVField.to_field(IntCSVField, 20)
+    second_form_unlock_level: IntCSVField = CSVField.to_field(IntCSVField, 21)
+    unknown_22: IntCSVField = CSVField.to_field(IntCSVField, 22)
+    tf_id: IntCSVField = CSVField.to_field(IntCSVField, 23)
+    uf_id: IntCSVField = CSVField.to_field(IntCSVField, 24)
+    evolve_level_tf: IntCSVField = CSVField.to_field(IntCSVField, 25)
+    evolve_level_uf: IntCSVField = CSVField.to_field(IntCSVField, 26)
+    evolve_cost_tf: IntCSVField = CSVField.to_field(IntCSVField, 27)
+    evolve_items_tf: IntListCSVField = CSVField.to_field(
+        IntListCSVField, 28, length=5 * 2
+    )
+    evolve_cost_ff: IntCSVField = CSVField.to_field(IntCSVField, 38)
+    evolve_items_uf: IntListCSVField = CSVField.to_field(
+        IntListCSVField, 39, length=5 * 2
+    )
+    max_base_no_catseye: IntCSVField = CSVField.to_field(IntCSVField, 49)
+    max_base_catseye: IntCSVField = CSVField.to_field(IntCSVField, 50)
+    max_plus: IntCSVField = CSVField.to_field(IntCSVField, 51)
+    gatya_ofset_y_1st: IntCSVField = CSVField.to_field(IntCSVField, 52)
+    gatya_ofset_y_2nd: IntCSVField = CSVField.to_field(IntCSVField, 53)
+    gatya_ofset_y_3rd: IntCSVField = CSVField.to_field(IntCSVField, 54)
+    gatya_ofset_y_4th: IntCSVField = CSVField.to_field(IntCSVField, 55)
+    catseye_usage_pattern: IntCSVField = CSVField.to_field(IntCSVField, 56)
+    game_version: IntCSVField = CSVField.to_field(IntCSVField, 57)
+    np_sell_price: IntCSVField = CSVField.to_field(IntCSVField, 58)
+    unknown_59: IntCSVField = CSVField.to_field(IntCSVField, 59)
+    unknown_60: IntCSVField = CSVField.to_field(IntCSVField, 60)
+    egg_val: IntCSVField = CSVField.to_field(IntCSVField, 61)
+    egg_id: IntCSVField = CSVField.to_field(IntCSVField, 62)
+
+    def apply_csv(self, cat_id: int, csv: "core.CSV"):
+        csv.index = cat_id
+        core.Modification.apply_csv_fields(self, csv, remove_others=False)
+
+    def read_csv(self, cat_id: int, csv: "core.CSV"):
+        csv.index = cat_id
         core.Modification.read_csv_fields(self, csv)
 
 
@@ -246,7 +299,7 @@ class CustomForm:
         index = self.form_type.get_index()
         csv.index = index
 
-        core.Modification.apply_csv_fields(self, csv)
+        core.Modification.apply_csv_fields(self, csv, remove_others=False)
 
     def read_name_desc(self, csv: "core.CSV"):
         index = self.form_type.get_index()
@@ -279,6 +332,7 @@ class CustomForm:
 class CustomCat(core.Modification):
     cat_id: int = field(metadata={"required": True})
     forms: Optional[dict["core.CatFormType", CustomForm]] = None
+    unitbuy: Optional[CustomUnitBuy] = None
     modification_type: core.ModificationType = core.ModificationType.CAT
 
     def __post_init__(
@@ -286,11 +340,23 @@ class CustomCat(core.Modification):
     ):  # This is required for CustomCat.Schema to not be a string for some reason
         CustomCat.Schema()
 
+    def get_unitbuy(self) -> "CustomUnitBuy":
+        if self.unitbuy is None:
+            self.unitbuy = CustomUnitBuy()
+        return self.unitbuy
+
     def apply(self, game_data: "core.GamePacks"):
-        return self.apply_forms(game_data)
+        self.apply_forms(game_data)
+
+        name, csv = self.get_unit_buy_csv(game_data)
+
+        self.apply_unit_buy(csv)
+
+        game_data.set_csv(name, csv)
 
     def read(self, game_data: "core.GamePacks"):
-        return self.read_forms(game_data)
+        self.read_forms(game_data)
+        self.read_unit_buy(game_data)
 
     @staticmethod
     def get_cat_id_str(cat_id: int) -> str:
@@ -317,6 +383,19 @@ class CustomCat(core.Modification):
 
         return file_name_stat, stat_csv
 
+    @staticmethod
+    def get_unit_buy_csv(
+        game_data: "core.GamePacks",
+    ) -> tuple[str, Optional["core.CSV"]]:
+        file_name = f"unitbuy.csv"
+        csv = game_data.get_csv(file_name)
+
+        return file_name, csv
+
+    def apply_unit_buy(self, unit_buy_csv: Optional["core.CSV"]):
+        if self.unitbuy is not None and unit_buy_csv is not None:
+            self.unitbuy.apply_csv(self.cat_id, unit_buy_csv)
+
     def apply_forms(self, game_data: "core.GamePacks"):
         file_name_desc, name_csv = CustomCat.get_name_csv(game_data, self.cat_id)
         file_name_stat, stat_csv = CustomCat.get_stats_csv(game_data, self.cat_id)
@@ -327,6 +406,14 @@ class CustomCat(core.Modification):
 
         game_data.set_csv(file_name_desc, name_csv)
         game_data.set_csv(file_name_stat, stat_csv)
+
+    def read_unit_buy_csv(self, csv: Optional["core.CSV"]):
+        if csv is None:
+            return
+        self.get_unitbuy().read_csv(self.cat_id, csv)
+
+    def read_unit_buy(self, game_data: "core.GamePacks"):
+        self.read_unit_buy_csv(self.get_unit_buy_csv(game_data)[1])
 
     def read_forms(self, game_data: "core.GamePacks"):
         _, name_csv = self.get_name_csv(game_data, self.cat_id)
