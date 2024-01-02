@@ -1,0 +1,145 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Cache-Control" content="no-store">
+  <meta http-equiv="Cache-Control" content="no-cache">
+  <meta http-equiv="Expires" content="-1">
+  <meta name="viewport"
+    content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=0,viewport-fit=cover">
+  <style type="text/css">
+    html {
+      height: 100%;
+    }
+
+    body {
+      height: 100%;
+      background-color: #eada8f;
+      font-size: small;
+      padding: 0px;
+      margin: 0px;
+      font-family: 'ヒラギノ角ゴ Pro W3', 'Hiragino Kaku Gothic Pro', 'メイリオ', Meiryo, Osaka, 'ＭＳ Ｐゴシック', 'MS PGothic', sans-serif;
+      -webkit-text-size-adjust: none;
+    }
+
+    /*画像の変な空白を無くす　全ての画像に適用*/
+    img {
+      vertical-align: bottom;
+    }
+
+    .midashi {
+      font-size: medium;
+      font-weight: bold;
+      width: 70%;
+      color: #F60;
+    }
+
+    .midashi2 {
+      font-size: x-large;
+      font-weight: bold;
+      width: 70%;
+      color: #630;
+      text-decoration: none;
+      text-shadow: 0 -1px 1px rgba(0, 0, 0, 0.2), 0 1px 1px rgba(0, 0, 0, 0.1);
+    }
+
+    .futoji {
+      font-size: large;
+      font-weight: bold;
+      width: 70%;
+      color: #333;
+      text-decoration: none;
+    }
+
+    .midashi_title {
+      background-color: #000000;
+      background: -webkit-gradient(linear, left top, left bottom, color-stop(1.00, #474747), color-stop(0.51, #0a0f0b), color-stop(0.50, #6d7673), color-stop(0.00, #afbdc0));
+      background: -webkit-linear-gradient (top, #afbdc0 0%, #6d7673 50%, #0a0f0b 51%, #474747 100%);
+      background: -moz-linear-gradient (top, #afbdc0 0%, #6d7673 50%, #0a0f0b 51%, #474747 100%);
+      background: -o-linear-gradient (top, #afbdc0 0%, #6d7673 50%, #0a0f0b 51%, #474747 100%);
+      background: -ms-linear-gradient (top, #afbdc0 0%, #6d7673 50%, #0a0f0b 51%, #474747 100%);
+      background: linear-gradient (top, #afbdc0 0%, #6d7673 50%, #0a0f0b 51%, #474747 100%);
+      font-size: large;
+      color: #FFF;
+      text-shadow: 0 -1px 1px rgba(0, 0, 0, 0.9), 0 1px 1px rgba(255, 255, 255, 0.5);
+      font-weight: bold;
+      border-top-width: 4px;
+      border-top-style: solid;
+      border-top-color: #000;
+      border-bottom-width: 4px;
+      border-bottom-style: solid;
+      border-bottom-color: #000;
+      padding-top: 2px;
+      padding-left: 10px;
+      padding-bottom: 2px;
+    }
+
+    .moji {
+      font-size: small;
+      color: #430;
+      padding-top: 2px;
+      padding-left: 10px;
+      padding-bottom: 2px;
+    }
+
+    .iro {
+      color: #0A0;
+      font-weight: bold;
+    }
+
+    .Buttonbig {
+      display: inline-block;
+      font-size: large;
+      font-weight: bold;
+      width: 70%;
+      color: #FFF;
+      text-decoration: none;
+      text-shadow: 0 -1px 1px rgba(0, 0, 0, 0.2), 0 1px 1px rgba(0, 0, 0, 1);
+      -webkit-box-shadow: inset 0px 1px 1px 0 rgba(255, 255, 255, 0.9);
+      box-shadow: inset 0px 1px 1px 0 rgba(255, 255, 255, 0.9);
+      -webkit-box-shadow: 0px 1px 2px 0px rgba(0, 0, 0, 0.4);
+      box-shadow: 0px 1px 2px 0px rgba(0, 0, 0, 0.4);
+      border-width: 2px;
+      border-color: #000;
+      border-style: solid;
+      border-radius: 2px;
+      background: -webkit-gradient(linear, left top, left bottom, color-stop(1.00, #ca9000), color-stop(0.00, #ffc200));
+      background: -webkit-linear-gradient(#ffd10a, #eb8900);
+      background: -moz-linear-gradient(#ffd10a, #eb8900);
+      background: -o-linear-gradient(#ffd10a, #eb8900);
+      background: -ms-linear-gradient(#ffd10a, #eb8900);
+      background: linear-gradient(#ffd10a, #eb8900);
+      padding: 8px;
+      margin-bottom: 0px;
+      text-align: center;
+      border-radius: 16px;
+    }
+  </style>
+  <link rel="stylesheet" type="text/css" href="kisyuhen.css" />
+
+  <title>Save Data Transfer</title>
+</head>
+
+<body>
+  <div align="center" style="height:100%">
+    <div id="main_area">
+
+      <img src="img_friend02.png" width="100%"><br>
+      <span class="midashi2">Mod List</span><br>
+      <span style="font-size:small">
+        See all mods you have applied to your game here<br>
+        Click on a mod to see its metadata as well as other options<br>
+        <span style="color:#990000">Modded APK created using <a
+            href="https://github.com/fieryhenry/tbcml">TBCML</a>.</span><br>
+      </span>
+      <hr noshade width="97%" color="#E2AF27">
+      {{MODS_LIST}}
+
+      <img src="img_friend03.png" width="100%"><br>
+    </div>
+  </div>
+</body>
+
+</html>

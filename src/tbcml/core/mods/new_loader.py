@@ -101,13 +101,20 @@ class NewModLoader:
         custom_enc_key: Optional[str] = None,
         custom_enc_iv: Optional[str] = None,
         open_path: bool = False,
+        add_modded_html: bool = True,
     ):
         if self.apk is None:
             raise Exception("APK not initialized. Call initialize() first.")
         if isinstance(mods, core.NewMod):
             mods = [mods]
 
-        self.apk.load_mods_new(mods, self.game_packs, custom_enc_key, custom_enc_iv)
+        self.apk.load_mods_new(
+            mods,
+            self.game_packs,
+            custom_enc_key,
+            custom_enc_iv,
+            add_modded_html=add_modded_html,
+        )
 
         if open_path:
             self.apk.output_path.open()

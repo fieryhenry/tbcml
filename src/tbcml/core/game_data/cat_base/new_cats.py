@@ -681,3 +681,8 @@ class CustomCat(core.Modification):
     def pre_to_json(self):
         for form in (self.forms or {}).values():
             form.pre_to_json()
+
+    def get_custom_html(self) -> str:
+        names = [form.name.get_value() for form in (self.forms or {}).values()]
+        name_str = ", ".join(names)
+        return f'<span style="color:#000">{name_str} (cat id: {self.cat_id})</span>'
