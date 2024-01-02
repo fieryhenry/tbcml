@@ -217,6 +217,84 @@ class CustomNyankoPictureBook:
 
 
 @dataclass
+class CustomTalent:
+    ability_id: IntCSVField = CSVField.to_field(IntCSVField, 2)
+    max_level: IntCSVField = CSVField.to_field(IntCSVField, 3)
+    min_1: IntCSVField = CSVField.to_field(IntCSVField, 4)
+    max_1: IntCSVField = CSVField.to_field(IntCSVField, 5)
+    min_2: IntCSVField = CSVField.to_field(IntCSVField, 6)
+    max_2: IntCSVField = CSVField.to_field(IntCSVField, 7)
+    min_3: IntCSVField = CSVField.to_field(IntCSVField, 8)
+    max_3: IntCSVField = CSVField.to_field(IntCSVField, 9)
+    min_4: IntCSVField = CSVField.to_field(IntCSVField, 10)
+    max_4: IntCSVField = CSVField.to_field(IntCSVField, 11)
+    text_id: IntCSVField = CSVField.to_field(IntCSVField, 12)
+    np_cost_set: IntCSVField = CSVField.to_field(IntCSVField, 13)  # levelID
+    name_id: IntCSVField = CSVField.to_field(IntCSVField, 14)
+    ultra: BoolCSVField = CSVField.to_field(BoolCSVField, 15)  # limit
+
+    def apply_csv(self, index: int, field_offset: int, csv: "core.CSV"):
+        csv.index = index
+        core.Modification.apply_csv_fields(
+            self, csv, remove_others=False, field_offset=field_offset
+        )
+
+    def read_csv(self, index: int, field_offset: int, csv: "core.CSV"):
+        csv.index = index
+        core.Modification.read_csv_fields(self, csv, field_offset=field_offset)
+
+
+@dataclass
+class CustomTalents:
+    cat_id: IntCSVField = CSVField.to_field(IntCSVField, 0)
+    type_id: IntCSVField = CSVField.to_field(IntCSVField, 1)
+    talents: list[CustomTalent] = field(default_factory=lambda: [])
+
+    @staticmethod
+    def find_index(cat_id: int, csv: "core.CSV") -> Optional[int]:
+        for _ in csv:
+            try:
+                if int(csv.get_str(0)) == cat_id:
+                    return csv.index
+            except (IndexError, ValueError):
+                continue
+        return None
+
+    def apply_csv(self, cat_id: int, csv: "core.CSV"):
+        self.cat_id.set(cat_id)
+        index = CustomTalents.find_index(cat_id, csv) or len(csv.lines)
+        csv.index = index
+        core.Modification.apply_csv_fields(self, csv, remove_others=False)
+        line_length = len(csv.get_current_line() or [])
+        total_talents = (line_length - 2) // 14
+        if total_talents < 0:
+            return
+        for i in range(total_talents):
+            try:
+                talent = self.talents[i]
+            except IndexError:
+                talent = CustomTalent()
+            talent.apply_csv(index, i * 14, csv)
+
+    def read_csv(self, cat_id: int, csv: "core.CSV") -> bool:
+        index = CustomTalents.find_index(cat_id, csv)
+        if index is None:
+            return False
+        csv.index = index
+        core.Modification.read_csv_fields(self, csv)
+        line_length = len(csv.get_current_line() or [])
+        total_talents = (line_length - 2) // 14
+        if total_talents < 0:
+            return False
+        self.talents = []
+        for i in range(total_talents):
+            talent = CustomTalent()
+            talent.read_csv(index, i * 14, csv)
+            self.talents.append(talent)
+        return True
+
+
+@dataclass
 class CustomForm:
     form_type: "core.CatFormType" = field(metadata={"required": True})
     name: StringCSVField = CSVField.to_field(StringCSVField, 0)
@@ -388,11 +466,17 @@ class CustomCat(core.Modification):
     nyanko_picture_book: Optional[CustomNyankoPictureBook] = None
     modification_type: core.ModificationType = core.ModificationType.CAT
     evolve_text: Optional[CustomEvolveText] = None
+    talents: Optional[CustomTalents] = None
 
     def __post_init__(
         self,
     ):  # This is required for CustomCat.Schema to not be a string for some reason
         CustomCat.Schema()
+
+    def get_talents(self) -> CustomTalents:
+        if self.talents is None:
+            self.talents = CustomTalents()
+        return self.talents
 
     def get_evolve_text(self) -> CustomEvolveText:
         if self.evolve_text is None:
@@ -424,10 +508,15 @@ class CustomCat(core.Modification):
         self.apply_evolve_text(csv)
         game_data.set_csv(name, csv)
 
+        name, csv = self.get_talents_csv(game_data)
+        self.apply_talents(csv)
+        game_data.set_csv(name, csv)
+
     def read(self, game_data: "core.GamePacks"):
         self.read_forms(game_data)
         self.read_unit_buy(game_data)
         self.read_nyanko_picture_book(game_data)
+        self.read_talents(game_data)
 
     @staticmethod
     def get_cat_id_str(cat_id: int) -> str:
@@ -481,6 +570,15 @@ class CustomCat(core.Modification):
 
         return file_name, csv
 
+    @staticmethod
+    def get_talents_csv(
+        game_data: "core.GamePacks",
+    ) -> tuple[str, Optional["core.CSV"]]:
+        file_name = f"SkillAcquisition.csv"
+        csv = game_data.get_csv(file_name)
+
+        return file_name, csv
+
     def apply_unit_buy(self, unit_buy_csv: Optional["core.CSV"]):
         if self.unitbuy is not None and unit_buy_csv is not None:
             self.unitbuy.apply_csv(self.cat_id, unit_buy_csv)
@@ -492,6 +590,10 @@ class CustomCat(core.Modification):
     def apply_evolve_text(self, evolve_text_csv: Optional["core.CSV"]):
         if self.evolve_text is not None and evolve_text_csv is not None:
             self.evolve_text.apply_csv(self.cat_id, evolve_text_csv)
+
+    def apply_talents(self, talents_csv: Optional["core.CSV"]):
+        if self.talents is not None and talents_csv is not None:
+            self.talents.apply_csv(self.cat_id, talents_csv)
 
     def apply_forms(self, game_data: "core.GamePacks"):
         file_name_desc, name_csv = CustomCat.get_name_csv(game_data, self.cat_id)
@@ -519,6 +621,12 @@ class CustomCat(core.Modification):
             return
         self.get_evolve_text().read_csv(self.cat_id, csv)
 
+    def read_talents_csv(self, csv: Optional["core.CSV"]):
+        if csv is None:
+            return
+        if not self.get_talents().read_csv(self.cat_id, csv):
+            self.talents = None
+
     def read_unit_buy(self, game_data: "core.GamePacks"):
         self.read_unit_buy_csv(self.get_unit_buy_csv(game_data)[1])
 
@@ -529,6 +637,9 @@ class CustomCat(core.Modification):
 
     def read_evolve_text(self, game_data: "core.GamePacks"):
         self.read_evolve_text_csv(self.get_evolve_text_csv(game_data)[1])
+
+    def read_talents(self, game_data: "core.GamePacks"):
+        self.read_talents_csv(self.get_talents_csv(game_data)[1])
 
     def read_forms(self, game_data: "core.GamePacks"):
         _, name_csv = self.get_name_csv(game_data, self.cat_id)
