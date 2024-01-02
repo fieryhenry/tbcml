@@ -35,6 +35,7 @@ class Modification:
         csv: "core.CSV",
         required_values: Optional[Sequence[tuple[int, Union[str, int]]]] = None,
         remove_others: bool = True,
+        field_offset: int = 0,
     ):
         if not hasattr(obj, "__dataclass_fields__"):
             raise ValueError("obj is not a dataclass!")
@@ -46,6 +47,7 @@ class Modification:
             name = field.name
             value = getattr(obj, name)
             if isinstance(value, core.CSVField):
+                value.col_index += field_offset
                 csv_fields.append(value)  # type: ignore
 
         if remove_others:
@@ -62,11 +64,13 @@ class Modification:
                 csv.set_str(val, ind)
 
             value.write_to_csv(csv)
+            value.col_index -= field_offset
 
     @staticmethod
     def read_csv_fields(
         obj: Any,
         csv: "core.CSV",
+        field_offset: int = 0,
     ):
         if not hasattr(obj, "__dataclass_fields__"):
             raise ValueError("obj is not a dataclass!")
@@ -75,7 +79,9 @@ class Modification:
             name = field.name
             value = getattr(obj, name)
             if isinstance(value, core.CSVField):
+                value.col_index += field_offset
                 value.read_from_csv(csv)
+                value.col_index -= field_offset
 
     def pre_to_json(self) -> None:
         raise NotImplementedError
