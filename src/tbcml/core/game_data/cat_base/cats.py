@@ -1743,7 +1743,6 @@ class Cat:
             self.nyanko_picture_book_data = NyankoPictureBookData.create_empty(
                 self.cat_id
             )
-            self.nyanko_picture_book_data.total_forms = len(self.forms)
 
         return new_form
 
