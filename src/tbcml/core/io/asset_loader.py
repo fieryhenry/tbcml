@@ -1,3 +1,4 @@
+from typing import Union
 from tbcml import core
 
 try:
@@ -21,8 +22,8 @@ class AssetLoader:
         return QtGui.QIcon(str(self.get_stlye_file_path(path)))
 
     @staticmethod
-    def get_asset_file_path(local_path: str) -> "core.Path":
-        return core.Path(is_relative=True).add("assets", local_path)
+    def get_asset_file_path(local_path: Union[str, "core.Path"]) -> "core.Path":
+        return core.Path(is_relative=True).add("assets").add(local_path)
 
     def load_icon(self, path: str) -> "QtGui.QIcon":
         return QtGui.QIcon(str(self.get_asset_file_path(path)))
