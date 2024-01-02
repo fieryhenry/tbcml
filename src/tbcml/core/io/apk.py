@@ -140,6 +140,11 @@ class Apk:
             if not filecmp.cmp(extracted_file.path, original_file.path):
                 original_file.copy(extracted_file)
 
+        for extracted_file in self.extracted_path.get_files_recursive():
+            original_file = self.get_original_extracted_path(extracted_file)
+            if not original_file.exists():
+                extracted_file.remove()
+
     @staticmethod
     def run_apktool(command: str) -> "core.CommandResult":
         apktool_path = core.Path.get_lib("apktool.jar")
@@ -955,6 +960,13 @@ class Apk:
             self.add_to_lib_folder(architecture, script_path)
             script_path.remove()
 
+    def add_libgadget_scripts_new(self, scripts: dict[str, str]):
+        for architecture, script_str in scripts.items():
+            script_path = self.temp_path.add("libbc_script.js.so")
+            core.Data(script_str).to_file(script_path)
+            self.add_to_lib_folder(architecture, script_path)
+            script_path.remove()
+
     @staticmethod
     def get_libgadgets_path(
         lib_gadgets_folder: Optional["core.Path"] = None,
@@ -1000,6 +1012,12 @@ class Apk:
         self.add_libgadget_scripts(scripts)
         self.add_libgadget_sos(used_arcs)
 
+    def add_frida_scripts_new(self, scripts: dict[str, str]):
+        used_arcs = list(scripts.keys())
+        self.add_libgadget_config(used_arcs)
+        self.add_libgadget_scripts_new(scripts)
+        self.add_libgadget_sos(used_arcs)
+
     def add_patches(self, patches: "core.LibPatches"):
         for patch in patches.lib_patches:
             self.add_patch(patch)
@@ -1026,6 +1044,53 @@ class Apk:
 
     def set_allowed_script_mods(self, allowed: bool):
         self.allowed_script_mods = allowed
+
+    def add_script_mods_new(
+        self, bc_mods: list["core.NewMod"], add_base_script: bool = True
+    ):
+        if not bc_mods:
+            return
+        if not self.is_allowed_script_mods():
+            return
+        scripts: dict[str, str] = {}
+        for mod in bc_mods:
+            scripts_str = mod.get_scripts_str(self)
+            for arc, string in scripts_str.items():
+                if arc not in scripts:
+                    scripts[arc] = ""
+                scripts[arc] += string + "\n"
+
+        if add_base_script:
+            base_script = core.NewFridaScript.get_base_script()
+            for arc in scripts.keys():
+                scripts[arc] += base_script
+
+        if scripts:
+            self.add_frida_scripts_new(scripts)
+
+    def add_modded_html_new(self, mods: list["core.NewMod"]):
+        transfer_screen_path = core.AssetLoader.get_asset_file_path(
+            core.Path("html").add("kisyuhen_01_top_en.html")  # TODO: different locales
+        )
+        modlist_path = core.AssetLoader.get_asset_file_path(
+            core.Path("html").add("modlist.html")
+        )
+
+        self.add_asset(transfer_screen_path)
+
+        mod_str = ""
+        for i, mod in enumerate(mods):
+            html = mod.get_custom_html()
+            mod_path = f"mod_{i}.html"
+            mod_str += (
+                f'<br><a href="{mod_path}" class="Buttonbig">{mod.name}</a><br><br>'
+            )
+            self.add_asset_data(core.Path(mod_path), core.Data(html))
+
+        modlist_html = modlist_path.read().to_str()
+        modlist_html = modlist_html.replace("{{MODS_LIST}}", mod_str)
+
+        self.add_asset_data(core.Path("modlist.html"), core.Data(modlist_html))
 
     def add_script_mods(self, bc_mods: list["core.Mod"]):
         if not bc_mods:
@@ -1083,6 +1148,9 @@ class Apk:
 
     def add_asset(self, asset_path: "core.Path"):
         asset_path.copy(self.extracted_path.add("assets").add(asset_path.basename()))
+
+    def add_asset_data(self, asset_path: "core.Path", asset_data: "core.Data"):
+        self.extracted_path.add("assets").add(asset_path).write(asset_data)
 
     def remove_asset(self, asset_path: "core.Path"):
         self.extracted_path.add("assets").add(asset_path.basename()).remove()
@@ -1305,12 +1373,18 @@ class Apk:
         game_packs: Optional["core.GamePacks"] = None,
         key: Optional[str] = None,
         iv: Optional[str] = None,
+        add_modded_html: bool = True,
     ):
         if game_packs is None:
             game_packs = core.GamePacks.from_apk(self)
         game_packs.apply_mods_new(mods)
         self.set_allow_backup(True)
         self.set_debuggable(True)
+
+        self.add_script_mods_new(mods)
+
+        if add_modded_html:
+            self.add_modded_html_new(mods)
 
         if key is not None:
             self.set_key(key)

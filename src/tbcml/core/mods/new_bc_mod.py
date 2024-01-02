@@ -9,6 +9,12 @@ class ModificationType(enum.Enum):
     CAT = "cat"
 
 
+class ModPaths(enum.Enum):
+    MODIFICATIONS = "modifications"
+    SCRIPTS = "scripts"
+    METADATA = "metadata.json"
+
+
 T = TypeVar("T")
 
 
@@ -86,24 +92,34 @@ class Modification:
     def pre_to_json(self) -> None:
         raise NotImplementedError
 
+    def get_custom_html(self) -> str:
+        return ""
+
 
 class NewMod:
     def __init__(
         self,
         name: str = "",
-        author: str = "",
+        authors: Union[str, list[str]] = "",
         description: str = "",
+        custom_html: Optional[str] = None,
     ):
         self.name = name
-        self.author = author
+        if isinstance(authors, str):
+            authors = [authors]
+        self.authors = authors
         self.description = description
+        self.custom_html = custom_html
+
         self.modifications: list[Modification] = []
+        self.scripts: list[core.NewFridaScript] = []
 
     def metadata_to_json(self) -> str:
         data = {
             "name": self.name,
-            "author": self.author,
+            "authors": self.authors,
             "description": self.description,
+            "custom_html": self.custom_html,
         }
         return json.dumps(data)
 
@@ -111,41 +127,48 @@ class NewMod:
     def metadata_from_json(data: str):
         obj = json.loads(data)
         name = obj.get("name", "")
-        author = obj.get("author", "")
+        authors = obj.get("authors", "")
         description = obj.get("description", "")
+        custom_html = obj.get("custom_html", None)
         return NewMod(
             name=name,
-            author=author,
+            authors=authors,
             description=description,
+            custom_html=custom_html,
         )
 
     def to_zip(self) -> "core.Data":
         zipfile = core.Zip()
         metadata_json = self.metadata_to_json()
-        metadata_file_name = core.Path("metadata.json")
+        metadata_file_name = core.Path(ModPaths.METADATA.value)
         zipfile.add_file(metadata_file_name, core.Data(metadata_json))
 
         for i, modification in enumerate(self.modifications):
             filepath = (
-                core.Path("modifications")
+                core.Path(ModPaths.MODIFICATIONS.value)
                 .add(modification.modification_type.value)
                 .add(f"{i}.json")
             )
             json_data = modification.to_json()
             zipfile.add_file(filepath, core.Data(json_data))
 
+        for i, script in enumerate(self.scripts):
+            script.add_to_zip(i, zipfile)
+
         return zipfile.to_data()
 
     @staticmethod
     def from_zip(data: "core.Data") -> "NewMod":
         zipfile = core.Zip(data)
-        metadata_file_name = core.Path("metadata.json")
+        metadata_file_name = core.Path(ModPaths.METADATA.value)
         metadata_json = zipfile.get_file(metadata_file_name)
         if metadata_json is None:
             return NewMod()
         mod = NewMod.metadata_from_json(metadata_json.to_str())
 
-        for path in zipfile.get_paths_in_folder(core.Path("modifications")):
+        for path in zipfile.get_paths_in_folder(
+            core.Path(ModPaths.MODIFICATIONS.value)
+        ):
             if not path.get_extension() == "json":
                 continue
             modification_type = path.parent().basename()
@@ -157,6 +180,10 @@ class NewMod:
             )
             mod.add_modification(modifiction)
 
+        for path in zipfile.get_paths_in_folder(core.Path(ModPaths.SCRIPTS.value)):
+            script = core.NewFridaScript.from_json(path.read().to_str())
+            mod.add_script(script)
+
         return mod
 
     def save(self, path: "core.Path"):
@@ -164,6 +191,19 @@ class NewMod:
 
     def add_modification(self, modification: "Modification"):
         self.modifications.append(modification)
+
+    def add_script(self, script: "core.NewFridaScript"):
+        self.scripts.append(script)
+
+    def get_scripts_str(self, apk: "core.Apk"):
+        scripts_dict: dict[str, str] = {}
+        for script in self.scripts:
+            scripts_str = script.get_scripts_str(apk, self.name, self.authors)
+            for arc, string in scripts_str.items():
+                if arc not in scripts_dict:
+                    scripts_dict[arc] = ""
+                scripts_dict[arc] += string + "\n"
+        return scripts_dict
 
     def apply_modifications(self, game_packs: "core.GamePacks"):
         for modification in self.modifications:
@@ -193,3 +233,25 @@ class NewMod:
             raise ValueError("Invalid Modification")
 
         return Modification.from_json(cls, modification_dt)
+
+    def get_custom_html(self) -> str:
+        if self.custom_html is not None:
+            return self.custom_html
+        base_mod = (
+            core.AssetLoader.get_asset_file_path(core.Path("html").add("base_mod.html"))
+            .read()
+            .to_str()
+        )
+
+        base_mod = base_mod.replace("{{MOD_NAME}}", self.name)
+        base_mod = base_mod.replace("{{MOD_AUTHORS}}", ", ".join(self.authors))
+        base_mod = base_mod.replace("{{MOD_DESCRIPTION}}", self.description)
+
+        modifications_str = ""
+
+        for modification in self.modifications:
+            html = modification.get_custom_html()
+            modifications_str += f'<br><span class="iro">[{modification.modification_type.name}] </span>{html}<br>'
+
+        base_mod = base_mod.replace("{{MODIFICATIONS}}", modifications_str)
+        return base_mod

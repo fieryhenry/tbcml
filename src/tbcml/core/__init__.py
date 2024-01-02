@@ -9,9 +9,11 @@ from .mods.new_bc_mod import (
     NewMod,
     Modification,
     ModificationType,
+    ModPaths,
 )
 from .mods.smali import SmaliHandler, SmaliSet, Smali
 from .mods.frida_script import FridaScripts, FridaScript, FridaGadgetHelper
+from .mods.new_frida_script import NewFridaScript
 from .mods.mod_manager import ModManager
 from .mods.editable import EditableClass
 from .mods.loader import ModLoader
@@ -190,6 +192,7 @@ __all__ = [
     "StringCSVField",
     "StrListCSVField",
     "Modification",
+    "ModPaths",
     "NewMod",
     "ModEditValueHandler",
     "Dependency",
@@ -197,6 +200,7 @@ __all__ = [
     "SmaliHandler",
     "SmaliSet",
     "Smali",
+    "NewFridaScript",
     "FridaScripts",
     "FridaScript",
     "FridaGadgetHelper",
