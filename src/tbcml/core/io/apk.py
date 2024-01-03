@@ -1083,7 +1083,7 @@ class Apk:
         if add_base_script:
             base_script = core.NewFridaScript.get_base_script()
             for arc in scripts.keys():
-                scripts[arc] += base_script
+                scripts[arc] = base_script.replace("// {{SCRIPTS}}", scripts[arc])
 
         if scripts:
             self.add_frida_scripts_new(
