@@ -63,7 +63,11 @@ function log(message, level = "info") {
 
 
 function getBaseAddress() {
-    return Module.findBaseAddress("libnative-lib.so").add(4096); // offset due to libgadget being added
+    let base_address = Module.findBaseAddress("libnative-lib.so")
+    if (base_address == null) {
+        return null;
+    }
+    return base_address.add(4096); // offset due to libgadget being added
 }
 
 function readStdString(address) {
