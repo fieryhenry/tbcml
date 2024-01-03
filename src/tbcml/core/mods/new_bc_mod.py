@@ -106,6 +106,14 @@ class NewMod:
         description: str = "",
         custom_html: Optional[str] = None,
     ):
+        """Initialize a mod
+
+        Args:
+            name (str, optional): The name of the mod, should be relatively short. Defaults to "".
+            authors (Union[str, list[str]], optional): The authors of the mod, can either be a single string e.g `"fieryhenry"`, but can be a list of names e.g `["fieryhenry", "enderelijas"]`. Defaults to "".
+            description (str, optional): Description of the mod, can be a longer string. Defaults to "".
+            custom_html (Optional[str], optional): The HTML to load when the user clicks this mod in the transfer menu mod list. Defaults to None which means that tbcml will create a basic page for you.
+        """
         self.name = name
         if isinstance(authors, str):
             authors = [authors]
