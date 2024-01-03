@@ -82,7 +82,7 @@ class SmaliSet:
         Args:
             zip_file (core.Zip): The zip file to add the SmaliSet to
         """
-        base_path = core.Path("smali")
+        base_path = core.Path(core.ModPaths.SMALI.value)
         for smali in self.smali_edits.values():
             json_data = core.JsonFile.from_object(
                 {"function_sig_to_call": smali.function_sig_to_call}
@@ -103,7 +103,7 @@ class SmaliSet:
         Returns:
             SmaliSet: The created SmaliSet
         """
-        base_path = core.Path("smali")
+        base_path = core.Path(core.ModPaths.SMALI.value)
         smali_edits = {}
         for file in zip_file.get_paths():
             if not file.path.startswith(base_path.to_str_forwards()):
@@ -154,7 +154,7 @@ class SmaliHandler:
     """Injects smali into an apk.
     https://github.com/ksg97031/frida-gadget"""
 
-    def __init__(self, apk: "core.Apk"):
+    def __init__(self, apk: "core.Apk", decode_resources: bool = True):
         """Initializes the SmaliHandler
 
         Args:
@@ -165,7 +165,7 @@ class SmaliHandler:
             ImportError: If the androguard module could not be imported
         """
         self.apk = apk
-        self.apk.extract_smali()
+        self.apk.extract_smali(decode_resources=decode_resources)
         if APK is None:
             raise ImportError(
                 "Please pip install tbcml[scripting] to use the smali module"
@@ -259,14 +259,22 @@ class SmaliHandler:
     const-string v0, "{library_name}"
     invoke-static {{v0}}, Ljava/lang/System;->loadLibrary(Ljava/lang/String;)V
 
-    const-string v0, "Loaded {library_name}"
-    const-string v1, "TBCML"
+    const-string v0, "tbcml"
+    const-string v1, "Loaded {library_name}"
     invoke-static {{v0, v1}}, Landroid/util/Log;->d(Ljava/lang/String;Ljava/lang/String;)I
-        """
+    """
 
         for i, line in enumerate(text):
             if line.startswith(".method") and "onCreate(" in line:
                 text.insert(i + 3, inject_text)
+
+                # find .locals
+                for j, line in enumerate(text[i:]):
+                    if line.strip().startswith(".locals"):
+                        current_count = int(line.strip().split(" ")[1])
+                        text[i + j] = f"    .locals {current_count + 1}"
+                        break
+
                 break
 
         text = "\n".join(text)
