@@ -1,6 +1,7 @@
 from dataclasses import field
 from typing import Optional
 from tbcml import core
+import copy
 
 from tbcml.core.io.csv_fields import (
     IntCSVField,
@@ -40,6 +41,18 @@ class CustomTextureMetadata:
     def apply_csv(self, csv: "core.CSV"):
         core.Modification.apply_csv_fields(self, csv)
 
+    def set_unit_form(self, form: str):
+        name = self.img_name.get()
+        parts = name.split("_")
+        id = parts[0]
+        self.img_name.set(f"{id}_{form}.png")
+
+    def set_id(self, id: str):
+        name = self.img_name.get()
+        parts = name.split("_")
+        form = parts[1]
+        self.img_name.set(f"{id}_{form}")
+
 
 @dataclass
 class CustomTexture:
@@ -59,7 +72,7 @@ class CustomTexture:
     def read_csv(self, csv: "core.CSV"):
         self.rects = []
         self.metadata.read_csv(csv)
-        for i in range(self.metadata.total_rects.get_value()):
+        for i in range(self.metadata.total_rects.get()):
             index = i + 4
             rect = CustomRect()
             rect.read_csv(index, csv)
@@ -75,10 +88,18 @@ class CustomTexture:
         self.apply_img(game_data)
 
     def apply_img(self, game_data: "core.GamePacks"):
-        game_data.set_img(self.metadata.img_name.get_value(), self.image)
+        game_data.set_img(self.metadata.img_name.get(), self.image)
 
     def read_img(self, game_data: "core.GamePacks", img_name: str):
         self.image = game_data.get_img(img_name)
+
+    def set_unit_form(self, form: str):
+        self.metadata.set_unit_form(form)
+        self.imgcut_name = self.metadata.img_name.get().replace(".png", ".imgcut")
+
+    def set_id(self, id: str):
+        self.metadata.set_id(id)
+        self.imgcut_name = self.metadata.img_name.get().replace(".png", ".imgcut")
 
 
 @dataclass
@@ -176,7 +197,7 @@ class CustomIntsInts:
         csv.index = index
         self.ints = []
         core.Modification.read_csv_fields(self, csv)
-        for i in range(self.total_ints.get_value()):
+        for i in range(self.total_ints.get()):
             ind = index + i + 1
             ints = CustomInts()
             ints.read_csv(ind, csv)
@@ -204,7 +225,7 @@ class CustomMamodel:
     def read_csv(self, csv: "core.CSV"):
         self.metadata.read_csv(csv)
         self.parts = []
-        for i in range(self.metadata.total_parts.get_value()):
+        for i in range(self.metadata.total_parts.get()):
             index = i + 3
             part = CustomModelPart()
             part.read_csv(index, csv)
@@ -221,6 +242,26 @@ class CustomMamodel:
 
         self.units.apply_csv(len(self.parts) + 3, csv)
         self.ints.apply_csv(len(self.parts) + 4, csv)
+
+    def set_unit_form(self, form: str):
+        name = self.mamodel_name
+        parts = name.split("_")
+        id = parts[0]
+        self.mamodel_name = f"{id}_{form}.mamodel"
+
+    def set_id(self, id: str):
+        name = self.mamodel_name
+        parts = name.split("_")
+        form = parts[1]
+        self.mamodel_name = f"{id}_{form}"
+
+        for part in self.parts[1:]:
+            part.unit_id.set(int(id))
+
+    def dup_ints(self):
+        if len(self.ints.ints) == 1:
+            self.ints.ints.append(self.ints.ints[0])
+            self.ints.total_ints.set(2)
 
 
 @dataclass
@@ -267,13 +308,13 @@ class CustomKeyFrames:
         csv.index = index
         core.Modification.read_csv_fields(self, csv)
         self.keyframes = []
-        for i in range(self.total_keyframes.get_value()):
+        for i in range(self.total_keyframes.get()):
             ind = index + i + 2
             keyframe = CustomKeyFrame()
             keyframe.read_csv(ind, csv)
             self.keyframes.append(keyframe)
 
-        return index + 2 + self.total_keyframes.get_value()
+        return index + 2 + self.total_keyframes.get()
 
     def apply_csv(self, index: int, csv: "core.CSV") -> int:
         csv.index = index
@@ -286,10 +327,10 @@ class CustomKeyFrames:
         return index + 2 + len(self.keyframes)
 
     def flip(self):
-        if self.modification_type.get_value() != core.AnimModificationType.ANGLE.value:
+        if self.modification_type.get() != core.AnimModificationType.ANGLE.value:
             return
         for keyframe in self.keyframes:
-            keyframe.change_in_value.set(-keyframe.change_in_value.get_value())
+            keyframe.change_in_value.set(-keyframe.change_in_value.get())
 
 
 @dataclass
@@ -304,7 +345,7 @@ class CustomUnitAnim:
         self.metadata.read_csv(csv)
         index = 3
         self.parts = []
-        for _ in range(self.metadata.total_parts.get_value()):
+        for _ in range(self.metadata.total_parts.get()):
             part = CustomKeyFrames()
             index = part.read_csv(index, csv)
             self.parts.append(part)
@@ -319,6 +360,18 @@ class CustomUnitAnim:
     def flip(self):
         for part in self.parts:
             part.flip()
+
+    def set_unit_form(self, form: str):
+        name = self.name
+        parts = name.split("_")
+        id = parts[0]
+        anim_id = parts[1][1:3]
+        self.name = f"{id}_{form}{anim_id}.maanim"
+
+    def set_id(self, id: str):
+        parts = self.name.split("_")
+        parts[0] = id
+        self.name = "_".join(parts)
 
 
 @dataclass
@@ -413,3 +466,19 @@ class CustomModel(core.Modification):
     def flip_anims(self):
         for anim in self.anims:
             anim.flip()
+
+    def deepcopy(self) -> "CustomModel":
+        return copy.deepcopy(self)
+
+    def set_unit_form(self, form: str):
+        self.texture.set_unit_form(form)
+        self.mamodel.set_unit_form(form)
+        for anim in self.anims:
+            anim.set_unit_form(form)
+
+    def set_id(self, id: int):
+        id_str = core.PaddedInt(id, 3).to_str()
+        self.texture.set_id(id_str)
+        self.mamodel.set_id(id_str)
+        for anim in self.anims:
+            anim.set_id(id_str)
