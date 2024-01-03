@@ -7,8 +7,9 @@ from tbcml import core
 class NewFridaScript:
     script_name: str
     script_content: str
-    arcs: Optional[Union[list[str], Literal["all"]]] = None
+    arcs: Union[list[str], Literal["all"]]
     script_description: str = ""
+    inject_smali: bool = False
 
     def to_json(self) -> str:
         return NewFridaScript.Schema().dumps(self)  # type: ignore
@@ -47,19 +48,19 @@ class NewFridaScript:
         string += self.script_content
         return string
 
-    def get_arcs(self, apk: "core.Apk") -> Optional[list[str]]:
+    def get_arcs(self, apk: "core.Apk") -> list[str]:
         if self.arcs == "all":
             return apk.get_architectures()
         return self.arcs
 
-    def get_scripts_str(self, apk: "core.Apk", mod_name: str, mod_authors: list[str]):
+    def get_scripts_str(
+        self, apk: "core.Apk", mod_name: str, mod_authors: list[str]
+    ) -> tuple[dict[str, str], bool]:
         arcs = self.get_arcs(apk)
-        if arcs is None:
-            raise NotImplementedError("smali injection not done yet.")
         scripts: dict[str, str] = {}
         for arc in arcs:
             scripts[arc] = self.get_script_str(mod_name, mod_authors)
-        return scripts
+        return scripts, self.inject_smali
 
     @staticmethod
     def get_base_script() -> str:

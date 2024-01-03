@@ -13,6 +13,7 @@ class ModPaths(enum.Enum):
     MODIFICATIONS = "modifications"
     SCRIPTS = "scripts"
     METADATA = "metadata.json"
+    SMALI = "smali"
 
 
 T = TypeVar("T")
@@ -113,6 +114,7 @@ class NewMod:
 
         self.modifications: list[Modification] = []
         self.scripts: list[core.NewFridaScript] = []
+        self.smali: core.SmaliSet = core.SmaliSet.create_empty()
 
     def metadata_to_json(self) -> str:
         data = {
@@ -155,6 +157,8 @@ class NewMod:
         for i, script in enumerate(self.scripts):
             script.add_to_zip(i, zipfile)
 
+        self.smali.add_to_zip(zipfile)
+
         return zipfile.to_data()
 
     @staticmethod
@@ -184,6 +188,8 @@ class NewMod:
             script = core.NewFridaScript.from_json(path.read().to_str())
             mod.add_script(script)
 
+        mod.smali = core.SmaliSet.from_zip(zipfile)
+
         return mod
 
     def save(self, path: "core.Path"):
@@ -195,15 +201,21 @@ class NewMod:
     def add_script(self, script: "core.NewFridaScript"):
         self.scripts.append(script)
 
-    def get_scripts_str(self, apk: "core.Apk"):
+    def add_smali(self, smali: "core.Smali"):
+        self.smali.add(smali)
+
+    def get_scripts_str(self, apk: "core.Apk") -> tuple[dict[str, str], bool]:
         scripts_dict: dict[str, str] = {}
+        inject_smali = False
         for script in self.scripts:
-            scripts_str = script.get_scripts_str(apk, self.name, self.authors)
+            scripts_str, inj = script.get_scripts_str(apk, self.name, self.authors)
+            if inj:
+                inject_smali = True
             for arc, string in scripts_str.items():
                 if arc not in scripts_dict:
                     scripts_dict[arc] = ""
                 scripts_dict[arc] += string + "\n"
-        return scripts_dict
+        return scripts_dict, inject_smali
 
     def apply_modifications(self, game_packs: "core.GamePacks"):
         for modification in self.modifications:

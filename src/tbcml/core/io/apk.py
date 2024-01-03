@@ -887,7 +887,7 @@ class Apk:
         return self.get_lib_path(architecture).add("libbattlecats-jni.so")
 
     def is_java(self):
-        return self.game_version.is_java()
+        return self.get_lib_path("x86").add("libbattlecats-jni.so").exists()
 
     def parse_libnative(self, architecture: str) -> Optional["core.Lib"]:
         path = self.get_libnative_path(architecture)
@@ -900,16 +900,22 @@ class Apk:
             self.smali_handler = core.SmaliHandler(self)
         return self.smali_handler
 
-    def add_library(self, architecture: str, library_path: "core.Path"):
-        libnative = self.get_libs().get(architecture)
-        if libnative is None:
-            print(f"Could not find libnative for {architecture}")
-            return
-        if not self.is_java():
+    def add_library(
+        self,
+        architecture: str,
+        library_path: "core.Path",
+        inject_native_lib: bool = True,
+        inject_smali: bool = False,
+    ):
+        if inject_smali:
+            self.get_smali_handler().inject_load_library(library_path.basename())
+        if inject_native_lib:
+            libnative = self.get_libs().get(architecture)
+            if libnative is None:
+                print(f"Could not find libnative for {architecture}")
+                return
             libnative.add_library(library_path)
             libnative.write()
-        else:
-            self.get_smali_handler().inject_load_library(library_path.basename())
         self.add_to_lib_folder(architecture, library_path)
 
     def get_lib_path(self, architecture: str) -> "core.Path":
@@ -997,11 +1003,17 @@ class Apk:
             libgadgets[arc.basename()] = files[0]
         return libgadgets
 
-    def add_libgadget_sos(self, used_arcs: list[str]):
+    def add_libgadget_sos(
+        self,
+        used_arcs: list[str],
+        inject_native_lib: bool = True,
+        inject_smali: bool = False,
+    ):
         for architecture, libgadget in self.get_libgadgets().items():
             if architecture not in used_arcs:
                 continue
-            self.add_library(architecture, libgadget)
+            self.add_library(architecture, libgadget, inject_native_lib, inject_smali)
+            inject_smali = False  # only inject smali code once
 
     def add_frida_scripts(
         self,
@@ -1012,11 +1024,16 @@ class Apk:
         self.add_libgadget_scripts(scripts)
         self.add_libgadget_sos(used_arcs)
 
-    def add_frida_scripts_new(self, scripts: dict[str, str]):
+    def add_frida_scripts_new(
+        self,
+        scripts: dict[str, str],
+        inject_native_lib: bool = True,
+        inject_smali: bool = False,
+    ):
         used_arcs = list(scripts.keys())
         self.add_libgadget_config(used_arcs)
         self.add_libgadget_scripts_new(scripts)
-        self.add_libgadget_sos(used_arcs)
+        self.add_libgadget_sos(used_arcs, inject_native_lib, inject_smali)
 
     def add_patches(self, patches: "core.LibPatches"):
         for patch in patches.lib_patches:
@@ -1053,8 +1070,11 @@ class Apk:
         if not self.is_allowed_script_mods():
             return
         scripts: dict[str, str] = {}
+        inject_smali: bool = False
         for mod in bc_mods:
-            scripts_str = mod.get_scripts_str(self)
+            scripts_str, inj = mod.get_scripts_str(self)
+            if inj:
+                inject_smali = True
             for arc, string in scripts_str.items():
                 if arc not in scripts:
                     scripts[arc] = ""
@@ -1066,7 +1086,9 @@ class Apk:
                 scripts[arc] += base_script
 
         if scripts:
-            self.add_frida_scripts_new(scripts)
+            self.add_frida_scripts_new(
+                scripts, inject_smali=inject_smali, inject_native_lib=not inject_smali
+            )
 
     def add_modded_html_new(self, mods: list["core.NewMod"]):
         transfer_screen_path = core.AssetLoader.get_asset_file_path(
@@ -1250,6 +1272,11 @@ class Apk:
             return
         self.get_smali_handler().inject_into_on_create(mod.smali.get_list())
 
+    def apply_mod_smali_new(self, mod: "core.NewMod"):
+        if mod.smali.is_empty():
+            return
+        self.get_smali_handler().inject_into_on_create(mod.smali.get_list())
+
     def set_allow_backup(self, allow_backup: bool):
         manifest = self.parse_manifest()
         if manifest is None:
@@ -1367,6 +1394,12 @@ class Apk:
         for mod in mods:
             self.apply_mod_smali(mod)
 
+    def add_smali_mods_new(self, mods: list["core.NewMod"]):
+        if not self.is_allowed_script_mods():
+            return
+        for mod in mods:
+            self.apply_mod_smali_new(mod)
+
     def load_mods_new(
         self,
         mods: list["core.NewMod"],
@@ -1382,6 +1415,7 @@ class Apk:
         self.set_debuggable(True)
 
         self.add_script_mods_new(mods)
+        self.add_smali_mods_new(mods)
 
         if add_modded_html:
             self.add_modded_html_new(mods)
