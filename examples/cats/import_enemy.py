@@ -1,49 +1,75 @@
 from tbcml import core
 
-cc = core.CountryCode.from_code("en")
 
-gv = core.GameVersion.from_string_latest("12.3.0", cc)
+class AssassinBearForm(core.CustomForm):
+    def __init__(self, cat_id: int, game_data: "core.GamePacks"):
+        super().__init__(
+            form_type=core.CatFormType.FIRST
+        )  # form type can be changed to change what form to replace
 
-apk = core.Apk(gv, cc)
-apk.download()
-apk.extract()
-apk.download_server_files()
+        enemy_release_id = 18  # enemy id is from renemy elease order page of wiki, other enemy ids may be -2 this.
 
-game_data = core.GamePacks.from_apk(apk)
+        deploy_icon_offset = (
+            -35,
+            30,
+        )  # deploy icon offset specifies how many pixels (x,y) to offset the enemy icon inside the deploy icon box
+        deploy_icon_scale = 3  # scale to increase enemy icon by.
 
-cat_id = 0
+        self.import_enemy_from_release_id(
+            cat_id,
+            enemy_release_id,
+            game_data,
+            deploy_icon_offset=deploy_icon_offset,
+            deploy_icon_scale=deploy_icon_scale,
+        )
+        """
+        I recommend creating your own deploy icon rather than using the
+        default enemy icons, as the enemy icons are 64x64 and the deploy
+        icons are 128x128, so they don't look too good
 
-cats = core.Cats.from_game_data(game_data, [cat_id])  # avoid loading all cats
-cat = cats.get_cat(cat_id)
-if cat is None:
-    raise ValueError("Cat 0 not found")
+        ```
+        self.deploy_icon = core.NewBCImage.from_file("enter_path_here")
+        ```
 
-first_form = cat.get_form(core.CatFormType.FIRST)  # can also do cat.get_form(0)
-if first_form is None:
-    raise ValueError("Cat 0 first form not found")
+        enemies don't have a recharge or cost value associated with them, so
+        they have to be set manually if you want them to be different from
+        the base cat
 
-enemies = core.Enemies.from_game_data(game_data)
-enemy = enemies.get_enemy(0)
-if enemy is None:
-    raise ValueError("Doge not found")
-enemy_model = enemy.get_anim().model
+        ```python
+        stats = self.get_stats()
 
-cat_model = first_form.get_anim().model
+        stats.recharge_time.set(0)
+        stats.cost.set(0)
+        ```
+        """
 
-first_form.import_enemy(enemy)
 
-mod = core.Mod(
-    "enemy_as_cat",
+class AssassinBear(core.CustomCat):
+    def __init__(self, game_data: "core.GamePacks"):
+        super().__init__(
+            cat_id=0
+        )  # cat id can be changed to change what cat to replace
+
+        custom_form = AssassinBearForm(self.cat_id, game_data)
+        self.set_form(custom_form)
+
+
+loader = core.NewModLoader("en", "12.3.0")  # can be changed for other versions
+loader.initialize()
+
+game_data = loader.get_game_packs()
+apk = loader.get_apk()
+
+mod = core.NewMod(
+    "Assassin Bear Cat",
     "fieryhenry",
-    "changes basic cat to doge",
-    core.Mod.create_mod_id(),
-    "1.0.0",
+    "Replaces basic cat first form to be the assassin bear enemy",
 )
 
-mod_edit = core.ModEdit(["cats", cat_id], cat.to_dict())
-mod.add_mod_edit(mod_edit)
+cat = AssassinBear(game_data)
+mod.add_modification(cat)
 
-apk.set_app_name("12.3.0")
-apk.set_package_name("jp.co.ponos.battlecatsie")
+apk.set_app_name("Assassin Bear")
+apk.set_package_name("jp.co.ponos.battlecats.assassinbear")
 
-apk.load_mods([mod], game_data)
+loader.apply(mod)
