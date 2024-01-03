@@ -64,3 +64,6 @@ class NewFridaScript:
     @staticmethod
     def get_base_script() -> str:
         return core.Path("base_script.js", True).read().to_str()
+
+    def get_custom_html(self) -> str:
+        return f'<span class="iro">[{self.script_name}]</span><br>{self.script_description}<br><span class="iro">Code:</span><br><pre><code class="language-javascript">{self.script_content}</code></pre>'

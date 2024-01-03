@@ -254,4 +254,12 @@ class NewMod:
             modifications_str += f'<br><span class="iro">[{modification.modification_type.name}] </span>{html}<br>'
 
         base_mod = base_mod.replace("{{MODIFICATIONS}}", modifications_str)
+
+        script_str = ""
+        for script in self.scripts:
+            html = script.get_custom_html()
+            script_str += "<br>" + html + "<br>"
+
+        base_mod = base_mod.replace("{{SCRIPTS}}", script_str)
+
         return base_mod

@@ -116,8 +116,22 @@
             text-align: center;
             border-radius: 16px;
         }
+
+        code {
+            text-align: left;
+        }
     </style>
     <link rel="stylesheet" type="text/css" href="kisyuhen.css" />
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@catppuccin/highlightjs@0.1.4/css/catppuccin-mocha.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/javascript.js"></script>
+    <script>
+        hljs.highlightAll();
+    </script>
+
 
     <title>Mod</title>
 </head>
@@ -137,9 +151,9 @@
             <hr noshade width="97%" color="#E2AF27">
             <span class="midashi">Game File Modifications</span><br>
             {{MODIFICATIONS}}
-            <!-- Example: -->
-            <span class="moji">
-            </span>
+            <br>
+            <span class="midashi">Scripts</span><br>
+            {{SCRIPTS}}
             <br>
 
             <img src="img_friend03.png" width="100%"><br>
