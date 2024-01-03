@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 
 from PIL import Image, ImageDraw
 
@@ -77,6 +77,16 @@ class NewBCImage:
     def get_subimage(self, rect: "core.Rect") -> "NewBCImage":
         return self.crop_rect(rect.x, rect.y, rect.x + rect.width, rect.y + rect.height)
 
+    def scale(self, scale: float):
+        if scale < 0:
+            self.flip_x()
+            self.flip_y()
+            scale *= -1
+        self.__image = self.image.resize(
+            (int(self.width * scale), int(self.height * scale)),
+            resample=Image.BICUBIC,
+        )
+
     def scale_x(self, scale: float):
         if scale < 0:
             self.flip_x()
@@ -92,10 +102,6 @@ class NewBCImage:
         self.__image = self.image.resize(
             (self.width, int(self.height * scale)), resample=Image.BICUBIC
         )
-
-    def scale(self, scale_x: float, scale_y: float):
-        self.scale_x(scale_x)
-        self.scale_y(scale_y)
 
     def flip_x(self):
         self.__image = self.image.transpose(Image.FLIP_LEFT_RIGHT)
@@ -121,6 +127,10 @@ class NewBCImage:
     @staticmethod
     def from_base_64(base_64: str) -> "NewBCImage":
         return NewBCImage(base_64)
+
+    @staticmethod
+    def from_file(path: Union["core.Path", str]):
+        return NewBCImage(core.Path(path).read().to_base_64())
 
     def to_base_64(self) -> str:
         return self.to_data().to_base_64()
