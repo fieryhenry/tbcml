@@ -1318,7 +1318,7 @@ class Apk:
                 string.text = value
                 break
         self.save_xml("strings", strings_xml)
-        return False
+        return True
 
     def set_app_name(self, name: str) -> bool:
         return self.edit_xml_string("app_name", name)
