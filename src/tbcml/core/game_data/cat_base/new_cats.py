@@ -393,11 +393,159 @@ class CustomTalents:
 
 @dataclass
 class CustomForm:
+    """CustomForm object
+    Any mention of a form object in this documentation is an instance of the CustomForm class
+    Any mention of a cat object in this documentation is an instance of the CustomCat class
+
+    Usage:
+        Basic, no inheritance method:
+        ```
+        form = CustomForm(form_type=core.CatFormType.FIRST)
+        form.name.set("Some cool name")
+        ```
+
+        Alternatively, if you want to encapsulate logic and data into your own class you can:
+        ```
+        class CoolCatForm(core.CustomForm):
+            def __init__(self):
+                super().__init__(form_type=core.CatFormType.FIRST)
+
+                self.name.set("Some cool name")
+        form = CoolCatForm()
+        ```
+
+        After creating the form object, it needs to be added to a cat:
+        ```
+        cat.set_form(form)
+        ```
+        where `cat` is a `CustomCat` instance
+
+        If you want to do some modifications to the base form data, or just
+        want to read the base game data for the form you can do the following:
+        ```
+        form = CustomForm(form_type=core.CatFormType.FIRST)
+        form.read(game_data)
+        print(form.name.get())
+        form.name.value_ += " custom cat ending"
+        ```
+        or
+        ```
+        class CoolCatForm(core.CustomForm):
+            def __init__(self, game_data: "core.GamePacks"):
+                super().__init__(form_type=core.CatFormType.FIRST)
+                self.read(game_data)
+
+                print(self.name.get())
+                self.name.value_ += " custom cat ending"
+        ```
+        where `game_data` is a `core.GamePacks` instance, to create this, look at the `GamePacks` documention.
+
+        Note that reading from game data will overwrite any previously set data.
+
+
+    Attributes:
+        For more documentation, see each field's definition separately lower down.
+
+        form_type: (CatFormType), what form position the form should apply to:
+        ```
+        core.CatFormType.FIRST
+        core.CatFormType.SECOND
+        core.CatFormType.THIRD
+        core.CatFormType.FOURTH
+        ```
+
+        The following attributes should not be created when initializing the object
+        and instead should be set with `.set(value)` and retrieved with
+        `.get()`, e.g `form.name.set("test")` where `form` is a CustomForm object
+
+        name: (StringCSVField), the name of the form
+        description: (StrListCSVField), the description of the form, list of 3 elements, one element for each line
+
+        The following attributes can be accessed directly like normal, but they
+        will be `None` if they haven't been read from the game yet, and so if you want
+        to get the object and create a new empty object if it is None, then you
+        should use the getter functions:
+        ```
+        get_stats()
+        get_anim()
+        get_upgrade_icon()
+        get_deploy_icon()
+
+        # e.g
+        form.get_stats().hp.set(10)
+        ```
+
+        stats: (CustomCatStats, optional), the stats for the form, specifies stuff such as hp, movement speed, attack damage, etc
+        anim: (CustomModel, optional), the animation of the unit
+        upgrade_icon: (NewBCImage, optional), the icon you see in the upgrade screen for the cat
+        deploy_icon: (NewBCImage, optional), the icon you see in, battle, the equip screen, and the cat guide
+    """
+
     form_type: "core.CatFormType" = field(metadata={"required": True})
+    """What form position the form should apply to:
+    ```
+    core.CatFormType.FIRST
+    core.CatFormType.SECOND
+    core.CatFormType.THIRD
+    core.CatFormType.FOURTH
+    ```
+    """
     name: StringCSVField = CSVField.to_field(StringCSVField, 0)
+    """Name of the form
+
+    Usage:
+    ```
+    # getting
+    name = form.name.get()
+
+    # setting
+    form.name.set("Cool Custom Cat")
+    ```
+    """
     description: StrListCSVField = CSVField.to_field(StrListCSVField, 1, length=3)
+    """Description of the form.
+    
+    It is a list of 3 elements, each element is a new line.
+
+    Usage:
+    ```
+    # getting
+    description = form.description.get()
+    line_1 = description[0]
+
+    # setting
+    form.description.set(["line 1", "line 2", "line 3"])
+    ```
+    """
     stats: Optional[CustomCatStats] = None
+    """Stats of the form.
+    
+    See `CustomCatStats` for more documentation
+
+    Usage:
+    ```
+    # getting
+    stats = form.stats  # may be None if not loaded from game data or already defined
+    hp = stats.hp.get()  # may error if stats is None
+
+    stats = form.get_stats()  # will not be None as if it is None, it will create a new CustomCatStats object
+    hp = stats.hp.get()  # will not error
+
+    # setting
+    stats.hp.set(10)  # should get stats object as above
+    """
     anim: Optional["core.CustomModel"] = None
+    """Animation for the form
+
+    See `core.CustomModel` for more documentation.
+    See `stats` field for difference between `form.anim` and `form.get_anim()`
+
+    Usage:
+    ```
+    anim = form.anim
+    anim = form.get_anim()
+    anim.flip_x()
+    """
     upgrade_icon: Optional["core.NewBCImage"] = None
     deploy_icon: Optional["core.NewBCImage"] = None
 
@@ -603,7 +751,6 @@ class CustomForm:
         deploy_icon_offset: tuple[int, int] = (-20, -20),
         deploy_icon_scale: float = 2.5,
     ) -> "core.CustomEnemy":
-
         return self.import_enemy_from_id(
             cat_id,
             enemy_release_id - 2,
