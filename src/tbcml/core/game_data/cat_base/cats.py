@@ -5,7 +5,14 @@ from tbcml import core
 
 
 class CatFormType(enum.Enum):
-    """Represents the different forms a cat has."""
+    """Represents the different forms a cat has.
+    ```
+    core.CatFormType.FIRST
+    core.CatFormType.SECOND
+    core.CatFormType.THIRD
+    core.CatFormType.FOURTH
+    ```
+    """
 
     FIRST = "f"
     """The first form of a cat."""
