@@ -107,83 +107,65 @@ do more advanced things.
 Create `script.py`
 
 ```python
-from tbcml.core import (
-    CountryCode,
-    GameVersion,
-    Apk,
-    GamePacks,
-    Mod,
-    ModEdit,
-    CatFormType,
-    Cat,
-    CatForm,
-)
+from tbcml import core
 
-# Choose the country code
-cc = CountryCode.EN
 
-# Choose a game version
-gv = GameVersion.from_string("12.3.0")
+class BasicCustomForm(core.CustomForm):
+    """For better organization, these classes could be defined in
+    another / separate files and then imported"""
 
-# Get the apk
-apk = Apk(gv, cc)
-apk.download()
-apk.extract()
+    def __init__(self):
+        super().__init__(form_type=core.CatFormType.FIRST)
 
-# Download server files data
-apk.download_server_files()
-apk.copy_server_files()
+        self.name.set("Cool Cat")
+        self.description.set(["First line!", "Second Line!", "Third description line!"])
 
-# Get the game data
-game_packs = GamePacks.from_apk(apk)
 
-# Create a mod id, or use an existing one
-mod_id = Mod.create_mod_id()
+class BasicCustomCat(core.CustomCat):
+    def __init__(self):
+        super().__init__(cat_id=0)
 
-# Create a mod, not all information is required
-mod = Mod(
+        first_form = BasicCustomForm()
+        self.set_form(first_form)
+
+
+loader = core.NewModLoader("en", "12.3.0")
+loader.initialize(allowed_script_mods=True)
+
+
+mod = core.NewMod(
     name="Test Mod",
-    author="Test Author",
+    authors="fieryhenry",  # can be a list of authors e.g ["person 1", "person 2"]
     description="Test Description",
-    mod_id=mod_id,
-    mod_version="1.0.0",
-    password="test",
 )
 
-# Define cat information
-cat_id = 0
-cat_form_type = CatFormType.FIRST
+cat = BasicCustomCat()
+mod.add_modification(cat)
 
-# Create a form with the name "Test Cat"
-form = CatForm(cat_id, cat_form_type, name="Test Cat")
+apk = loader.get_apk()
 
-# Create a cat
-cat = Cat(cat_id)
+apk.set_app_name("The Battle Cats Basic Mod")
 
-# Set the form
-cat.set_form(cat_form_type, form)
+# package name should be different to base game if you want your modded app
+# to not replace the normal app.
+apk.set_package_name("jp.co.ponos.battlecats.assassinbear")
 
-# Create a mod edit
-mod_edit = ModEdit(["cats", cat_id], cat.to_dict())
+# set open_path to True if you want to open the containg folder of the modded apk
+loader.apply(mod, open_path=False)
 
-# Add the mod edit to the mod
-mod.add_mod_edit(mod_edit)
+loader.initialize_adb()
+loader.install_adb(run_game=True)
 
-# Add the mod to the game packs
-apk.load_mods([mod], game_packs)
-
-# open the apk folder in the file explorer (optional)
-apk.output_path.open()
+print(apk.final_apk_path)
 
 ```
 
-If you want to do some script modding, you will also need to set
-`allowed_script_mods` to `True` when creating the apk object
+If you want to do disable script modding (e.g for security reasons), you will
+need to set `allowed_script_mods` to `False` when creating the apk object /
+initializing the loader
 
 ```python
-
-apk = Apk(gv, cc, allowed_script_mods=True)
-
+loader.initialize(allowed_script_mods=False)
 ```
 
 Run the script
