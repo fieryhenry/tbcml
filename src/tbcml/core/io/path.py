@@ -8,7 +8,9 @@ import re
 
 
 class Path:
-    def __init__(self, path: str = "", is_relative: bool = False):
+    def __init__(self, path: typing.Union[str, "Path"] = "", is_relative: bool = False):
+        if isinstance(path, Path):
+            path = path.to_str()
         if is_relative:
             self.path = self.get_relative_path(path)
         else:
