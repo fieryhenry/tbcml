@@ -56,6 +56,7 @@ from .game_data.cat_base.unit import (
 
 from .game_data.cat_base.item_shop import ItemShop
 from .game_data.cat_base.new_cats import CustomCat, CustomForm, CustomCatStats
+from .game_data.cat_base.new_enemy import CustomEnemy, CustomEnemyStats
 from .game_data.cat_base.cats import (
     UnitBuy,
     Talents,
@@ -242,6 +243,8 @@ __all__ = [
     "Toxic",
     "Shield",
     "ItemShop",
+    "CustomEnemy",
+    "CustomEnemyStats",
     "CustomCat",
     "CustomForm",
     "CustomCatStats",

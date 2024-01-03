@@ -7,6 +7,7 @@ from dataclasses import fields
 
 class ModificationType(enum.Enum):
     CAT = "cat"
+    ENEMY = "enemy"
 
 
 class ModPaths(enum.Enum):
@@ -240,6 +241,8 @@ class NewMod:
 
         if mod_type == ModificationType.CAT.value:
             cls = core.CustomCat
+        elif mod_type == ModificationType.ENEMY.value:
+            cls = core.CustomEnemy
 
         if cls is None:
             raise ValueError("Invalid Modification")
