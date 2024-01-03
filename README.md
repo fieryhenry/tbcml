@@ -112,7 +112,10 @@ from tbcml import core
 
 class BasicCustomForm(core.CustomForm):
     """For better organization, these classes could be defined in
-    another / separate files and then imported"""
+    another / separate files and then imported.
+
+    See core/game_data/cat_base/new_cats.py for documetation of cats
+    """
 
     def __init__(self):
         super().__init__(form_type=core.CatFormType.FIRST)
@@ -129,9 +132,12 @@ class BasicCustomCat(core.CustomCat):
         self.set_form(first_form)
 
 
-loader = core.NewModLoader("en", "12.3.0")
-loader.initialize(allowed_script_mods=True)
+loader = core.NewModLoader(
+    "en", "12.3.0"
+)  # these can be changed for the version you want
+loader.initialize()
 
+apk = loader.get_apk()
 
 mod = core.NewMod(
     name="Test Mod",
@@ -142,8 +148,6 @@ mod = core.NewMod(
 cat = BasicCustomCat()
 mod.add_modification(cat)
 
-apk = loader.get_apk()
-
 apk.set_app_name("The Battle Cats Basic Mod")
 
 # package name should be different to base game if you want your modded app
@@ -153,11 +157,7 @@ apk.set_package_name("jp.co.ponos.battlecats.assassinbear")
 # set open_path to True if you want to open the containg folder of the modded apk
 loader.apply(mod, open_path=False)
 
-loader.initialize_adb()
-loader.install_adb(run_game=True)
-
 print(apk.final_apk_path)
-
 ```
 
 If you want to do disable script modding (e.g for security reasons), you will
