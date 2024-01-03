@@ -1299,34 +1299,39 @@ class Apk:
             manifest.set_attribute(path, "android:debuggable", "false")
         self.set_manifest(manifest)
 
-    def load_xml(self, name: str) -> "core.XML":
+    def load_xml(self, name: str) -> Optional["core.XML"]:
         strings_xml = self.extracted_path.add("res").add("values").add(f"{name}.xml")
+        if not strings_xml.exists():
+            return None
         return core.XML(strings_xml.read())
 
     def save_xml(self, name: str, xml: "core.XML"):
         xml.to_file(self.extracted_path.add("res").add("values").add(f"{name}.xml"))
 
-    def edit_xml_string(self, name: str, value: str):
+    def edit_xml_string(self, name: str, value: str) -> bool:
         strings_xml = self.load_xml("strings")
+        if strings_xml is None:
+            return False
         strings = strings_xml.get_elements("string")
         for string in strings:
             if string.get("name") == name:
                 string.text = value
                 break
         self.save_xml("strings", strings_xml)
+        return False
 
-    def set_app_name(self, name: str):
-        self.edit_xml_string("app_name", name)
+    def set_app_name(self, name: str) -> bool:
+        return self.edit_xml_string("app_name", name)
 
-    def set_package_name(self, package_name: str):
-        self.package_name = package_name
+    def set_package_name(self, package_name: str) -> bool:
         manifest = self.parse_manifest()
         if manifest is None:
-            return
+            return False
 
         manifest.set_attribute("manifest", "package", package_name)
 
-        self.edit_xml_string("package_name", package_name)
+        if not self.edit_xml_string("package_name", package_name):
+            return False
 
         path = "application/provider"
         for provider in manifest.get_elements(path):
@@ -1343,6 +1348,8 @@ class Apk:
             provider.set(attribute, package_name + "." + end)
 
         self.set_manifest(manifest)
+        self.package_name = package_name
+        return True
 
     def set_clear_text_traffic(self, clear_text_traffic: bool):
         manifest = self.parse_manifest()
