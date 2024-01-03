@@ -38,7 +38,11 @@ class NewFridaScript:
     def get_script_str(self, mod_name: str, mod_authors: list[str]) -> str:
         mod_authors_str = ", ".join(mod_authors)
         if self.arcs:
-            arcs_str = ", ".join(self.arcs) + " architectures"
+            if self.arcs == "all":
+                arcs = ["all"]
+            else:
+                arcs = self.arcs
+            arcs_str = ", ".join(arcs) + " architectures"
         else:
             arcs_str = "smali injection"
         string = "/*\n"
