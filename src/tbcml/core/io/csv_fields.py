@@ -41,15 +41,20 @@ class CSVField(Generic[F]):
     def set(self, value: F):
         self.value = value
 
+    def set_ignore_none(self, value: Optional[F]):
+        if value is None:
+            return
+        self.value = value
+
     @property
     def value_(self) -> F:
-        return self.get_value()
+        return self.get()
 
     @value_.setter
     def value_(self, value: F):
         self.set(value)
 
-    def get_value(self) -> F:
+    def get(self) -> F:
         raise NotImplementedError
 
     def set_col_index(self, col_index: int):
@@ -84,7 +89,7 @@ class IntCSVField(CSVField[int]):
         self.value = csv.get_int(self.col_index)
         self.uninitialize_csv(csv)
 
-    def get_value(self) -> int:
+    def get(self) -> int:
         return self.value or 0
 
 
@@ -102,7 +107,7 @@ class BoolCSVField(CSVField[bool]):
         self.value = csv.get_bool(self.col_index)
         self.uninitialize_csv(csv)
 
-    def get_value(self) -> bool:
+    def get(self) -> bool:
         return self.value or False
 
 
@@ -120,7 +125,7 @@ class StringCSVField(CSVField[str]):
         self.value = csv.get_str(self.col_index)
         self.uninitialize_csv(csv)
 
-    def get_value(self) -> str:
+    def get(self) -> str:
         return self.value or ""
 
 
@@ -159,6 +164,19 @@ class StrListCSVField(CSVField[list[str]]):
 
         self.uninitialize_csv(csv)
 
+    def get(self) -> list[str]:
+        if self.value is None:
+            return [self.blank] * (self.length or 0)
+        if self.length is None:
+            return self.value
+        required_length = self.length - len(self.value)
+        if required_length < 0:
+            return self.value[: self.length]
+
+        value = self.value.copy()
+        value.extend([self.blank] * required_length)
+        return value
+
 
 @dataclass
 class IntListCSVField(CSVField[list[int]]):
@@ -195,3 +213,16 @@ class IntListCSVField(CSVField[list[int]]):
         csv.set_list(self.value, self.col_index)
 
         self.uninitialize_csv(csv)
+
+    def get(self) -> list[int]:
+        if self.value is None:
+            return [self.blank] * (self.length or 0)
+        if self.length is None:
+            return self.value
+        required_length = self.length - len(self.value)
+        if required_length < 0:
+            return self.value[: self.length]
+
+        value = self.value.copy()
+        value.extend([self.blank] * required_length)
+        return value
