@@ -143,6 +143,103 @@ class CustomCatStats:
         csv.index = index
         core.Modification.read_csv_fields(self, csv)
 
+    def import_enemy(
+        self, enemy_stats: "core.CustomEnemyStats", target_all_effects: bool = True
+    ):
+        if target_all_effects:
+            has_targeted_effect = enemy_stats.has_targeted_effect()
+        else:
+            has_targeted_effect = None
+        self.hp.set(enemy_stats.hp.get())
+        self.kbs.set(enemy_stats.kbs.get())
+        self.speed.set(enemy_stats.speed.get())
+        self.attack_1_damage.set(enemy_stats.attack_1_damage.get())
+        self.attack_interval.set(enemy_stats.attack_interval.get())
+        self.attack_range.set(enemy_stats.attack_range.get())
+        self.collision_start.set(enemy_stats.collision_start.get())
+        self.collision_width.set(enemy_stats.collision_width.get())
+        self.collision_width.set(enemy_stats.collision_width.get())
+        self.unused.set(enemy_stats.unused.get())
+        self.area_attack.set(enemy_stats.area_attack.get())
+        self.attack_1_foreswing.set(enemy_stats.attack_1_foreswing.get())
+        self.knockback_prob.set(enemy_stats.knockback_prob.get())
+        self.freeze_prob.set(enemy_stats.freeze_prob.get())
+        self.freeze_duration.set(enemy_stats.freeze_duration.get())
+        self.slow_prob.set(enemy_stats.slow_prob.get())
+        self.slow_duration.set(enemy_stats.slow_duration.get())
+        self.crit_prob.set(enemy_stats.crit_prob.get())
+        self.wave_prob.set(enemy_stats.wave_prob.get())
+        self.wave_level.set(enemy_stats.wave_level.get())
+        self.weaken_prob.set(enemy_stats.weaken_prob.get())
+        self.weaken_duration.set(enemy_stats.weaken_duration.get())
+        self.weaken_percentage.set(enemy_stats.weaken_percentage.get())
+        self.strengthen_hp_start_percentage.set(
+            enemy_stats.strengthen_hp_start_percentage.get()
+        )
+        self.strengthen_hp_boost_percentage.set(
+            enemy_stats.strengthen_hp_boost_percentage.get()
+        )
+        self.is_metal.set(enemy_stats.metal.get())
+        self.attack_1_ld_start.set(enemy_stats.attack_1_ld_start.get())
+        self.attack_1_ld_range.set(enemy_stats.attack_1_ld_range.get())
+        self.wave_immunity.set(enemy_stats.wave_immunity.get())
+        self.wave_blocker.set(enemy_stats.wave_blocker.get())
+        self.knockback_immunity.set(enemy_stats.knockback_immunity.get())
+        self.freeze_immunity.set(enemy_stats.freeze_immunity.get())
+        self.slow_immunity.set(enemy_stats.slow_immunity.get())
+        self.weaken_immunity.set(enemy_stats.weaken_immunity.get())
+        self.attacks_before_set_attack_state.set(
+            enemy_stats.attacks_before_set_attack_state.get()
+        )
+        self.time_before_death.set(enemy_stats.time_before_death.get())
+        self.attack_state.set(enemy_stats.attack_state.get())
+        self.attack_2_damage.set(enemy_stats.attack_2_damage.get())
+        self.attack_3_damange.set(enemy_stats.attack_3_damange.get())
+        self.attack_2_foreswing.set(enemy_stats.attack_2_foreswing.get())
+        self.attack_3_foreswing.set(enemy_stats.attack_3_foreswing.get())
+        self.attack_1_use_ability.set(enemy_stats.attack_1_use_ability.get())
+        self.attack_2_use_ability.set(enemy_stats.attack_2_use_ability.get())
+        self.attack_3_use_ability.set(enemy_stats.attack_3_use_ability.get())
+        self.spawn_anim_model_id.set(enemy_stats.spawn_anim_model_id.get())
+        self.soul_model_anim_id.set(enemy_stats.soul_model_anim_id.get())
+        self.has_entry_maanim.set(enemy_stats.has_entry_maanim.get())
+        self.has_death_maanim.set(enemy_stats.has_death_maanim.get())
+        self.warp_prob.set(enemy_stats.warp_prob.get())
+        self.warp_duration.set(enemy_stats.warp_duration.get())
+        self.warp_min_range.set(enemy_stats.warp_min_range.get())
+        self.warp_max_range.set(enemy_stats.warp_max_range.get())
+        self.warp_blocker.set(enemy_stats.warp_blocker.get())
+        self.dodge_prob.set(enemy_stats.dodge_prob.get())
+        self.dodge_duration.set(enemy_stats.dodge_duration.get())
+        self.surge_prob.set(enemy_stats.surge_prob.get())
+        self.surge_start.set(enemy_stats.surge_start.get())
+        self.surge_range.set(enemy_stats.surge_range.get())
+        self.surge_level.set(enemy_stats.surge_level.get())
+        self.surge_immunity.set(enemy_stats.surge_immunity.get())
+        self.curse_prob.set(enemy_stats.curse_prob.get())
+        self.curse_duration.set(enemy_stats.curse_duration.get())
+        self.wave_is_mini.set(enemy_stats.wave_is_mini.get())
+        self.attack_2_ld_flag.set(enemy_stats.attack_2_ld_flag.get())
+        self.attack_2_ld_start.set(enemy_stats.attack_2_ld_start.get())
+        self.attack_2_ld_range.set(enemy_stats.attack_2_ld_range.get())
+        self.attack_3_ld_flag.set(enemy_stats.attack_3_ld_flag.get())
+        self.attack_3_ld_start.set(enemy_stats.attack_3_ld_start.get())
+        self.unknown_108.set(enemy_stats.unkown_102.get())
+        self.counter_surge.set(enemy_stats.counter_surge.get())
+
+        self.target_red.set_ignore_none(has_targeted_effect)
+        self.target_floating.set_ignore_none(has_targeted_effect)
+        self.target_black.set_ignore_none(has_targeted_effect)
+        self.target_metal.set_ignore_none(has_targeted_effect)
+        self.target_traitless.set_ignore_none(has_targeted_effect)
+        self.target_angel.set_ignore_none(has_targeted_effect)
+        self.target_alien.set_ignore_none(has_targeted_effect)
+        self.target_zombie.set_ignore_none(has_targeted_effect)
+        self.target_witch.set_ignore_none(has_targeted_effect)
+        self.target_eva.set_ignore_none(has_targeted_effect)
+        self.target_relic.set_ignore_none(has_targeted_effect)
+        self.target_aku.set_ignore_none(has_targeted_effect)
+
 
 @dataclass
 class CustomUnitBuy:
@@ -304,6 +401,11 @@ class CustomForm:
     upgrade_icon: Optional["core.NewBCImage"] = None
     deploy_icon: Optional["core.NewBCImage"] = None
 
+    def get_stats(self) -> "core.CustomCatStats":
+        if self.stats is None:
+            self.stats = core.CustomCatStats()
+        return self.stats
+
     def get_anim(self) -> "core.CustomModel":
         if self.anim is None:
             self.anim = core.CustomModel()
@@ -430,6 +532,85 @@ class CustomForm:
             self.upgrade_icon.save_b64()
         if self.anim is not None:
             self.anim.texture.save_b64()
+
+    def get_deploy_border(self) -> "core.NewBCImage":
+        path = core.AssetLoader.get_asset_file_path(f"uni_{self.form_type.value}.png")
+        return core.NewBCImage(path.read().to_base_64())
+
+    def import_enemy_deploy_icon(
+        self,
+        enemy_icon: "core.NewBCImage",
+        offset: tuple[int, int] = (-20, -20),
+        scale: float = 2.5,
+    ):
+        enemy_icon.scale(scale)
+        enemy_icon.convert_to_rgba()
+        base_image = core.NewBCImage.from_size(128, 128)
+        base_image.paste(enemy_icon, offset[0], offset[1])
+        base_image = base_image.crop_rect(
+            14,
+            26,
+            113,
+            101,
+        )
+        border_img = self.get_deploy_border()
+        border_img.convert_to_rgba()
+        border_img.paste(base_image, 14, 26)
+        self.deploy_icon = border_img
+
+    def import_enemy(
+        self,
+        cat_id: int,
+        enemy: "core.CustomEnemy",
+        deploy_icon_offset: tuple[int, int] = (-20, -20),
+        deploy_icon_scale: float = 2.5,
+    ):
+        self.name.set(enemy.name.get())
+        self.description.set(enemy.description.get()[1:])
+        if enemy.anim is not None:
+            self.anim = enemy.anim.deepcopy()
+            self.anim.flip_x()
+            self.anim.set_unit_form(self.form_type.value)
+            self.anim.set_id(cat_id)
+            self.anim.mamodel.dup_ints()
+
+        if enemy.icon is not None:
+            self.import_enemy_deploy_icon(
+                enemy.icon, deploy_icon_offset, deploy_icon_scale
+            )
+
+        if enemy.stats is not None:
+            self.get_stats().import_enemy(enemy.stats)
+
+    def import_enemy_from_id(
+        self,
+        cat_id: int,
+        enemy_id: int,
+        game_data: "core.GamePacks",
+        deploy_icon_offset: tuple[int, int] = (-20, -20),
+        deploy_icon_scale: float = 2.5,
+    ) -> "core.CustomEnemy":
+        enemy = core.CustomEnemy(enemy_id)
+        enemy.read(game_data)
+        self.import_enemy(cat_id, enemy, deploy_icon_offset, deploy_icon_scale)
+        return enemy
+
+    def import_enemy_from_release_id(
+        self,
+        cat_id: int,
+        enemy_release_id: int,
+        game_data: "core.GamePacks",
+        deploy_icon_offset: tuple[int, int] = (-20, -20),
+        deploy_icon_scale: float = 2.5,
+    ) -> "core.CustomEnemy":
+
+        return self.import_enemy_from_id(
+            cat_id,
+            enemy_release_id - 2,
+            game_data,
+            deploy_icon_offset,
+            deploy_icon_scale,
+        )
 
 
 @dataclass
@@ -683,6 +864,6 @@ class CustomCat(core.Modification):
             form.pre_to_json()
 
     def get_custom_html(self) -> str:
-        names = [form.name.get_value() for form in (self.forms or {}).values()]
+        names = [form.name.get() for form in (self.forms or {}).values()]
         name_str = ", ".join(names)
         return f'<span style="color:#000">{name_str} (cat id: {self.cat_id})</span>'
