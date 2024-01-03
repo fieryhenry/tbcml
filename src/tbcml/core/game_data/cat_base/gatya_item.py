@@ -156,7 +156,10 @@ class GatyaItemBuy:
             if item.gatya_ticket_id is not None:
                 line[10] = str(item.gatya_ticket_id)
             if item.comment is not None:
-                line[11] = item.comment
+                try:
+                    line[11] = item.comment
+                except IndexError:
+                    line.append(item.comment)
             remaining_items.pop(i)
             csv.lines[i + 1] = line
 
