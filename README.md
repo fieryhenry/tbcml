@@ -152,7 +152,7 @@ apk.set_app_name("The Battle Cats Basic Mod")
 
 # package name should be different to base game if you want your modded app
 # to not replace the normal app.
-apk.set_package_name("jp.co.ponos.battlecats.assassinbear")
+apk.set_package_name("jp.co.ponos.battlecats.basicmod")
 
 # set open_path to True if you want to open the containg folder of the modded apk
 loader.apply(mod, open_path=False)
