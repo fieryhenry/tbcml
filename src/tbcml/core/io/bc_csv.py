@@ -51,15 +51,17 @@ class CSV:
         remove_padding: bool = True,
         remove_comments: bool = True,
         remove_empty: bool = True,
+        lines: Optional[list[list[str]]] = None,
     ):
         if file_data is None:
             file_data = core.Data()
-        self.file_data = file_data
+        file_data = file_data
         if remove_padding:
             try:
-                self.file_data = self.file_data.unpad_pkcs7()
+                file_data = file_data.unpad_pkcs7()
             except ValueError:
                 pass
+        self.remove_padding = remove_padding
         self.delimeter = str(delimeter)
         self.remove_comments = remove_comments
         self.remove_empty = remove_empty
@@ -68,11 +70,14 @@ class CSV:
         self.line_length = 0
         self.is_int = True
         self.ignore_none = True
-        self.parse()
+        if lines is not None:
+            self.lines = lines
+        else:
+            self.parse(file_data)
 
-    def parse(self):
+    def parse(self, file_data: "core.Data"):
         lines: list[list[str]] = []
-        for line in self.file_data.to_str().splitlines():
+        for line in file_data.to_str().splitlines():
             if self.remove_comments:
                 line = line.split("//")[0]
             line = line.strip()
@@ -283,3 +288,12 @@ class CSV:
             else:
                 ind = None
             self.set_str(string, ind)
+
+    def copy(self) -> "core.CSV":
+        return core.CSV(
+            delimeter=self.delimeter,
+            remove_padding=self.remove_padding,
+            remove_comments=self.remove_comments,
+            remove_empty=self.remove_empty,
+            lines=self.lines,
+        )
