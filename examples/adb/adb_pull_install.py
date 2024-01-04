@@ -1,6 +1,7 @@
 from tbcml import core
 
-adb_handler = core.AdbHandler("jp.co.ponos.battlecatsen")
+adb_handler = core.AdbHandler()
+adb_handler.set_package_name("jp.co.ponos.battlecatsen")
 
 devices = adb_handler.get_connected_devices()
 print(devices)
