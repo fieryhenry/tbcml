@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 from dataclasses import field
 from tbcml import core
 
@@ -291,6 +291,38 @@ class CustomUnitBuy:
     def read_csv(self, cat_id: int, csv: "core.CSV"):
         csv.index = cat_id
         core.Modification.read_csv_fields(self, csv)
+
+    def set_obtainable(self, obtainable: bool):
+        if not obtainable:
+            self.game_version.set(-1)
+        else:
+            self.game_version.set(
+                0 if self.game_version.get() == -1 else self.game_version.get()
+            )
+
+    def is_obtainable(self) -> bool:
+        return self.game_version.get() != -1
+
+    def set_max_level(
+        self,
+        max_base: int,
+        max_plus: int,
+        level_until_catsye_req: Optional[int] = None,
+        original_base_max: Optional[int] = None,
+        original_plus_max: Optional[int] = None,
+    ):
+        self.max_base_catseye.set(max_base)
+        self.max_plus.set(max_plus)
+        if level_until_catsye_req is not None:
+            self.max_base_no_catseye.set(level_until_catsye_req)
+        if original_base_max is not None:
+            self.original_max_base.set(original_base_max)
+        if original_plus_max is not None:
+            self.original_max_plus.set(original_plus_max)
+
+    def reset_upgrade_costs(self):
+        for i in range(len(self.upgrade_costs.get())):
+            self.upgrade_costs.set_element(0, i)
 
 
 @dataclass
@@ -706,6 +738,36 @@ class CustomForm:
         border_img.paste(base_image, 14, 26)
         self.deploy_icon = border_img
 
+    def format_bcu_deploy_icon(self):
+        deploy_icon = self.get_deploy_icon()
+        if deploy_icon.width == 128 and deploy_icon.height == 128:
+            return
+        deploy_icon.convert_to_rgba()
+        base_image = core.NewBCImage.from_size(128, 128)
+        base_image.paste(deploy_icon, 9, 21)
+        self.deploy_icon = base_image
+
+    def format_bcu_upgrade_icon(self):
+        upgrade_icon = self.get_upgrade_icon()
+        if upgrade_icon.width == 85 and upgrade_icon.height == 32:
+            upgrade_icon.scale(3.5)
+
+        base_image = core.NewBCImage.from_size(512, 128)
+        base_image.paste(upgrade_icon, 13, 1)
+
+        start_pos = (146, 112)
+        end_pos = (118, 70)
+        start_offset = 0
+        start_width = 311 - start_pos[0]
+        for i in range(start_pos[1] - end_pos[1]):
+            for j in range(start_width):
+                base_image.putpixel(
+                    start_pos[0] + j + start_offset, start_pos[1] - i, (0, 0, 0, 0)
+                )
+            start_offset += 1
+            start_width -= 1
+        self.upgrade_icon = base_image
+
     def import_enemy(
         self,
         cat_id: int,
@@ -758,6 +820,18 @@ class CustomForm:
             deploy_icon_offset,
             deploy_icon_scale,
         )
+
+    def set_cat_id(self, id: int):
+        if self.anim is not None:
+            self.anim.set_id(id)
+
+    def set_form(self, form: Union[int, "core.CatFormType"]):
+        if isinstance(form, int):
+            form = core.CatFormType.from_index(form)
+
+        self.form_type = form
+        if self.anim is not None:
+            self.anim.set_unit_form(form.value)
 
 
 @dataclass
@@ -1014,3 +1088,9 @@ class CustomCat(core.Modification):
         names = [form.name.get() for form in (self.forms or {}).values()]
         name_str = ", ".join(names)
         return f'<span style="color:#000">{name_str} (cat id: {self.cat_id})</span>'
+
+    def set_cat_id(self, id: int):
+        self.cat_id = id
+        if self.forms is not None:
+            for form in self.forms.values():
+                form.set_cat_id(id)
