@@ -177,6 +177,11 @@ class StrListCSVField(CSVField[list[str]]):
         value.extend([self.blank] * required_length)
         return value
 
+    def set_element(self, value: str, index: int):
+        ls = self.get()
+        ls[index] = value
+        self.value = ls
+
 
 @dataclass
 class IntListCSVField(CSVField[list[int]]):
@@ -226,3 +231,8 @@ class IntListCSVField(CSVField[list[int]]):
         value = self.value.copy()
         value.extend([self.blank] * required_length)
         return value
+
+    def set_element(self, value: int, index: int):
+        ls = self.get()
+        ls[index] = value
+        self.value = ls
