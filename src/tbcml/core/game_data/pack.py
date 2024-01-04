@@ -393,6 +393,8 @@ class GamePacks:
         self.modified_packs: dict[str, bool] = {}
         self.init_data()
 
+        self.csv_cache: dict[str, core.CSV] = {}
+
     def init_data(self):
         """Initialize the data objects."""
 
@@ -444,7 +446,13 @@ class GamePacks:
         delimeter: Optional[Union["core.Delimeter", str]] = ",",
         country_code: Optional["core.CountryCode"] = None,
         show_error: bool = False,
+        use_cache: bool = True,
+        update_cache: bool = True,
     ) -> Optional["core.CSV"]:
+        if use_cache:
+            csv = self.csv_cache.get(file_name)
+            if csv is not None:
+                return csv.copy()
         if country_code is not None:
             delimeter = core.Delimeter.from_country_code_res(country_code)
         if delimeter is None:
@@ -453,13 +461,21 @@ class GamePacks:
         if file is None:
             return
         csv = core.CSV(file.dec_data, delimeter=delimeter)
+        if update_cache:
+            self.csv_cache[file_name] = csv
+
         return csv
 
     def set_csv(
-        self, file_name: str, csv: Optional["core.CSV"] = None
+        self,
+        file_name: str,
+        csv: Optional["core.CSV"] = None,
+        update_cache: bool = True,
     ) -> Optional["GameFile"]:
         if csv is None:
             return None
+        if update_cache:
+            self.csv_cache[file_name] = csv
         return self.set_file(file_name, csv.to_data())
 
     def get_img(
