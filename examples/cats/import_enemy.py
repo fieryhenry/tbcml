@@ -1,7 +1,7 @@
 from tbcml import core
 
 
-class AssassinBearForm(core.CustomForm):
+class AssassinBearForm(core.CatForm):
     def __init__(self, cat_id: int, game_data: "core.GamePacks"):
         super().__init__(
             form_type=core.CatFormType.FIRST
@@ -44,7 +44,7 @@ class AssassinBearForm(core.CustomForm):
         """
 
 
-class AssassinBear(core.CustomCat):
+class AssassinBear(core.Cat):
     def __init__(self, game_data: "core.GamePacks"):
         super().__init__(
             cat_id=0

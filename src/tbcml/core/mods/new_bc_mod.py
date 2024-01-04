@@ -248,7 +248,7 @@ class NewMod:
         cls = None
 
         if mod_type == ModificationType.CAT.value:
-            cls = core.CustomCat
+            cls = core.Cat
         elif mod_type == ModificationType.ENEMY.value:
             cls = core.CustomEnemy
 

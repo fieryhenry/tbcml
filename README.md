@@ -110,7 +110,7 @@ Create `script.py`
 from tbcml import core
 
 
-class BasicCustomForm(core.CustomForm):
+class BasicCustomForm(core.CatForm):
     """For better organization, these classes could be defined in
     another / separate files and then imported.
 
@@ -124,7 +124,7 @@ class BasicCustomForm(core.CustomForm):
         self.description.set(["First line!", "Second Line!", "Third description line!"])
 
 
-class BasicCustomCat(core.CustomCat):
+class BasicCustomCat(core.Cat):
     def __init__(self):
         super().__init__(cat_id=0)
 

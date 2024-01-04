@@ -1,7 +1,7 @@
 from tbcml import core
 
 
-class NewForm(core.CustomForm):
+class NewForm(core.CatForm):
     def __init__(self):
         super().__init__(form_type=core.CatFormType.FIRST)
 
@@ -9,7 +9,7 @@ class NewForm(core.CustomForm):
         self.description.set(["cat that does stuff...", "example cat for tbcml"])
 
 
-class NewCat(core.CustomCat):
+class NewCat(core.Cat):
     def __init__(self):
         super().__init__(cat_id=0)
 
