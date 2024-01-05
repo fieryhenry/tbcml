@@ -402,6 +402,24 @@ class Model:
         return model
 
     @staticmethod
+    def from_paths(
+        mamodel_path: "core.Path",
+        imgcut_path: "core.Path",
+        img_path: "core.Path",
+        maanim_paths: list["core.Path"],
+    ) -> "Model":
+        return Model.from_data(
+            mamodel_path.read(),
+            mamodel_path.basename(),
+            imgcut_path.read(),
+            imgcut_path.basename(),
+            img_path.read(),
+            img_path.basename(),
+            [path.read() for path in maanim_paths],
+            [path.basename() for path in maanim_paths],
+        )
+
+    @staticmethod
     def from_data(
         mamodel_data: "core.Data",
         mamodel_name: str,

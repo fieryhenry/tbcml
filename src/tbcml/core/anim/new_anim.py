@@ -382,16 +382,14 @@ class CustomModel(core.Modification):
 
     def read_csv(
         self,
-        game_data: "core.GamePacks",
-        img_name: str,
+        img: Optional["core.NewBCImage"],
         imgcut_csv: Optional["core.CSV"],
         maanim_csvs: dict[str, "core.CSV"],
         mamodel_csv: Optional["core.CSV"],
     ):
         if imgcut_csv is not None:
             self.texture.read_csv(imgcut_csv)
-        self.texture.read_img(game_data, img_name)
-        self.texture.apply_img
+        self.texture.image = img
         self.anims = []
         for name, maanim_csv in maanim_csvs.items():
             anim = CustomUnitAnim(name=name)
@@ -424,6 +422,7 @@ class CustomModel(core.Modification):
         mamodel_name: str,
     ):
         self.texture.imgcut_name = imgcut_name
+        self.texture.metadata.img_name.set(sprite_name)
 
         texture_csv = game_data.get_csv(imgcut_name)
 
@@ -437,7 +436,35 @@ class CustomModel(core.Modification):
             if maanim_csv is not None:
                 maanim_csvs[maanim_name] = maanim_csv
 
-        self.read_csv(game_data, sprite_name, texture_csv, maanim_csvs, mamodel_csv)
+        img = game_data.get_img(sprite_name)
+
+        self.read_csv(img, texture_csv, maanim_csvs, mamodel_csv)
+
+    def read_files(
+        self,
+        sprite_path: "core.Path",
+        imgcut_path: "core.Path",
+        maanim_paths: list["core.Path"],
+        mamodel_path: "core.Path",
+    ):
+        self.texture.imgcut_name = imgcut_path.basename()
+        self.texture.metadata.img_name.set(sprite_path.basename())
+        texture_csv = core.CSV(imgcut_path.read())
+
+        self.mamodel.mamodel_name = mamodel_path.basename()
+        mamodel_csv = core.CSV(mamodel_path.read())
+
+        maanim_csvs: dict[str, "core.CSV"] = {}
+        for path in maanim_paths:
+            maanim_csv = core.CSV(path.read())
+            maanim_csvs[path.basename()] = maanim_csv
+
+        self.read_csv(
+            core.NewBCImage.from_file(sprite_path),
+            texture_csv,
+            maanim_csvs,
+            mamodel_csv,
+        )
 
     def apply(self, game_data: "core.GamePacks"):
         texture_csv = core.CSV()
