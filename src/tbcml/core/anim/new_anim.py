@@ -466,6 +466,36 @@ class CustomModel(core.Modification):
             mamodel_csv,
         )
 
+    def read_data(
+        self,
+        sprite_name: str,
+        sprite_data: "core.Data",
+        imgcut_name: str,
+        imgcut_data: "core.Data",
+        maanim_names: list[str],
+        maanim_datas: list["core.Data"],
+        mamodel_name: str,
+        mamodel_data: "core.Data",
+    ):
+        self.texture.imgcut_name = imgcut_name
+        self.texture.metadata.img_name.set(sprite_name)
+        texture_csv = core.CSV(imgcut_data)
+
+        self.mamodel.mamodel_name = mamodel_name
+        mamodel_csv = core.CSV(mamodel_data)
+
+        maanim_csvs: dict[str, "core.CSV"] = {}
+        for name, data in zip(maanim_names, maanim_datas):
+            maanim_csv = core.CSV(data)
+            maanim_csvs[name] = maanim_csv
+
+        self.read_csv(
+            core.NewBCImage.from_data(sprite_data),
+            texture_csv,
+            maanim_csvs,
+            mamodel_csv,
+        )
+
     def apply(self, game_data: "core.GamePacks"):
         texture_csv = core.CSV()
         self.texture.apply_csv(texture_csv, game_data)
