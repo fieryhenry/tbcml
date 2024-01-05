@@ -77,7 +77,7 @@ class BCUForm:
         self.deploy_icon = deploy_icon
 
     def get_cat_id_form(self) -> Optional[tuple[int, "core.CatFormType"]]:
-        img_name = self.anim.tex.img_name
+        img_name = self.anim.texture.metadata.img_name.get()
         cat_id = int(img_name[:3])
         form_str = img_name[4:5]
         try:
@@ -118,59 +118,37 @@ class BCUForm:
             maanim_data.append(maanim.data)
         return maanim_data
 
-    def load_anim(self) -> Optional["core.Model"]:
+    def load_anim(self) -> Optional["core.CustomModel"]:
         sprite = self.anims.get_file_by_name("sprite.png")
         imgcut = self.anims.get_file_by_name("imgcut.txt")
         mamodel = self.anims.get_file_by_name("mamodel.txt")
         if sprite is None or imgcut is None or mamodel is None:
             return None
-        model = core.Model.from_data(
-            mamodel.data,
-            self.get_mamodel_name(),
-            imgcut.data,
-            self.get_imgcut_name(),
-            sprite.data,
+        model = core.CustomModel().read_data(
             self.get_sprite_name(),
-            self.get_maanim_data(),
+            sprite.data,
+            self.get_imgcut_name(),
+            imgcut.data,
             self.get_maanim_names(),
+            self.get_maanim_data(),
+            self.get_mamodel_name(),
+            mamodel.data,
         )
         return model
 
-    def load_display_icon(self) -> Optional["core.BCImage"]:
+    def load_display_icon(self) -> Optional["core.NewBCImage"]:
         display_file = self.anims.get_file_by_name("icon_display.png")
         if display_file is None:
             return None
 
-        display_image = core.BCImage(display_file.data)
-        display_image.scale(3.5, 3.5)
+        return core.NewBCImage.from_data(display_file.data)
 
-        base_image = core.BCImage.from_size(512, 128)
-        base_image.paste(display_image, 13, 1)
-
-        start_pos = (146, 112)
-        end_pos = (118, 70)
-        start_offset = 0
-        start_width = 311 - start_pos[0]
-        for i in range(start_pos[1] - end_pos[1]):
-            for j in range(start_width):
-                base_image.putpixel(
-                    start_pos[0] + j + start_offset, start_pos[1] - i, (0, 0, 0, 0)
-                )
-            start_offset += 1
-            start_width -= 1
-
-        return base_image
-
-    def load_deploy_icon(self) -> Optional["core.BCImage"]:
+    def load_deploy_icon(self) -> Optional["core.NewBCImage"]:
         deploy_file = self.anims.get_file_by_name("icon_deploy.png")
         if deploy_file is None:
             return None
 
-        deploy_image = core.BCImage(deploy_file.data)
-
-        base_image = core.BCImage.from_size(128, 128)
-        base_image.paste(deploy_image, 9, 21)
-        return base_image
+        return core.NewBCImage.from_data(deploy_file.data)
 
     def get_cat_id_str(self):
         return core.PaddedInt(self.cat_id, 3).to_str()
@@ -178,163 +156,160 @@ class BCUForm:
     def to_cat_form(self, cat_id: int, form: "core.CatFormType") -> "core.CatForm":
         self.cat_id = cat_id
         self.form = form
-        if len(self.anim.mamodel.ints) == 1:
-            self.anim.mamodel.ints.append(self.anim.mamodel.ints[0])
-        an = core.CatModel(self.cat_id, self.form, self.anim)
-        frm = core.CatForm(
-            self.cat_id,
-            self.form,
-            self.to_stats(),
-            self.name,
-            self.description,
-            an,
-            self.upgrade_icon,
-            self.deploy_icon,
-        )
-        frm.set_cat_id(self.cat_id, force=True)
-        frm.set_form(self.form, force=True)
+        self.anim.mamodel.dup_ints()
+        frm = core.CatForm(self.form)
+        frm.stats = self.to_stats()
+        frm.name.set(self.name)
+        frm.description.set(self.description)
+        frm.anim = self.anim
+        frm.upgrade_icon = self.upgrade_icon
+        frm.deploy_icon = self.deploy_icon
+        frm.set_cat_id(self.cat_id)
+        frm.set_form(self.form)
+        frm.format_bcu_deploy_icon()
+        frm.format_bcu_upgrade_icon()
         return frm
 
-    def to_stats(self) -> "core.CatStats":
-        stats = core.CatStats(self.cat_id, self.form, [])
+    def to_stats(self) -> "core.FormStats":
+        stats = core.FormStats()
         base_stats = self.form_data["du"]
         traits = base_stats["traits"]
         procs = base_stats["rep"]["proc"]
         traits = sorted(traits, key=lambda x: x["id"])
-        stats.hp = base_stats["hp"]
-        stats.kbs = base_stats["hb"]
-        stats.speed = base_stats["speed"]
-        stats.attack_1.damage = base_stats["atks"]["pool"][0]["atk"]
-        stats.attack_interval = core.Frames(base_stats["tba"])
-        stats.range = base_stats["range"]
-        stats.cost = base_stats["price"]
-        stats.recharge_time = core.Frames(base_stats["resp"])
-        stats.collision_width = base_stats["width"]
-        stats.target_red = self.get_trait_by_id(traits, 0)
-        stats.area_attack = base_stats["atks"]["pool"][0]["range"]
-        stats.z_layers.min = base_stats["front"]
-        stats.z_layers.max = base_stats["back"]
-        stats.target_floating = self.get_trait_by_id(traits, 1)
-        stats.target_black = self.get_trait_by_id(traits, 2)
-        stats.target_metal = self.get_trait_by_id(traits, 3)
-        stats.target_traitless = self.get_trait_by_id(traits, 9)
-        stats.target_angel = self.get_trait_by_id(traits, 4)
-        stats.target_alien = self.get_trait_by_id(traits, 5)
-        stats.target_zombie = self.get_trait_by_id(traits, 6)
-        stats.strong = self.check_ability(base_stats["abi"], 0)
-        stats.knockback.prob = self.get_proc_prob(procs, "KB")
-        stats.freeze.prob = self.get_proc_prob(procs, "STOP")
-        stats.freeze.time = self.get_proc_time(procs, "STOP")
-        stats.slow.prob = self.get_proc_prob(procs, "SLOW")
-        stats.slow.time = self.get_proc_time(procs, "SLOW")
-        stats.resistant = self.check_ability(base_stats["abi"], 1)
-        stats.insane_damage = self.check_ability(base_stats["abi"], 2)
-        stats.crit.prob = self.get_proc_prob(procs, "CRIT")
-        stats.attacks_only = self.check_ability(base_stats["abi"], 3)
-        stats.extra_money = bool(self.get_proc_mult(procs, "BOUNTY") // 100)
-        stats.base_destroyer = bool(self.get_proc_mult(procs, "ATKBASE") // 300)
-        stats.wave.is_mini = bool(
+        stats.hp.set(base_stats["hp"])
+        stats.kbs.set(base_stats["hb"])
+        stats.speed.set(base_stats["speed"])
+        stats.attack_1_damage.set(base_stats["atks"]["pool"][0]["atk"])
+        stats.attack_interval.set(base_stats["tba"] // 2)
+        stats.attack_range.set(base_stats["range"])
+        stats.cost.set(base_stats["price"])
+        stats.recharge_time.set(base_stats["resp"] // 2)
+        stats.collision_width.set(base_stats["width"])
+        stats.target_red.set(self.get_trait_by_id(traits, 0))
+        stats.area_attack.set(base_stats["atks"]["pool"][0]["range"])
+        stats.min_z_layer.set(base_stats["front"])
+        stats.max_z_layer.set(base_stats["back"])
+        stats.target_floating.set(self.get_trait_by_id(traits, 1))
+        stats.target_black.set(self.get_trait_by_id(traits, 2))
+        stats.target_metal.set(self.get_trait_by_id(traits, 3))
+        stats.target_traitless.set(self.get_trait_by_id(traits, 9))
+        stats.target_angel.set(self.get_trait_by_id(traits, 4))
+        stats.target_alien.set(self.get_trait_by_id(traits, 5))
+        stats.target_zombie.set(self.get_trait_by_id(traits, 6))
+        stats.strong.set(self.check_ability(base_stats["abi"], 0))
+        stats.knockback_prob.set(self.get_proc_prob(procs, "KB"))
+        stats.freeze_prob.set(self.get_proc_prob(procs, "STOP"))
+        stats.freeze_duration.set(self.get_proc_time(procs, "STOP"))
+        stats.slow_prob.set(self.get_proc_prob(procs, "SLOW"))
+        stats.slow_duration.set(self.get_proc_time(procs, "SLOW"))
+        stats.resistant.set(self.check_ability(base_stats["abi"], 1))
+        stats.insane_damage.set(self.check_ability(base_stats["abi"], 2))
+        stats.crit_prob.set(self.get_proc_prob(procs, "CRIT"))
+        stats.attacks_only.set(self.check_ability(base_stats["abi"], 3))
+        stats.extra_money.set(bool(self.get_proc_mult(procs, "BOUNTY") // 100))
+        stats.base_destroyer.set(bool(self.get_proc_mult(procs, "ATKBASE") // 300))
+        stats.wave_level.set(
             max(
-                self.get_proc_prob(procs, "WAVE").percent or 0,
-                self.get_proc_prob(procs, "MINIWAVE").percent or 0,
+                self.get_proc_level(procs, "WAVE"),
+                self.get_proc_level(procs, "MINIWAVE"),
             )
         )
-        stats.wave.level = max(
-            self.get_proc_level(procs, "WAVE"), self.get_proc_level(procs, "MINIWAVE")
+        stats.weaken_prob.set(self.get_proc_prob(procs, "WEAK"))
+        stats.weaken_duration.set(self.get_proc_time(procs, "WEAK"))
+        stats.strengthen_hp_start_percentage.set(self.get_proc_health(procs, "STRONG"))
+        stats.strengthen_hp_boost_percentage.set(self.get_proc_mult(procs, "STRONG"))
+        stats.lethal_strike_prob.set(self.get_proc_prob(procs, "LETHAL"))
+        stats.is_metal.set(self.check_ability(base_stats["abi"], 4))
+        stats.attack_1_ld_start.set(base_stats["atks"]["pool"][0]["ld0"])
+        stats.attack_1_ld_range.set(
+            base_stats["atks"]["pool"][0]["ld1"] - stats.attack_1_ld_start.get()
         )
-        stats.weaken.prob = self.get_proc_prob(procs, "WEAK")
-        stats.weaken.time = self.get_proc_time(procs, "WEAK")
-        stats.strengthen.hp_percent = self.get_proc_health(procs, "STRONG")
-        stats.strengthen.multiplier_percent = self.get_proc_mult(procs, "STRONG")
-        stats.lethal_strike.prob = self.get_proc_prob(procs, "LETHAL")
-        stats.is_metal = self.check_ability(base_stats["abi"], 4)
-        stats.attack_1.long_distance_start = base_stats["atks"]["pool"][0]["ld0"]
-        stats.attack_1.long_distance_range = (
-            base_stats["atks"]["pool"][0]["ld1"] - stats.attack_1.long_distance_start
-        )
-        stats.wave_immunity = bool(self.get_proc_mult(procs, "IMUWAVE"))
-        stats.wave_blocker = self.check_ability(base_stats["abi"], 5)
-        stats.knockback_immunity = bool(self.get_proc_mult(procs, "IMUKB"))
-        stats.freeze_immunity = bool(self.get_proc_mult(procs, "IMUSTOP"))
-        stats.slow_immunity = bool(self.get_proc_mult(procs, "IMUSLOW"))
-        stats.weaken_immunity = bool(self.get_proc_mult(procs, "IMUWEAK"))
-        stats.zombie_killer = self.check_ability(base_stats["abi"], 9)
-        stats.witch_killer = self.check_ability(base_stats["abi"], 10)
-        stats.target_witch = self.check_ability(base_stats["abi"], 10)
-        stats.attack_state.attacks_before = base_stats["loop"]
-        stats.attack_state.state_id = (
-            2 if self.check_ability(base_stats["abi"], 11) else 0
-        )
-        stats.attack_2.damage = self.get_attack(base_stats["atks"]["pool"], 1, "atk")
-        stats.attack_3.damage = self.get_attack(base_stats["atks"]["pool"], 2, "atk")
-        stats.attack_1.foreswing = core.Frames(
+        stats.wave_immunity.set(bool(self.get_proc_mult(procs, "IMUWAVE")))
+        stats.wave_blocker.set(self.check_ability(base_stats["abi"], 5))
+        stats.knockback_immunity.set(bool(self.get_proc_mult(procs, "IMUKB")))
+        stats.freeze_immunity.set(bool(self.get_proc_mult(procs, "IMUSTOP")))
+        stats.slow_immunity.set(bool(self.get_proc_mult(procs, "IMUSLOW")))
+        stats.weaken_immunity.set(bool(self.get_proc_mult(procs, "IMUWEAK")))
+        stats.zombie_killer.set(self.check_ability(base_stats["abi"], 9))
+        stats.witch_killer.set(self.check_ability(base_stats["abi"], 10))
+        stats.target_witch.set(self.check_ability(base_stats["abi"], 10))
+        stats.attacks_before_set_attack_state.set(base_stats["loop"])
+        stats.attack_state.set((2 if self.check_ability(base_stats["abi"], 11) else 0))
+        stats.attack_2_damage.set(self.get_attack(base_stats["atks"]["pool"], 1, "atk"))
+        stats.attack_2_damage.set(self.get_attack(base_stats["atks"]["pool"], 2, "atk"))
+        stats.attack_1_foreswing.set(
             self.get_attack(base_stats["atks"]["pool"], 0, "pre")
         )
-        stats.attack_2.foreswing = core.Frames(
+        stats.attack_2_foreswing.set(
             self.get_attack(base_stats["atks"]["pool"], 1, "pre")
         )
-        stats.attack_3.foreswing = core.Frames(
+        stats.attack_2_foreswing.set(
             self.get_attack(base_stats["atks"]["pool"], 2, "pre")
         )
-        stats.attack_2.use_ability = True
-        stats.attack_3.use_ability = True
-        stats.soul_anim.model_id = base_stats["death"]["id"]
-        stats.barrier_breaker.prob = self.get_proc_prob(procs, "BREAK")
-        stats.warp.prob = self.get_proc_prob(procs, "WARP")
-        stats.warp.time = self.get_proc_time(procs, "WARP")
-        stats.warp.min_distance = self.get_proc_value(procs, "WARP", "dis") * 4
-        stats.warp.max_distance = self.get_proc_value(procs, "WARP", "dis") * 4
-        stats.warp_blocker = bool(self.get_proc_mult(procs, "IMUWARP"))
-        stats.target_eva = self.check_ability(base_stats["abi"], 13)
-        stats.eva_killer = self.check_ability(base_stats["abi"], 13)
-        stats.target_relic = self.get_trait_by_id(traits, 8)
-        stats.curse_immunity = bool(self.get_proc_mult(procs, "IMUCURSE"))
-        stats.insanely_tough = self.check_ability(base_stats["abi"], 15)
-        stats.insane_damage = self.check_ability(base_stats["abi"], 16)
-        stats.savage_blow.prob = self.get_proc_prob(procs, "SATK")
-        stats.savage_blow.multiplier = self.get_proc_mult(procs, "SATK")
-        stats.dodge.prob = self.get_proc_prob(procs, "IMUATK")
-        stats.dodge.time = self.get_proc_time(procs, "IMUATK")
-        stats.surge.prob = self.get_proc_prob(procs, "VOLC")
-        stats.surge.start = int(self.get_proc_value(procs, "VOLC", "dis_0")) * 4
-        stats.surge.range = (
-            int(self.get_proc_value(procs, "VOLC", "dis_1")) * 4
-        ) - stats.surge.start
-        stats.surge.level = self.get_proc_value(procs, "VOLC", "time") // 20
-        stats.toxic_immunity = bool(self.get_proc_mult(procs, "IMUPOIATK"))
-        stats.surge_immunity = bool(self.get_proc_mult(procs, "IMUVOLC"))
-        stats.curse.prob = self.get_proc_prob(procs, "CURSE")
-        stats.curse.time = self.get_proc_time(procs, "CURSE")
-        stats.wave.is_mini = self.get_proc_prob(procs, "MINIWAVE").percent != 0
-        stats.shield_pierce.prob = self.get_proc_prob(procs, "SHIELDBREAK")
-        stats.target_aku = self.get_trait_by_id(traits, 7)
-        stats.collossus_slayer = self.check_ability(base_stats["abi"], 17)
-        stats.soul_strike = self.check_ability(base_stats["abi"], 18)
-        stats.attack_2.long_distance_flag = (
+        stats.attack_2_use_ability.set(True)
+        stats.attack_2_use_ability.set(True)
+        stats.soul_model_anim_id.set(base_stats["death"]["id"])
+        stats.barrier_break_prob.set(self.get_proc_prob(procs, "BREAK"))
+        stats.warp_prob.set(self.get_proc_prob(procs, "WARP"))
+        stats.warp_duration.set(self.get_proc_time(procs, "WARP"))
+        stats.warp_min_range.set(self.get_proc_value(procs, "WARP", "dis") * 4)
+        stats.warp_max_range.set(self.get_proc_value(procs, "WARP", "dis") * 4)
+        stats.warp_blocker.set(bool(self.get_proc_mult(procs, "IMUWARP")))
+        stats.target_eva.set(self.check_ability(base_stats["abi"], 13))
+        stats.eva_killer.set(self.check_ability(base_stats["abi"], 13))
+        stats.target_relic.set(self.get_trait_by_id(traits, 8))
+        stats.curse_immunity.set(bool(self.get_proc_mult(procs, "IMUCURSE")))
+        stats.insanely_tough.set(self.check_ability(base_stats["abi"], 15))
+        stats.insane_damage.set(self.check_ability(base_stats["abi"], 16))
+        stats.savage_blow_prob.set(self.get_proc_prob(procs, "SATK"))
+        stats.savage_blow_damage_addition.set(self.get_proc_mult(procs, "SATK"))
+        stats.dodge_prob.set(self.get_proc_prob(procs, "IMUATK"))
+        stats.dodge_duration.set(self.get_proc_time(procs, "IMUATK"))
+        stats.surge_prob.set(self.get_proc_prob(procs, "VOLC"))
+        stats.surge_start.set(int(self.get_proc_value(procs, "VOLC", "dis_0")) * 4)
+        stats.surge_range.set(
+            (int(self.get_proc_value(procs, "VOLC", "dis_1")) * 4)
+            - stats.surge_start.get()
+        )
+        stats.surge_level.set(self.get_proc_value(procs, "VOLC", "time") // 20)
+        stats.toxic_immunity.set(bool(self.get_proc_mult(procs, "IMUPOIATK")))
+        stats.surge_immunity.set(bool(self.get_proc_mult(procs, "IMUVOLC")))
+        stats.curse_prob.set(self.get_proc_prob(procs, "CURSE"))
+        stats.curse_duration.set(self.get_proc_time(procs, "CURSE"))
+        stats.wave_is_mini.set(self.get_proc_prob(procs, "MINIWAVE") != 0)
+        stats.shield_pierce_prob.set(self.get_proc_prob(procs, "SHIELDBREAK"))
+        stats.target_aku.set(self.get_trait_by_id(traits, 7))
+        stats.collossus_slayer.set(self.check_ability(base_stats["abi"], 17))
+        stats.soul_strike.set(self.check_ability(base_stats["abi"], 18))
+        stats.attack_2_ld_flag.set(
             self.get_attack(base_stats["atks"]["pool"], 1, "ld") != 0
         )
-        stats.attack_2.long_distance_start = self.get_attack(
-            base_stats["atks"]["pool"], 1, "ld0"
+        stats.attack_2_ld_start.set(
+            self.get_attack(base_stats["atks"]["pool"], 1, "ld0")
         )
-        stats.attack_2.long_distance_range = (
-            self.get_attack(base_stats["atks"]["pool"], 1, "ld1")
-            - stats.attack_2.long_distance_start
+        stats.attack_2_ld_range.set(
+            (
+                self.get_attack(base_stats["atks"]["pool"], 1, "ld1")
+                - stats.attack_2_ld_start.get()
+            )
         )
-        stats.attack_3.long_distance_flag = (
+        stats.attack_2_ld_flag.set(
             self.get_attack(base_stats["atks"]["pool"], 2, "ld") != 0
         )
-        stats.attack_3.long_distance_start = self.get_attack(
-            base_stats["atks"]["pool"], 2, "ld0"
+        stats.attack_2_ld_start.set(
+            self.get_attack(base_stats["atks"]["pool"], 2, "ld0")
         )
-        stats.attack_3.long_distance_range = (
-            self.get_attack(base_stats["atks"]["pool"], 2, "ld1")
-            - stats.attack_3.long_distance_start
+        stats.attack_2_ld_range.set(
+            (
+                self.get_attack(base_stats["atks"]["pool"], 2, "ld1")
+                - stats.attack_2_ld_start.get()
+            )
         )
-        stats.behemoth_slayer = self.get_proc_prob(procs, "BSTHUNT").percent != 0
-        stats.behemoth_dodge.prob = self.get_proc_prob(procs, "BSTHUNT")
-        stats.behemoth_dodge.time = self.get_proc_time(procs, "BSTHUNT")
-        stats.attack_1.use_ability = True
-        stats.counter_surge = self.check_ability(base_stats["abi"], 19)
+        stats.behemoth_slayer.set(self.get_proc_prob(procs, "BSTHUNT") != 0)
+        stats.behemoth_dodge_prob.set(self.get_proc_prob(procs, "BSTHUNT"))
+        stats.behemoth_dodge_duration.set(self.get_proc_time(procs, "BSTHUNT"))
+        stats.attack_1_use_ability.set(True)
+        stats.counter_surge.set(self.check_ability(base_stats["abi"], 19))
 
         return stats
 
@@ -358,11 +333,11 @@ class BCUForm:
 
     @staticmethod
     def get_proc_prob(procs: dict[str, dict[str, int]], proc_name: str):
-        return core.Prob(BCUForm.get_proc_value(procs, proc_name, "prob"))
+        return BCUForm.get_proc_value(procs, proc_name, "prob")
 
     @staticmethod
     def get_proc_time(procs: dict[str, dict[str, int]], proc_name: str):
-        return core.Frames(BCUForm.get_proc_value(procs, proc_name, "time"))
+        return BCUForm.get_proc_value(procs, proc_name, "time")
 
     @staticmethod
     def get_proc_level(procs: dict[str, dict[str, int]], proc_name: str):
@@ -411,29 +386,28 @@ class BCUCat:
 
     def to_cat(
         self,
-        unit_buy: "core.UnitBuyData",
-        talent: Optional["core.Talent"],
-        npbd: "core.NyankoPictureBookData",
-        evov_text: "core.EvolveTextCat",
         cat_id: int,
     ) -> "core.Cat":
         forms: dict[core.CatFormType, core.CatForm] = {}
         for form in self.forms:
             forms[form.form] = form.to_cat_form(cat_id, form.form)
-        unit_buy.rarity = core.Rarity(self.rarity)
-        unit_buy.max_upgrade_level_no_catseye = self.max_base_level
-        unit_buy.max_plus_upgrade_level = self.max_plus_level
-        unit_buy.max_upgrade_level_catseye = self.max_base_level
+
+        unit_buy = core.UnitBuy()
+
+        unit_buy.rarity.set(self.rarity)
+        unit_buy.max_base_no_catseye.set(self.max_base_level)
+        unit_buy.max_plus.set(self.max_plus_level)
+        unit_buy.max_base_catseye.set(self.max_base_level)
+        unit_buy.set_obtainable(True)
+
+        nypb = core.NyankoPictureBook()
+        nypb.is_displayed_in_cat_guide.set(True)
 
         unit = core.Cat(
             cat_id,
-            forms,
-            unit_buy,
-            talent,
-            npbd,
-            evov_text,
         )
-        unit.set_is_displayed_in_catguide(True)
+        unit.forms = forms
+        unit.unitbuy = unit_buy
         unit.set_cat_id(cat_id)
         return unit
 
@@ -489,26 +463,26 @@ class BCUEnemy:
             maanim_data.append(maanim.data)
         return maanim_data
 
-    def load_anim(self) -> Optional["core.Model"]:
+    def load_anim(self) -> Optional["core.CustomModel"]:
         sprite = self.anims.get_file_by_name("sprite.png")
         imgcut = self.anims.get_file_by_name("imgcut.txt")
         mamodel = self.anims.get_file_by_name("mamodel.txt")
         if sprite is None or imgcut is None or mamodel is None:
             return None
-        model = core.Model.from_data(
-            mamodel.data,
-            self.get_mamodel_name(),
-            imgcut.data,
-            self.get_imgcut_name(),
-            sprite.data,
+        model = core.CustomModel().read_data(
             self.get_sprite_name(),
-            self.get_maanim_data(),
+            sprite.data,
+            self.get_imgcut_name(),
+            imgcut.data,
             self.get_maanim_names(),
+            self.get_maanim_data(),
+            self.get_mamodel_name(),
+            mamodel.data,
         )
         return model
 
     def get_enemy_id(self) -> Optional[int]:
-        img_name = self.anim.tex.img_name
+        img_name = self.anim.texture.metadata.img_name.get()
         try:
             enemy_id = int(img_name[:3])
         except ValueError:
@@ -525,162 +499,182 @@ class BCUEnemy:
                 continue
             index_str = core.PaddedInt(index.value, 2).to_str()
             maanim.name = f"{self.get_enemy_id_str()}_e{index_str}.maanim"
-        an = core.EnemyModel(self.enemy_id, self.anim)
         enemy = core.Enemy(
             enemy_id,
-            self.to_stats(),
-            self.name,
-            self.descritpion,
-            an,
-            core.BCImage.from_size(64, 64),
         )
+        enemy.stats = self.to_stats()
+        enemy.name.set(self.name)
+        enemy.description.set(self.descritpion)
+        enemy.anim = self.anim
         enemy.set_enemy_id(enemy_id)
         return enemy
 
     def to_stats(self) -> "core.EnemyStats":
-        stats = core.EnemyStats(self.enemy_id, [])
+        stats = core.EnemyStats()
         base_stats = self.enemy_data["de"]
         traits = base_stats["traits"]
         procs = base_stats["rep"]["proc"]
         traits = sorted(traits, key=lambda x: x["id"])
 
-        stats.hp = base_stats["hp"]
-        stats.kbs = base_stats["hb"]
-        stats.speed = base_stats["speed"]
-        stats.attack_1.damage = base_stats["atks"]["pool"][0]["atk"]
-        stats.attack_interval = core.Frames(base_stats["tba"])
-        stats.range = base_stats["range"]
-        stats.money_drop = base_stats["drop"]
-        stats.collision_width = base_stats["width"]
-        stats.red = BCUForm.get_trait_by_id(traits, 0)
-        stats.area_attack = base_stats["atks"]["pool"][0]["range"]
-        stats.floating = BCUForm.get_trait_by_id(traits, 1)
-        stats.black = BCUForm.get_trait_by_id(traits, 2)
-        stats.metal = BCUForm.get_trait_by_id(traits, 3)
-        stats.traitless = BCUForm.get_trait_by_id(traits, 9)
-        stats.angel = BCUForm.get_trait_by_id(traits, 4)
-        stats.alien = BCUForm.get_trait_by_id(traits, 5)
-        stats.zombie = BCUForm.get_trait_by_id(traits, 6)
-        stats.knockback.prob = BCUForm.get_proc_prob(procs, "KB")
-        stats.freeze.prob = BCUForm.get_proc_prob(procs, "STOP")
-        stats.freeze.time = BCUForm.get_proc_time(procs, "STOP")
-        stats.slow.prob = BCUForm.get_proc_prob(procs, "SLOW")
-        stats.slow.time = BCUForm.get_proc_time(procs, "SLOW")
-        stats.crit.prob = BCUForm.get_proc_prob(procs, "CRIT")
-        stats.base_destroyer = bool(BCUForm.get_proc_mult(procs, "ATKBASE") // 300)
-        stats.wave.is_mini = bool(
-            max(
-                BCUForm.get_proc_prob(procs, "WAVE").percent or 0,
-                BCUForm.get_proc_prob(procs, "MINIWAVE").percent or 0,
+        stats.hp.set(base_stats["hp"])
+        stats.kbs.set(base_stats["hb"])
+        stats.speed.set(base_stats["speed"])
+        stats.attack_1_damage.set(base_stats["atks"]["pool"][0]["atk"])
+        stats.attack_interval.set(base_stats["tba"])
+        stats.attack_range.set(base_stats["range"])
+        stats.money_drop.set(base_stats["drop"])
+        stats.collision_width.set(base_stats["width"])
+        stats.red.set(BCUForm.get_trait_by_id(traits, 0))
+        stats.area_attack.set(base_stats["atks"]["pool"][0]["range"])
+        stats.floating.set(BCUForm.get_trait_by_id(traits, 1))
+        stats.black.set(BCUForm.get_trait_by_id(traits, 2))
+        stats.metal.set(BCUForm.get_trait_by_id(traits, 3))
+        stats.traitless.set(BCUForm.get_trait_by_id(traits, 9))
+        stats.angel.set(BCUForm.get_trait_by_id(traits, 4))
+        stats.alien.set(BCUForm.get_trait_by_id(traits, 5))
+        stats.zombie.set(BCUForm.get_trait_by_id(traits, 6))
+        stats.knockback_prob.set(BCUForm.get_proc_prob(procs, "KB"))
+        stats.freeze_prob.set(BCUForm.get_proc_prob(procs, "STOP"))
+        stats.freeze_duration.set(BCUForm.get_proc_time(procs, "STOP"))
+        stats.slow_prob.set(BCUForm.get_proc_prob(procs, "SLOW"))
+        stats.slow_duration.set(BCUForm.get_proc_time(procs, "SLOW"))
+        stats.crit_prob.set(BCUForm.get_proc_prob(procs, "CRIT"))
+        stats.base_destroyer.set(bool(BCUForm.get_proc_mult(procs, "ATKBASE") // 300))
+        stats.wave_is_mini.set(
+            bool(
+                max(
+                    BCUForm.get_proc_prob(procs, "WAVE"),
+                    BCUForm.get_proc_prob(procs, "MINIWAVE"),
+                )
             )
         )
-        stats.wave.level = max(
-            BCUForm.get_proc_level(procs, "WAVE"),
-            BCUForm.get_proc_level(procs, "MINIWAVE"),
+        stats.wave_level.set(
+            max(
+                BCUForm.get_proc_level(procs, "WAVE"),
+                BCUForm.get_proc_level(procs, "MINIWAVE"),
+            )
         )
-        stats.weaken.prob = BCUForm.get_proc_prob(procs, "WEAK")
-        stats.weaken.time = BCUForm.get_proc_time(procs, "WEAK")
-        stats.strengthen.hp_percent = BCUForm.get_proc_health(procs, "STRONG")
-        stats.strengthen.multiplier_percent = BCUForm.get_proc_mult(procs, "STRONG")
-        stats.survive_lethal_strike.prob = BCUForm.get_proc_prob(procs, "LETHAL")
-        stats.attack_1.long_distance_start = base_stats["atks"]["pool"][0]["ld0"]
-        stats.attack_1.long_distance_range = (
-            base_stats["atks"]["pool"][0]["ld1"] - stats.attack_1.long_distance_start
+        stats.weaken_prob.set(BCUForm.get_proc_prob(procs, "WEAK"))
+        stats.weaken_duration.set(BCUForm.get_proc_time(procs, "WEAK"))
+        stats.strengthen_hp_start_percentage.set(
+            BCUForm.get_proc_health(procs, "STRONG")
         )
-        stats.wave_immunity = bool(BCUForm.get_proc_mult(procs, "IMUWAVE"))
-        stats.wave_blocker = BCUForm.check_ability(base_stats["abi"], 5)
-        stats.knockback_immunity = bool(BCUForm.get_proc_mult(procs, "IMUKB"))
-        stats.freeze_immunity = bool(BCUForm.get_proc_mult(procs, "IMUSTOP"))
-        stats.slow_immunity = bool(BCUForm.get_proc_mult(procs, "IMUSLOW"))
-        stats.weaken_immunity = bool(BCUForm.get_proc_mult(procs, "IMUWEAK"))
-        stats.burrow.count = BCUForm.get_proc_value(procs, "BURROW", "count")
-        stats.burrow.distance = BCUForm.get_proc_value(procs, "BURROW", "dis") * 4
-        stats.revive.count = BCUForm.get_proc_value(procs, "REVIVE", "count")
-        stats.revive.time = BCUForm.get_proc_time(procs, "REVIVE")
-        stats.revive.hp_remain_percent = BCUForm.get_proc_health(procs, "REVIVE")
-        stats.witch = BCUForm.get_trait_by_id(traits, 10)
-        stats.base = BCUForm.get_trait_by_id(traits, 14)
-        stats.attack_state.attacks_before = base_stats["loop"]
-        stats.attack_state.state_id = (
-            2 if BCUForm.check_ability(base_stats["abi"], 11) else 0
+        stats.strengthen_hp_boost_percentage.set(BCUForm.get_proc_mult(procs, "STRONG"))
+        stats.survive_lethal_strike_prob.set(BCUForm.get_proc_prob(procs, "LETHAL"))
+        stats.attack_1_ld_start.set(base_stats["atks"]["pool"][0]["ld0"])
+        stats.attack_1_ld_range.set(
+            (base_stats["atks"]["pool"][0]["ld1"] - stats.attack_1_ld_start)
         )
-        stats.attack_2.damage = BCUForm.get_attack(base_stats["atks"]["pool"], 1, "atk")
-        stats.attack_3.damage = BCUForm.get_attack(base_stats["atks"]["pool"], 2, "atk")
-        stats.attack_1.foreswing = core.Frames(
+        stats.wave_immunity.set(bool(BCUForm.get_proc_mult(procs, "IMUWAVE")))
+        stats.wave_blocker.set(BCUForm.check_ability(base_stats["abi"], 5))
+        stats.knockback_immunity.set(bool(BCUForm.get_proc_mult(procs, "IMUKB")))
+        stats.freeze_immunity.set(bool(BCUForm.get_proc_mult(procs, "IMUSTOP")))
+        stats.slow_immunity.set(bool(BCUForm.get_proc_mult(procs, "IMUSLOW")))
+        stats.weaken_immunity.set(bool(BCUForm.get_proc_mult(procs, "IMUWEAK")))
+        stats.burrow_count.set(BCUForm.get_proc_value(procs, "BURROW", "count"))
+        stats.burrow_distance.set(BCUForm.get_proc_value(procs, "BURROW", "dis") * 4)
+        stats.revive_count.set(BCUForm.get_proc_value(procs, "REVIVE", "count"))
+        stats.revive_time.set(BCUForm.get_proc_time(procs, "REVIVE"))
+        stats.revive_hp_percentage.set(BCUForm.get_proc_health(procs, "REVIVE"))
+        stats.witch.set(BCUForm.get_trait_by_id(traits, 10))
+        stats.base.set(BCUForm.get_trait_by_id(traits, 14))
+        stats.attacks_before_set_attack_state.set(base_stats["loop"])
+        stats.attack_state.set(
+            (2 if BCUForm.check_ability(base_stats["abi"], 11) else 0)
+        )
+        stats.attack_2_damage.set(
+            BCUForm.get_attack(base_stats["atks"]["pool"], 1, "atk")
+        )
+        stats.attack_2_damage.set(
+            BCUForm.get_attack(base_stats["atks"]["pool"], 2, "atk")
+        )
+        stats.attack_1_foreswing.set(
             BCUForm.get_attack(base_stats["atks"]["pool"], 0, "pre")
         )
-        stats.attack_2.foreswing = core.Frames(
+        stats.attack_2_foreswing.set(
             BCUForm.get_attack(base_stats["atks"]["pool"], 1, "pre")
         )
-        stats.attack_3.foreswing = core.Frames(
+        stats.attack_2_foreswing.set(
             BCUForm.get_attack(base_stats["atks"]["pool"], 2, "pre")
         )
-        stats.attack_2.use_ability = True
-        stats.attack_3.use_ability = True
-        stats.soul_anim.model_id = base_stats["death"]["id"]
-        stats.barrier.hp = BCUForm.get_proc_health(procs, "BARRIER")
-        stats.warp.prob = BCUForm.get_proc_prob(procs, "WARP")
-        stats.warp.time = BCUForm.get_proc_time(procs, "WARP")
-        stats.warp.min_distance = BCUForm.get_proc_value(procs, "WARP", "dis") * 4
-        stats.warp.max_distance = BCUForm.get_proc_value(procs, "WARP", "dis") * 4
-        stats.starred_alien = base_stats["star"]
-        stats.warp_blocker = bool(BCUForm.get_proc_mult(procs, "IMUWARP"))
-        stats.eva_angel = BCUForm.get_trait_by_id(traits, 10)
-        stats.relic = BCUForm.get_trait_by_id(traits, 8)
-        stats.curse.prob = BCUForm.get_proc_prob(procs, "CURSE")
-        stats.curse.time = BCUForm.get_proc_time(procs, "CURSE")
-        stats.surge.prob = BCUForm.get_proc_prob(procs, "VOLC")
-        stats.savage_blow.prob = BCUForm.get_proc_prob(procs, "SATK")
-        stats.savage_blow.multiplier = BCUForm.get_proc_mult(procs, "SATK")
-        stats.dodge.prob = BCUForm.get_proc_prob(procs, "IMUATK")
-        stats.dodge.time = BCUForm.get_proc_time(procs, "IMUATK")
-        stats.toxic.prob = BCUForm.get_proc_prob(procs, "POIATK")
-        stats.toxic.hp_percent = BCUForm.get_proc_mult(procs, "POIATK")
-        stats.surge.start = int(BCUForm.get_proc_value(procs, "VOLC", "dis_0")) * 4
-        stats.surge.range = (
-            int(BCUForm.get_proc_value(procs, "VOLC", "dis_1")) * 4
-        ) - stats.surge.start
-        stats.surge.level = BCUForm.get_proc_value(procs, "VOLC", "time") // 20
-        stats.surge_immunity = bool(BCUForm.get_proc_mult(procs, "IMUVOLC"))
-        stats.wave.is_mini = BCUForm.get_proc_prob(procs, "MINIWAVE").percent != 0
-        stats.shield.hp = BCUForm.get_proc_health(procs, "SHIELD")
-        stats.shield.percent_heal_kb = BCUForm.get_proc_value(procs, "SHIELD", "regen")
-        stats.death_surge.prob = BCUForm.get_proc_prob(procs, "DEATHSURGE")
-        stats.death_surge.start = (
-            int(BCUForm.get_proc_value(procs, "DEATHSURGE", "dis_0")) * 4
+        stats.attack_2_use_ability.set(True)
+        stats.attack_2_use_ability.set(True)
+        stats.soul_model_anim_id.set(base_stats["death"]["id"])
+        stats.barrier_hp.set(BCUForm.get_proc_health(procs, "BARRIER"))
+        stats.warp_prob.set(BCUForm.get_proc_prob(procs, "WARP"))
+        stats.warp_duration.set(BCUForm.get_proc_time(procs, "WARP"))
+        stats.warp_min_range.set(BCUForm.get_proc_value(procs, "WARP", "dis") * 4)
+        stats.warp_max_range.set(BCUForm.get_proc_value(procs, "WARP", "dis") * 4)
+        stats.starred_alien.set(base_stats["star"])
+        stats.warp_blocker.set(bool(BCUForm.get_proc_mult(procs, "IMUWARP")))
+        stats.eva_angel.set(BCUForm.get_trait_by_id(traits, 10))
+        stats.relic.set(BCUForm.get_trait_by_id(traits, 8))
+        stats.curse_prob.set(BCUForm.get_proc_prob(procs, "CURSE"))
+        stats.curse_duration.set(BCUForm.get_proc_time(procs, "CURSE"))
+        stats.surge_prob.set(BCUForm.get_proc_prob(procs, "VOLC"))
+        stats.savage_blow_prob.set(BCUForm.get_proc_prob(procs, "SATK"))
+        stats.savage_blow_damage_addition.set(BCUForm.get_proc_mult(procs, "SATK"))
+        stats.dodge_prob.set(BCUForm.get_proc_prob(procs, "IMUATK"))
+        stats.dodge_duration.set(BCUForm.get_proc_time(procs, "IMUATK"))
+        stats.toxic_prob.set(BCUForm.get_proc_prob(procs, "POIATK"))
+        stats.toxic_hp_percentage.set(BCUForm.get_proc_mult(procs, "POIATK"))
+        stats.surge_start.set(int(BCUForm.get_proc_value(procs, "VOLC", "dis_0")) * 4)
+        stats.surge_range.set(
+            (int(BCUForm.get_proc_value(procs, "VOLC", "dis_1")) * 4)
+            - stats.surge_start.get()
         )
-        stats.death_surge.range = (
-            int(BCUForm.get_proc_value(procs, "DEATHSURGE", "dis_1")) * 4
-        ) - stats.death_surge.start
-        stats.death_surge.level = (
-            BCUForm.get_proc_value(procs, "DEATHSURGE", "time") // 20
+        stats.surge_level.set(BCUForm.get_proc_value(procs, "VOLC", "time") // 20)
+        stats.surge_immunity.set(bool(BCUForm.get_proc_mult(procs, "IMUVOLC")))
+        stats.wave_is_mini.set(BCUForm.get_proc_prob(procs, "MINIWAVE") != 0)
+        stats.shield_hp.set(BCUForm.get_proc_health(procs, "SHIELD"))
+        stats.sheild_kb_heal_percentage.set(
+            BCUForm.get_proc_value(procs, "SHIELD", "regen")
         )
-        stats.aku = BCUForm.get_trait_by_id(traits, 7)
-        stats.baron = BCUForm.get_trait_by_id(traits, 12)
-        stats.attack_2.long_distance_flag = (
-            BCUForm.get_attack(base_stats["atks"]["pool"], 1, "ld0") != 0
-            or BCUForm.get_attack(base_stats["atks"]["pool"], 1, "ld1") != 0
+        stats.death_surge_prob.set(BCUForm.get_proc_prob(procs, "DEATHSURGE"))
+        stats.death_surge_start.set(
+            (int(BCUForm.get_proc_value(procs, "DEATHSURGE", "dis_0")) * 4)
         )
-        stats.attack_2.long_distance_start = BCUForm.get_attack(
-            base_stats["atks"]["pool"], 1, "ld0"
+        stats.death_surge_range.set(
+            (int(BCUForm.get_proc_value(procs, "DEATHSURGE", "dis_1")) * 4)
+            - stats.death_surge_start.get()
         )
-        stats.attack_2.long_distance_range = (
-            BCUForm.get_attack(base_stats["atks"]["pool"], 1, "ld1")
-            - stats.attack_2.long_distance_start
+        stats.death_surge_level.set(
+            (BCUForm.get_proc_value(procs, "DEATHSURGE", "time") // 20)
         )
-        stats.attack_3.long_distance_flag = (
-            BCUForm.get_attack(base_stats["atks"]["pool"], 2, "ld0") != 0
-            or BCUForm.get_attack(base_stats["atks"]["pool"], 2, "ld1") != 0
+        stats.aku.set(BCUForm.get_trait_by_id(traits, 7))
+        stats.baron.set(BCUForm.get_trait_by_id(traits, 12))
+        stats.attack_2_ld_flag.set(
+            (
+                BCUForm.get_attack(base_stats["atks"]["pool"], 1, "ld0") != 0
+                or BCUForm.get_attack(base_stats["atks"]["pool"], 1, "ld1") != 0
+            )
         )
-        stats.attack_3.long_distance_start = BCUForm.get_attack(
-            base_stats["atks"]["pool"], 2, "ld0"
+        stats.attack_2_ld_start.set(
+            BCUForm.get_attack(base_stats["atks"]["pool"], 1, "ld0")
         )
-        stats.attack_3.long_distance_range = (
-            BCUForm.get_attack(base_stats["atks"]["pool"], 2, "ld1")
-            - stats.attack_3.long_distance_start
+        stats.attack_2_ld_range.set(
+            (
+                BCUForm.get_attack(base_stats["atks"]["pool"], 1, "ld1")
+                - stats.attack_2_ld_start.get()
+            )
         )
-        stats.behemoth = BCUForm.get_trait_by_id(traits, 13)
-        stats.counter_surge = BCUForm.check_ability(base_stats["abi"], 19)
+        stats.attack_2_ld_flag.set(
+            (
+                BCUForm.get_attack(base_stats["atks"]["pool"], 2, "ld0") != 0
+                or BCUForm.get_attack(base_stats["atks"]["pool"], 2, "ld1") != 0
+            )
+        )
+        stats.attack_2_ld_start.set(
+            BCUForm.get_attack(base_stats["atks"]["pool"], 2, "ld0")
+        )
+        stats.attack_2_ld_range.set(
+            (
+                BCUForm.get_attack(base_stats["atks"]["pool"], 2, "ld1")
+                - stats.attack_2_ld_start.get()
+            )
+        )
+        stats.behemoth.set(BCUForm.get_trait_by_id(traits, 13))
+        stats.counter_surge.set(BCUForm.check_ability(base_stats["abi"], 19))
 
         return stats
 
@@ -856,52 +850,3 @@ class BCUZip:
             )
             enemies.append(enemy)
         return enemies
-
-    def apply_to_mod(
-        self,
-        mod: "core.Mod",
-        game_data: "core.GamePacks",
-        cat_ids: Optional[list[int]] = None,
-        enemy_ids: Optional[list[int]] = None,
-    ):
-        mod.add_bcu_contributor(self.author)
-        cats = self.load_units()
-        if cat_ids is None:
-            cat_ids = list(range(len(cats)))
-
-        unit_buy = core.UnitBuy.from_game_data(game_data)
-        talents = core.Talents.from_game_data(game_data)
-        nyanko_picture_book = core.NyankoPictureBook.from_game_data(game_data)
-        evolve_text = core.EvolveText.from_game_data(game_data)
-
-        for cat, id in zip(cats, cat_ids):
-            unit_buy_data = unit_buy.unit_buy_data.get(
-                id, core.UnitBuyData.create_empty(id)
-            )
-            talent = talents.talents.get(id)
-            nyanko_picture_book_data = nyanko_picture_book.data.get(
-                id, core.NyankoPictureBookData.create_empty(id)
-            )
-            evolve_text_data = evolve_text.text.get(
-                id, core.EvolveTextCat.create_empty(id)
-            )
-            cat_object = cat.to_cat(
-                unit_buy_data,
-                talent,
-                nyanko_picture_book_data,
-                evolve_text_data,
-                id,
-            )
-            mod_edit = cat_object.to_dict()
-            mod_edit = core.ModEdit(["cats", id], mod_edit)
-            mod.add_mod_edit(mod_edit)
-
-        enemies = self.load_enemies()
-        if enemy_ids is None:
-            enemy_ids = list(range(len(enemies)))
-
-        for enemy, id in zip(enemies, enemy_ids):
-            enemy_object = enemy.to_enemy(id)
-            mod_edit = enemy_object.to_dict()
-            mod_edit = core.ModEdit(["enemies", id], mod_edit)
-            mod.add_mod_edit(mod_edit)
