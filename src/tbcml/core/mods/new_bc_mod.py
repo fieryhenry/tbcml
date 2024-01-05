@@ -250,7 +250,7 @@ class NewMod:
         if mod_type == ModificationType.CAT.value:
             cls = core.Cat
         elif mod_type == ModificationType.ENEMY.value:
-            cls = core.CustomEnemy
+            cls = core.Enemy
 
         if cls is None:
             raise ValueError("Invalid Modification")

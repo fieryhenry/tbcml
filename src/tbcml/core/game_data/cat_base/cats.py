@@ -217,7 +217,7 @@ class FormStats:
         core.Modification.read_csv_fields(self, csv)
 
     def import_enemy(
-        self, enemy_stats: "core.CustomEnemyStats", target_all_effects: bool = True
+        self, enemy_stats: "core.EnemyStats", target_all_effects: bool = True
     ):
         if target_all_effects:
             has_targeted_effect = enemy_stats.has_targeted_effect()
@@ -844,7 +844,7 @@ class CatForm:
     def import_enemy(
         self,
         cat_id: int,
-        enemy: "core.CustomEnemy",
+        enemy: "core.Enemy",
         deploy_icon_offset: tuple[int, int] = (-20, -20),
         deploy_icon_scale: float = 2.5,
     ):
@@ -872,8 +872,8 @@ class CatForm:
         game_data: "core.GamePacks",
         deploy_icon_offset: tuple[int, int] = (-20, -20),
         deploy_icon_scale: float = 2.5,
-    ) -> "core.CustomEnemy":
-        enemy = core.CustomEnemy(enemy_id)
+    ) -> "core.Enemy":
+        enemy = core.Enemy(enemy_id)
         enemy.read(game_data)
         self.import_enemy(cat_id, enemy, deploy_icon_offset, deploy_icon_scale)
         return enemy
@@ -885,7 +885,7 @@ class CatForm:
         game_data: "core.GamePacks",
         deploy_icon_offset: tuple[int, int] = (-20, -20),
         deploy_icon_scale: float = 2.5,
-    ) -> "core.CustomEnemy":
+    ) -> "core.Enemy":
         return self.import_enemy_from_id(
             cat_id,
             enemy_release_id - 2,

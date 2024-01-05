@@ -61,15 +61,7 @@ from .game_data.cat_base.cats import (
     FormStats,
     CatFormType,
 )
-from .game_data.cat_base.new_enemy import CustomEnemy, CustomEnemyStats
-from .game_data.cat_base.enemies import (
-    Enemies,
-    EnemyStatsData,
-    EnemyNames,
-    EnemyStats,
-    Enemy,
-    EnemyModel,
-)
+from .game_data.cat_base.enemy import Enemy, EnemyStats
 from .game_data.cat_base.gatya_item import GatyaItems
 from .game_data.cat_base.gatya import Gatya, GatyaRarity, GatyaType, RollType
 from .game_data.cat_base.scheme_item import SchemeItems
@@ -230,8 +222,8 @@ __all__ = [
     "Toxic",
     "Shield",
     "ItemShop",
-    "CustomEnemy",
-    "CustomEnemyStats",
+    "Enemy",
+    "EnemyStats",
     "Cat",
     "CatForm",
     "FormStats",

@@ -14,7 +14,7 @@ from marshmallow_dataclass import dataclass
 
 
 @dataclass
-class CustomEnemyStats:
+class EnemyStats:
     hp: IntCSVField = CSVField.to_field(IntCSVField, 0)
     kbs: IntCSVField = CSVField.to_field(IntCSVField, 1)
     speed: IntCSVField = CSVField.to_field(IntCSVField, 2)
@@ -142,14 +142,19 @@ class CustomEnemyStats:
 
 
 @dataclass
-class CustomEnemy(core.Modification):
+class Enemy(core.Modification):
     enemy_id: int = field(metadata={"required": True})
     name: StringCSVField = CSVField.to_field(StringCSVField, 0)
     description: StrListCSVField = CSVField.to_field(StrListCSVField, 0, length=5)
-    stats: Optional[CustomEnemyStats] = None
+    stats: Optional[EnemyStats] = None
     anim: Optional["core.CustomModel"] = None
     icon: Optional["core.NewBCImage"] = None
     modification_type: core.ModificationType = core.ModificationType.ENEMY
+
+    def set_enemy_id(self, id: int):
+        self.enemy_id = id
+        if self.anim is not None:
+            self.anim.set_id(id)
 
     def get_release_id(self) -> int:
         return self.enemy_id + 2
@@ -164,15 +169,15 @@ class CustomEnemy(core.Modification):
             self.icon = core.NewBCImage.from_size(64, 64)
         return self.icon
 
-    def get_stats(self) -> "CustomEnemyStats":
+    def get_stats(self) -> "EnemyStats":
         if self.stats is None:
-            self.stats = CustomEnemyStats()
+            self.stats = EnemyStats()
         return self.stats
 
     def __post_init__(
         self,
     ):  # This is required for CustomEnemy.Schema to not be a string for some reason
-        CustomEnemy.Schema()
+        Enemy.Schema()
 
     def apply(self, game_data: "core.GamePacks"):
         self.apply_name(game_data)
@@ -182,21 +187,21 @@ class CustomEnemy(core.Modification):
         self.apply_anim(game_data)
 
     def apply_name(self, game_data: "core.GamePacks"):
-        file_name, csv = CustomEnemy.get_name_csv(game_data)
+        file_name, csv = Enemy.get_name_csv(game_data)
         if csv is not None:
             csv.index = self.enemy_id
             self.name.write_to_csv(csv)
             game_data.set_csv(file_name, csv)
 
     def apply_description(self, game_data: "core.GamePacks"):
-        file_name, csv = CustomEnemy.get_descripion_csv(game_data)
+        file_name, csv = Enemy.get_descripion_csv(game_data)
         if csv is not None:
             csv.index = self.enemy_id
             self.description.write_to_csv(csv)
             game_data.set_csv(file_name, csv)
 
     def apply_stats(self, game_data: "core.GamePacks"):
-        file_name, csv = CustomEnemy.get_stats_csv(game_data)
+        file_name, csv = Enemy.get_stats_csv(game_data)
         if csv is not None and self.stats is not None:
             self.stats.apply_csv(self.enemy_id, csv)
             game_data.set_csv(file_name, csv)
@@ -217,19 +222,19 @@ class CustomEnemy(core.Modification):
         self.read_anim(game_data)
 
     def read_name(self, game_data: "core.GamePacks"):
-        _, csv = CustomEnemy.get_name_csv(game_data)
+        _, csv = Enemy.get_name_csv(game_data)
         if csv is not None:
             csv.index = self.enemy_id
             self.name.read_from_csv(csv)
 
     def read_descripion(self, game_data: "core.GamePacks"):
-        _, csv = CustomEnemy.get_descripion_csv(game_data)
+        _, csv = Enemy.get_descripion_csv(game_data)
         if csv is not None:
             csv.index = self.enemy_id
             self.description.read_from_csv(csv)
 
     def read_stats(self, game_data: "core.GamePacks"):
-        _, csv = CustomEnemy.get_stats_csv(game_data)
+        _, csv = Enemy.get_stats_csv(game_data)
         if csv is not None:
             self.get_stats().read_csv(self.enemy_id, csv)
 
@@ -288,7 +293,7 @@ class CustomEnemy(core.Modification):
         )
 
     def get_sprite_file_name(self):
-        return f"{CustomEnemy.get_enemy_id_str(self.enemy_id)}_e.png"
+        return f"{Enemy.get_enemy_id_str(self.enemy_id)}_e.png"
 
     def get_imgcut_file_name(self):
         return self.get_sprite_file_name().replace(".png", ".imgcut")
@@ -304,7 +309,7 @@ class CustomEnemy(core.Modification):
         maanim_paths: list[str] = []
         for anim_type in core.AnimType:
             maanim_paths.append(self.get_maanim_file_name(anim_type))
-        enemy_id_str = CustomEnemy.get_enemy_id_str(self.enemy_id)
+        enemy_id_str = Enemy.get_enemy_id_str(self.enemy_id)
         maanim_paths.append(f"{enemy_id_str}_e_entry.maanim")
         maanim_paths.append(f"{enemy_id_str}_e_soul.maanim")
         return maanim_paths
