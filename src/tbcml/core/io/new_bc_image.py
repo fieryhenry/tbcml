@@ -129,6 +129,10 @@ class NewBCImage:
         return NewBCImage(base_64)
 
     @staticmethod
+    def from_data(data: "core.Data") -> "NewBCImage":
+        return NewBCImage(data.to_base_64())
+
+    @staticmethod
     def from_file(path: Union["core.Path", str]):
         return NewBCImage(core.Path(path).read().to_base_64())
 
