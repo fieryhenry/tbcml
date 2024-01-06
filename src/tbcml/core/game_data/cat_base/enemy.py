@@ -268,7 +268,7 @@ class Enemy(core.Modification):
     def get_descripion_csv(
         game_data: "core.GamePacks",
     ) -> tuple[str, Optional["core.CSV"]]:
-        file_name_desc = f"EnemyPictureBook_{game_data.localizable.get_lang()}.csv"
+        file_name_desc = f"EnemyPictureBook_{game_data.new_localizable.get_lang()}.csv"
         desc_csv = game_data.get_csv(
             file_name_desc, country_code=game_data.country_code
         )

@@ -1002,7 +1002,7 @@ class Cat(core.Modification):
         game_data: "core.GamePacks", cat_id: int
     ) -> tuple[str, Optional["core.CSV"]]:
         file_name_desc = (
-            f"Unit_Explanation{cat_id+1}_{game_data.localizable.get_lang()}.csv"
+            f"Unit_Explanation{cat_id+1}_{game_data.new_localizable.get_lang()}.csv"
         )
         name_csv = game_data.get_csv(
             file_name_desc, country_code=game_data.country_code
@@ -1040,7 +1040,7 @@ class Cat(core.Modification):
     def get_evolve_text_csv(
         game_data: "core.GamePacks",
     ) -> tuple[str, Optional["core.CSV"]]:
-        file_name = f"unitevolve_{game_data.localizable.get_lang()}.csv"
+        file_name = f"unitevolve_{game_data.new_localizable.get_lang()}.csv"
         csv = game_data.get_csv(file_name, country_code=game_data.country_code)
 
         return file_name, csv
