@@ -15,13 +15,14 @@ class CSVField(Generic[F]):
     value: Optional[Any] = None  # marshmallow_dataclass can't do generics in fields atm
 
     def __post_init__(self):
-        self.original_index: int = 0
+        self.original_index: Optional[int] = None
 
     def read_from_csv(self, csv: "core.CSV") -> None:
         raise NotImplementedError
 
     def initialize_csv(self, csv: "core.CSV", writing: bool) -> bool:
         if self.value is None and not self.always_write and writing:
+            self.original_index = None
             return False
         self.original_index = csv.index
         if self.row_index is not None:
@@ -30,6 +31,8 @@ class CSVField(Generic[F]):
         return True
 
     def uninitialize_csv(self, csv: "core.CSV"):
+        if self.original_index is None:
+            return
         csv.index = self.original_index
 
     def write_to_csv(self, csv: "core.CSV"):
