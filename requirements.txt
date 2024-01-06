@@ -2,7 +2,7 @@ beautifulsoup4==4.12.2
 cloudscraper==1.2.71
 cryptography==41.0.6
 Pillow==10.0.1
-pycryptodomex==3.19.0
+pycryptodomex==3.19.1
 requests==2.31.0
 pyYAML==6.0.1
 ffmpeg_python==0.2.0
