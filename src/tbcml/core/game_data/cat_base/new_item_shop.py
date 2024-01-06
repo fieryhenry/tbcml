@@ -42,6 +42,11 @@ class CustomItemShop(core.Modification):
     texture: Optional["core.CustomTexture"] = None
     modification_type: core.ModificationType = core.ModificationType.SHOP
 
+    def get_texture(self) -> "core.CustomTexture":
+        if self.texture is None:
+            self.texture = core.CustomTexture()
+        return self.texture
+
     def __post_init__(
         self,
     ):  # This is required for CustomItemShop.Schema to not be a string for some reason
@@ -64,7 +69,7 @@ class CustomItemShop(core.Modification):
             return
 
         texture = core.CustomTexture()
-        texture.read_csv(imgcut_csv)
+        texture.read_csv(imgcut_csv, imgcut_name)
         texture.read_img(game_data, sprite_name)
 
         self.texture = texture
@@ -73,7 +78,11 @@ class CustomItemShop(core.Modification):
         if self.texture is None:
             return
         texture_csv = core.CSV()
-        self.texture.apply_csv(texture_csv, game_data)
+        self.texture.apply_csv(
+            texture_csv,
+            game_data,
+            f"item000_{game_data.new_localizable.get_lang()}.png",
+        )
         game_data.set_csv(self.texture.imgcut_name, texture_csv)
 
     def read_data(self, game_data: "core.GamePacks"):
@@ -122,3 +131,12 @@ class CustomItemShop(core.Modification):
             self.items = {}
 
         self.items[shop_id] = item
+
+    def get_item_img(self, item: "CustomShopItem") -> "core.NewBCImage":
+        img = self.get_texture().get_cut(item.imgcut_rect_id.get())
+        if img is None:
+            return core.NewBCImage()
+        return img
+
+    def set_item_img(self, item: "CustomShopItem", img: "core.NewBCImage"):
+        self.get_texture().set_cut(item.imgcut_rect_id.get(), img)
