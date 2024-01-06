@@ -69,7 +69,9 @@ class CustomTexture:
         if self.image is not None:
             self.image.save_b64()
 
-    def read_csv(self, csv: "core.CSV"):
+    def read_csv(self, csv: "core.CSV", imgcut_name: Optional[str] = None):
+        if imgcut_name is not None:
+            self.imgcut_name = imgcut_name
         self.rects = []
         self.metadata.read_csv(csv)
         for i in range(self.metadata.total_rects.get()):
@@ -78,17 +80,28 @@ class CustomTexture:
             rect.read_csv(index, csv)
             self.rects.append(rect)
 
-    def apply_csv(self, csv: "core.CSV", game_data: "core.GamePacks"):
+    def apply_csv(
+        self,
+        csv: "core.CSV",
+        game_data: "core.GamePacks",
+        imgname_save_overwrite: Optional[str] = None,
+    ):
         self.metadata.total_rects.set(len(self.rects))
         self.metadata.apply_csv(csv)
         for i, rect in enumerate(self.rects):
             index = i + 4
             rect.apply_csv(index, csv)
 
-        self.apply_img(game_data)
+        self.apply_img(game_data, imgname_save_overwrite)
 
-    def apply_img(self, game_data: "core.GamePacks"):
-        game_data.set_img(self.metadata.img_name.get(), self.image)
+    def apply_img(
+        self, game_data: "core.GamePacks", imgname_save_overwrite: Optional[str] = None
+    ):
+        if imgname_save_overwrite is not None:
+            name = imgname_save_overwrite
+        else:
+            name = self.metadata.img_name.get()
+        game_data.set_img(name, self.image)
 
     def read_img(self, game_data: "core.GamePacks", img_name: str):
         self.image = game_data.get_img(img_name)
@@ -100,6 +113,70 @@ class CustomTexture:
     def set_id(self, id: str):
         self.metadata.set_id(id)
         self.imgcut_name = self.metadata.img_name.get().replace(".png", ".imgcut")
+
+    def get_rect(self, id: int) -> Optional["CustomRect"]:
+        try:
+            rect = self.rects[id]
+        except IndexError:
+            return None
+        return rect
+
+    def get_cut(self, rect_id: int):
+        if not self.image:
+            return None
+
+        rect = self.get_rect(rect_id)
+        if rect is None:
+            return None
+
+        return self.image.get_subimage(rect)
+
+    def get_cut_from_rect(self, rect: "core.CustomRect") -> Optional["core.NewBCImage"]:
+        if self.image is None:
+            return None
+        return self.image.get_subimage(rect)
+
+    def set_cut(self, rect_id: int, img: "core.NewBCImage"):
+        original_rect = self.get_rect(rect_id)
+        if original_rect is None or self.image is None:
+            return
+        new_rect_new = img.get_rect(original_rect.x.get(), original_rect.y.get())
+        self.rects[rect_id] = new_rect_new
+        if (
+            new_rect_new.w.get() <= original_rect.w.get()
+            and new_rect_new.h.get() <= original_rect.h.get()
+        ):
+            self.image.wipe_rect(original_rect)
+            self.image.paste_rect(img, new_rect_new)
+            return
+
+        # reconstruct imgcut
+        x = 0
+        y = 0
+        new_rects: list["core.CustomRect"] = []
+        for rect in self.rects:
+            new_rect = core.CustomRect()
+            new_rect.x.set(x)
+            new_rect.y.set(0)
+            new_rect.h.set(rect.h.get())
+            new_rect.w.set(rect.w.get())
+            new_rects.append(new_rect)
+            x += new_rect.w.get()
+            y = max(new_rect.h.get(), y)
+
+        new_img = core.NewBCImage.from_size(x, y)
+
+        for i, (old_rect, new_rect) in enumerate(zip(self.rects, new_rects)):
+            if i == rect_id:
+                cut = img
+            else:
+                cut = self.get_cut_from_rect(old_rect)
+            if cut is None:
+                continue
+            new_img.paste_rect(cut, new_rect)
+
+        self.image = new_img
+        self.rects = new_rects
 
 
 @dataclass
