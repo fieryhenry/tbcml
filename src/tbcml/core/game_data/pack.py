@@ -391,9 +391,9 @@ class GamePacks:
         self.country_code = country_code
         self.gv = gv
         self.modified_packs: dict[str, bool] = {}
-        self.init_data()
-
         self.csv_cache: dict[str, core.CSV] = {}
+
+        self.init_data()
 
     def init_data(self):
         """Initialize the data objects."""
@@ -404,18 +404,12 @@ class GamePacks:
         self.shake_effects: Optional[core.ShakeEffects] = None
 
         self.adjust_data: Optional[core.AdjustData] = None
-        self.cats: Optional[core.Cats] = None
-        self.enemies: Optional[core.Enemies] = None
-        self.enemy_names: Optional[core.EnemyNames] = None
-        self.enemy_stats: Optional[core.EnemyStatsData] = None
-        self.evolve_text: Optional[core.EvolveText] = None
         self.gatya: Optional[core.Gatya] = None
         self.gatya_items: Optional[core.GatyaItems] = None
         self.item_shop: Optional[core.ItemShop] = None
         self.matatabi: Optional[core.MatatabiData] = None
         self.nyanko_picture_book: Optional[core.NyankoPictureBook] = None
         self.scheme_items: Optional[core.SchemeItems] = None
-        self.talents: Optional[core.Talents] = None
         self.unit_buy: Optional[core.UnitBuy] = None
         self.user_rank_reward: Optional[core.UserRankReward] = None
 
@@ -428,6 +422,9 @@ class GamePacks:
         self.maps: Optional[core.Maps] = None
 
         self.localizable = core.Localizable.from_game_data(self)
+
+        self.new_localizable = core.CustomLocalizable()
+        self.new_localizable.read(self)
 
     def get_pack(self, pack_name: str) -> Optional["PackFile"]:
         """Get a pack from the game packs.
@@ -701,8 +698,6 @@ class GamePacks:
         )
 
         core.AdjustData.create_empty().apply_mod_to_game_data(mod, self, "adjust_data")
-        core.Cats.create_empty().apply_mod_to_game_data(mod, self, "cats")
-        core.Enemies.create_empty().apply_mod_to_game_data(mod, self, "enemies")
         core.Gatya.create_empty().apply_mod_to_game_data(mod, self, "gatya")
         core.GatyaItems.create_empty().apply_mod_to_game_data(mod, self, "gatya_items")
         core.ItemShop.create_empty().apply_mod_to_game_data(mod, self, "item_shop")
