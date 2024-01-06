@@ -92,7 +92,7 @@ from .game_data.gamototo.item_pack import ItemPacks
 from .game_data.bcu import BCUZip
 
 from .game_data.map.map import Maps
-from .anim.new_anim import CustomModel, CustomTexture
+from .anim.new_anim import CustomModel, CustomTexture, CustomRect
 from .anim.model import Model
 from .anim.model_part import ModelPart
 from .anim.unit_animation import (
@@ -270,6 +270,7 @@ __all__ = [
     "Maps",
     "CustomModel",
     "CustomTexture",
+    "CustomRect",
     "Model",
     "ModelPart",
     "AnimType",
