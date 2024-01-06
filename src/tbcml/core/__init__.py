@@ -55,6 +55,7 @@ from .game_data.cat_base.unit import (
 )
 
 from .game_data.cat_base.item_shop import ItemShop
+from .game_data.cat_base.new_item_shop import CustomShopItem, CustomItemShop
 from .game_data.cat_base.cats import (
     Cat,
     CatForm,
@@ -81,6 +82,7 @@ from .game_data.battle.chara_group import CharaGroups
 from .game_data.battle.base_ability import BaseAbilities
 
 from .game_data.localizable import Localizable
+from .game_data.new_localizable import CustomLocalizable, LocalizableItem
 
 from .game_data.gamototo.cannon import Castles, CastleMixRecipies
 from .game_data.gamototo.engineers import EngineerLimit, EngineerAnim
@@ -90,7 +92,7 @@ from .game_data.gamototo.item_pack import ItemPacks
 from .game_data.bcu import BCUZip
 
 from .game_data.map.map import Maps
-from .anim.new_anim import CustomModel
+from .anim.new_anim import CustomModel, CustomTexture
 from .anim.model import Model
 from .anim.model_part import ModelPart
 from .anim.unit_animation import (
@@ -226,6 +228,8 @@ __all__ = [
     "Barrier",
     "Toxic",
     "Shield",
+    "CustomShopItem",
+    "CustomItemShop",
     "ItemShop",
     "Enemy",
     "EnemyStats",
@@ -253,6 +257,8 @@ __all__ = [
     "Bgs",
     "CharaGroups",
     "BaseAbilities",
+    "CustomLocalizable",
+    "LocalizableItem",
     "Localizable",
     "Castles",
     "CastleMixRecipies",
@@ -263,6 +269,7 @@ __all__ = [
     "BCUZip",
     "Maps",
     "CustomModel",
+    "CustomTexture",
     "Model",
     "ModelPart",
     "AnimType",
