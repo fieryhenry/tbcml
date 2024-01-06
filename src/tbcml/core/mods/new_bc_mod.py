@@ -8,6 +8,26 @@ from dataclasses import fields
 class ModificationType(enum.Enum):
     CAT = "cat"
     ENEMY = "enemy"
+    SHOP = "shop"
+    LOCALIZABLE = "localizable"
+
+    @staticmethod
+    def from_str_value(string: str) -> Optional["ModificationType"]:
+        for type in ModificationType:
+            if type.value == string:
+                return type
+        return None
+
+    def get_cls(self) -> type:
+        if self == ModificationType.CAT:
+            return core.Cat
+        if self == ModificationType.ENEMY:
+            return core.Enemy
+        if self == ModificationType.SHOP:
+            return core.CustomItemShop
+        if self == ModificationType.LOCALIZABLE:
+            return core.CustomLocalizable
+        raise NotImplementedError()
 
 
 class ModPaths(enum.Enum):
@@ -247,14 +267,11 @@ class NewMod:
         mod_type, modification_dt = data
         cls = None
 
-        if mod_type == ModificationType.CAT.value:
-            cls = core.Cat
-        elif mod_type == ModificationType.ENEMY.value:
-            cls = core.Enemy
-
-        if cls is None:
+        type = ModificationType.from_str_value(mod_type)
+        if type is None:
             raise ValueError("Invalid Modification")
 
+        cls = type.get_cls()
         return Modification.from_json(cls, modification_dt)
 
     def get_custom_html(self) -> str:
