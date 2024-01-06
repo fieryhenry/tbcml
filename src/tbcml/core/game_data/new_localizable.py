@@ -23,6 +23,12 @@ class LocalizableItem:
         csv.index = index
         core.Modification.apply_csv_fields(self, csv, remove_others=False)
 
+    def get_value(self) -> str:
+        return "\t".join(self.value.get())
+
+    def set_value(self, string: str):
+        self.value.set(string.split("\t"))
+
 
 @dataclass
 class CustomLocalizable(core.Modification):
@@ -82,12 +88,18 @@ class CustomLocalizable(core.Modification):
         self.apply_strings(game_data)
 
     def get_custom_html(self) -> str:
-        ...
+        if self.strings is None:
+            return "No Custom Strings"
+        html = "Strings:<br>"
+
+        for key, value in self.strings.items():
+            html += f'<span style="color:#000">{key} : {value.get_value()}</span>'
+        return html
 
     def set_string(self, key: str, value: str):
         new_item = LocalizableItem()
         new_item.key.set(key)
-        new_item.value.set(value.split("\t"))
+        new_item.set_value(value)
 
         if self.strings is None:
             self.strings = {}
@@ -101,7 +113,7 @@ class CustomLocalizable(core.Modification):
         item = self.strings.get(key)
         if item is None:
             return None
-        return "\t".join(item.value.get())
+        return item.get_value()
 
     def get_lang(self) -> str:
         lang = self.get_string("lang")
