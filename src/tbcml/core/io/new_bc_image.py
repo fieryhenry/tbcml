@@ -74,8 +74,18 @@ class NewBCImage:
         dt.save(bytes_io, format="PNG")
         return NewBCImage(core.Data(bytes_io.getvalue()).to_base_64())
 
-    def get_subimage(self, rect: "core.Rect") -> "NewBCImage":
-        return self.crop_rect(rect.x, rect.y, rect.x + rect.width, rect.y + rect.height)
+    def wipe_region(self, x1: int, y1: int, x2: int, y2: int):
+        for x in range(x1, x2):
+            for y in range(y1, y2):
+                self.putpixel(x, y, (0, 0, 0, 0))
+
+    def get_subimage(self, rect: "core.CustomRect") -> "NewBCImage":
+        return self.crop_rect(
+            rect.x.get(),
+            rect.y.get(),
+            rect.x.get() + rect.w.get(),
+            rect.y.get() + rect.h.get(),
+        )
 
     def scale(self, scale: float):
         if scale < 0:
@@ -145,11 +155,24 @@ class NewBCImage:
     def convert_to_rgba(self):
         self.__image = self.image.convert("RGBA")
 
-    def paste_rect(self, image: "NewBCImage", rect: "core.Rect"):
+    def paste_rect(self, image: "NewBCImage", rect: "core.CustomRect"):
         self.image.paste(
             image.image,
-            (rect.x, rect.y, rect.x + rect.width, rect.y + rect.height),
+            (
+                rect.x.get(),
+                rect.y.get(),
+                rect.x.get() + rect.w.get(),
+                rect.y.get() + rect.h.get(),
+            ),
             image.image,
+        )
+
+    def wipe_rect(self, rect: "core.CustomRect"):
+        self.wipe_region(
+            rect.x.get(),
+            rect.y.get(),
+            rect.x.get() + rect.w.get(),
+            rect.y.get() + rect.h.get(),
         )
 
     def putpixel(self, x: int, y: int, color: tuple[int, int, int, int]):
@@ -186,3 +209,11 @@ class NewBCImage:
         draw = ImageDraw.Draw(mask)
         draw.ellipse((0, 0, self.width, self.height), fill=255)
         self.image.putalpha(mask)
+
+    def get_rect(self, x: int, y: int) -> "core.CustomRect":
+        rect = core.CustomRect()
+        rect.x.set(x)
+        rect.y.set(y)
+        rect.w.set(self.width)
+        rect.h.set(self.height)
+        return rect
