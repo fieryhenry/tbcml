@@ -52,7 +52,7 @@ mod.add_script(script)
 
 apk.set_app_name("Battle Cats Mail Box Hack")
 apk.set_package_name(
-    "jp.co.ponos.battlecats.mailboxhack"
+    "jp.co.ponos.battlecatsen.mailboxhack"
 )  # may not work if you set decode_resources to False when extracting the APK
 
 print("Applying mods to game...")
