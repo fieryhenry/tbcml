@@ -1,5 +1,7 @@
 from tbcml import core
-from typing import List, Optional, Union
+from typing import Callable, List, Optional, Union
+
+from tbcml.core.io.apk import Apk
 
 
 class NewModLoader:
@@ -70,6 +72,9 @@ class NewModLoader:
         print_errors: bool = True,
         allowed_script_mods: bool = True,
         custom_apk_folder: Optional["core.Path"] = None,
+        download_progress: Optional[
+            Callable[[float, int, int, bool], None]
+        ] = Apk.progress,
     ):
         self.apk = core.Apk(
             game_version=self.game_version,
@@ -77,7 +82,7 @@ class NewModLoader:
             allowed_script_mods=allowed_script_mods,
             apk_folder=custom_apk_folder,
         )
-        self.apk.download()
+        self.apk.download(download_progress)
         self.apk.extract(decode_resources=decode_resources)
         # older versions don't have server files
         try:
@@ -133,28 +138,31 @@ class NewModLoader:
             if not success:
                 raise Exception("No devices connected.")
 
-    def install_adb(self, run_game: bool = False):
-        self.get_adb_handler().run_adb_handler_function(
+    def install_adb(self, run_game: bool = False) -> list[list["core.CommandResult"]]:
+        results = self.get_adb_handler().run_adb_handler_function(
             core.AdbHandler.install_apk, self.get_apk().get_final_apk_path()
         )
 
         if run_game:
-            self.run_game_adb()
+            return [results, self.run_game_adb()]
+        return [results]
 
     def get_adb_handler(self) -> "core.BulkAdbHandler":
         if self.adb_handler is None:
             raise Exception("ADB handler not initialized. Call initialize_adb() first.")
         return self.adb_handler
 
-    def run_game_adb(self):
-        self.get_adb_handler().run_adb_handler_function(core.AdbHandler.run_game)
+    def run_game_adb(self) -> list["core.CommandResult"]:
+        return self.get_adb_handler().run_adb_handler_function(core.AdbHandler.run_game)
 
-    def close_game_adb(self):
-        self.get_adb_handler().run_adb_handler_function(core.AdbHandler.close_game)
+    def close_game_adb(self) -> list["core.CommandResult"]:
+        return self.get_adb_handler().run_adb_handler_function(
+            core.AdbHandler.close_game
+        )
 
-    def push_server_files_adb(self):
+    def push_server_files_adb(self) -> list[list["core.CommandResult"]]:
         apk = self.get_apk()
-        self.get_adb_handler().run_adb_handler_function(
+        return self.get_adb_handler().run_adb_handler_function(
             core.AdbHandler.push_files_to_folder,
             apk.get_server_path(apk.country_code, apk.apk_folder).get_files(),
             core.AdbHandler.get_battlecats_path(apk.package_name).add("files"),
