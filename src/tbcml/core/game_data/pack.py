@@ -753,7 +753,7 @@ class GamePacks:
         if not mods:
             return
         for mod in mods:
-            mod.apply_modifications(self)
+            mod.apply_to_game_data(self)
 
     def apply_mods(self, mods: list["core.Mod"]):
         """Apply a list of mods to the game packs.
