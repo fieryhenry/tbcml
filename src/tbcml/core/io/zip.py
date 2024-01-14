@@ -101,6 +101,10 @@ class Zip:
                 data = key_data + data
         return data
 
+    @staticmethod
+    def is_encrypted(data: "core.Data") -> bool:
+        return not zipfile.is_zipfile(data.to_bytes_io())
+
     def folder_exists(self, folder_name: str) -> bool:
         return folder_name in self.zip.namelist()
 
