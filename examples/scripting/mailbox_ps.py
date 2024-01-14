@@ -52,8 +52,6 @@ script_64 = FridaScript(
     description="Overwrites a botan cryptography function to always return 1",
 )
 
-script_name = "force-verify-nyanko-signature"
-
 mod.add_script(script_32)
 mod.add_script(script_64)
 
