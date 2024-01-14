@@ -82,7 +82,7 @@ class SmaliSet:
         Args:
             zip_file (core.Zip): The zip file to add the SmaliSet to
         """
-        base_path = core.Path(core.ModPaths.SMALI.value)
+        base_path = core.Path(core.ModPath.SMALI.value)
         for smali in self.smali_edits.values():
             json_data = core.JsonFile.from_object(
                 {"function_sig_to_call": smali.function_sig_to_call}
@@ -103,7 +103,7 @@ class SmaliSet:
         Returns:
             SmaliSet: The created SmaliSet
         """
-        base_path = core.Path(core.ModPaths.SMALI.value)
+        base_path = core.Path(core.ModPath.SMALI.value)
         smali_edits = {}
         for file in zip_file.get_paths():
             if not file.path.startswith(base_path.to_str_forwards()):
