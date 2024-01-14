@@ -1,11 +1,20 @@
-from typing import Any, Optional
-import uuid
+from typing import Any, Literal, Optional, Union
 from tbcml import core
 
 try:
     import lief
 except ImportError:
     lief = None
+
+ARC = Union[
+    Literal["x86"],
+    Literal["x86_64"],
+    Literal["arm64-v8a"],
+    Literal["armeabi-v7a"],
+    Literal["armeabi"],
+    Literal["mips"],
+    Literal["mips64"],
+]
 
 
 class Patch:
@@ -101,18 +110,12 @@ class LibPatch:
         cc: "core.CountryCode",
         gv: "core.GameVersion",
         patches: list[Patch],
-        id: str,
     ):
         self.name = name
         self.architecture = architecture
         self.cc = cc
         self.gv = gv
         self.patches = patches
-        self.id = id
-
-    @staticmethod
-    def create_id() -> str:
-        return str(uuid.uuid4())
 
     def serialize(self):
         return {
@@ -121,7 +124,6 @@ class LibPatch:
             "cc": self.cc.get_code(),
             "gv": self.gv.to_string(),
             "patches": [patch.serialize() for patch in self.patches],
-            "id": self.id,
         }
 
     @staticmethod
@@ -132,7 +134,6 @@ class LibPatch:
             core.CountryCode.from_code(data.get("cc", "en")),
             core.GameVersion.from_string(data.get("gv", "12.4.0")),
             LibPatch.deserialize_patches(data.get("patches", [])),
-            data.get("id", LibPatch.create_id()),
         )
 
     @staticmethod
@@ -148,7 +149,7 @@ class LibPatch:
                 raise ValueError(f"Invalid patch type '{type}'")
         return patches
 
-    def add_to_zip(self, zip: "core.Zip"):
+    def add_to_zip(self, zip: "core.Zip", index: int):
         """Adds the lib patch to a zip file.
 
         Args:
@@ -157,47 +158,51 @@ class LibPatch:
         json_data = self.serialize()
         json_file = core.JsonFile.from_object(json_data)
         zip.add_file(
-            self.get_file_path(self.architecture, self.id),
+            self.get_file_path(self.architecture, index),
             json_file.to_data(),
         )
 
     @staticmethod
-    def from_zip(zip: "core.Zip", arc: str, id: str) -> "LibPatch":
+    def from_zip(zip: "core.Zip", arc: str, index: int) -> "LibPatch":
         """Gets a lib patch from a zip file.
 
         Args:
             zip (core.Zip): The zip file to get the lib patch from
             arc (str): Architecture the patch is designed for
-            id (str): ID of the patch
+            index (str): index of the patch
 
         Returns:
             LibPatch: The lib patch
         """
-        json_file = zip.get_file(LibPatch.get_file_path(arc, id))
+        json_file = zip.get_file(LibPatch.get_file_path(arc, index))
         if json_file is None:
             raise FileNotFoundError(
-                f"Could not find lib patch '{id}' for architecture '{arc}'"
+                f"Could not find lib patch '{index}' for architecture '{arc}'"
             )
         json_data = core.JsonFile.from_data(json_file).get_json()
         return LibPatch.deserialize(json_data)
 
     @staticmethod
-    def get_file_path(arc: str, id: str) -> "core.Path":
+    def get_file_path(arc: str, index: int) -> "core.Path":
         """Gets the file path for a lib patch.
 
         Args:
             arc (str): Architecture the patch is designed for
-            id (str): ID of the patch
+            index (int): index of the patch
 
         Returns:
             core.Path: The file path for the lib patch
         """
-        return core.Path(f"lib_patches/{arc}/{id}.json")
+        return core.Path(core.ModPath.LIB_PATCHES.value).add(arc).add(f"{index}.json")
 
 
 class LibPatches:
     def __init__(self, lib_patches: list[LibPatch]):
         self.lib_patches = lib_patches
+
+    @staticmethod
+    def create_empty() -> "LibPatches":
+        return LibPatches([])
 
     def serialize(self):
         return [lib_patch.serialize() for lib_patch in self.lib_patches]
@@ -230,16 +235,16 @@ class LibPatches:
         Args:
             zip (core.Zip): The zip file to add the lib patches to
         """
-        arcs: dict[str, list[str]] = {}
-        for lib_patch in self.lib_patches:
-            lib_patch.add_to_zip(zip)
+        arcs: dict[str, list[int]] = {}
+        for i, lib_patch in enumerate(self.lib_patches):
+            lib_patch.add_to_zip(zip, i)
             if lib_patch.architecture not in arcs:
                 arcs[lib_patch.architecture] = []
-            arcs[lib_patch.architecture].append(lib_patch.id)
+            arcs[lib_patch.architecture].append(i)
         json_data = {"arcs": arcs}
         json_file = core.JsonFile.from_object(json_data)
         zip.add_file(
-            core.Path("lib_patches/lib_patches.json"),
+            core.Path(core.ModPath.LIB_PATCHES.value).add("lib_patches.json"),
             json_file.to_data(),
         )
 
@@ -253,9 +258,11 @@ class LibPatches:
         Returns:
             LibPatches: The lib patches
         """
-        json_file = zip.get_file(core.Path("lib_patches/lib_patches.json"))
+        json_file = zip.get_file(
+            core.Path(core.ModPath.LIB_PATCHES.value).add("lib_patches.json")
+        )
         if json_file is None:
-            raise FileNotFoundError("Could not find lib patches")
+            return LibPatches([])
         json_data = core.JsonFile.from_data(json_file).get_json()
         lib_patches: list[LibPatch] = []
         for arc, names in json_data["arcs"].items():
