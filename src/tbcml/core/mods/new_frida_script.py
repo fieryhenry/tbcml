@@ -1,14 +1,14 @@
-from typing import Literal, Optional, Union
+from typing import Literal, Optional, Sequence, Union
 from marshmallow_dataclass import dataclass
 from tbcml import core
 
 
 @dataclass
 class NewFridaScript:
-    script_name: str
-    script_content: str
-    arcs: Union[list[str], Literal["all"]]
-    script_description: str = ""
+    name: str
+    content: str
+    architectures: Union[list["core.ARC"], Literal["all"]]
+    description: str = ""
     inject_smali: bool = False
 
     def to_json(self) -> str:
@@ -20,7 +20,7 @@ class NewFridaScript:
 
     @staticmethod
     def get_path(index: int) -> "core.Path":
-        return core.Path(core.ModPaths.SCRIPTS.value).add(f"{index}.json")
+        return core.Path(core.ModPath.SCRIPTS.value).add(f"{index}.json")
 
     def add_to_zip(self, index: int, zip: "core.Zip"):
         path = NewFridaScript.get_path(index)
@@ -37,25 +37,25 @@ class NewFridaScript:
 
     def get_script_str(self, mod_name: str, mod_authors: list[str]) -> str:
         mod_authors_str = ", ".join(mod_authors)
-        if self.arcs:
-            if self.arcs == "all":
+        if self.architectures:
+            if self.architectures == "all":
                 arcs = ["all"]
             else:
-                arcs = self.arcs
+                arcs = self.architectures
             arcs_str = ", ".join(arcs) + " architectures"
         else:
             arcs_str = "smali injection"
         string = "/*\n"
-        string += f"\t{self.script_name} from {mod_name} by {mod_authors_str} for {arcs_str}\n"
-        string += f"\t{self.script_description}\n"
+        string += f"\t{self.name} from {mod_name} by {mod_authors_str} for {arcs_str}\n"
+        string += f"\t{self.description}\n"
         string += "*/\n\n"
-        string += self.script_content
+        string += self.content
         return string
 
-    def get_arcs(self, apk: "core.Apk") -> list[str]:
-        if self.arcs == "all":
+    def get_arcs(self, apk: "core.Apk") -> Sequence[str]:
+        if self.architectures == "all":
             return apk.get_architectures()
-        return self.arcs
+        return self.architectures
 
     def get_scripts_str(
         self, apk: "core.Apk", mod_name: str, mod_authors: list[str]
@@ -71,4 +71,4 @@ class NewFridaScript:
         return core.Path("base_script.js", True).read().to_str()
 
     def get_custom_html(self) -> str:
-        return f'<span class="iro">[{self.script_name}]</span><br>{self.script_description}<br><span class="iro">Code:</span><br><pre><code class="language-javascript">{self.script_content}</code></pre>'
+        return f'<span class="iro">[{self.name}]</span><br>{self.description}<br><span class="iro">Code:</span><br><pre><code class="language-javascript">{self.content}</code></pre>'
