@@ -108,13 +108,13 @@ class LibPatch:
     def __init__(
         self,
         name: str,
-        architectures: "core.ARCS",
+        architectures: ARCS,
         patches: Union[list[Patch], Patch],
         valid_ccs: Optional[list["core.CC"]] = None,
         valid_game_versions: Optional[list["core.GV"]] = None,
     ):
         self.name = name
-        self.architectures = architectures
+        self.architectures: ARCS = architectures
         if isinstance(patches, Patch):
             patches = [patches]
         self.patches = patches
@@ -336,9 +336,7 @@ class Lib:
             if func.name == name:
                 return func
 
-    def apply_patch(self, patch: LibPatch, force: bool = False):
-        if patch.architecture != self.architecture and not force:
-            raise ValueError("Architecture mismatch")
+    def apply_patch(self, patch: LibPatch):
         for patch_ in patch.patches:
             patch_.apply_patch(self)
 
