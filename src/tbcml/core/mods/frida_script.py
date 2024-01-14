@@ -1,4 +1,4 @@
-from typing import Optional, Sequence
+from typing import Optional
 from marshmallow_dataclass import dataclass
 from tbcml import core
 
@@ -56,15 +56,6 @@ class FridaScript:
         string += self.content
         return string
 
-    def get_arcs(self, apk: "core.Apk") -> Sequence[str]:
-        if self.architectures == "all":
-            return apk.get_architectures()
-        elif self.architectures == "32":
-            return apk.get_32_bit_arcs()
-        elif self.architectures == "64":
-            return apk.get_64_bit_arcs()
-        return self.architectures
-
     def get_scripts_str(
         self, apk: "core.Apk", mod_name: str, mod_authors: list[str]
     ) -> tuple[dict[str, str], bool]:
@@ -72,7 +63,7 @@ class FridaScript:
         if not is_valid:
             return {}, self.inject_smali
 
-        arcs = self.get_arcs(apk)
+        arcs = apk.get_architectures_subset(self.architectures)
         scripts: dict[str, str] = {}
         for arc in arcs:
             scripts[arc] = self.get_script_str(mod_name, mod_authors)

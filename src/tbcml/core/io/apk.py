@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Sequence
 
 import bs4
 import cloudscraper  # type: ignore
@@ -1042,11 +1042,25 @@ class Apk:
             self.add_patch(patch)
 
     def add_patch(self, patch: "core.LibPatch"):
-        lib = self.parse_libnative(patch.architecture)
-        if lib is None:
-            return
-        lib.apply_patch(patch)
-        lib.write()
+        arcs = self.get_architectures_subset(patch.architectures)
+
+        for arc in arcs:
+            lib = self.parse_libnative(arc)
+            if lib is None:
+                return
+            lib.apply_patch(patch)
+            lib.write()
+
+    def get_architectures_subset(self, arcs: "core.ARCS") -> Sequence[str]:
+        if arcs == "all":
+            return self.get_architectures()
+        elif arcs == "32":
+            return self.get_32_bit_arcs()
+        elif arcs == "64":
+            return self.get_64_bit_arcs()
+        
+        all_arcs = self.get_architectures()
+        return [arc for arc in arcs if arc in all_arcs]
 
     def is_allowed_script_mods(self) -> bool:
         return self.allowed_script_mods
