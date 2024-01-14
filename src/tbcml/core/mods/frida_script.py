@@ -5,13 +5,72 @@ from tbcml import core
 
 @dataclass
 class FridaScript:
+    """FridaScript object
+    See <https://frida.re/> for what frida is
+
+    Usage:
+        ```
+        script_content = \"""
+        let func_name = "_ZN5Botan11PK_Verifier14verify_messageEPKhmS2_m"
+
+        // Botan::PK_Verifier::verify_message(...)
+        Interceptor.attach(Module.findExportByName("libnative-lib.so", func_name), {
+            onLeave: function (retval) {
+                retval.replace(0x1)
+            }
+        })
+        \"""
+        script = FridaScript(
+            name="Mailbox Hack",
+            content=script_content,
+            architectures="64",
+            description="Disable signature verification",
+        )
+        mod.add_script(script)
+        ```
+
+    Attributes:
+        name: (str), the name of the script
+        content: (str), the actual script code
+        architectures: (list[str] | str), the architectrues the script should apply to.
+        description: (str), the description of what the script does. Defaults to ""
+        inject_smali: (bool), whether to inject the frida-gadget library into the onCreate method of the apk instead of the native-lib. Defaults to False
+        valid_ccs: (list[str | core.CountryCode] | None), the country codes (en, jp, kr, tw) the script should apply to. If None, apply to all country codes. Defaults to None
+        valid_game_versions: (list[str | core.GameVersion] | None), the game versions (e.g 12.3.0, 13.0.0) the script should apply to. If None, apply to all game versions. Defaults to None
+    """
+
     name: str
+    """The name of the script"""
     content: str
+    """The actual script code, see <https://frida.re/docs/javascript-api/> on how to write a script, or look at the examples"""
     architectures: "core.ARCS"
+    """The architectrues the script should apply to.
+    
+    Options are: `[x86, x86_64, arm64-v8a, armeabi-v7a, armeabi, mips, mips64], all, 32, 64.`
+
+    32 = all 32 bit architectures.
+    64 = all 64 bit architectures.
+    all = all architectures.
+
+    `x86, x86_64, arm64-v8a, armeabi-v7a, armeabi, mips, mips64` should be specified in a list. e.g ["x86", "arm64-v8a"],
+    whereas `all, 32, 64` should be specified on their own e.g "32" or "all"
+    """
     description: str = ""
+    """The description of what the script does. Defaults to ""."""
     inject_smali: bool = False
+    """Whether to inject the frida-gadget library into the onCreate method of the apk instead of the native-lib.
+    
+    This is less reliable than injecting into libnative-lib.so, but may work for old versions.
+    Also useful if you want to hook into something as soon as the app loads. Defaults to False
+    """
     valid_ccs: Optional[list["core.CC"]] = None
+    """List of country codes (en, jp, kr, tw) the script should apply to.
+    If None, the script should apply to all country codes. Defaults to None
+    """
     valid_game_versions: Optional[list["core.GV"]] = None
+    """List of game versions (e.g 12.3.0, 13.0.0) the script should apply to
+    If None, the script should apply to all game versions. Defaults to None
+    """
 
     def to_json(self) -> str:
         return FridaScript.Schema().dumps(self)  # type: ignore
