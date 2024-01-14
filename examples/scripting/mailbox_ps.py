@@ -75,6 +75,9 @@ apk = loader.get_apk()
 apk.set_app_name("12.3.0")
 apk.set_package_name("jp.co.ponos.battlecatste")
 
-apk.load_mods([mod])
+loader.apply(mod)
+
+# loader.initialize_adb()
+# loader.install_adb(run_game=True)
 
 print(apk.final_apk_path)
