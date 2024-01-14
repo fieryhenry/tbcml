@@ -1,5 +1,6 @@
 """Country code enum."""
 import enum
+from typing import Literal, Union
 
 
 class CountryCode(enum.Enum):
@@ -97,3 +98,6 @@ class CountryCode(enum.Enum):
             str: The 2 letter lowercase country code.
         """
         return f"CountryCode.{self.name}"
+
+
+CC = Union[Literal["en"], Literal["jp"], Literal["kr"], Literal["tw"], CountryCode]

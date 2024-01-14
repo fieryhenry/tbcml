@@ -32,7 +32,7 @@ class NewModLoader:
 
     def __init__(
         self,
-        country_code: Union[str, "core.CountryCode"],
+        country_code: "core.CC",
         game_version: Union[str, "core.GameVersion"],
     ):
         if isinstance(country_code, str):
