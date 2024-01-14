@@ -30,11 +30,14 @@ class ModificationType(enum.Enum):
         raise NotImplementedError()
 
 
-class ModPaths(enum.Enum):
+class ModPath(enum.Enum):
     MODIFICATIONS = "modifications"
     SCRIPTS = "scripts"
     METADATA = "metadata.json"
     SMALI = "smali"
+    GAME_FILES = "game_files"
+    APK_FILES = "apk_files"
+    LIB_PATCHES = "lib_patches"
 
 
 T = TypeVar("T")
@@ -143,7 +146,12 @@ class NewMod:
 
         self.modifications: list[Modification] = []
         self.scripts: list[core.NewFridaScript] = []
+
+        self.game_files: dict[str, core.Data] = {}
+        self.apk_files: dict[core.Path, core.Data] = {}
+
         self.smali: core.SmaliSet = core.SmaliSet.create_empty()
+        self.patches: core.LibPatches = core.LibPatches.create_empty()
 
     def metadata_to_json(self) -> str:
         data = {
@@ -155,7 +163,7 @@ class NewMod:
         return json.dumps(data)
 
     @staticmethod
-    def metadata_from_json(data: str):
+    def metadata_from_json(data: str) -> "NewMod":
         obj = json.loads(data)
         name = obj.get("name", "")
         authors = obj.get("authors", "")
@@ -171,37 +179,90 @@ class NewMod:
     def to_zip(self) -> "core.Data":
         zipfile = core.Zip()
         metadata_json = self.metadata_to_json()
-        metadata_file_name = core.Path(ModPaths.METADATA.value)
+        metadata_file_name = core.Path(ModPath.METADATA.value)
         zipfile.add_file(metadata_file_name, core.Data(metadata_json))
 
+        self.add_modifications_to_zip(zipfile)
+        self.add_scripts_to_zip(zipfile)
+        self.add_game_files_to_zip(zipfile)
+        self.add_apk_files_to_zip(zipfile)
+
+        self.smali.add_to_zip(zipfile)
+        self.patches.add_to_zip(zipfile)
+
+        return zipfile.to_data()
+
+    def add_apk_files_to_zip(self, zipfile: "core.Zip"):
+        for name, data in self.apk_files.items():
+            path = core.Path(ModPath.APK_FILES.value).add(name)
+            zipfile.add_file(path, data)
+
+    def add_game_files_to_zip(self, zipfile: "core.Zip"):
+        for name, data in self.game_files.items():
+            path = core.Path(ModPath.GAME_FILES.value).add(name)
+            zipfile.add_file(path, data)
+
+    def add_scripts_to_zip(self, zipfile: "core.Zip"):
+        for i, script in enumerate(self.scripts):
+            script.add_to_zip(i, zipfile)
+
+    def add_modifications_to_zip(self, zipfile: "core.Zip"):
         for i, modification in enumerate(self.modifications):
             filepath = (
-                core.Path(ModPaths.MODIFICATIONS.value)
+                core.Path(ModPath.MODIFICATIONS.value)
                 .add(modification.modification_type.value)
                 .add(f"{i}.json")
             )
             json_data = modification.to_json()
             zipfile.add_file(filepath, core.Data(json_data))
 
-        for i, script in enumerate(self.scripts):
-            script.add_to_zip(i, zipfile)
-
-        self.smali.add_to_zip(zipfile)
-
-        return zipfile.to_data()
-
     @staticmethod
     def from_zip(data: "core.Data") -> "NewMod":
         zipfile = core.Zip(data)
-        metadata_file_name = core.Path(ModPaths.METADATA.value)
+        metadata_file_name = core.Path(ModPath.METADATA.value)
         metadata_json = zipfile.get_file(metadata_file_name)
         if metadata_json is None:
             return NewMod()
         mod = NewMod.metadata_from_json(metadata_json.to_str())
 
-        for path in zipfile.get_paths_in_folder(
-            core.Path(ModPaths.MODIFICATIONS.value)
-        ):
+        NewMod.modifications_from_zip(zipfile, mod)
+        NewMod.scripts_from_zip(zipfile, mod)
+        NewMod.game_files_from_zip(zipfile, mod)
+        NewMod.apk_files_from_zip(zipfile, mod)
+
+        mod.smali = core.SmaliSet.from_zip(zipfile)
+        mod.patches = core.LibPatches.from_zip(zipfile)
+
+        return mod
+
+    @staticmethod
+    def get_files_in_mod_path(zipfile: "core.Zip", path_type: ModPath):
+        return zipfile.get_paths_in_folder(core.Path(path_type.value))
+
+    @staticmethod
+    def apk_files_from_zip(zipfile: "core.Zip", mod: "NewMod"):
+        for path in NewMod.get_files_in_mod_path(zipfile, ModPath.APK_FILES):
+            data = zipfile.get_file(path)
+            if data is not None:
+                key = path.remove_prefix(ModPath.APK_FILES.value)
+                mod.apk_files[key] = data
+
+    @staticmethod
+    def game_files_from_zip(zipfile: "core.Zip", mod: "NewMod"):
+        for path in NewMod.get_files_in_mod_path(zipfile, ModPath.GAME_FILES):
+            data = zipfile.get_file(path)
+            if data is not None:
+                mod.game_files[path.basename()] = data
+
+    @staticmethod
+    def scripts_from_zip(zipfile: "core.Zip", mod: "NewMod"):
+        for path in NewMod.get_files_in_mod_path(zipfile, ModPath.SCRIPTS):
+            script = core.NewFridaScript.from_json(path.read().to_str())
+            mod.add_script(script)
+
+    @staticmethod
+    def modifications_from_zip(zipfile: "core.Zip", mod: "NewMod"):
+        for path in NewMod.get_files_in_mod_path(zipfile, ModPath.MODIFICATIONS):
             if not path.get_extension() == "json":
                 continue
             modification_type = path.parent().basename()
@@ -212,14 +273,6 @@ class NewMod:
                 (modification_type, dt.to_str())
             )
             mod.add_modification(modifiction)
-
-        for path in zipfile.get_paths_in_folder(core.Path(ModPaths.SCRIPTS.value)):
-            script = core.NewFridaScript.from_json(path.read().to_str())
-            mod.add_script(script)
-
-        mod.smali = core.SmaliSet.from_zip(zipfile)
-
-        return mod
 
     def save(self, path: "core.Path"):
         self.to_zip().to_file(path)
@@ -249,6 +302,23 @@ class NewMod:
     def apply_modifications(self, game_packs: "core.GamePacks"):
         for modification in self.modifications:
             modification.apply(game_packs)
+
+    def apply_game_files(self, game_packs: "core.GamePacks"):
+        for file, data in self.game_files.items():
+            game_packs.set_file(file, data)
+
+    def apply_apk_files(self, apk: "core.Apk"):
+        for file, data in self.apk_files.items():
+            path = apk.extracted_path.add(file)
+            path.parent().generate_dirs()
+            path.write(data)
+
+    def apply_to_game_data(self, game_packs: "core.GamePacks"):
+        self.apply_modifications(game_packs)
+        self.apply_game_files(game_packs)
+
+    def apply_to_apk(self, apk: "core.Apk"):
+        self.apply_apk_files(apk)
 
     def modifications_to_json(self) -> list[tuple[str, str]]:
         data: list[tuple[str, str]] = []

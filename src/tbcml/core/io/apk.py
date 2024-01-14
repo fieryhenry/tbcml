@@ -869,10 +869,11 @@ class Apk:
         apk.original_extracted_path.remove_tree().generate_dirs()
         return apk
 
-    def get_architectures(self):
+    def get_architectures(self) -> list[str]:
         architectures: list[str] = []
         for folder in self.extracted_path.add("lib").get_dirs():
-            architectures.append(folder.basename())
+            arc = folder.basename()
+            architectures.append(arc)
         return architectures
 
     def __str__(self):
@@ -1140,6 +1141,19 @@ class Apk:
         if not patches.is_empty():
             self.add_patches(patches)
 
+    def add_patch_mods_new(self, bc_mods: list["core.NewMod"]):
+        if not bc_mods:
+            return
+        if not self.is_allowed_script_mods():
+            return
+        patches = core.LibPatches.create_empty()
+        for mod in bc_mods:
+            patches.add_patches(mod.patches)
+
+        patches.validate_patches(self.country_code, self.game_version)
+        if not patches.is_empty():
+            self.add_patches(patches)
+
     def get_libs(self) -> dict[str, "core.Lib"]:
         if self.libs is not None:
             return self.libs
@@ -1391,6 +1405,10 @@ class Apk:
             self.extracted_path.add(file_name).write(data)
         return skipped
 
+    def add_mods_files_new(self, mods: list["core.NewMod"]):
+        for mod in mods:
+            mod.apply_to_apk(self)
+
     def add_mods_files(self, mods: list["core.Mod"]):
         for mod in mods:
             self.add_mod_files(mod)
@@ -1417,20 +1435,26 @@ class Apk:
     ):
         if game_packs is None:
             game_packs = core.GamePacks.from_apk(self)
-        game_packs.apply_mods_new(mods)
-        self.set_allow_backup(True)
-        self.set_debuggable(True)
-
-        self.add_script_mods_new(mods)
-        self.add_smali_mods_new(mods)
-
-        if add_modded_html:
-            self.add_modded_html_new(mods)
 
         if key is not None:
             self.set_key(key)
         if iv is not None:
             self.set_iv(iv)
+
+        self.add_smali_mods_new(mods)
+
+        self.add_script_mods_new(mods)
+        self.add_patch_mods_new(mods)
+
+        game_packs.apply_mods_new(mods)
+
+        self.set_allow_backup(True)
+        self.set_debuggable(True)
+
+        if add_modded_html:
+            self.add_modded_html_new(mods)
+
+        self.add_mods_files_new(mods)
 
         self.load_packs_into_game(game_packs)
 
