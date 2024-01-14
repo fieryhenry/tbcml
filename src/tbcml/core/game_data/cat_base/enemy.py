@@ -174,9 +174,7 @@ class Enemy(core.Modification):
             self.stats = EnemyStats()
         return self.stats
 
-    def __post_init__(
-        self,
-    ):  # This is required for CustomEnemy.Schema to not be a string for some reason
+    def __post_init__(self):
         Enemy.Schema()
 
     def apply(self, game_data: "core.GamePacks"):

@@ -35,9 +35,7 @@ class Localizable(core.Modification):
     strings: Optional[dict[str, LocalizableItem]] = None
     modification_type: core.ModificationType = core.ModificationType.LOCALIZABLE
 
-    def __post_init__(
-        self,
-    ):  # This is required for CustomItemShop.Schema to not be a string for some reason
+    def __post_init__(self):
         Localizable.Schema()
 
     @staticmethod

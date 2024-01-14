@@ -47,9 +47,7 @@ class ItemShop(core.Modification):
             self.texture = core.Texture()
         return self.texture
 
-    def __post_init__(
-        self,
-    ):  # This is required for CustomItemShop.Schema to not be a string for some reason
+    def __post_init__(self):
         ItemShop.Schema()
 
     @staticmethod

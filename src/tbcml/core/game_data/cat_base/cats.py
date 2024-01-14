@@ -943,9 +943,7 @@ class Cat(core.Modification):
     evolve_text: Optional[CatEvolveText] = None
     talents: Optional[CatTalents] = None
 
-    def __post_init__(
-        self,
-    ):  # This is required for Cat.Schema to not be a string for some reason
+    def __post_init__(self):
         Cat.Schema()
 
     def get_talents(self) -> CatTalents:
