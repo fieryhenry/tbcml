@@ -132,14 +132,14 @@ class BasicCustomCat(core.Cat):
         self.set_form(first_form)
 
 
-loader = core.NewModLoader(
+loader = core.ModLoader(
     "en", "12.3.0"
 )  # these can be changed for the version you want
 loader.initialize()
 
 apk = loader.get_apk()
 
-mod = core.NewMod(
+mod = core.Mod(
     name="Test Mod",
     authors="fieryhenry",  # can be a list of authors e.g ["person 1", "person 2"]
     description="Test Description",

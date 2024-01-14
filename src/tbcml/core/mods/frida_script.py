@@ -1,321 +1,100 @@
-"""Module for handling Frida scripts"""
-
-from typing import Any, Optional
-import uuid
-
+from typing import Optional, Sequence
+from marshmallow_dataclass import dataclass
 from tbcml import core
 
 
+@dataclass
 class FridaScript:
-    """A class to represent a Frida script."""
+    name: str
+    content: str
+    architectures: "core.ARCS"
+    description: str = ""
+    inject_smali: bool = False
+    valid_ccs: Optional[list["core.CC"]] = None
+    valid_game_versions: Optional[list["core.GV"]] = None
 
-    def __init__(
-        self,
-        arc: str,
-        cc: "core.CountryCode",
-        gv: "core.GameVersion",
-        script: str,
-        name: str,
-        id: str,
-        mod: "core.Mod",
-    ):
-        """Initializes a new instance of the FridaScript class.
-
-        Args:
-            arc (str): The architecture the script is designed for
-            cc (core.CountryCode): The country code the script is designed for
-            gv (core.GameVersion): The game version the script is designed for
-            script (str): The script code
-            name (str): The name of the script
-            mod (core.Mod): The mod the script belongs to
-        """
-        self.arc = arc
-        self.cc = cc
-        self.gv = gv
-        self.script = script
-        self.name = name
-        self.id = id
-        self.mod = mod
+    def to_json(self) -> str:
+        return FridaScript.Schema().dumps(self)  # type: ignore
 
     @staticmethod
-    def create_id() -> str:
-        return str(uuid.uuid4())
+    def from_json(data: str) -> "FridaScript":
+        return FridaScript.Schema().loads(data)  # type: ignore
 
     @staticmethod
-    def get_file_path(arc: str, id: str) -> "core.Path":
-        """Gets the file path for a Frida script.
+    def get_path(index: int) -> "core.Path":
+        return core.Path(core.ModPath.SCRIPTS.value).add(f"{index}.json")
 
-        Args:
-            arc (str): Architecture the script is designed for
-            id (str): ID of the script
-
-        Returns:
-            core.Path: The file path for the Frida script
-        """
-        return core.Path(f"scripts/{arc}/{id}.json")
-
-    def add_to_zip(self, zip: "core.Zip"):
-        """Adds the Frida script to a zip file.
-
-        Args:
-            zip (core.Zip): The zip file to add the Frida script to
-        """
-        json_data = self.serialize()
-        json_file = core.JsonFile.from_object(json_data)
-        zip.add_file(
-            self.get_file_path(self.arc, self.id),
-            json_file.to_data(),
-        )
-
-    def serialize(self) -> dict[str, Any]:
-        """Serializes the Frida script.
-
-        Returns:
-            dict[str, Any]: The serialized Frida script
-        """
-        return {
-            "arc": self.arc,
-            "cc": self.cc.get_code(),
-            "gv": self.gv.to_string(),
-            "script": self.script,
-            "name": self.name,
-            "id": self.id,
-        }
+    def add_to_zip(self, index: int, zip: "core.Zip"):
+        path = FridaScript.get_path(index)
+        json = self.to_json()
+        zip.add_file(path, core.Data(json))
 
     @staticmethod
-    def deserialize(data: dict[str, Any], mod: "core.Mod") -> "FridaScript":
-        """Deserializes a Frida script.
+    def from_zip(index: int, zip: "core.Zip") -> Optional["FridaScript"]:
+        path = FridaScript.get_path(index)
+        data = zip.get_file(path)
+        if data is None:
+            return None
+        return FridaScript.from_json(data.to_str())
 
-        Args:
-            data (dict[str, Any]): The serialized Frida script
-            mod (core.Mod): The mod the Frida script belongs to
+    def get_script_str(self, mod_name: str, mod_authors: list[str]) -> str:
+        mod_authors_str = ", ".join(mod_authors)
+        if self.architectures:
+            if self.architectures == "all":
+                arcs = ["all"]
+            elif self.architectures in ["32", "64"]:
+                arcs = [self.architectures + " bit"]
+            else:
+                arcs = self.architectures
+            arcs_str = ", ".join(arcs) + " architectures"
+        else:
+            arcs_str = "smali injection"
+        string = "/*\n"
+        string += f"\t{self.name} from {mod_name} by {mod_authors_str} for {arcs_str}\n"
+        string += f"\t{self.description}\n"
+        string += "*/\n\n"
+        string += self.content
+        return string
 
-        Returns:
-            FridaScript: The deserialized Frida script
-        """
-        return FridaScript(
-            data["arc"],
-            core.CountryCode.from_code(data["cc"]),
-            core.GameVersion.from_string(data["gv"]),
-            data["script"],
-            data["name"],
-            data["id"],
-            mod,
-        )
+    def get_arcs(self, apk: "core.Apk") -> Sequence[str]:
+        if self.architectures == "all":
+            return apk.get_architectures()
+        elif self.architectures == "32":
+            return apk.get_32_bit_arcs()
+        elif self.architectures == "64":
+            return apk.get_64_bit_arcs()
+        return self.architectures
+
+    def get_scripts_str(
+        self, apk: "core.Apk", mod_name: str, mod_authors: list[str]
+    ) -> tuple[dict[str, str], bool]:
+        is_valid = self.is_valid(apk.country_code, apk.game_version)
+        if not is_valid:
+            return {}, self.inject_smali
+
+        arcs = self.get_arcs(apk)
+        scripts: dict[str, str] = {}
+        for arc in arcs:
+            scripts[arc] = self.get_script_str(mod_name, mod_authors)
+        return scripts, self.inject_smali
 
     @staticmethod
-    def from_zip(
-        zip: "core.Zip",
-        mod: "core.Mod",
-        arc: str,
-        id: str,
-    ) -> "FridaScript":
-        """Creates a Frida script from a zip file.
-
-        Args:
-            zip (core.Zip): Zip file to create the Frida script from
-            mod (core.Mod): The mod the Frida script belongs to
-            arc (str): Architecture the script is designed for
-            id (str): Id of the script
-
-        Raises:
-            ValueError: If the file is not found in the zip
-
-        Returns:
-            FridaScript: The Frida script created from the zip file
-        """
-        file = zip.get_file(FridaScript.get_file_path(arc, id))
-        if file is None:
-            raise ValueError("File not found in zip.")
-        json_file = core.JsonFile.from_data(file)
-        return FridaScript.deserialize(json_file.get_json(), mod)
-
-
-class FridaScripts:
-    """A class to represent a collection of Frida scripts."""
-
-    def __init__(
-        self,
-        scripts: list["FridaScript"],
-    ):
-        """Initializes a new instance of the FridaScripts class.
-
-        Args:
-            scripts (list[FridaScript]): The Frida scripts
-        """
-        self.scripts = scripts
-
-    def is_valid_script(
-        self,
-        script: "FridaScript",
-        cc: "core.CountryCode",
-        gv: "core.GameVersion",
-    ) -> bool:
-        """Checks if a Frida script is valid for a given country code and game version.
-
-        Args:
-            script (FridaScript): The Frida script to check
-            cc (core.CountryCode): The country code to check
-            gv (core.GameVersion): The game version to check
-
-        Returns:
-            bool: True if the Frida script is valid for the given country code and game version, False otherwise
-        """
-        return script.cc == cc and script.gv == gv
-
-    def validate_scripts(self, cc: "core.CountryCode", gv: "core.GameVersion"):
-        """Removes all Frida scripts that are not valid for a given country code and game version.
-
-        Args:
-            cc (core.CountryCode): Country code to validate against
-            gv (core.GameVersion): Game version to validate against
-        """
-        new_scripts: list["FridaScript"] = []
-        for script in self.scripts:
-            if self.is_valid_script(script, cc, gv):
-                new_scripts.append(script)
-        self.scripts = new_scripts
-
-    def is_empty(self) -> bool:
-        """Checks if the collection of Frida scripts is empty.
-
-        Returns:
-            bool: True if the collection of Frida scripts is empty, False otherwise
-        """
-        return len(self.scripts) == 0
-
-    def add_script(self, script: "FridaScript"):
-        """Adds a Frida script to the collection.
-
-        Args:
-            script (FridaScript): The Frida script to add
-        """
-        self.scripts.append(script)
-
-    def remove_script(self, script: "FridaScript"):
-        """Removes a Frida script from the collection.
-
-        Args:
-            script (FridaScript): The Frida script to remove
-        """
-        if script in self.scripts:
-            self.scripts.remove(script)
-
-    def get_script(self, arc: str) -> Optional["FridaScript"]:
-        """Gets a Frida script from the collection.
-
-        Returns:
-            Optional[FridaScript]: The Frida script if found, None otherwise
-        """
-        for script in self.scripts:
-            if script.arc == arc:
-                return script
-        return None
-
-    def add_scripts(self, scripts: "FridaScripts"):
-        """Adds a collection of Frida scripts to the collection.
-
-        Args:
-            scripts (FridaScripts): The collection of Frida scripts to add
-        """
-        for script in scripts.scripts:
-            self.add_script(script)
-
-    def get_base_script(self) -> str:
-        """Gets the base Frida script with helper functions.
-
-        Returns:
-            str: The base Frida script content
-        """
+    def get_base_script() -> str:
         return core.Path("base_script.js", True).read().to_str()
 
-    def combine_scripts(self, arc: str) -> "core.Data":
-        """Combines all Frida scripts for a given architecture into one script.
+    def get_custom_html(self) -> str:
+        return f'<span class="iro">[{self.name}]</span><br>{self.description}<br><span class="iro">Code:</span><br><pre><code class="language-javascript">{self.content}</code></pre>'
 
-        Args:
-            arc (str): The architecture to combine scripts for
-
-        Returns:
-            core.Data: The combined Frida script
-        """
-        base_script = self.get_base_script() + "\r\n"
-        script_text = ""
-        for script in self.scripts:
-            if script.arc == arc:
-                text = ""
-                text += f"// {'-'*50}\r\n// {script.name} from mod {script.mod.name} by {script.mod.author}\r\n// {'-'*50}\r\n\r\n"
-                text += script.script
-                text += "\r\n\r\n"
-                script_text += text
-        base_script = base_script.replace("// {{SCRIPTS}}", script_text)
-        return core.Data(base_script)
-
-    def add_to_zip(self, zip: "core.Zip"):
-        """Adds the collection of Frida scripts to a zip file.
-
-        Args:
-            zip (core.Zip): The zip file to add the Frida scripts to
-        """
-        arcs: dict[str, list[str]] = {}
-        for script in self.scripts:
-            script.add_to_zip(zip)
-            if script.arc not in arcs:
-                arcs[script.arc] = []
-            arcs[script.arc].append(script.id)
-        json_data = {
-            "arcs": arcs,
-        }
-        json = core.JsonFile.from_object(json_data)
-        zip.add_file(core.Path("scripts/scripts.json"), json.to_data())
-
-    @staticmethod
-    def from_zip(
-        zip: "core.Zip",
-        mod: "core.Mod",
-    ) -> "FridaScripts":
-        """Creates a new instance of the FridaScripts class from a zip file.
-
-        Args:
-            zip (core.Zip): The zip file to create the FridaScripts instance from
-            mod (core.Mod): The mod to create the FridaScripts instance for
-
-        Raises:
-            ValueError: If the zip file does not contain the scripts.json file
-
-        Returns:
-            FridaScripts: The FridaScripts instance
-        """
-        file = zip.get_file(core.Path("scripts").add("scripts.json"))
-        if file is None:
-            raise ValueError("File not found in zip.")
-        json = core.JsonFile.from_data(file)
-        json_data = json.get_json()
-        arcs = json_data["arcs"]
-        scripts: list["FridaScript"] = []
-        for arc in arcs:
-            for id in arcs[arc]:
-                scripts.append(FridaScript.from_zip(zip, mod, arc, id))
-        return FridaScripts(scripts)
-
-    def import_scripts(self, other: "FridaScripts"):
-        """Imports all Frida scripts from another FridaScripts instance.
-
-        Args:
-            other (FridaScripts): The FridaScripts instance to import the scripts from
-        """
-        for script in other.scripts:
-            self.add_script(script)
-
-    def get_used_arcs(self) -> list[str]:
-        """Gets a list of all used architectures.
-
-        Returns:
-            list[str]: The list of used architectures
-        """
-        arcs: set[str] = set()
-        for script in self.scripts:
-            arcs.add(script.arc)
-        return list(arcs)
+    def is_valid(self, cc: "core.CountryCode", gv: "core.GameVersion") -> bool:
+        if self.valid_ccs is not None:
+            valid_cc_str = [str(valid_cc) for valid_cc in self.valid_ccs]
+            if str(cc) not in valid_cc_str:
+                return False
+        if self.valid_game_versions is not None:
+            valid_gv_str = [str(valid_gv) for valid_gv in self.valid_game_versions]
+            if str(gv) not in valid_gv_str:
+                return False
+        return True
 
 
 class FridaGadgetHelper:

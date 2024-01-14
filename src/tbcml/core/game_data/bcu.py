@@ -118,13 +118,13 @@ class BCUForm:
             maanim_data.append(maanim.data)
         return maanim_data
 
-    def load_anim(self) -> Optional["core.CustomModel"]:
+    def load_anim(self) -> Optional["core.Model"]:
         sprite = self.anims.get_file_by_name("sprite.png")
         imgcut = self.anims.get_file_by_name("imgcut.txt")
         mamodel = self.anims.get_file_by_name("mamodel.txt")
         if sprite is None or imgcut is None or mamodel is None:
             return None
-        model = core.CustomModel().read_data(
+        model = core.Model().read_data(
             self.get_sprite_name(),
             sprite.data,
             self.get_imgcut_name(),
@@ -136,19 +136,19 @@ class BCUForm:
         )
         return model
 
-    def load_display_icon(self) -> Optional["core.NewBCImage"]:
+    def load_display_icon(self) -> Optional["core.BCImage"]:
         display_file = self.anims.get_file_by_name("icon_display.png")
         if display_file is None:
             return None
 
-        return core.NewBCImage.from_data(display_file.data)
+        return core.BCImage.from_data(display_file.data)
 
-    def load_deploy_icon(self) -> Optional["core.NewBCImage"]:
+    def load_deploy_icon(self) -> Optional["core.BCImage"]:
         deploy_file = self.anims.get_file_by_name("icon_deploy.png")
         if deploy_file is None:
             return None
 
-        return core.NewBCImage.from_data(deploy_file.data)
+        return core.BCImage.from_data(deploy_file.data)
 
     def get_cat_id_str(self):
         return core.PaddedInt(self.cat_id, 3).to_str()
@@ -463,13 +463,13 @@ class BCUEnemy:
             maanim_data.append(maanim.data)
         return maanim_data
 
-    def load_anim(self) -> Optional["core.CustomModel"]:
+    def load_anim(self) -> Optional["core.Model"]:
         sprite = self.anims.get_file_by_name("sprite.png")
         imgcut = self.anims.get_file_by_name("imgcut.txt")
         mamodel = self.anims.get_file_by_name("mamodel.txt")
         if sprite is None or imgcut is None or mamodel is None:
             return None
-        model = core.CustomModel().read_data(
+        model = core.Model().read_data(
             self.get_sprite_name(),
             sprite.data,
             self.get_imgcut_name(),

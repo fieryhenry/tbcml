@@ -1,15 +1,3 @@
-from tbcml.core.anim import (
-    rect,
-    texture,
-    model,
-    unit_animation,
-    model_part,
-)
+from tbcml.core.anim import anim
 
-__all__ = [
-    "rect",
-    "texture",
-    "model",
-    "unit_animation",
-    "model_part",
-]
+__all__ = ["anim"]

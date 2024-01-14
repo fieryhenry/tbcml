@@ -639,7 +639,7 @@ class CatForm:
     # setting
     stats.hp.set(10)  # should get stats object as above
     """
-    anim: Optional["core.CustomModel"] = None
+    anim: Optional["core.Model"] = None
     """Animation for the form
 
     See `core.CustomModel` for more documentation.
@@ -651,27 +651,27 @@ class CatForm:
     anim = form.get_anim()
     anim.flip_x()
     """
-    upgrade_icon: Optional["core.NewBCImage"] = None
-    deploy_icon: Optional["core.NewBCImage"] = None
+    upgrade_icon: Optional["core.BCImage"] = None
+    deploy_icon: Optional["core.BCImage"] = None
 
     def get_stats(self) -> "core.FormStats":
         if self.stats is None:
             self.stats = core.FormStats()
         return self.stats
 
-    def get_anim(self) -> "core.CustomModel":
+    def get_anim(self) -> "core.Model":
         if self.anim is None:
-            self.anim = core.CustomModel()
+            self.anim = core.Model()
         return self.anim
 
-    def get_deploy_icon(self) -> "core.NewBCImage":
+    def get_deploy_icon(self) -> "core.BCImage":
         if self.deploy_icon is None:
-            self.deploy_icon = core.NewBCImage.from_size(128, 128)
+            self.deploy_icon = core.BCImage.from_size(128, 128)
         return self.deploy_icon
 
-    def get_upgrade_icon(self) -> "core.NewBCImage":
+    def get_upgrade_icon(self) -> "core.BCImage":
         if self.upgrade_icon is None:
-            self.upgrade_icon = core.NewBCImage.from_size(512, 128)
+            self.upgrade_icon = core.BCImage.from_size(512, 128)
         return self.upgrade_icon
 
     def apply_game_data(self, cat_id: int, game_data: "core.GamePacks"):
@@ -721,7 +721,7 @@ class CatForm:
         return maanim_paths
 
     def read_anim(self, cat_id: int, game_data: "core.GamePacks"):
-        self.anim = core.CustomModel()
+        self.anim = core.Model()
         self.anim.read(
             game_data,
             self.get_sprite_file_name(cat_id),
@@ -786,19 +786,19 @@ class CatForm:
         if self.anim is not None:
             self.anim.texture.save_b64()
 
-    def get_deploy_border(self) -> "core.NewBCImage":
+    def get_deploy_border(self) -> "core.BCImage":
         path = core.AssetLoader.get_asset_file_path(f"uni_{self.form_type.value}.png")
-        return core.NewBCImage(path.read().to_base_64())
+        return core.BCImage(path.read().to_base_64())
 
     def import_enemy_deploy_icon(
         self,
-        enemy_icon: "core.NewBCImage",
+        enemy_icon: "core.BCImage",
         offset: tuple[int, int] = (-20, -20),
         scale: float = 2.5,
     ):
         enemy_icon.scale(scale)
         enemy_icon.convert_to_rgba()
-        base_image = core.NewBCImage.from_size(128, 128)
+        base_image = core.BCImage.from_size(128, 128)
         base_image.paste(enemy_icon, offset[0], offset[1])
         base_image = base_image.crop_rect(
             14,
@@ -816,7 +816,7 @@ class CatForm:
         if deploy_icon.width == 128 and deploy_icon.height == 128:
             return
         deploy_icon.convert_to_rgba()
-        base_image = core.NewBCImage.from_size(128, 128)
+        base_image = core.BCImage.from_size(128, 128)
         base_image.paste(deploy_icon, 9, 21)
         self.deploy_icon = base_image
 
@@ -825,7 +825,7 @@ class CatForm:
         if upgrade_icon.width == 85 and upgrade_icon.height == 32:
             upgrade_icon.scale(3.5)
 
-        base_image = core.NewBCImage.from_size(512, 128)
+        base_image = core.BCImage.from_size(512, 128)
         base_image.paste(upgrade_icon, 13, 1)
 
         start_pos = (146, 112)
@@ -1002,7 +1002,7 @@ class Cat(core.Modification):
         game_data: "core.GamePacks", cat_id: int
     ) -> tuple[str, Optional["core.CSV"]]:
         file_name_desc = (
-            f"Unit_Explanation{cat_id+1}_{game_data.new_localizable.get_lang()}.csv"
+            f"Unit_Explanation{cat_id+1}_{game_data.localizable.get_lang()}.csv"
         )
         name_csv = game_data.get_csv(
             file_name_desc, country_code=game_data.country_code
@@ -1040,7 +1040,7 @@ class Cat(core.Modification):
     def get_evolve_text_csv(
         game_data: "core.GamePacks",
     ) -> tuple[str, Optional["core.CSV"]]:
-        file_name = f"unitevolve_{game_data.new_localizable.get_lang()}.csv"
+        file_name = f"unitevolve_{game_data.localizable.get_lang()}.csv"
         csv = game_data.get_csv(file_name, country_code=game_data.country_code)
 
         return file_name, csv

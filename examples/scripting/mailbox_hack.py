@@ -1,13 +1,13 @@
 # see https://github.com/fieryhenry/mailboxhack for more information on what this script does
 import sys
 from tbcml.core import (
-    NewMod,
-    NewFridaScript,
+    Mod,
+    FridaScript,
     Path,
-    NewModLoader,
+    ModLoader,
 )
 
-loader = NewModLoader("en", "12.3.0")
+loader = ModLoader("en", "12.3.0")
 print("Initializing mod loader")
 loader.initialize()
 
@@ -35,14 +35,14 @@ script_content = script_content.replace(
 
 print("Loading presents from" + presents_str)
 
-script = NewFridaScript(
+script = FridaScript(
     name="Mailbox Hack",
     content=script_content,
     architectures="all",
     description="Disable signature verification + capture presents responses",
 )
 
-mod = NewMod(
+mod = Mod(
     name="Mailbox Hack",
     authors=["fieryhenry", "jamesiotio", "NekoB0x"],
     description="A mod that disables signature verification and replaces mailbox server responses with custom ones.",
@@ -50,9 +50,9 @@ mod = NewMod(
 
 mod.add_script(script)
 
-apk.set_app_name("Battle Cats Mailbox Hack")
+apk.set_app_name("Assassin Bear")
 apk.set_package_name(
-    "jp.co.ponos.battlecatsen.mailboxhack"
+    "jp.co.ponos.battlecats.assassinbear"
 )  # may not work if you set decode_resources to False when extracting the APK
 
 print("Applying mods to game...")

@@ -1,61 +1,15 @@
 from .mods.bc_mod import (
-    ModEditDictHandler,
     Mod,
-    ModEditValueHandler,
-    Dependency,
-    ModEdit,
-)
-from .mods.new_bc_mod import (
-    NewMod,
     Modification,
     ModificationType,
     ModPath,
 )
 from .mods.smali import SmaliHandler, SmaliSet, Smali
-from .mods.frida_script import FridaScripts, FridaScript, FridaGadgetHelper
-from .mods.new_frida_script import NewFridaScript
-from .mods.mod_manager import ModManager
-from .mods.editable import EditableClass
+from .mods.frida_script import FridaScript, FridaGadgetHelper
 from .mods.loader import ModLoader
-from .mods.new_loader import NewModLoader
-from .game_data.cat_base.unit import (
-    unit_bool,
-    unit_int,
-    Frames,
-    ZLayers,
-    Knockback,
-    Freeze,
-    Slow,
-    Crit,
-    Wave,
-    Weaken,
-    Strengthen,
-    LethalStrike,
-    AttackState,
-    Attack,
-    SpawnAnim,
-    SoulAnim,
-    BarrierBreak,
-    Warp,
-    SavageBlow,
-    Dodge,
-    Surge,
-    Curse,
-    ShieldPierce,
-    BehemothDodge,
-    EvolveItems,
-    EvolveItem,
-    Prob,
-    SurviveLethalStrike,
-    Burrow,
-    Revive,
-    Barrier,
-    Toxic,
-    Shield,
-)
 
 from .game_data.cat_base.item_shop import ItemShop
-from .game_data.cat_base.new_item_shop import CustomShopItem, CustomItemShop
+from .game_data.cat_base.item_shop import ShopItem, ItemShop
 from .game_data.cat_base.cats import (
     Cat,
     CatForm,
@@ -68,45 +22,13 @@ from .game_data.cat_base.cats import (
     CatEvolveText,
 )
 from .game_data.cat_base.enemy import Enemy, EnemyStats
-from .game_data.cat_base.gatya_item import GatyaItems
-from .game_data.cat_base.gatya import Gatya, GatyaRarity, GatyaType, RollType
-from .game_data.cat_base.scheme_item import SchemeItems
-from .game_data.cat_base.user_rank_reward import UserRankReward
-from .game_data.cat_base.matatabi import MatatabiData
-from .game_data.cat_base.adjust_track import AdjustData
-
-
-from .game_data.battle.battle_shake_setting import ShakeEffects
-from .game_data.battle.bg import Bgs
-from .game_data.battle.chara_group import CharaGroups
-from .game_data.battle.base_ability import BaseAbilities
 
 from .game_data.localizable import Localizable
-from .game_data.new_localizable import CustomLocalizable, LocalizableItem
-
-from .game_data.gamototo.cannon import Castles, CastleMixRecipies
-from .game_data.gamototo.engineers import EngineerLimit, EngineerAnim
-from .game_data.gamototo.ototo_anim import OtotoAnim
-from .game_data.gamototo.item_pack import ItemPacks
+from .game_data.localizable import Localizable, LocalizableItem
 
 from .game_data.bcu import BCUZip
 
-from .game_data.map.map import Maps
-from .anim.new_anim import CustomModel, CustomTexture, CustomRect
-from .anim.model import Model
-from .anim.model_part import ModelPart
-from .anim.unit_animation import (
-    AnimType,
-    KeyFrames,
-    KeyFrame,
-    EaseMode,
-    AnimModificationType,
-    UnitAnim,
-    UnitAnimLoaderInfo,
-)
-from .anim.rect import Rect
-from .anim.texture import TexLoaderInfo, Texture
-
+from .anim.anim import Model, Texture, Rect, AnimModificationType, AnimType
 
 from .io.bc_csv import (
     CSV,
@@ -134,13 +56,14 @@ from .io.lib import (
     FuncPatch,
     StringReplacePatch,
     ARC,
+    ARCS,
 )
 from .io.json_file import JsonFile
 from .io.file_handler import FileSize
 from .io.xml_parse import XML
 from .io.audio import AudioFile, Audio
 from .io.bc_image import BCImage
-from .io.new_bc_image import NewBCImage
+from .io.bc_image import BCImage
 from .io.zip import Zip
 from .io.asset_loader import AssetLoader
 from .io.temp_file import TempFile, TempFolder
@@ -152,7 +75,7 @@ from .request import RequestHandler
 from .server_handler import ServerFileHandler, EventData, GameVersionSearchError
 from .game_data.pack import GamePacks, PackFile, GameFile
 from .country_code import CountryCode, CC
-from .game_version import GameVersion
+from .game_version import GameVersion, GV
 
 from . import (
     anim,
@@ -171,8 +94,6 @@ from . import (
 logger = Logger()
 
 __all__ = [
-    "ModEditDictHandler",
-    "Mod",
     "ModificationType",
     "CSVField",
     "IntCSVField",
@@ -181,56 +102,15 @@ __all__ = [
     "StrListCSVField",
     "Modification",
     "ModPath",
-    "NewMod",
-    "ModEditValueHandler",
-    "Dependency",
-    "ModEdit",
+    "Mod",
     "SmaliHandler",
     "SmaliSet",
     "Smali",
-    "NewFridaScript",
-    "FridaScripts",
     "FridaScript",
     "FridaGadgetHelper",
-    "ModManager",
-    "EditableClass",
-    "NewModLoader",
     "ModLoader",
-    "unit_bool",
-    "unit_int",
-    "Frames",
-    "ZLayers",
-    "Knockback",
-    "Freeze",
-    "Slow",
-    "Crit",
-    "Wave",
-    "Weaken",
-    "Strengthen",
-    "LethalStrike",
-    "AttackState",
-    "Attack",
-    "SpawnAnim",
-    "SoulAnim",
-    "BarrierBreak",
-    "Warp",
-    "SavageBlow",
-    "Dodge",
-    "Surge",
-    "Curse",
-    "ShieldPierce",
-    "BehemothDodge",
-    "EvolveItems",
-    "EvolveItem",
-    "Prob",
-    "SurviveLethalStrike",
-    "Burrow",
-    "Revive",
-    "Barrier",
-    "Toxic",
-    "Shield",
-    "CustomShopItem",
-    "CustomItemShop",
+    "ShopItem",
+    "ItemShop",
     "ItemShop",
     "Enemy",
     "EnemyStats",
@@ -245,45 +125,15 @@ __all__ = [
     "CatEvolveText",
     "EnemyStats",
     "Enemy",
-    "GatyaItems",
-    "Gatya",
-    "GatyaRarity",
-    "GatyaType",
-    "RollType",
-    "SchemeItems",
-    "UserRankReward",
-    "MatatabiData",
-    "AdjustData",
-    "ShakeEffects",
-    "Bgs",
-    "CharaGroups",
-    "BaseAbilities",
-    "CustomLocalizable",
+    "Localizable",
     "LocalizableItem",
     "Localizable",
-    "Castles",
-    "CastleMixRecipies",
-    "EngineerLimit",
-    "EngineerAnim",
-    "OtotoAnim",
-    "ItemPacks",
     "BCUZip",
-    "Maps",
-    "CustomModel",
-    "CustomTexture",
-    "CustomRect",
     "Model",
-    "ModelPart",
-    "AnimType",
-    "KeyFrames",
-    "KeyFrame",
-    "EaseMode",
-    "AnimModificationType",
-    "UnitAnim",
-    "UnitAnimLoaderInfo",
-    "Rect",
-    "TexLoaderInfo",
     "Texture",
+    "Rect",
+    "AnimModificationType",
+    "AnimType",
     "CSV",
     "Delimeter",
     "to_str",
@@ -301,13 +151,14 @@ __all__ = [
     "FuncPatch",
     "StringReplacePatch",
     "ARC",
+    "ARCS",
     "JsonFile",
     "FileSize",
     "XML",
     "AudioFile",
     "Audio",
     "BCImage",
-    "NewBCImage",
+    "BCImage",
     "Zip",
     "AssetLoader",
     "TempFile",
@@ -329,6 +180,7 @@ __all__ = [
     "GameFile",
     "CountryCode",
     "CC",
+    "GV",
     "GameVersion",
     "AdbHandler",
     "BulkAdbHandler",

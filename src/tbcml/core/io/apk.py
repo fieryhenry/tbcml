@@ -876,6 +876,24 @@ class Apk:
             architectures.append(arc)
         return architectures
 
+    def get_64_bit_arcs(self) -> list[str]:
+        architectures: list[str] = []
+        bit_64 = core.Lib.get_64_bit_arcs()
+        for folder in self.extracted_path.add("lib").get_dirs():
+            arc = folder.basename()
+            if arc in bit_64:
+                architectures.append(arc)
+        return architectures
+
+    def get_32_bit_arcs(self) -> list[str]:
+        architectures: list[str] = []
+        bit_32 = core.Lib.get_32_bit_arcs()
+        for folder in self.extracted_path.add("lib").get_dirs():
+            arc = folder.basename()
+            if arc in bit_32:
+                architectures.append(arc)
+        return architectures
+
     def __str__(self):
         return self.get_display_string()
 
@@ -959,15 +977,7 @@ class Apk:
             for architecture in used_arcs:
                 self.add_to_lib_folder(architecture, temp_file)
 
-    def add_libgadget_scripts(self, scripts: "core.FridaScripts"):
-        for architecture in scripts.get_used_arcs():
-            script_str = scripts.combine_scripts(architecture)
-            script_path = self.temp_path.add("libbc_script.js.so")
-            script_str.to_file(script_path)
-            self.add_to_lib_folder(architecture, script_path)
-            script_path.remove()
-
-    def add_libgadget_scripts_new(self, scripts: dict[str, str]):
+    def add_libgadget_scripts(self, scripts: dict[str, str]):
         for architecture, script_str in scripts.items():
             script_path = self.temp_path.add("libbc_script.js.so")
             core.Data(script_str).to_file(script_path)
@@ -1018,22 +1028,13 @@ class Apk:
 
     def add_frida_scripts(
         self,
-        scripts: "core.FridaScripts",
-    ):
-        used_arcs = scripts.get_used_arcs()
-        self.add_libgadget_config(used_arcs)
-        self.add_libgadget_scripts(scripts)
-        self.add_libgadget_sos(used_arcs)
-
-    def add_frida_scripts_new(
-        self,
         scripts: dict[str, str],
         inject_native_lib: bool = True,
         inject_smali: bool = False,
     ):
         used_arcs = list(scripts.keys())
         self.add_libgadget_config(used_arcs)
-        self.add_libgadget_scripts_new(scripts)
+        self.add_libgadget_scripts(scripts)
         self.add_libgadget_sos(used_arcs, inject_native_lib, inject_smali)
 
     def add_patches(self, patches: "core.LibPatches"):
@@ -1047,25 +1048,13 @@ class Apk:
         lib.apply_patch(patch)
         lib.write()
 
-    def has_script_mods(self, bc_mods: list["core.Mod"]):
-        if not bc_mods:
-            return False
-        scripts = core.FridaScripts([])
-        for mod in bc_mods:
-            scripts.add_scripts(mod.scripts)
-
-        scripts.validate_scripts(self.country_code, self.game_version)
-        return not scripts.is_empty()
-
     def is_allowed_script_mods(self) -> bool:
         return self.allowed_script_mods
 
     def set_allowed_script_mods(self, allowed: bool):
         self.allowed_script_mods = allowed
 
-    def add_script_mods_new(
-        self, bc_mods: list["core.NewMod"], add_base_script: bool = True
-    ):
+    def add_script_mods(self, bc_mods: list["core.Mod"], add_base_script: bool = True):
         if not bc_mods:
             return
         if not self.is_allowed_script_mods():
@@ -1082,16 +1071,16 @@ class Apk:
                 scripts[arc] += string + "\n"
 
         if add_base_script:
-            base_script = core.NewFridaScript.get_base_script()
+            base_script = core.FridaScript.get_base_script()
             for arc in scripts.keys():
                 scripts[arc] = base_script.replace("// {{SCRIPTS}}", scripts[arc])
 
         if scripts:
-            self.add_frida_scripts_new(
+            self.add_frida_scripts(
                 scripts, inject_smali=inject_smali, inject_native_lib=not inject_smali
             )
 
-    def add_modded_html_new(self, mods: list["core.NewMod"]):
+    def add_modded_html(self, mods: list["core.Mod"]):
         transfer_screen_path = core.AssetLoader.get_asset_file_path(
             core.Path("html").add("kisyuhen_01_top_en.html")  # TODO: different locales
         )
@@ -1115,33 +1104,7 @@ class Apk:
 
         self.add_asset_data(core.Path("modlist.html"), core.Data(modlist_html))
 
-    def add_script_mods(self, bc_mods: list["core.Mod"]):
-        if not bc_mods:
-            return
-        if not self.is_allowed_script_mods():
-            return
-        scripts = core.FridaScripts([])
-        for mod in bc_mods:
-            scripts.add_scripts(mod.scripts)
-
-        scripts.validate_scripts(self.country_code, self.game_version)
-        if not scripts.is_empty():
-            self.add_frida_scripts(scripts)
-
     def add_patch_mods(self, bc_mods: list["core.Mod"]):
-        if not bc_mods:
-            return
-        if not self.is_allowed_script_mods():
-            return
-        patches = core.LibPatches([])
-        for mod in bc_mods:
-            patches.add_patches(mod.patches)
-
-        patches.validate_patches(self.country_code, self.game_version)
-        if not patches.is_empty():
-            self.add_patches(patches)
-
-    def add_patch_mods_new(self, bc_mods: list["core.NewMod"]):
         if not bc_mods:
             return
         if not self.is_allowed_script_mods():
@@ -1231,11 +1194,6 @@ class Apk:
             self.get_pack_location().add(audio.get_apk_name())
         )
 
-    def add_audio_mods(self, bc_mods: list["core.Mod"]):
-        for mod in bc_mods:
-            for audio in mod.audio.audio_files.values():
-                self.add_audio(audio)
-
     def get_all_audio(self) -> "core.Audio":
         audio_files: dict[str, "core.AudioFile"] = {}
         for file in self.get_pack_location().get_files():
@@ -1282,11 +1240,6 @@ class Apk:
         return files
 
     def apply_mod_smali(self, mod: "core.Mod"):
-        if mod.smali.is_empty():
-            return
-        self.get_smali_handler().inject_into_on_create(mod.smali.get_list())
-
-    def apply_mod_smali_new(self, mod: "core.NewMod"):
         if mod.smali.is_empty():
             return
         self.get_smali_handler().inject_into_on_create(mod.smali.get_list())
@@ -1394,24 +1347,9 @@ class Apk:
             "jar",
         ]
 
-    def add_mod_files(self, mod: "core.Mod") -> bool:
-        skipped = False
-        risky_extensions = self.get_risky_extensions()
-        for file_name, data in mod.apk_files.items():
-            if file_name.split(".")[-1] in risky_extensions:
-                if not self.is_allowed_script_mods():
-                    skipped = True
-                    continue
-            self.extracted_path.add(file_name).write(data)
-        return skipped
-
-    def add_mods_files_new(self, mods: list["core.NewMod"]):
-        for mod in mods:
-            mod.apply_to_apk(self)
-
     def add_mods_files(self, mods: list["core.Mod"]):
         for mod in mods:
-            self.add_mod_files(mod)
+            mod.apply_to_apk(self)
 
     def add_smali_mods(self, mods: list["core.Mod"]):
         if not self.is_allowed_script_mods():
@@ -1419,15 +1357,9 @@ class Apk:
         for mod in mods:
             self.apply_mod_smali(mod)
 
-    def add_smali_mods_new(self, mods: list["core.NewMod"]):
-        if not self.is_allowed_script_mods():
-            return
-        for mod in mods:
-            self.apply_mod_smali_new(mod)
-
-    def load_mods_new(
+    def load_mods(
         self,
-        mods: list["core.NewMod"],
+        mods: list["core.Mod"],
         game_packs: Optional["core.GamePacks"] = None,
         key: Optional[str] = None,
         iv: Optional[str] = None,
@@ -1441,44 +1373,19 @@ class Apk:
         if iv is not None:
             self.set_iv(iv)
 
-        self.add_smali_mods_new(mods)
+        self.add_smali_mods(mods)
 
-        self.add_script_mods_new(mods)
-        self.add_patch_mods_new(mods)
+        self.add_script_mods(mods)
+        self.add_patch_mods(mods)
 
-        game_packs.apply_mods_new(mods)
+        game_packs.apply_mods(mods)
 
         self.set_allow_backup(True)
         self.set_debuggable(True)
 
         if add_modded_html:
-            self.add_modded_html_new(mods)
+            self.add_modded_html(mods)
 
-        self.add_mods_files_new(mods)
-
-        self.load_packs_into_game(game_packs)
-
-    def load_mods(
-        self,
-        mods: list["core.Mod"],
-        game_packs: Optional["core.GamePacks"] = None,
-        key: Optional[str] = None,
-        iv: Optional[str] = None,
-    ):
-        if game_packs is None:
-            game_packs = core.GamePacks.from_apk(self)
-        game_packs.apply_mods(mods)
         self.add_mods_files(mods)
-        self.set_allow_backup(True)
-        self.set_debuggable(True)
-        self.add_audio_mods(mods)
-        self.add_script_mods(mods)
-        self.add_patch_mods(mods)
-        self.add_smali_mods(mods)
-
-        if key is not None:
-            self.set_key(key)
-        if iv is not None:
-            self.set_iv(iv)
 
         self.load_packs_into_game(game_packs)

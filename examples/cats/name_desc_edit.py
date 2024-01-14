@@ -16,11 +16,11 @@ class NewCat(core.Cat):
         self.set_form(NewForm())
 
 
-loader = core.NewModLoader("en", "12.3.0")
+loader = core.ModLoader("en", "12.3.0")
 loader.initialize()
 
 
-mod = core.NewMod(
+mod = core.Mod(
     "Modded Cat Info Example",
     "fieryhenry",
     "Changes basic cat first form name and description",

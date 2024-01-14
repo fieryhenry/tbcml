@@ -1,13 +1,13 @@
 from tbcml import core
 
 
-class CustomLocalizable(core.CustomLocalizable):
+class CustomLocalizable(core.Localizable):
     def __init__(self):
         super().__init__()
         self.set_string("catfood", "Cat Food")
 
 
-class CatFoodItem(core.CustomShopItem):
+class CatFoodItem(core.ShopItem):
     def __init__(self):
         super().__init__()
 
@@ -20,19 +20,19 @@ class CatFoodItem(core.CustomShopItem):
         self.category_name.set("catfood")
 
 
-class CustomShop(core.CustomItemShop):
+class CustomShop(core.ItemShop):
     def __init__(self):
         super().__init__()
 
         self.set_item(CatFoodItem())
 
 
-loader = core.NewModLoader("en", "12.3.0")
+loader = core.ModLoader("en", "12.3.0")
 loader.initialize()
 
 apk = loader.get_apk()
 
-mod = core.NewMod(
+mod = core.Mod(
     "Custom ItemShop", "fieryhenry", "Adds catfood as a custom item shop item"
 )
 

@@ -1,4 +1,5 @@
 from dataclasses import field
+import enum
 from typing import Optional
 from tbcml import core
 import copy
@@ -11,8 +12,48 @@ from tbcml.core.io.csv_fields import (
 from marshmallow_dataclass import dataclass
 
 
+class AnimModificationType(enum.Enum):
+    PARENT = 0
+    ID = 1
+    SPRITE = 2
+    Z_ORDER = 3
+    POS_X = 4
+    POS_Y = 5
+    PIVOT_X = 6
+    PIVOT_Y = 7
+    SCALE_UNIT = 8
+    SCALE_X = 9
+    SCALE_Y = 10
+    ANGLE = 11
+    OPACITY = 12
+    H_FLIP = 13
+    V_FLIP = 14
+
+
+class AnimType(enum.Enum):
+    WALK = 0
+    IDLE = 1
+    ATTACK = 2
+    KNOCK_BACK = 3
+
+    @staticmethod
+    def from_bcu_str(string: str) -> Optional["AnimType"]:
+        string = string.split("_")[1]
+        string = string.split(".")[0]
+        if string == "walk":
+            return AnimType.WALK
+        elif string == "idle":
+            return AnimType.IDLE
+        elif string == "attack":
+            return AnimType.ATTACK
+        elif string == "kb":
+            return AnimType.KNOCK_BACK
+        else:
+            return None
+
+
 @dataclass
-class CustomRect:
+class Rect:
     x: IntCSVField = CSVField.to_field(IntCSVField, 0)
     y: IntCSVField = CSVField.to_field(IntCSVField, 1)
     w: IntCSVField = CSVField.to_field(IntCSVField, 2)
@@ -29,7 +70,7 @@ class CustomRect:
 
 
 @dataclass
-class CustomTextureMetadata:
+class TextureMetadata:
     head_name: StringCSVField = CSVField.to_field(StringCSVField, 0, row_index=0)
     version_code: StringCSVField = CSVField.to_field(StringCSVField, 0, row_index=1)
     img_name: StringCSVField = CSVField.to_field(StringCSVField, 0, row_index=2)
@@ -55,14 +96,12 @@ class CustomTextureMetadata:
 
 
 @dataclass
-class CustomTexture:
-    metadata: CustomTextureMetadata = field(
-        default_factory=lambda: CustomTextureMetadata()
+class Texture:
+    metadata: TextureMetadata = field(default_factory=lambda: TextureMetadata())
+    image: Optional["core.BCImage"] = field(
+        default_factory=lambda: core.BCImage.create_empty()
     )
-    image: Optional["core.NewBCImage"] = field(
-        default_factory=lambda: core.NewBCImage.create_empty()
-    )
-    rects: list[CustomRect] = field(default_factory=lambda: [])
+    rects: list[Rect] = field(default_factory=lambda: [])
     imgcut_name: str = ""
 
     def save_b64(self):
@@ -76,7 +115,7 @@ class CustomTexture:
         self.metadata.read_csv(csv)
         for i in range(self.metadata.total_rects.get()):
             index = i + 4
-            rect = CustomRect()
+            rect = Rect()
             rect.read_csv(index, csv)
             self.rects.append(rect)
 
@@ -114,7 +153,7 @@ class CustomTexture:
         self.metadata.set_id(id)
         self.imgcut_name = self.metadata.img_name.get().replace(".png", ".imgcut")
 
-    def get_rect(self, id: int) -> Optional["CustomRect"]:
+    def get_rect(self, id: int) -> Optional["Rect"]:
         try:
             rect = self.rects[id]
         except IndexError:
@@ -131,12 +170,12 @@ class CustomTexture:
 
         return self.image.get_subimage(rect)
 
-    def get_cut_from_rect(self, rect: "core.CustomRect") -> Optional["core.NewBCImage"]:
+    def get_cut_from_rect(self, rect: "core.Rect") -> Optional["core.BCImage"]:
         if self.image is None:
             return None
         return self.image.get_subimage(rect)
 
-    def set_cut(self, rect_id: int, img: "core.NewBCImage"):
+    def set_cut(self, rect_id: int, img: "core.BCImage"):
         original_rect = self.get_rect(rect_id)
         if original_rect is None or self.image is None:
             return
@@ -153,9 +192,9 @@ class CustomTexture:
         # reconstruct imgcut
         x = 0
         y = 0
-        new_rects: list["core.CustomRect"] = []
+        new_rects: list["core.Rect"] = []
         for rect in self.rects:
-            new_rect = core.CustomRect()
+            new_rect = core.Rect()
             new_rect.x.set(x)
             new_rect.y.set(0)
             new_rect.h.set(rect.h.get())
@@ -164,7 +203,7 @@ class CustomTexture:
             x += new_rect.w.get()
             y = max(new_rect.h.get(), y)
 
-        new_img = core.NewBCImage.from_size(x, y)
+        new_img = core.BCImage.from_size(x, y)
 
         for i, (old_rect, new_rect) in enumerate(zip(self.rects, new_rects)):
             if i == rect_id:
@@ -180,7 +219,7 @@ class CustomTexture:
 
 
 @dataclass
-class CustomMamodelMetaData:
+class MamodelMetaData:
     head_name: StringCSVField = CSVField.to_field(StringCSVField, 0, row_index=0)
     version_code: StringCSVField = CSVField.to_field(StringCSVField, 0, row_index=1)
     total_parts: IntCSVField = CSVField.to_field(IntCSVField, 0, row_index=2)
@@ -193,7 +232,7 @@ class CustomMamodelMetaData:
 
 
 @dataclass
-class CustomModelPart:
+class ModelPart:
     parent_id: IntCSVField = CSVField.to_field(IntCSVField, 0)
     unit_id: IntCSVField = CSVField.to_field(IntCSVField, 1)
     cut_id: IntCSVField = CSVField.to_field(IntCSVField, 2)
@@ -232,7 +271,7 @@ class CustomModelPart:
 
 
 @dataclass
-class CustomUnits:
+class MamodelUnits:
     scale_unit: IntCSVField = CSVField.to_field(IntCSVField, 0)
     angle_unit: IntCSVField = CSVField.to_field(IntCSVField, 1)
     alpha_unit: IntCSVField = CSVField.to_field(IntCSVField, 2)
@@ -247,7 +286,7 @@ class CustomUnits:
 
 
 @dataclass
-class CustomInts:
+class MamodelInts:
     int_0: IntCSVField = CSVField.to_field(IntCSVField, 0)
     int_1: IntCSVField = CSVField.to_field(IntCSVField, 1)
     int_2: IntCSVField = CSVField.to_field(IntCSVField, 2)
@@ -266,8 +305,8 @@ class CustomInts:
 
 
 @dataclass
-class CustomIntsInts:
-    ints: list[CustomInts] = field(default_factory=lambda: [])
+class MamodelIntsInts:
+    ints: list[MamodelInts] = field(default_factory=lambda: [])
     total_ints: IntCSVField = CSVField.to_field(IntCSVField, 0)
 
     def read_csv(self, index: int, csv: "core.CSV"):
@@ -276,7 +315,7 @@ class CustomIntsInts:
         core.Modification.read_csv_fields(self, csv)
         for i in range(self.total_ints.get()):
             ind = index + i + 1
-            ints = CustomInts()
+            ints = MamodelInts()
             ints.read_csv(ind, csv)
             self.ints.append(ints)
 
@@ -290,13 +329,11 @@ class CustomIntsInts:
 
 
 @dataclass
-class CustomMamodel:
-    metadata: CustomMamodelMetaData = field(
-        default_factory=lambda: CustomMamodelMetaData()
-    )
-    parts: list[CustomModelPart] = field(default_factory=lambda: [])
-    units: CustomUnits = field(default_factory=lambda: CustomUnits())
-    ints: CustomIntsInts = field(default_factory=lambda: CustomIntsInts())
+class Mamodel:
+    metadata: MamodelMetaData = field(default_factory=lambda: MamodelMetaData())
+    parts: list[ModelPart] = field(default_factory=lambda: [])
+    units: MamodelUnits = field(default_factory=lambda: MamodelUnits())
+    ints: MamodelIntsInts = field(default_factory=lambda: MamodelIntsInts())
     mamodel_name: str = ""
 
     def read_csv(self, csv: "core.CSV"):
@@ -304,7 +341,7 @@ class CustomMamodel:
         self.parts = []
         for i in range(self.metadata.total_parts.get()):
             index = i + 3
-            part = CustomModelPart()
+            part = ModelPart()
             part.read_csv(index, csv)
             self.parts.append(part)
         self.units.read_csv(len(self.parts) + 3, csv)
@@ -342,7 +379,7 @@ class CustomMamodel:
 
 
 @dataclass
-class CustomKeyFrame:
+class KeyFrame:
     frame: IntCSVField = CSVField.to_field(IntCSVField, 0)
     change_in_value: IntCSVField = CSVField.to_field(IntCSVField, 1)
     ease_mode: IntCSVField = CSVField.to_field(IntCSVField, 2)
@@ -358,7 +395,7 @@ class CustomKeyFrame:
 
 
 @dataclass
-class CustomMaanimMetadata:
+class MaanimMetadata:
     head_name: StringCSVField = CSVField.to_field(StringCSVField, 0, row_index=0)
     version_code: StringCSVField = CSVField.to_field(StringCSVField, 0, row_index=1)
     total_parts: IntCSVField = CSVField.to_field(IntCSVField, 0, row_index=2)
@@ -371,8 +408,8 @@ class CustomMaanimMetadata:
 
 
 @dataclass
-class CustomKeyFrames:
-    keyframes: list[CustomKeyFrame] = field(default_factory=lambda: [])
+class KeyFrames:
+    keyframes: list[KeyFrame] = field(default_factory=lambda: [])
     model_id: IntCSVField = CSVField.to_field(IntCSVField, 0)
     modification_type: IntCSVField = CSVField.to_field(IntCSVField, 1)
     loop: IntCSVField = CSVField.to_field(IntCSVField, 2)
@@ -387,7 +424,7 @@ class CustomKeyFrames:
         self.keyframes = []
         for i in range(self.total_keyframes.get()):
             ind = index + i + 2
-            keyframe = CustomKeyFrame()
+            keyframe = KeyFrame()
             keyframe.read_csv(ind, csv)
             self.keyframes.append(keyframe)
 
@@ -404,18 +441,16 @@ class CustomKeyFrames:
         return index + 2 + len(self.keyframes)
 
     def flip(self):
-        if self.modification_type.get() != core.AnimModificationType.ANGLE.value:
+        if self.modification_type.get() != AnimModificationType.ANGLE.value:
             return
         for keyframe in self.keyframes:
             keyframe.change_in_value.set(-keyframe.change_in_value.get())
 
 
 @dataclass
-class CustomUnitAnim:
-    metadata: CustomMaanimMetadata = field(
-        default_factory=lambda: CustomMaanimMetadata()
-    )
-    parts: list[CustomKeyFrames] = field(default_factory=lambda: [])
+class UnitAnim:
+    metadata: MaanimMetadata = field(default_factory=lambda: MaanimMetadata())
+    parts: list[KeyFrames] = field(default_factory=lambda: [])
     name: str = ""
 
     def read_csv(self, csv: "core.CSV"):
@@ -423,7 +458,7 @@ class CustomUnitAnim:
         index = 3
         self.parts = []
         for _ in range(self.metadata.total_parts.get()):
-            part = CustomKeyFrames()
+            part = KeyFrames()
             index = part.read_csv(index, csv)
             self.parts.append(part)
 
@@ -452,14 +487,14 @@ class CustomUnitAnim:
 
 
 @dataclass
-class CustomModel(core.Modification):
-    texture: CustomTexture = field(default_factory=lambda: CustomTexture())
-    anims: list[CustomUnitAnim] = field(default_factory=lambda: [])
-    mamodel: CustomMamodel = field(default_factory=lambda: CustomMamodel())
+class Model(core.Modification):
+    texture: Texture = field(default_factory=lambda: Texture())
+    anims: list[UnitAnim] = field(default_factory=lambda: [])
+    mamodel: Mamodel = field(default_factory=lambda: Mamodel())
 
     def read_csv(
         self,
-        img: Optional["core.NewBCImage"],
+        img: Optional["core.BCImage"],
         imgcut_csv: Optional["core.CSV"],
         maanim_csvs: dict[str, "core.CSV"],
         mamodel_csv: Optional["core.CSV"],
@@ -469,7 +504,7 @@ class CustomModel(core.Modification):
         self.texture.image = img
         self.anims = []
         for name, maanim_csv in maanim_csvs.items():
-            anim = CustomUnitAnim(name=name)
+            anim = UnitAnim(name=name)
             anim.read_csv(maanim_csv)
             self.anims.append(anim)
 
@@ -537,7 +572,7 @@ class CustomModel(core.Modification):
             maanim_csvs[path.basename()] = maanim_csv
 
         self.read_csv(
-            core.NewBCImage.from_file(sprite_path),
+            core.BCImage.from_file(sprite_path),
             texture_csv,
             maanim_csvs,
             mamodel_csv,
@@ -567,7 +602,7 @@ class CustomModel(core.Modification):
             maanim_csvs[name] = maanim_csv
 
         self.read_csv(
-            core.NewBCImage.from_data(sprite_data),
+            core.BCImage.from_data(sprite_data),
             texture_csv,
             maanim_csvs,
             mamodel_csv,
@@ -601,7 +636,7 @@ class CustomModel(core.Modification):
         for anim in self.anims:
             anim.flip()
 
-    def deepcopy(self) -> "CustomModel":
+    def deepcopy(self) -> "Model":
         return copy.deepcopy(self)
 
     def set_unit_form(self, form: str):

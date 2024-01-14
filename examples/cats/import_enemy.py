@@ -54,13 +54,13 @@ class AssassinBear(core.Cat):
         self.set_form(custom_form)
 
 
-loader = core.NewModLoader("en", "12.3.0")  # can be changed for other versions
+loader = core.ModLoader("en", "12.3.0")  # can be changed for other versions
 loader.initialize()
 
 game_data = loader.get_game_packs()
 apk = loader.get_apk()
 
-mod = core.NewMod(
+mod = core.Mod(
     "Assassin Bear Cat",
     "fieryhenry",
     "Replaces basic cat first form to be the assassin bear enemy",
@@ -73,3 +73,5 @@ apk.set_app_name("Assassin Bear")
 apk.set_package_name("jp.co.ponos.battlecats.assassinbear")
 
 loader.apply(mod)
+loader.initialize_adb()
+loader.install_adb(run_game=True)

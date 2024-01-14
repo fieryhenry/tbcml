@@ -147,8 +147,8 @@ class Enemy(core.Modification):
     name: StringCSVField = CSVField.to_field(StringCSVField, 0)
     description: StrListCSVField = CSVField.to_field(StrListCSVField, 0, length=5)
     stats: Optional[EnemyStats] = None
-    anim: Optional["core.CustomModel"] = None
-    icon: Optional["core.NewBCImage"] = None
+    anim: Optional["core.Model"] = None
+    icon: Optional["core.BCImage"] = None
     modification_type: core.ModificationType = core.ModificationType.ENEMY
 
     def set_enemy_id(self, id: int):
@@ -159,14 +159,14 @@ class Enemy(core.Modification):
     def get_release_id(self) -> int:
         return self.enemy_id + 2
 
-    def get_anim(self) -> "core.CustomModel":
+    def get_anim(self) -> "core.Model":
         if self.anim is None:
-            self.anim = core.CustomModel()
+            self.anim = core.Model()
         return self.anim
 
-    def get_icon(self) -> "core.NewBCImage":
+    def get_icon(self) -> "core.BCImage":
         if self.icon is None:
-            self.icon = core.NewBCImage.from_size(64, 64)
+            self.icon = core.BCImage.from_size(64, 64)
         return self.icon
 
     def get_stats(self) -> "EnemyStats":
@@ -242,7 +242,7 @@ class Enemy(core.Modification):
         self.icon = game_data.get_img(self.get_enemy_icon_name())
 
     def read_anim(self, game_data: "core.GamePacks"):
-        self.anim = core.CustomModel()
+        self.anim = core.Model()
         self.anim.read(
             game_data,
             self.get_sprite_file_name(),
@@ -268,7 +268,7 @@ class Enemy(core.Modification):
     def get_descripion_csv(
         game_data: "core.GamePacks",
     ) -> tuple[str, Optional["core.CSV"]]:
-        file_name_desc = f"EnemyPictureBook_{game_data.new_localizable.get_lang()}.csv"
+        file_name_desc = f"EnemyPictureBook_{game_data.localizable.get_lang()}.csv"
         desc_csv = game_data.get_csv(
             file_name_desc, country_code=game_data.country_code
         )

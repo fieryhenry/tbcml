@@ -63,7 +63,7 @@ class CountryCode(enum.Enum):
         for country_code in CountryCode:
             if country_code.get_code() == code:
                 return country_code
-        return CountryCode.EN
+        return CountryCode.JP
 
     @staticmethod
     def get_all() -> list["CountryCode"]:

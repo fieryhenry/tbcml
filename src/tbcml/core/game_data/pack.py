@@ -398,33 +398,8 @@ class GamePacks:
     def init_data(self):
         """Initialize the data objects."""
 
-        self.base_abilities: Optional[core.BaseAbilities] = None
-        self.bgs: Optional[core.Bgs] = None
-        self.chara_groups: Optional[core.CharaGroups] = None
-        self.shake_effects: Optional[core.ShakeEffects] = None
-
-        self.adjust_data: Optional[core.AdjustData] = None
-        self.gatya: Optional[core.Gatya] = None
-        self.gatya_items: Optional[core.GatyaItems] = None
-        self.item_shop: Optional[core.ItemShop] = None
-        self.matatabi: Optional[core.MatatabiData] = None
-        self.nyanko_picture_book: Optional[core.NyankoPictureBook] = None
-        self.scheme_items: Optional[core.SchemeItems] = None
-        self.unit_buy: Optional[core.UnitBuy] = None
-        self.user_rank_reward: Optional[core.UserRankReward] = None
-
-        self.castles: Optional[core.Castles] = None
-        self.castle_mix_recipies: Optional[core.CastleMixRecipies] = None
-        self.engineer_anim: Optional[core.EngineerAnim] = None
-        self.engineer_limit: Optional[core.EngineerLimit] = None
-        self.ototo_anim: Optional[core.OtotoAnim] = None
-
-        self.maps: Optional[core.Maps] = None
-
-        self.localizable = core.Localizable.from_game_data(self)
-
-        self.new_localizable = core.CustomLocalizable()
-        self.new_localizable.read(self)
+        self.localizable = core.Localizable()
+        self.localizable.read(self)
 
     def get_pack(self, pack_name: str) -> Optional["PackFile"]:
         """Get a pack from the game packs.
@@ -477,14 +452,14 @@ class GamePacks:
 
     def get_img(
         self, file_name: str, show_error: bool = False
-    ) -> Optional["core.NewBCImage"]:
+    ) -> Optional["core.BCImage"]:
         file = self.find_file(file_name, show_error)
         if file is None:
             return None
-        return core.NewBCImage(file.dec_data.to_base_64())
+        return core.BCImage(file.dec_data.to_base_64())
 
     def set_img(
-        self, file_name: str, img: Optional["core.NewBCImage"]
+        self, file_name: str, img: Optional["core.BCImage"]
     ) -> Optional["GameFile"]:
         if img is None:
             return None
@@ -682,52 +657,6 @@ class GamePacks:
             packs[pack_name] = pack
         return GamePacks(packs, apk.country_code, apk.game_version)
 
-    def apply_mod(self, mod: "core.Mod"):
-        """Apply mod data to the game packs. Should be called after all mods have been imported into a single mod.
-
-        Args:
-            mod (core.Mod): The mod.
-        """
-        core.BaseAbilities.create_empty().apply_mod_to_game_data(mod, self, "abilities")
-        core.Bgs.create_empty().apply_mod_to_game_data(mod, self, "bgs")
-        core.CharaGroups.create_empty().apply_mod_to_game_data(
-            mod, self, "chara_groups"
-        )
-        core.ShakeEffects.create_empty().apply_mod_to_game_data(
-            mod, self, "shake_effects"
-        )
-
-        core.AdjustData.create_empty().apply_mod_to_game_data(mod, self, "adjust_data")
-        core.Gatya.create_empty().apply_mod_to_game_data(mod, self, "gatya")
-        core.GatyaItems.create_empty().apply_mod_to_game_data(mod, self, "gatya_items")
-        core.ItemShop.create_empty().apply_mod_to_game_data(mod, self, "item_shop")
-        core.MatatabiData.create_empty().apply_mod_to_game_data(
-            mod, self, "matatabi_data"
-        )
-        core.SchemeItems.create_empty().apply_mod_to_game_data(
-            mod, self, "scheme_items"
-        )
-        core.UserRankReward.create_empty().apply_mod_to_game_data(
-            mod, self, "user_rank_reward"
-        )
-
-        core.Castles.create_empty().apply_mod_to_game_data(mod, self, "castles")
-        core.EngineerAnim.create_empty().apply_mod_to_game_data(
-            mod, self, "engineer_anim"
-        )
-        core.EngineerLimit.create_empty().apply_mod_to_game_data(
-            mod, self, "engineer_limit"
-        )
-        core.ItemPacks.create_empty().apply_mod_to_game_data(mod, self, "item_packs")
-        core.OtotoAnim.create_empty().apply_mod_to_game_data(mod, self, "ototo_anim")
-
-        core.Maps.create_empty().apply_mod_to_game_data(mod, self, "maps")
-
-        core.Localizable.create_empty().apply_mod_to_game_data(mod, self, "localizable")
-
-        for file_name, data in mod.game_files.items():
-            self.set_file(file_name, data)
-
     def extract(
         self,
         path: "core.Path",
@@ -749,23 +678,11 @@ class GamePacks:
                     continue
             pack.extract(path)
 
-    def apply_mods_new(self, mods: list["core.NewMod"]):
+    def apply_mods(self, mods: list["core.Mod"]):
         if not mods:
             return
         for mod in mods:
             mod.apply_to_game_data(self)
-
-    def apply_mods(self, mods: list["core.Mod"]):
-        """Apply a list of mods to the game packs.
-
-        Args:
-            mods (list[core.Mod]): The mods.
-        """
-        if not mods:
-            return
-        main_mod = mods[0]
-        main_mod.import_mods(mods[1:])
-        self.apply_mod(main_mod)
 
     def copy(self) -> "GamePacks":
         """Deep copy the game packs.

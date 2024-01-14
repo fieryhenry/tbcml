@@ -1,5 +1,5 @@
 """A module containing the GameVersion class."""
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from tbcml import core
 
@@ -213,3 +213,6 @@ class GameVersion:
         """
 
         return self.game_version < core.GameVersion.from_string("7.0.0")
+
+
+GV = Union[str, GameVersion]
