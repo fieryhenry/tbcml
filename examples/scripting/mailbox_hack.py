@@ -50,14 +50,16 @@ mod = Mod(
 
 mod.add_script(script)
 
-apk.set_app_name("Assassin Bear")
+apk.set_app_name("Battle Cats Mail Box Hack")
 apk.set_package_name(
-    "jp.co.ponos.battlecats.assassinbear"
+    "jp.co.ponos.battlecats.mailboxhack"
 )  # may not work if you set decode_resources to False when extracting the APK
 
 print("Applying mods to game...")
 
 loader.apply(mod)
-loader.initialize_adb()
-loader.install_adb(run_game=True)
+
 print(apk.final_apk_path)
+
+# loader.initialize_adb()
+# loader.install_adb(run_game=True)
