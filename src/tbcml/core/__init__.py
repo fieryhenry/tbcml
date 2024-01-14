@@ -9,7 +9,7 @@ from .mods.new_bc_mod import (
     NewMod,
     Modification,
     ModificationType,
-    ModPaths,
+    ModPath,
 )
 from .mods.smali import SmaliHandler, SmaliSet, Smali
 from .mods.frida_script import FridaScripts, FridaScript, FridaGadgetHelper
@@ -133,6 +133,7 @@ from .io.lib import (
     Patch,
     FuncPatch,
     StringReplacePatch,
+    ARC,
 )
 from .io.json_file import JsonFile
 from .io.file_handler import FileSize
@@ -150,7 +151,7 @@ from .langs import Languages
 from .request import RequestHandler
 from .server_handler import ServerFileHandler, EventData, GameVersionSearchError
 from .game_data.pack import GamePacks, PackFile, GameFile
-from .country_code import CountryCode
+from .country_code import CountryCode, CC
 from .game_version import GameVersion
 
 from . import (
@@ -179,7 +180,7 @@ __all__ = [
     "StringCSVField",
     "StrListCSVField",
     "Modification",
-    "ModPaths",
+    "ModPath",
     "NewMod",
     "ModEditValueHandler",
     "Dependency",
@@ -299,6 +300,7 @@ __all__ = [
     "Patch",
     "FuncPatch",
     "StringReplacePatch",
+    "ARC",
     "JsonFile",
     "FileSize",
     "XML",
@@ -326,6 +328,7 @@ __all__ = [
     "PackFile",
     "GameFile",
     "CountryCode",
+    "CC",
     "GameVersion",
     "AdbHandler",
     "BulkAdbHandler",
