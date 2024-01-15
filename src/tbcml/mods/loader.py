@@ -59,7 +59,6 @@ class ModLoader:
         self.game_packs: Optional[tbcml.GamePacks] = None
         self.apk: Optional[tbcml.Apk] = None
         self.adb_handler: Optional[tbcml.BulkAdbHandler] = None
-        self.local_device_handler: Optional[tbcml.LocalDeviceHandler] = None
 
     def initialize(
         self,
@@ -198,18 +197,6 @@ class ModLoader:
             if not success:
                 raise Exception("No devices connected.")
 
-    def initialize_local_device(self):
-        self.local_device_handler = tbcml.LocalDeviceHandler()
-        self.local_device_handler.set_package_name(self.get_apk().package_name)
-
-    def install_apk(
-        self, run_game: bool = False, adb: bool = True, locally: bool = True
-    ):
-        if self.local_device_handler is not None and locally:
-            self.install_locally(run_game)
-        if self.adb_handler is not None and adb:
-            self.install_adb(run_game)
-
     def install_adb(
         self, run_game: bool = False
     ) -> tuple[list["tbcml.CommandResult"], Optional[list["tbcml.CommandResult"]]]:
@@ -229,15 +216,9 @@ class ModLoader:
             return (results, self.run_game_adb())
         return (results, None)
 
-    def install_locally(
-        self, run_game: bool = False
-    ) -> tuple["tbcml.CommandResult", Optional["tbcml.CommandResult"]]:
-        result = self.get_local_device_handler().install_apk(
-            self.get_apk().get_final_apk_path()
-        )
-        if run_game:
-            return (result, self.run_game_locally())
-        return (result, None)
+    def copy_to_android_download_folder(self):
+        """Copies the final apk to the /sdard/Download directory for easier installation"""
+        self.get_apk().copy_to_android_download_folder()
 
     def get_adb_handler(self) -> "tbcml.BulkAdbHandler":
         """Gets the apk handler. Will never be None
@@ -254,13 +235,6 @@ class ModLoader:
             )
         return self.adb_handler
 
-    def get_local_device_handler(self) -> "tbcml.LocalDeviceHandler":
-        if self.local_device_handler is None:
-            raise ModLoaderUninitializedException(
-                "Local device handler not initialized. Call initialize_local_device() first"
-            )
-        return self.local_device_handler
-
     def run_game_adb(self) -> list["tbcml.CommandResult"]:
         """Run the game with adb
 
@@ -270,9 +244,6 @@ class ModLoader:
         return self.get_adb_handler().run_adb_handler_function(
             tbcml.AdbHandler.run_game
         )
-
-    def run_game_locally(self) -> "tbcml.CommandResult":
-        return self.get_local_device_handler().run_game()
 
     def close_game_adb(self) -> list["tbcml.CommandResult"]:
         """Close the game with adb

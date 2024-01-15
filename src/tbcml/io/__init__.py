@@ -4,7 +4,6 @@ from tbcml.io import (
     data,
     apk,
     file_handler,
-    local_device,
     path,
     yaml,
     command,
@@ -36,5 +35,4 @@ __all__ = [
     "adb",
     "csv_fields",
     "bc_image",
-    "local_device",
 ]

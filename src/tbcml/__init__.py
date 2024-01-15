@@ -47,7 +47,6 @@ from .io.path import Path
 from .io.data import Data, PaddedInt
 from .io.command import Command, CommandResult
 from .io.adb import AdbHandler, BulkAdbHandler
-from .io.local_device import LocalDeviceHandler
 from .io.lib import (
     LibFiles,
     Lib,
@@ -178,7 +177,6 @@ __all__ = [
     "GameVersion",
     "AdbHandler",
     "BulkAdbHandler",
-    "LocalDeviceHandler",
     "mods",
     "game_data",
     "io",
