@@ -45,7 +45,6 @@ setuptools.setup(
             "moviepy",
         ],
         "scripting": [
-            "androguard",
             "lief",
         ],
     },

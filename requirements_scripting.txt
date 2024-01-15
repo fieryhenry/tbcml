@@ -1,2 +1,1 @@
 lief==0.13.2
-androguard==3.3.5
