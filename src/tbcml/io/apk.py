@@ -1332,6 +1332,13 @@ class Apk:
         self.package_name = package_name
         return True
 
+    def copy_to_android_download_folder(self):
+        download_path = tbcml.Path.get_root().add(
+            "sdcard", "Download", self.final_apk_path.basename()
+        )
+        download_path.parent().generate_dirs()
+        self.final_apk_path.copy(download_path)
+
     def set_clear_text_traffic(self, clear_text_traffic: bool):
         manifest = self.parse_manifest()
         if manifest is None:
