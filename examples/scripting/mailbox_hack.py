@@ -33,7 +33,7 @@ script_content = script_content.replace(
     is_file_str,
 )
 
-print("Loading presents from" + presents_str)
+print("Loading presents from " + presents_str)
 
 script = FridaScript(
     name="Mailbox Hack",
@@ -61,5 +61,5 @@ loader.apply(mod)
 
 print(apk.final_apk_path)
 
-loader.initialize_adb()
-loader.install_adb(run_game=True)
+# loader.initialize_adb()
+# loader.install_adb(run_game=True)
