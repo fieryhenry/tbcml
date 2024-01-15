@@ -213,6 +213,17 @@ python3 script.py
   with pip as newer versions of those libraries don't exist on termux for some
   reason. Lief may take a very long time to compile.
 
+  Also to get lief working you may need to run the following commands:
+
+  ```bash
+  pkg install patchelf
+  patchelf --add-needed libpython3.11.so /data/data/com.termux/files/usr/lib/python3.11/site-packages/lief.cpython-311.so
+  patchelf --add-needed libandroid.so /data/data/com.termux/files/usr/lib/python3.11/site-packages/lief.cpython-311.so
+  ```
+
+  You may need to change the python version in the above commands if you are
+  using a different version of python.
+
   You can then install the library from pypi [here](#from-pypi), or
   install the library from
   source (need to do `pkg install git`) [here](#from-source)
