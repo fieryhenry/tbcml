@@ -1,10 +1,10 @@
-from tbcml import core
+import tbcml
 
 
-class AssassinBearForm(core.CatForm):
-    def __init__(self, cat_id: int, game_data: "core.GamePacks"):
+class AssassinBearForm(tbcml.CatForm):
+    def __init__(self, cat_id: int, game_data: "tbcml.GamePacks"):
         super().__init__(
-            form_type=core.CatFormType.FIRST
+            form_type=tbcml.CatFormType.FIRST
         )  # form type can be changed to change what form to replace
 
         enemy_release_id = 18  # enemy id is from renemy elease order page of wiki, other enemy ids may be -2 this.
@@ -28,7 +28,7 @@ class AssassinBearForm(core.CatForm):
         icons are 128x128, so they don't look too good
 
         ```
-        self.deploy_icon = core.NewBCImage.from_file("enter_path_here")
+        self.deploy_icon = tbcml.NewBCImage.from_file("enter_path_here")
         ```
 
         enemies don't have a recharge or cost value associated with them, so
@@ -44,8 +44,8 @@ class AssassinBearForm(core.CatForm):
         """
 
 
-class AssassinBear(core.Cat):
-    def __init__(self, game_data: "core.GamePacks"):
+class AssassinBear(tbcml.Cat):
+    def __init__(self, game_data: "tbcml.GamePacks"):
         super().__init__(
             cat_id=0
         )  # cat id can be changed to change what cat to replace
@@ -54,13 +54,13 @@ class AssassinBear(core.Cat):
         self.set_form(custom_form)
 
 
-loader = core.ModLoader("en", "12.3.0")  # can be changed for other versions
+loader = tbcml.ModLoader("en", "12.3.0")  # can be changed for other versions
 loader.initialize()
 
 game_data = loader.get_game_packs()
 apk = loader.get_apk()
 
-mod = core.Mod(
+mod = tbcml.Mod(
     "Assassin Bear Cat",
     "fieryhenry",
     "Replaces basic cat first form to be the assassin bear enemy",
@@ -73,5 +73,6 @@ apk.set_app_name("Assassin Bear")
 apk.set_package_name("jp.co.ponos.battlecats.assassinbear")
 
 loader.apply(mod)
-# loader.initialize_adb()
-# loader.install_adb(run_game=True)
+
+loader.initialize_adb()
+loader.install_adb(run_game=True)

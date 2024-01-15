@@ -1,26 +1,26 @@
-from tbcml import core
+import tbcml
 
 
-class NewForm(core.CatForm):
+class NewForm(tbcml.CatForm):
     def __init__(self):
-        super().__init__(form_type=core.CatFormType.FIRST)
+        super().__init__(form_type=tbcml.CatFormType.FIRST)
 
         self.name.set("cool name")
         self.description.set(["cat that does stuff...", "example cat for tbcml"])
 
 
-class NewCat(core.Cat):
+class NewCat(tbcml.Cat):
     def __init__(self):
         super().__init__(cat_id=0)
 
         self.set_form(NewForm())
 
 
-loader = core.ModLoader("en", "12.3.0")
+loader = tbcml.ModLoader("en", "12.3.0")
 loader.initialize()
 
 
-mod = core.Mod(
+mod = tbcml.Mod(
     "Modded Cat Info Example",
     "fieryhenry",
     "Changes basic cat first form name and description",

@@ -1,6 +1,6 @@
 # see https://github.com/fieryhenry/mailboxhack for more information on what this script does
 import sys
-from tbcml.core import (
+from tbcml import (
     Mod,
     FridaScript,
     Path,
@@ -61,5 +61,5 @@ loader.apply(mod)
 
 print(apk.final_apk_path)
 
-# loader.initialize_adb()
-# loader.install_adb(run_game=True)
+loader.initialize_adb()
+loader.install_adb(run_game=True)

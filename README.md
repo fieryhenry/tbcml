@@ -75,20 +75,12 @@ also need to install tbcml[scripting]
 pip install tbcml[scripting]
 ```
 
-If you want to use the model viewer, you will also need to install
-tbcml[ui]
-
-```bash
-pip install tbcml[ui]
-```
-
 #### From source
 
 ```bash
 git clone https://github.com/fieryhenry/tbcml.git
 cd tbcml
 pip install -r requirements_scripting.txt
-pip install -r requirements_ui.txt
 pip install -e .
 ```
 
@@ -107,10 +99,10 @@ do more advanced things.
 Create `script.py`
 
 ```python
-from tbcml import core
+import tbcml
 
 
-class BasicCustomForm(core.CatForm):
+class BasicCustomForm(tbcml.CatForm):
     """For better organization, these classes could be defined in
     another / separate files and then imported.
 
@@ -118,13 +110,13 @@ class BasicCustomForm(core.CatForm):
     """
 
     def __init__(self):
-        super().__init__(form_type=core.CatFormType.FIRST)
+        super().__init__(form_type=tbcml.CatFormType.FIRST)
 
         self.name.set("Cool Cat")
         self.description.set(["First line!", "Second Line!", "Third description line!"])
 
 
-class BasicCustomCat(core.Cat):
+class BasicCustomCat(tbcml.Cat):
     def __init__(self):
         super().__init__(cat_id=0)
 
@@ -132,14 +124,14 @@ class BasicCustomCat(core.Cat):
         self.set_form(first_form)
 
 
-loader = core.ModLoader(
+loader = tbcml.ModLoader(
     "en", "12.3.0"
 )  # these can be changed for the version you want
 loader.initialize()
 
 apk = loader.get_apk()
 
-mod = core.Mod(
+mod = tbcml.Mod(
     name="Test Mod",
     authors="fieryhenry",  # can be a list of authors e.g ["person 1", "person 2"]
     description="Test Description",

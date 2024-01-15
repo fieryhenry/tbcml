@@ -1,6 +1,6 @@
 # see https://github.com/fieryhenry/TBCMailServer
 
-from tbcml.core import (
+from tbcml import (
     Mod,
     LibPatch,
     StringReplacePatch,
