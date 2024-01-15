@@ -48,7 +48,7 @@ used for save editing as I haven't made a modding specific one
 yet)
 
 I've spent so much time working on this project because I've changed my mind on
-what this tool should do and how to structure it, but due to all of the
+what this library should do and how to structure it, but due to all of the
 re-writes, it really doesn't look like it. So I would really appricate it if you
 considered donating to my kofi:
 
@@ -89,7 +89,7 @@ scripting or ui features.
 
 ### Basic Usage
 
-You can obviously do more advanced things with this tool, but this is just a
+You can obviously do more advanced things with this library, but this is just a
 basic example of how to use it.
 
 I don't have time to create a bunch of examples and the documentation is not
@@ -188,8 +188,9 @@ python3 script.py
   termux-change-repo
   ```
 
-  When prompted for a mirror, any of them should work, but I picked "GH Mirrors
-  by Kcubeterm"
+  When prompted for a mirror, any of them should work (pick recommended group
+  mirrors if they exist, but if they don't, then I picked "GH Mirrors
+  by Kcubeterm" at it seemed to work fine)
 
   Then run the following commands:
 
@@ -200,13 +201,20 @@ python3 script.py
   pkg install openjdk-17
   pkg install aapt
   pkg install apksigner
+  pkg install git
+  pkg install cmake
   ```
 
-  rust and binutils are needed to build the cryptography package btw, the tool
-  is not written in it.
+  rust and binutils are needed to build the cryptography package btw, the library
+  is not written in it. cmake is used to build leif. git is not strictly
+  necessary but is needed to install the library from source.
 
-  You can then install the tool from pypi [here](#from-pypi), or
-  install the tool from
+  If you want scripting you may have to manually install lief
+  with pip as newer versions of those libraries don't exist on termux for some
+  reason. Lief may take a very long time to compile.
+
+  You can then install the library from pypi [here](#from-pypi), or
+  install the library from
   source (need to do `pkg install git`) [here](#from-source)
 
   I recommend adding
