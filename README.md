@@ -106,7 +106,7 @@ class BasicCustomForm(tbcml.CatForm):
     """For better organization, these classes could be defined in
     another / separate files and then imported.
 
-    See core/game_data/cat_base/new_cats.py for documetation of cats
+    See game_data/cat_base/cats.py for documetation of cats
     """
 
     def __init__(self):
