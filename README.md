@@ -246,7 +246,7 @@ python3 script.py
 
 ## Documentation (Not Finished)
 
-For examples see the [examples](examples) folder. Note that some may need the
+For examples see [examples.md](examples/examples.md). Note that some may need the
 latest commit to work (see [install from source](#from-source))
 
 <https://tbcml-docs.readthedocs.io/en/latest/>
