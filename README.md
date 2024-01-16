@@ -22,21 +22,20 @@ Most features are not documented yet and many may not work properly atm.
 
 Note that most of these features a work in progress and may not work properly.
 
-- Downloading and extracting apks
-- Downloading server files and event data
+- [Downloading and extracting apks](examples/apk/download_and_extract.py)
+- [Downloading server files](examples/apk/download_server_files.py) and event data
 - Decryption and encryption of pack files
 - Parsing of various game data files
-- Modification of game data
-- Frida gadget hooking
+- [Modification of game data](examples/cats/name_desc_edit.py)
+- [Frida gadget hooking](examples/scripting/mailbox_hack.py)
 - Smali code injection
 - Java to smali code conversion
-- Patching of libnative-lib.so file
+- [Patching of libnative-lib.so file](examples/scripting/mailbox_ps.py)
 - Modification of apk assets
-- Animation Viewer / Loader
 - BCU Pack Imports
 - Repacking and signing of modified apks
-- Randomization of encryption keys so that your pack files cannot be easily
-  decrypted by other people
+- [Custom encryption key and iv so that your pack files cannot be easily
+  decrypted by other people](examples/apk/custom_enc_key.py)
 
 Note that the scripting functionality is very limited, especially in later
 game versions. Once I finish the [game
