@@ -1,3 +1,4 @@
+import copy
 from typing import Optional
 from marshmallow_dataclass import dataclass
 import tbcml
@@ -27,10 +28,7 @@ class ShopItem:
                 return csv.index
         return None
 
-    def read_csv(self, csv: "tbcml.CSV") -> bool:
-        index = self.find_index(csv)
-        if index is None:
-            return False
+    def read_csv(self, csv: "tbcml.CSV", index: int) -> bool:
         csv.index = index
         tbcml.Modification.read_csv_fields(self, csv)
         return True
@@ -39,6 +37,9 @@ class ShopItem:
         index = self.find_index(csv) or len(csv.lines)
         csv.index = index
         tbcml.Modification.apply_csv_fields(self, csv, remove_others=False)
+
+    def copy(self) -> "ShopItem":
+        return copy.deepcopy(self)
 
 
 @dataclass
@@ -54,6 +55,11 @@ class ItemShop(tbcml.Modification):
 
     def __post_init__(self):
         ItemShop.Schema()
+
+    def get_item(self, id: int) -> Optional[ShopItem]:
+        if self.items is None:
+            return None
+        return self.items.get(id)
 
     @staticmethod
     def get_data_csv(
@@ -94,9 +100,9 @@ class ItemShop(tbcml.Modification):
             return
 
         self.items = {}
-        for _ in csv.lines[1:]:
+        for i in range(len(csv.lines[1:])):
             item = ShopItem()
-            item.read_csv(csv)
+            item.read_csv(csv, i + 1)
             self.items[item.shop_id.get()] = item
 
     def apply_data(self, game_data: "tbcml.GamePacks"):
@@ -134,6 +140,13 @@ class ItemShop(tbcml.Modification):
             self.items = {}
 
         self.items[shop_id] = item
+
+    def add_item(self, item: "ShopItem"):
+        if self.items is None:
+            raise ValueError("You must read data first!")
+        id = len(self.items)
+        item.shop_id.set(id)
+        self.items[id] = item
 
     def get_item_img(self, item: "ShopItem") -> "tbcml.BCImage":
         img = self.get_texture().get_cut(item.imgcut_rect_id.get())
