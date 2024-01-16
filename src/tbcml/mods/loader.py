@@ -267,6 +267,6 @@ class ModLoader:
         apk = self.get_apk()
         return self.get_adb_handler().run_adb_handler_function(
             tbcml.AdbHandler.push_files_to_folder,
-            apk.get_server_path(apk.country_code, apk.apk_folder).get_files(),
+            apk.get_server_path().get_files(),
             tbcml.AdbHandler.get_battlecats_path(apk.package_name).add("files"),
         )

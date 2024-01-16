@@ -199,7 +199,7 @@ class ServerFileHandler:
                     break
                 if self.file_map[name] != index:
                     continue
-                path = tbcml.Apk.get_server_path(
+                path = tbcml.Apk.get_server_path_static(
                     self.apk.country_code, self.apk.apk_folder
                 ).add(name)
                 if not path.exists():
@@ -216,7 +216,9 @@ class ServerFileHandler:
             if found and hashes_equal:
                 return False
         zipf = self.download(index)
-        path = tbcml.Apk.get_server_path(self.apk.country_code, self.apk.apk_folder)
+        path = tbcml.Apk.get_server_path_static(
+            self.apk.country_code, self.apk.apk_folder
+        )
         zipf.extract(path)
         return True
 
