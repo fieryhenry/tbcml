@@ -43,7 +43,7 @@ from .io.csv_fields import (
     StrListCSVField,
 )
 from .io.apk import Apk
-from .io.path import Path
+from .io.path import Path, PathStr
 from .io.data import Data, PaddedInt
 from .io.command import Command, CommandResult
 from .io.adb import AdbHandler, BulkAdbHandler
@@ -134,6 +134,7 @@ __all__ = [
     "to_str",
     "Apk",
     "Path",
+    "PathStr",
     "Data",
     "PaddedInt",
     "Command",

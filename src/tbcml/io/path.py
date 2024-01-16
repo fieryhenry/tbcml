@@ -317,3 +317,6 @@ class Path:
 
     def remove_prefix(self, prefix: str) -> "Path":
         return Path(self.path.removeprefix(prefix))
+
+
+PathStr = typing.Union[Path, str]

@@ -1,6 +1,7 @@
 """Country code enum."""
 import enum
 from typing import Literal, Union
+import tbcml
 
 
 class CountryCode(enum.Enum):
@@ -10,6 +11,12 @@ class CountryCode(enum.Enum):
     JP = "jp"
     KR = "kr"
     TW = "tw"
+
+    @staticmethod
+    def from_cc(cc: "tbcml.CC"):
+        if isinstance(cc, str):
+            return CountryCode.from_code(cc)
+        return cc
 
     def get_code(self) -> str:
         """Gets the 2 letter lowercase country code.

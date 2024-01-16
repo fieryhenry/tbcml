@@ -11,18 +11,19 @@ import tbcml
 class Apk:
     def __init__(
         self,
-        game_version: "tbcml.GameVersion",
-        country_code: "tbcml.CountryCode",
-        apk_folder: Optional["tbcml.Path"] = None,
+        game_version: "tbcml.GV",
+        country_code: "tbcml.CC",
+        apk_folder: Optional["tbcml.PathStr"] = None,
         allowed_script_mods: bool = True,
     ):
-        self.game_version = game_version
-        self.country_code = country_code
+        self.game_version = tbcml.GameVersion.from_gv(game_version)
+        self.country_code = tbcml.CountryCode.from_cc(country_code)
         self.package_name = self.get_package_name()
 
         if apk_folder is None:
-            apk_folder = self.get_default_apk_folder()
-        self.apk_folder = apk_folder
+            self.apk_folder = Apk.get_default_apk_folder()
+        else:
+            self.apk_folder = tbcml.Path(apk_folder)
 
         self.smali_handler: Optional[tbcml.SmaliHandler] = None
 

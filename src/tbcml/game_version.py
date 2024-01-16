@@ -15,6 +15,12 @@ class GameVersion:
         """
         self.game_version = game_version
 
+    @staticmethod
+    def from_gv(gv: "tbcml.GV") -> "GameVersion":
+        if isinstance(gv, str):
+            return GameVersion.from_string(gv)
+        return gv
+
     def to_string(self) -> str:
         """Converts the game version to a string.
 
