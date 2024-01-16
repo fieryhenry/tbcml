@@ -13,3 +13,4 @@ __pycache__
 /test*.zip
 /files_remaining.txt
 /.venv
+.*
