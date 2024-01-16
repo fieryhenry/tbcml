@@ -10,3 +10,5 @@ Collection of examples for using tbcml.
 - [Edit Unit Stats](cats/stats_edit.py)
 - [Custom Shop Item](itemshop/catfood_item.py)
 - [Mailbox Hack Script](scripting/mailbox_hack.py)
+- [Custom Encryption Key](apk/custom_enc_key.py)
+- [Downloading Server Files](apk/download_server_files.py)
