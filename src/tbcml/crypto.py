@@ -113,6 +113,12 @@ class AesCipher:
         cipher = self.get_cipher()
         return tbcml.Data(cipher.encrypt(data.get_bytes()))
 
+    @staticmethod
+    def get_key_length(has_iv: bool) -> int:
+        if has_iv:
+            return 16
+        return 8
+
     def decrypt(self, data: "tbcml.Data") -> "tbcml.Data":
         """Decrypts the given data.
 
