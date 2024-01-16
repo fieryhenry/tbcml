@@ -30,6 +30,9 @@ class GameFile:
 
     @property
     def dec_data(self):
+        return self.decrypt_data()
+
+    def decrypt_data(self):
         if self.__dec_data is not None:
             return self.__dec_data
 
@@ -61,6 +64,8 @@ class GameFile:
         Returns:
             tbcml.Data: The encrypted data.
         """
+        if key is not None or iv is not None:
+            self.decrypt_data()  # needs to be re-encrypted if key or iv is different
         if self.enc_data is not None:
             if self.__dec_data is None or self.__dec_data == self.original_dec_data:
                 return self.enc_data
