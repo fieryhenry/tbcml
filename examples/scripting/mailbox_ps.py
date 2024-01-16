@@ -1,5 +1,5 @@
 # see https://github.com/fieryhenry/TBCMailServer
-
+# showcases frida scripting and libnative patching
 from tbcml import (
     Mod,
     LibPatch,
