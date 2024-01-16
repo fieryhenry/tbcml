@@ -91,10 +91,7 @@ class Apk:
         return tbcml.Path.get_documents_folder().add("LibGadgets").generate_dirs()
 
     def get_packs_from_dir(self) -> list["tbcml.Path"]:
-        return (
-            self.get_pack_location().get_files()
-            + self.get_server_path(self.country_code, self.apk_folder).get_files()
-        )
+        return self.get_pack_location().get_files() + self.get_server_path().get_files()
 
     def get_packs_lists(self) -> list[tuple["tbcml.Path", "tbcml.Path"]]:
         files: list[tuple[tbcml.Path, tbcml.Path]] = []
@@ -784,6 +781,7 @@ class Apk:
                 length_override = 8
             else:
                 length_override = 16
+        key += "tbcml_encryption_key"  # makes it harder to do a hash lookup to find original key string
         return (
             tbcml.Hash(tbcml.HashAlgorithm.SHA256)
             .get_hash(tbcml.Data(key), length_override)
@@ -798,6 +796,9 @@ class Apk:
                 return None
             else:
                 length_override = 16
+        iv += (
+            "tbcml_encryption_iv"  # makes it harder to tell if iv and key are the same
+        )
         return (
             tbcml.Hash(tbcml.HashAlgorithm.SHA256)
             .get_hash(tbcml.Data(iv), length_override)
@@ -852,17 +853,21 @@ class Apk:
     def download_server_files(
         self,
         display: bool = False,
+        force: bool = False,
     ):
         sfh = tbcml.ServerFileHandler(self)
-        sfh.extract_all(display=display)
+        sfh.extract_all(display=display, force=force)
 
     @staticmethod
-    def get_server_path(
+    def get_server_path_static(
         cc: "tbcml.CountryCode", apk_folder: Optional["tbcml.Path"] = None
     ) -> "tbcml.Path":
         if apk_folder is None:
             apk_folder = Apk.get_default_apk_folder()
         return apk_folder.parent().add(f"{cc.get_code()}_server")
+
+    def get_server_path(self):
+        return Apk.get_server_path_static(self.country_code, self.apk_folder)
 
     @staticmethod
     def from_apk_path(
@@ -1242,9 +1247,7 @@ class Apk:
             if not file.get_extension() == "caf" and not file.get_extension() == "ogg":
                 continue
             audio_files[file.basename()] = tbcml.AudioFile.from_file(file)
-        for file in self.get_server_path(
-            self.country_code, self.apk_folder
-        ).get_files():
+        for file in self.get_server_path().get_files():
             if not file.get_extension() == "caf" and not file.get_extension() == "ogg":
                 continue
             audio_files[file.basename()] = tbcml.AudioFile.from_file(file)
@@ -1257,9 +1260,7 @@ class Apk:
                 continue
             if file.basename() == audio.get_apk_name():
                 return file
-        for file in self.get_server_path(
-            self.country_code, self.apk_folder
-        ).get_files():
+        for file in self.get_server_path().get_files():
             if not file.get_extension() == "caf" and not file.get_extension() == "ogg":
                 continue
             if file.basename() == audio.get_apk_name():
