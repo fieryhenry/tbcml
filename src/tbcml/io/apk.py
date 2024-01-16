@@ -322,10 +322,10 @@ class Apk:
         apk_path.copy(self.final_apk_path)
         apk_path.remove()
 
-    def set_key(self, key: str):
+    def set_key(self, key: Optional[str]):
         self.key = key
 
-    def set_iv(self, iv: str):
+    def set_iv(self, iv: Optional[str]):
         self.iv = iv
 
     def randomize_key(self):
@@ -778,11 +778,29 @@ class Apk:
             urls.append(data["versionURL"])
         return dict(zip(versions, urls))
 
-    @staticmethod
-    def create_key(key: str, length: int = 16) -> str:
+    def create_key(self, key: str, length_override: Optional[int] = None) -> str:
+        if length_override is None:
+            if self.game_version < tbcml.GameVersion.from_string("8.9.0"):
+                length_override = 8
+            else:
+                length_override = 16
         return (
             tbcml.Hash(tbcml.HashAlgorithm.SHA256)
-            .get_hash(tbcml.Data(key), length)
+            .get_hash(tbcml.Data(key), length_override)
+            .to_hex()
+        )
+
+    def create_iv(
+        self, iv: str, length_override: Optional[int] = None
+    ) -> Optional[str]:
+        if length_override is None:
+            if self.game_version < tbcml.GameVersion.from_string("8.9.0"):
+                return None
+            else:
+                length_override = 16
+        return (
+            tbcml.Hash(tbcml.HashAlgorithm.SHA256)
+            .get_hash(tbcml.Data(iv), length_override)
             .to_hex()
         )
 
