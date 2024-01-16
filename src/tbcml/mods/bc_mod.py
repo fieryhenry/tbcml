@@ -346,9 +346,7 @@ class Mod:
         if self.custom_html is not None:
             return self.custom_html
         base_mod = (
-            tbcml.Path.get_asset_file_path(
-                tbcml.Path("html").add("base_mod.html")
-            )
+            tbcml.Path.get_asset_file_path(tbcml.Path("html").add("base_mod.html"))
             .read()
             .to_str()
         )
