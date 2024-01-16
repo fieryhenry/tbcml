@@ -21,9 +21,9 @@ class Apk:
         self.package_name = self.get_package_name()
 
         if apk_folder is None:
-            self.apk_folder = Apk.get_default_apk_folder()
+            self.apk_folder = Apk.get_default_apk_folder().get_absolute_path()
         else:
-            self.apk_folder = tbcml.Path(apk_folder)
+            self.apk_folder = tbcml.Path(apk_folder).get_absolute_path()
 
         self.smali_handler: Optional[tbcml.SmaliHandler] = None
 
@@ -778,6 +778,14 @@ class Apk:
             urls.append(data["versionURL"])
         return dict(zip(versions, urls))
 
+    @staticmethod
+    def create_key(key: str, length: int = 16) -> str:
+        return (
+            tbcml.Hash(tbcml.HashAlgorithm.SHA256)
+            .get_hash(tbcml.Data(key), length)
+            .to_hex()
+        )
+
     def get_download_url(self) -> str:
         return f"https://d.apkpure.com/b/APK/jp.co.ponos.battlecats{self.country_code.get_patching_code()}?versionCode={self.game_version.game_version}0"
 
@@ -843,6 +851,7 @@ class Apk:
         apk_path: "tbcml.Path",
         cc_overwrite: Optional["tbcml.CountryCode"] = None,
         gv_overwrite: Optional["tbcml.GameVersion"] = None,
+        apk_folder: Optional["tbcml.Path"] = None,
     ) -> "Apk":
         cmd = f'aapt dump badging "{apk_path}"'
         result = tbcml.Command(cmd).run()
@@ -865,7 +874,7 @@ class Apk:
         else:
             gv = gv_overwrite
 
-        apk = Apk(gv, cc)
+        apk = Apk(gv, cc, apk_folder=apk_folder)
         apk_path.copy(apk.apk_path)
         apk.original_extracted_path.remove_tree().generate_dirs()
         return apk
