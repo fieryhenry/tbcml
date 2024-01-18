@@ -74,5 +74,5 @@ apk.set_package_name("jp.co.ponos.battlecats.assassinbear")
 
 loader.apply(mod)
 
-loader.initialize_adb()
-loader.install_adb(run_game=True)
+# loader.initialize_adb()
+# loader.install_adb(run_game=True)
