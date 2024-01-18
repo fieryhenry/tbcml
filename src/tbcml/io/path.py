@@ -236,20 +236,29 @@ class Path:
         return []
 
     def get_files_recursive(self, regex: typing.Optional[str] = None) -> list["Path"]:
-        if self.exists():
-            if regex is None:
-                files: list["Path"] = []
-                for root, _, files_str in os.walk(self.path):
-                    files.extend([self.add(root, file) for file in files_str])
-                return files
-            else:
-                files: list["Path"] = []
-                for root, _, files_str in os.walk(self.path):
-                    for file in files:
-                        if re.search(regex, file.path):
-                            files.append(self.add(root, file.path))
-                return files
-        return []
+        if not self.exists():
+            return []
+        if regex is None:
+            files: list["Path"] = []
+            for root, _, files_str in os.walk(self.path):
+                files.extend([self.add(root, file) for file in files_str])
+            return files
+        else:
+            files: list["Path"] = []
+            for root, _, files_str in os.walk(self.path):
+                for file_str in files_str:
+                    file = self.add(root, file_str)
+                    if re.search(regex, file.path):
+                        files.append(self.add(root, file.path))
+            return files
+
+    def get_dirs_recursive(self) -> list["Path"]:
+        if not self.exists():
+            return []
+        dirs: list["Path"] = []
+        for root, dirnames, _ in os.walk(self.path):
+            dirs.extend([self.add(root, dir) for dir in dirnames])
+        return dirs
 
     def get_dirs(self) -> list["Path"]:
         return [file for file in self.get_files() if file.is_directory()]
