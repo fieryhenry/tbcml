@@ -223,25 +223,17 @@ python3 script.py
   You may need to change the python version in the above commands if you are
   using a different version of python.
 
-  You can then install the library from pypi [here](#from-pypi), or
-  install the library from
-  source (need to do `pkg install git`) [here](#from-source)
-
+  You can then install the library from source [here](#from-source)
+  (recommended) or from pypi [here](#from-pypi).
+  
   I recommend adding
   
   ```python
-  print(apk.get_final_apk_path())
+  loader.copy_to_android_download_folder()
   ```
 
-  to the end of your script so that you can easily find the apk. Then you can
-  copy the file to the Documents folder with the following
-  command:
-
-  ```bash
-  cp path/to/apk /sdcard/Documents
-  ```
-
-  Then you can install it with a file manager.
+  to the end of your script so that the final apk is copied to your downloads
+  folder. Then you can install it with a file manager.
 
 ## Documentation (Not Finished)
 
