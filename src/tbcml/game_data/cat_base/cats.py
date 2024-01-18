@@ -205,18 +205,27 @@ class FormStats:
     def apply_csv(self, form_type: "CatFormType", csv: "tbcml.CSV"):
         index = form_type.get_index()
         csv.index = index
+        tbcml.Modification.apply_csv_fields(
+            self,
+            csv,
+            self.get_required(),
+            remove_others=False,
+        )
+
+    def get_required(self):
         required: list[tuple[int, int]] = [
             (55, -1),
             (57, -1),
             (63, 1),
             (66, -1),
         ]
-        tbcml.Modification.apply_csv_fields(self, csv, required, remove_others=False)
+
+        return required
 
     def read_csv(self, form_type: "CatFormType", csv: "tbcml.CSV"):
         index = form_type.get_index()
         csv.index = index
-        tbcml.Modification.read_csv_fields(self, csv)
+        tbcml.Modification.read_csv_fields(self, csv, self.get_required())
 
     def import_enemy(
         self, enemy_stats: "tbcml.EnemyStats", target_all_effects: bool = True
@@ -688,9 +697,23 @@ class CatForm:
         game_data.set_img(self.get_deploy_icon_file_name(cat_id), self.deploy_icon)
 
     def read_game_data(self, cat_id: int, game_data: "tbcml.GamePacks"):
-        _, name_csv = Cat.get_name_csv(game_data, cat_id)
+        self.read_stats(cat_id, game_data)
+        self.read_name_desc(cat_id, game_data)
+        self.read_anim(cat_id, game_data)
+        self.read_icons(cat_id, game_data)
+
+    def read_stats(self, cat_id: int, game_data: "tbcml.GamePacks"):
         _, stats_csv = Cat.get_stats_csv(game_data, cat_id)
-        self.read_csv(name_csv, stats_csv, cat_id, game_data)
+        if stats_csv is None:
+            return
+        self.stats = FormStats()
+        self.stats.read_csv(self.form_type, stats_csv)
+
+    def read_name_desc(self, cat_id: int, game_data: "tbcml.GamePacks"):
+        _, name_csv = Cat.get_name_csv(game_data, cat_id)
+        if name_csv is None:
+            return
+        self.read_name_desc_csv(name_csv)
 
     def get_upgrade_icon_file_name(self, cat_id: int):
         return f"udi{Cat.get_cat_id_str(cat_id)}_{self.form_type.value}.png"
@@ -754,7 +777,7 @@ class CatForm:
 
         tbcml.Modification.apply_csv_fields(self, csv, remove_others=False)
 
-    def read_name_desc(self, csv: "tbcml.CSV"):
+    def read_name_desc_csv(self, csv: "tbcml.CSV"):
         index = self.form_type.get_index()
         csv.index = index
 
@@ -768,7 +791,7 @@ class CatForm:
         game_data: Optional["tbcml.GamePacks"],
     ):
         if name_csv is not None:
-            self.read_name_desc(name_csv)
+            self.read_name_desc_csv(name_csv)
         if stat_csv is not None:
             self.stats = FormStats()
             self.stats.read_csv(self.form_type, stat_csv)
