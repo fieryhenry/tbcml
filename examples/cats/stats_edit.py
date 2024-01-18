@@ -4,7 +4,9 @@ import tbcml
 class NewForm(tbcml.CatForm):
     def __init__(self, cat_id: int, game_data: tbcml.GamePacks):
         super().__init__(form_type=tbcml.CatFormType.FIRST)
-        self.read_stats(cat_id, game_data)
+        self.read_stats(
+            cat_id, game_data
+        )  # not needed if you are just writing stats, not reading anything
 
         stats = self.get_stats()
         stats.hp.set(5000)
