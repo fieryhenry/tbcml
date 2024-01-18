@@ -88,6 +88,7 @@ class Modification:
                 value.uninitialize_csv(csv)
 
         for value in csv_fields:
+            value.initialize_csv(csv, writing=True)
             original_len = len(csv.get_current_line() or [])
             for ind, val in required_values:
                 if ind < original_len:
@@ -101,6 +102,7 @@ class Modification:
     def read_csv_fields(
         obj: Any,
         csv: "tbcml.CSV",
+        required_values: Optional[Sequence[tuple[int, Union[str, int]]]] = None,
         field_offset: int = 0,
     ):
         if not hasattr(obj, "__dataclass_fields__"):
@@ -111,7 +113,17 @@ class Modification:
             value = getattr(obj, name)
             if isinstance(value, tbcml.CSVField):
                 value.col_index += field_offset
-                value.read_from_csv(csv)
+                default = None
+                for ind, val in required_values or []:
+                    if ind == value.col_index:
+                        default = val
+                        break
+
+                if default is None:
+                    value.read_from_csv(csv)
+                else:
+                    value.read_from_csv(csv, default=default)
+
                 value.col_index -= field_offset
 
     def pre_to_json(self) -> None:
@@ -152,6 +164,22 @@ class Mod:
 
         self.smali: tbcml.SmaliSet = tbcml.SmaliSet.create_empty()
         self.patches: tbcml.LibPatches = tbcml.LibPatches.create_empty()
+
+    def add_apk_file(
+        self,
+        apk_path: "tbcml.PathStr",
+        file_data: Optional["tbcml.Data"] = None,
+        local_path: Optional["tbcml.PathStr"] = None,
+    ):
+        data = None
+        if local_path is not None:
+            data = tbcml.Path(local_path).read()
+        if file_data is not None:
+            data = file_data
+        if data is None:
+            raise ValueError("Either local_path or data must be specified!")
+        path = tbcml.Path(apk_path)
+        self.apk_files[path] = data
 
     def metadata_to_json(self) -> str:
         data = {
