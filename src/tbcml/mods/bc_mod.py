@@ -312,6 +312,10 @@ class Mod:
     def add_smali(self, smali: "tbcml.Smali"):
         self.smali.add(smali)
 
+    def add_smali_set(self, smali_set: "tbcml.SmaliSet"):
+        for smali in smali_set.get_list():
+            self.add_smali(smali)
+
     def get_scripts_str(self, apk: "tbcml.Apk") -> tuple[dict[str, str], bool]:
         scripts_dict: dict[str, str] = {}
         inject_smali = False
