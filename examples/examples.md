@@ -13,3 +13,4 @@ Collection of examples for using tbcml.
 - [Custom Encryption Key](apk/custom_enc_key.py)
 - [Downloading Server Files](apk/download_server_files.py)
 - [Asset Editing](apk/asset_edit.py)
+- [Smali Injection](scripting/dataload_smali.py)

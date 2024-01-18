@@ -28,7 +28,7 @@ Note that most of these features a work in progress and may not work properly.
 - Parsing of various game data files
 - [Modification of game data](examples/cats/name_desc_edit.py)
 - [Frida gadget hooking](examples/scripting/mailbox_hack.py)
-- Smali code injection
+- [Smali code injection](examples/scripting/dataload_smali.py)
 - Java to smali code conversion
 - [Patching of libnative-lib.so file](examples/scripting/mailbox_ps.py)
 - [Modification of apk assets](examples/apk/asset_edit.py)
