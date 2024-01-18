@@ -143,6 +143,11 @@ class Apk:
             if not original_file.exists():
                 extracted_file.remove()
 
+        for extracted_dir in self.extracted_path.get_dirs_recursive():
+            orignal_dir = self.get_original_extracted_path(extracted_dir)
+            if not orignal_dir.exists():
+                extracted_dir.remove()
+
     @staticmethod
     def run_apktool(command: str) -> "tbcml.CommandResult":
         apktool_path = tbcml.Path.get_lib("apktool.jar")
