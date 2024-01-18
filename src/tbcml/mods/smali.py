@@ -148,7 +148,7 @@ class SmaliHandler:
     """Injects smali into an apk.
     https://github.com/ksg97031/frida-gadget"""
 
-    def __init__(self, apk: "tbcml.Apk", decode_resources: bool = True):
+    def __init__(self, apk: "tbcml.Apk", decode_resources: bool = False):
         """Initializes the SmaliHandler
 
         Args:
@@ -326,7 +326,7 @@ class SmaliHandler:
                 top_level_path = top_level_path.parent()
             top_level_path.copy(temp_folder)
             command = tbcml.Command(
-                f"javac --source 7 --target 7 '{java_path}' -d '{temp_folder}'",
+                f"javac --source 8 --target 8 '{java_path}' -d '{temp_folder}'",
                 cwd=temp_folder,
             )
             result = command.run()
@@ -334,8 +334,6 @@ class SmaliHandler:
                 if display_errors:
                     print(result.result)
                 return None
-
-            dex_path = temp_folder.add("classes.dex")
 
             all_class_files = temp_folder.add(
                 *class_name.split(".")[:-1]
@@ -348,8 +346,10 @@ class SmaliHandler:
                 classes_string += f"'{full_class_name}' "
             classes_string = classes_string.strip()
 
+            dex_folder = temp_folder.add("classes").generate_dirs()
+
             command = tbcml.Command(
-                f"dx --dex --output='{dex_path}' {classes_string}",
+                f"d8 --output '{dex_folder}' {classes_string}",
                 cwd=temp_folder,
             )
             result = command.run()
@@ -357,6 +357,11 @@ class SmaliHandler:
                 if display_errors:
                     print(result.result)
                 return None
+
+            dex_path = temp_folder.add("classes.dex")
+            dex_folder.add("classes.dex").copy(dex_path)
+
+            dex_folder.remove()
 
             smali_path = temp_folder.add("smali")
 
@@ -553,12 +558,12 @@ class SmaliHandler:
             path (tbcml.Path): The path to the dot class files
         """
         command = tbcml.Command(
-            f"dx -JXmx2048m --dex --multi-dex --output='{self.get_output_classes_path()}' '{self.get_dex2jar_classes_path_new()}'"
+            f"d8 output '{self.get_output_classes_path()}' '{self.get_dex2jar_classes_path_new()}'"
         )
         res = command.run()
         if res.exit_code != 0:
             print(res.result)
-            raise RuntimeError("dx failed")
+            raise RuntimeError("d8 failed")
 
         for dex_file in self.get_output_classes_path().recursive_glob("*.dex"):
             dex_file.copy(self.apk.extracted_path)
