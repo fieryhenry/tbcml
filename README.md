@@ -31,11 +31,11 @@ Note that most of these features a work in progress and may not work properly.
 - Smali code injection
 - Java to smali code conversion
 - [Patching of libnative-lib.so file](examples/scripting/mailbox_ps.py)
-- Modification of apk assets
+- [Modification of apk assets](examples/apk/asset_edit.py)
 - BCU Pack Imports
 - Repacking and signing of modified apks
-- [Custom encryption key and iv so that your pack files cannot be easily
-  decrypted by other people](examples/apk/custom_enc_key.py)
+- [Custom encryption key and iv](examples/apk/custom_enc_key.py) so that your
+  pack files cannot be easily decrypted by other people
 
 Note that the scripting functionality is very limited, especially in later
 game versions. Once I finish the [game
@@ -61,6 +61,18 @@ considered donating to my kofi:
 
 To install on android see [Install on Android](#install-on-android)
 
+#### From source (recommended)
+
+```bash
+git clone https://github.com/fieryhenry/tbcml.git
+cd tbcml
+pip install -r requirements_scripting.txt
+pip install -e .
+```
+
+You don't need to install the requirements_scripting.txt if you don't want to
+use the scripting features.
+
 #### From pypi
 
 ```bash
@@ -73,18 +85,6 @@ also need to install tbcml[scripting]
 ```bash
 pip install tbcml[scripting]
 ```
-
-#### From source
-
-```bash
-git clone https://github.com/fieryhenry/tbcml.git
-cd tbcml
-pip install -r requirements_scripting.txt
-pip install -e .
-```
-
-You don't need to install the requirements if you don't want to use the
-scripting or ui features.
 
 ### Basic Usage
 
@@ -175,8 +175,6 @@ python3 script.py
 
 ## Install on Android
 
-### Requirements
-
 - Termux (via [F-Droid](https://f-droid.org/en/packages/com.termux/)) You cannot
   use the play store version as it doesn't work
 - Make sure you download "Termux Terminal emulator with packages"
@@ -187,7 +185,7 @@ python3 script.py
   termux-change-repo
   ```
 
-  When prompted for a mirror, any of them should work (pick recommended group
+  When prompted for a mirror, any of them should work (pick recommended
   mirrors if they exist, but if they don't, then I picked "GH Mirrors
   by Kcubeterm" at it seemed to work fine)
 
@@ -205,12 +203,13 @@ python3 script.py
   ```
 
   rust and binutils are needed to build the cryptography package btw, the library
-  is not written in it. cmake is used to build leif. git is not strictly
-  necessary but is needed to install the library from source.
+  is not written in it. cmake is used to build leif and so is only needed if you
+  want scripting capabilities. git is not strictly necessary but is needed to
+  instal the library from source.
 
   If you want scripting you may have to manually install lief
-  with pip as newer versions of those libraries don't exist on termux for some
-  reason. Lief may take a very long time to compile.
+  with pip (`pip install lief`) as newer versions of those libraries don't exist
+  on termux for some reason. Lief may take a very long time to compile.
 
   Also to get lief working you may need to run the following commands:
 
@@ -223,7 +222,7 @@ python3 script.py
   You may need to change the python version in the above commands if you are
   using a different version of python.
 
-  You can then install the library from source [here](#from-source)
+  You can then install the library from source [here](#from-source-recommended)
   (recommended) or from pypi [here](#from-pypi).
   
   I recommend adding
@@ -238,6 +237,6 @@ python3 script.py
 ## Documentation (Not Finished)
 
 For examples see [examples.md](examples/examples.md). Note that some may need the
-latest commit to work (see [install from source](#from-source))
+latest commit to work (see [install from source](#from-source-recommended))
 
 <https://tbcml-docs.readthedocs.io/en/latest/>
