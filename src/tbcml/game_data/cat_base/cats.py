@@ -593,8 +593,8 @@ class CatForm:
 
         stats: (FormStats, optional), the stats for the form, specifies stuff such as hp, movement speed, attack damage, etc
         anim: (CustomModel, optional), the animation of the unit
-        upgrade_icon: (NewBCImage, optional), the icon you see in the upgrade screen for the cat
-        deploy_icon: (NewBCImage, optional), the icon you see in, battle, the equip screen, and the cat guide
+        upgrade_icon: (BCImage, optional), the icon you see in the upgrade screen for the cat
+        deploy_icon: (BCImage, optional), the icon you see in, battle, the equip screen, and the cat guide
     """
 
     form_type: "tbcml.CatFormType" = field(metadata={"required": True})

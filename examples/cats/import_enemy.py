@@ -7,7 +7,7 @@ class AssassinBearForm(tbcml.CatForm):
             form_type=tbcml.CatFormType.FIRST
         )  # form type can be changed to change what form to replace
 
-        enemy_release_id = 18  # enemy id is from renemy elease order page of wiki, other enemy ids may be -2 this.
+        enemy_release_id = 18  # enemy id is from enemy release order page of wiki, other enemy ids may be -2 this.
 
         deploy_icon_offset = (
             -35,
@@ -28,7 +28,7 @@ class AssassinBearForm(tbcml.CatForm):
         icons are 128x128, so they don't look too good
 
         ```
-        self.deploy_icon = tbcml.NewBCImage.from_file("enter_path_here")
+        self.deploy_icon = tbcml.BCImage.from_file("enter_path_here")
         ```
 
         enemies don't have a recharge or cost value associated with them, so
