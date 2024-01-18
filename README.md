@@ -38,10 +38,8 @@ Note that most of these features a work in progress and may not work properly.
   pack files cannot be easily decrypted by other people
 
 Note that the scripting functionality is very limited, especially in later
-game versions. Once I finish the [game
-decompilation](https://github.com/fieryhenry/battlecats) I will be able to
-make a much more powerful modding api.
-
+game versions (> 8.4.0) as function and class names have been stripped from the
+binary.
 Discord: <https://discord.gg/DvmMgvn5ZB> (The server is the same one which is
 used for save editing as I haven't made a modding specific one
 yet)
