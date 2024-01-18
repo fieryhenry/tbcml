@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0,">
+	<title>PONOS | The Battle Cats</title>
+	<link rel="stylesheet" href="user_info.css">
+	<meta http-equiv="Pragma" content="no-cache">
+	<meta http-equiv="Cache-Control" content="no-cache">
+	<meta http-equiv="Expires" content="0">
+
+	<script type="text/javascript">
+		var userRankBonusReceived = {};
+		var userRankBonusList = {};
+
+		function setUserRankBonus(bonusUserRank, received, description) {
+			userRankBonusReceived[bonusUserRank] = received;
+			userRankBonusList[bonusUserRank] = description;
+		}
+
+		function setUserRank(userRank) {
+
+			var element = document.getElementById('rank');
+			element.innerHTML = userRank;
+
+			var table = document.getElementById('user_rank_bonus_table');
+
+			for (var bonusUserRank in userRankBonusList) {
+				var row = table.insertRow(-1);
+				row.insertCell(-1).innerHTML = bonusUserRank + ((userRankBonusReceived[bonusUserRank] != undefined && userRankBonusReceived[bonusUserRank]) ? '<span class="complete"><img src="complete.png"></span>' : '');
+				row.insertCell(-1).innerHTML = userRankBonusList[bonusUserRank];
+
+				if (bonusUserRank <= userRank) {
+					var elements = document.getElementsByName('rank_' + bonusUserRank);
+
+					for (var i = 0; i < elements.length; i++) {
+						elements[i].style.display = "";
+					}
+				}
+
+				if (bonusUserRank > userRank) {
+					break;
+				}
+			}
+		}
+
+		function setEnergy(currentEnergy, maxEnergy) {
+			var element = document.getElementById('energy');
+			element.innerHTML = currentEnergy + '/' + maxEnergy;
+		}
+
+		function setItem(itemID, count) {
+			var element = document.getElementById('item_' + itemID);
+
+			if (element != undefined) {
+				element.innerHTML = count;
+			}
+		}
+
+		function setExcavationLevel(level) {
+			if (level > 0) {
+				var elements = document.getElementsByName('excavation_level');
+
+				for (var i = 0; i < elements.length; i++) {
+					elements[i].style.display = "";
+				}
+
+				document.getElementById('excavation_level').innerHTML = level;
+			}
+		}
+
+		function setVisible(name, visible) {
+			if (visible) {
+				var elements = document.getElementsByName(name);
+
+				for (var i = 0; i < elements.length; i++) {
+					elements[i].style.display = "";
+				}
+			}
+		}
+	</script>
+
+</head>
+
+<body>
+
+	<article>
+
+		<h2>This has been modified!</h2>
+		<h2>This has been modified!</h2>
+		<h2>This has been modified!</h2>
+		<h2>This has been modified!</h2>
+		<h2>This has been modified!</h2>
+		<h2>This has been modified!</h2>
+		<h4>User Status</h4>
+		<div class="block">
+
+			<table class="table_style u_info" style="clear:both;">
+				<tbody>
+					<tr>
+						<td class="u_data01">User Rank</td>
+						<td class="u_data02">
+							<span id="rank"></span>
+						</td>
+					</tr>
+					<tr>
+						<td class="u_data01">Cat Energy<br>Leadership</td>
+						<td class="u_data02">
+							<span id="energy"></span>
+							<div class="u_item basic">
+								<img src="gatyaitemD_105_f.png" alt="">
+								<p><span id="item_105"></span></p>
+							</div>
+						</td>
+					</tr>
+					<tr>
+						<td class="u_data01">Battle Items</td>
+						<td class="u_data02">
+							<div class="u_item basic">
+								<img src="gatyaitemD_00_f.png" alt="">
+								<p><span id="item_0"></span></p>
+							</div>
+							<div class="u_item basic">
+								<img src="gatyaitemD_01_f.png" alt="">
+								<p><span id="item_1"></span></p>
+							</div>
+							<div class="u_item basic">
+								<img src="gatyaitemD_02_f.png" alt="">
+								<p><span id="item_2"></span></p>
+							</div>
+							<div class="u_item basic">
+								<img src="gatyaitemD_03_f.png" alt="">
+								<p><span id="item_3"></span></p>
+							</div>
+							<div class="u_item basic">
+								<img src="gatyaitemD_04_f.png" alt="">
+								<p><span id="item_4"></span></p>
+							</div>
+							<div class="u_item basic">
+								<img src="gatyaitemD_05_f.png" alt="">
+								<p><span id="item_5"></span></p>
+							</div>
+
+						</td>
+					</tr>
+					<tr name="clear_shiga" style="display:none;">
+						<td class="u_data01">Catamins</td>
+						<td class="u_data02">
+							<div class="u_item vitamin">
+								<img src="gatyaitemD_55_f.png" alt="">
+								<p><span id="item_55"></span></p>
+							</div>
+							<div class="u_item vitamin">
+								<img src="gatyaitemD_56_f.png" alt="">
+								<p><span id="item_56"></span></p>
+							</div>
+							<div class="u_item vitamin">
+								<img src="gatyaitemD_57_f.png" alt="">
+								<p><span id="item_57"></span></p>
+							</div>
+
+						</td>
+					</tr>
+					<tr name="clear_japan1" style="display:none;">
+						<td class="u_data01">Building Materials</td>
+						<td class="u_data02">
+							<div class="u_item castle">
+								<img src="gatyaitemD_85_f.png" alt="">
+								<p><span id="item_85"></span></p>
+							</div>
+							<div class="u_item castle">
+								<img src="gatyaitemD_86_f.png" alt="">
+								<p><span id="item_86"></span></p>
+							</div>
+							<div class="u_item castle">
+								<img src="gatyaitemD_87_f.png" alt="">
+								<p><span id="item_87"></span></p>
+							</div>
+							<div class="u_item castle">
+								<img src="gatyaitemD_88_f.png" alt="">
+								<p><span id="item_88"></span></p>
+							</div>
+							<div class="u_item castle">
+								<img src="gatyaitemD_89_f.png" alt="">
+								<p><span id="item_89"></span></p>
+							</div>
+							<div class="u_item castle">
+								<img src="gatyaitemD_90_f.png" alt="">
+								<p><span id="item_90"></span></p>
+							</div>
+							<div class="u_item castle">
+								<img src="gatyaitemD_91_f.png" alt="">
+								<p><span id="item_91"></span></p>
+							</div>
+							<div class="u_item castle">
+								<img src="gatyaitemD_140_f.png" alt="">
+								<p><span id="item_140"></span></p>
+							</div>
+
+							<!--新城素材-->
+							<div name="clear_legend" style="display:none;">
+								<div class="u_item castle">
+									<img src="gatyaitemD_187_f.png" alt="">
+									<p><span id="item_187"></span></p>
+								</div>
+								<div class="u_item castle">
+									<img src="gatyaitemD_188_f.png" alt="">
+									<p><span id="item_188"></span></p>
+								</div>
+								<div class="u_item castle">
+									<img src="gatyaitemD_189_f.png" alt="">
+									<p><span id="item_189"></span></p>
+								</div>
+								<div class="u_item castle">
+									<img src="gatyaitemD_190_f.png" alt="">
+									<p><span id="item_190"></span></p>
+								</div>
+								<div class="u_item castle">
+									<img src="gatyaitemD_191_f.png" alt="">
+									<p><span id="item_191"></span></p>
+								</div>
+								<div class="u_item castle">
+									<img src="gatyaitemD_192_f.png" alt="">
+									<p><span id="item_192"></span></p>
+								</div>
+								<div class="u_item castle">
+									<img src="gatyaitemD_193_f.png" alt="">
+									<p><span id="item_193"></span></p>
+								</div>
+								<div class="u_item castle">
+									<img src="gatyaitemD_194_f.png" alt="">
+									<p><span id="item_194"></span></p>
+								</div>
+							</div><!--/clear_legend-->
+
+							<div class="u_item castle">
+								<img src="gatyaitemD_92_f.png" alt="">
+								<p><span id="item_92"></span></p>
+							</div>
+
+						</td>
+					</tr>
+					<tr name="clear_japan3" style="display:none;">
+						<td class="u_data01">Catfruit</td>
+						<td class="u_data02">
+							<div class="u_box">
+								<div class="u_item seed">
+									<img src="gatyaitemD_30_f.png" alt="">
+									<p><span id="item_30"></span></p>
+								</div>
+								<div class="u_item seed">
+									<img src="gatyaitemD_31_f.png" alt="">
+									<p><span id="item_31"></span></p>
+								</div>
+								<div class="u_item seed">
+									<img src="gatyaitemD_32_f.png" alt="">
+									<p><span id="item_32"></span></p>
+								</div>
+								<div class="u_item seed">
+									<img src="gatyaitemD_33_f.png" alt="">
+									<p><span id="item_33"></span></p>
+								</div>
+								<div class="u_item seed">
+									<img src="gatyaitemD_34_f.png" alt="">
+									<p><span id="item_34"></span></p>
+								</div>
+								<div class="u_item seed">
+									<img src="gatyaitemD_dummy.png" alt="">
+									<div name="clear_space1" style="display:none; position:absolute; top:0;">
+										<img src="gatyaitemD_43_f.png" alt="">
+										<p><span id="item_43"></span></p>
+									</div>
+								</div>
+								<div name="get_demonmatatabi" class="u_item seed" style="display:none;">
+									<img src="gatyaitemD_160_f.png" alt="">
+									<p><span id="item_160"></span></p>
+								</div>
+								<div name="clear_legend" class="u_item seed" style="display:none;">
+									<img src="gatyaitemD_41_f.png" alt="">
+									<p><span id="item_41"></span></p>
+								</div>
+							</div>
+							<div class="u_box">
+								<div class="u_item fruit">
+									<img src="gatyaitemD_35_f.png" alt="">
+									<p><span id="item_35"></span></p>
+								</div>
+								<div class="u_item fruit">
+									<img src="gatyaitemD_36_f.png" alt="">
+									<p><span id="item_36"></span></p>
+								</div>
+								<div class="u_item fruit">
+									<img src="gatyaitemD_37_f.png" alt="">
+									<p><span id="item_37"></span></p>
+								</div>
+								<div class="u_item fruit">
+									<img src="gatyaitemD_38_f.png" alt="">
+									<p><span id="item_38"></span></p>
+								</div>
+								<div class="u_item fruit">
+									<img src="gatyaitemD_39_f.png" alt="">
+									<p><span id="item_39"></span></p>
+								</div>
+								<div class="u_item fruit">
+									<img src="gatyaitemD_40_f.png" alt="">
+									<p><span id="item_40"></span></p>
+								</div>
+								<div name="get_demonmatatabi" class="u_item fruit" style="display:none;">
+									<img src="gatyaitemD_161_f.png" alt="">
+									<p><span id="item_161"></span></p>
+								</div>
+								<div name="clear_legend" class="u_item fruit" style="display:none;">
+									<img src="gatyaitemD_42_f.png" alt="">
+									<p><span id="item_42"></span></p>
+								</div>
+							</div>
+							<div class="u_box">
+								<div name="get_goldmatatabi" class="u_item seed" style="display:none;">
+									<img src="gatyaitemD_164_f.png" alt="">
+									<p><span id="item_164"></span></p>
+								</div>
+							</div>
+							<div class="u_box">
+								<div name="get_goldmatatabi" class="u_item fruit" style="display:none;">
+									<img src="gatyaitemD_44_f.png" alt="">
+									<p><span id="item_44"></span></p>
+								</div>
+							</div>
+						</td>
+					</tr>
+
+
+					<tr name="get_cube" style="display:none;">
+						<td class="u_data01">Behemoth Stones</td>
+						<td class="u_data02">
+							<div class="u_box">
+								<div class="u_item basic">
+									<img src="gatyaitemD_167_f.png" alt="">
+									<p><span id="item_167"></span></p>
+								</div>
+								<div class="u_item basic">
+									<img src="gatyaitemD_168_f.png" alt="">
+									<p><span id="item_168"></span></p>
+								</div>
+								<div class="u_item basic">
+									<img src="gatyaitemD_169_f.png" alt="">
+									<p><span id="item_169"></span></p>
+								</div>
+								<div class="u_item basic">
+									<img src="gatyaitemD_170_f.png" alt="">
+									<p><span id="item_170"></span></p>
+								</div>
+								<div class="u_item basic">
+									<img src="gatyaitemD_171_f.png" alt="">
+									<p><span id="item_171"></span></p>
+								</div>
+								<div class="u_item basic">
+									<img src="gatyaitemD_184_f.png" alt="">
+									<p><span id="item_184"></span></p>
+								</div>
+							</div><!--/ubox-->
+
+							<div class="u_box">
+								<div class="u_item basic">
+									<img src="gatyaitemD_179_f.png" alt="">
+									<p><span id="item_179"></span></p>
+								</div>
+								<div class="u_item basic">
+									<img src="gatyaitemD_180_f.png" alt="">
+									<p><span id="item_180"></span></p>
+								</div>
+								<div class="u_item basic">
+									<img src="gatyaitemD_181_f.png" alt="">
+									<p><span id="item_181"></span></p>
+								</div>
+								<div class="u_item basic">
+									<img src="gatyaitemD_182_f.png" alt="">
+									<p><span id="item_182"></span></p>
+								</div>
+								<div class="u_item basic">
+									<img src="gatyaitemD_183_f.png" alt="">
+									<p><span id="item_183"></span></p>
+								</div>
+							</div><!--/ubox-->
+						</td>
+					</tr>
+
+					<tr name="rank_1600" style="display:none;">
+						<td class="u_data01">Catseyes</td>
+						<td class="u_data02">
+							<div class="u_item eye">
+								<img src="gatyaitemD_50_f.png" alt="">
+								<p><span id="item_50"></span></p>
+							</div>
+							<div class="u_item eye">
+								<img src="gatyaitemD_51_f.png" alt="">
+								<p><span id="item_51"></span></p>
+							</div>
+							<div class="u_item eye">
+								<img src="gatyaitemD_52_f.png" alt="">
+								<p><span id="item_52"></span></p>
+							</div>
+							<div class="u_item eye">
+								<img src="gatyaitemD_53_f.png" alt="">
+								<p><span id="item_53"></span></p>
+							</div>
+							<div class="u_item eye">
+								<img src="gatyaitemD_54_f.png" alt="">
+								<p><span id="item_54"></span></p>
+							</div>
+							<div class="u_item eye">
+								<img src="gatyaitemD_58_f.png" alt="">
+								<p><span id="item_58"></span></p>
+							</div>
+						</td>
+					</tr>
+
+					<tr name="clear_world3" style="display:none;">
+						<td class="u_data01">NP</td>
+						<td class="u_data02">
+							<p id="np"><span id="item_7"></span></p>
+						</td>
+					</tr>
+					<tr name="excavation_level" style="display:none;">
+						<td class="u_data01">Enigma Lv</td>
+						<td class="u_data02">
+							<p class="bold_num"><span id="excavation_level"></span></p>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+
+		</div>
+
+
+		<h4>User Rank</h4>
+
+		<div class="block">
+			<p class="txt">
+				Upgrading Cat Units and Battle Items will raise your total User Rank, displayed at the top of the Cat
+				Base menu.<br />
+				Reaching certain User Rank totals will unlock cool rewards and higher level caps for your Cat
+				Units!<br />
+				<span class="fs76 pt_s">
+					※If you are unable to receive rewards from a User Rank achievement, please ensure that your app is
+					updated to the most recent version, then try again.
+				</span>
+			</p>
+
+			<p class="chara_ttl01"><span>▼User Rank Rewards</span></p>
+
+			<table class="table_style" style="clear:both;">
+				<tbody id="user_rank_bonus_table">
+					<tr>
+						<th class="wid15">User Rank</th>
+						<th>Achievements</th>
+					</tr>
+				</tbody>
+			</table>
+
+			<span name="rank_900" style="display:none;">
+				<p class="txt">
+					<span class="fs76">
+						※Double-check upcoming User Rank rewards!<br />
+						※Accepting any reward earned from a User Rank achievement will immediately earn you one
+						Leadership! (Ver. 8.2.0 or later required)<br />
+					</span>
+				</p>
+
+				<p class="ttl">Unlocking Level Limits</p>
+				<p class="txt">
+					Achieving certain User Rank levels will unlock higher level limits for your Cat Unit upgrades. With
+					the exception of the Normal Cats and a few other Units, the highest limit reachable by these User
+					Rank rewards is capped at Level 30.<br />
+					<span name="rank_1600" style="display:none;">
+						However, using a <span class="red fw">Catseye</span> special item can release this restriction
+						and allow further upgrades!<br />
+						<span class="fs76">
+							※Once you have activated a Cat Unit, using XP will allow you to upgrade their Unit
+							Level.<br />
+							※To use a Catseye, you must first have at least one unit upgraded to Level 30.<br />
+						</span>
+					</span>
+				</p>
+			</span>
+
+			<span name="rank_1500" style="display:none;">
+				<p class="ttl">Unlocking MAX+ Limits</p>
+				<p class="txt">Upgrading your units' MAX+ rank will make them more powerful.<br />
+					Use the appropriate Cat Capsule from the Capsule Machine to increase that Unit's MAX+ rank.<br />
+					XP cannot be used to increase a Cat Unit's MAX+ rank.<br />
+				</p>
+			</span>
+
+			<span name="rank_1500" style="display:none;">
+				<p class="ttl">About Catfruit</p>
+				<p class="txt">Once Level 30 has been reached by certain rare-level Cat Units, "Catfruit" or "Catfruit
+					Seeds" items may be used to reach their third True Form.<br />
+					The Catfruit item may be acquired from certain Event Stages.<br />
+				</p>
+			</span>
+
+			<span name="rank_1600" style="display:none;">
+				<p class="ttl">About Catseyes</p>
+				<p class="txt">You can use a Catseye item on a Unit who has reached Level 30 in order to unlock even
+					higher level limits for that character.<br />
+					The GAMATOTO Expedition will very occasionally discover Catseyes during their item searches.<br />
+				</p>
+			</span>
+
+		</div>
+	</article>
+
+
+
+
+
+
+</body>
+
+</html>
