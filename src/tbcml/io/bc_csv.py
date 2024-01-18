@@ -222,29 +222,32 @@ class CSV:
 
         return line
 
-    def get_str(self, index: Optional[int] = None):
+    def get_str(self, index: Optional[int] = None, default: str = ""):
         if index is not None:
             self.str_index = index
         line = self.get_current_line()
         if line is None:
-            return ""
+            return default
         if self.str_index >= len(line):
-            return ""
+            return default
         item = line[self.str_index]
         self.str_index += 1
         return item
 
-    def get_int(self, index: Optional[int] = None):
+    def get_int(self, index: Optional[int] = None, default: int = 0):
         try:
             return int(self.get_str(index))
         except ValueError:
-            return 0
+            return default
 
-    def get_bool(self, index: Optional[int] = None):
-        return bool(self.get_int(index))
+    def get_bool(self, index: Optional[int] = None, default: bool = False):
+        return bool(self.get_int(index, int(default)))
 
     def get_str_list(
-        self, index: Optional[int] = None, length: Optional[int] = None
+        self,
+        index: Optional[int] = None,
+        length: Optional[int] = None,
+        default: str = "",
     ) -> list[str]:
         if index is not None:
             self.str_index = index
@@ -260,7 +263,7 @@ class CSV:
             if len(item) > length:
                 item = item[:length]
             else:
-                item.extend([""] * (length - len(item)))
+                item.extend([default] * (length - len(item)))
 
         self.str_index += len(item)
         return item
@@ -269,6 +272,7 @@ class CSV:
         self,
         index: Optional[int] = None,
         length: Optional[int] = None,
+        default: int = 0,
     ) -> list[int]:
         str_list = self.get_str_list(index, length)
         int_list: list[int] = []
@@ -276,7 +280,7 @@ class CSV:
             try:
                 int_list.append(int(item))
             except ValueError:
-                int_list.append(0)
+                int_list.append(default)
         return int_list
 
     def set_list(self, item: Optional[list[Any]], index: Optional[int] = None):

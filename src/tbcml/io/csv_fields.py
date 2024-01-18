@@ -17,7 +17,7 @@ class CSVField(Generic[F]):
     def __post_init__(self):
         self.original_index: Optional[int] = None
 
-    def read_from_csv(self, csv: "tbcml.CSV") -> None:
+    def read_from_csv(self, csv: "tbcml.CSV", default: Any = None) -> None:
         raise NotImplementedError
 
     def initialize_csv(self, csv: "tbcml.CSV", writing: bool) -> bool:
@@ -86,10 +86,10 @@ class IntCSVField(CSVField[int]):
     row_index: Optional[int] = None
     row_offset: int = 0
 
-    def read_from_csv(self, csv: "tbcml.CSV"):
+    def read_from_csv(self, csv: "tbcml.CSV", default: int = 0):
         if not self.initialize_csv(csv, writing=False):
             return
-        self.value = csv.get_int(self.col_index)
+        self.value = csv.get_int(self.col_index, default=default)
         self.uninitialize_csv(csv)
 
     def get(self) -> int:
@@ -104,10 +104,10 @@ class BoolCSVField(CSVField[bool]):
     row_index: Optional[int] = None
     row_offset: int = 0
 
-    def read_from_csv(self, csv: "tbcml.CSV"):
+    def read_from_csv(self, csv: "tbcml.CSV", default: bool = False):
         if not self.initialize_csv(csv, writing=False):
             return
-        self.value = csv.get_bool(self.col_index)
+        self.value = csv.get_bool(self.col_index, default=default)
         self.uninitialize_csv(csv)
 
     def get(self) -> bool:
@@ -122,10 +122,10 @@ class StringCSVField(CSVField[str]):
     row_index: Optional[int] = None
     row_offset: int = 0
 
-    def read_from_csv(self, csv: "tbcml.CSV"):
+    def read_from_csv(self, csv: "tbcml.CSV", default: str = ""):
         if not self.initialize_csv(csv, writing=False):
             return
-        self.value = csv.get_str(self.col_index)
+        self.value = csv.get_str(self.col_index, default=default)
         self.uninitialize_csv(csv)
 
     def get(self) -> str:
@@ -142,10 +142,10 @@ class StrListCSVField(CSVField[list[str]]):
     row_offset: int = 0
     blank: str = ""
 
-    def read_from_csv(self, csv: "tbcml.CSV"):
+    def read_from_csv(self, csv: "tbcml.CSV", default: str = ""):
         if not self.initialize_csv(csv, writing=False):
             return
-        self.value = csv.get_str_list(self.col_index, self.length)
+        self.value = csv.get_str_list(self.col_index, self.length, default=default)
         self.uninitialize_csv(csv)
 
     def write_to_csv(self, csv: "tbcml.CSV"):
@@ -196,10 +196,10 @@ class IntListCSVField(CSVField[list[int]]):
     row_offset: int = 0
     blank: int = 0
 
-    def read_from_csv(self, csv: "tbcml.CSV"):
+    def read_from_csv(self, csv: "tbcml.CSV", default: int = 0):
         if not self.initialize_csv(csv, writing=False):
             return
-        self.value = csv.get_int_list(self.col_index, self.length)
+        self.value = csv.get_int_list(self.col_index, self.length, default=default)
         self.uninitialize_csv(csv)
 
     def write_to_csv(self, csv: "tbcml.CSV"):
