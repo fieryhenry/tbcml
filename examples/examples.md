@@ -12,3 +12,4 @@ Collection of examples for using tbcml.
 - [Mailbox Hack Script](scripting/mailbox_hack.py)
 - [Custom Encryption Key](apk/custom_enc_key.py)
 - [Downloading Server Files](apk/download_server_files.py)
+- [Asset Editing](apk/asset_edit.py)
