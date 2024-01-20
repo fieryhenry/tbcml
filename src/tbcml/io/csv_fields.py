@@ -20,6 +20,9 @@ class CSVField(Generic[F]):
     def read_from_csv(self, csv: "tbcml.CSV", default: Any = None) -> None:
         raise NotImplementedError
 
+    def has_been_set(self) -> bool:
+        return self.value is not None
+
     def initialize_csv(self, csv: "tbcml.CSV", writing: bool) -> bool:
         if self.value is None and not self.always_write and writing:
             self.original_index = None
