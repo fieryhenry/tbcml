@@ -4,7 +4,12 @@ import uuid
 
 
 class TempFile:
-    def __init__(self, name: Optional[str] = None, extension: Optional[str] = None):
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        extension: Optional[str] = None,
+        path: Optional["tbcml.Path"] = None,
+    ):
         if name is None:
             name = str(uuid.uuid4())
         if extension is None:
@@ -12,13 +17,17 @@ class TempFile:
         else:
             if not extension.startswith("."):
                 extension = f".{extension}"
-        self.path = (
-            tbcml.Path.get_documents_folder()
-            .add("temp")
-            .add(f"{name}{extension}")
-            .get_absolute_path()
-        )
-        self.path.parent().generate_dirs()
+        if path is None:
+            path = (
+                tbcml.Path.get_documents_folder()
+                .add("temp")
+                .add(f"{name}{extension}")
+                .get_absolute_path()
+            )
+
+        path.parent().generate_dirs()
+
+        self.path = path
 
     def __enter__(self):
         return self.path
@@ -32,13 +41,18 @@ class TempFile:
 
 
 class TempFolder:
-    def __init__(self, name: Optional[str] = None):
+    def __init__(self, name: Optional[str] = None, path: Optional["tbcml.Path"] = None):
         if name is None:
             name = str(uuid.uuid4())
-        self.path = (
-            tbcml.Path.get_documents_folder().add("temp").add(name).get_absolute_path()
-        )
-        self.path.generate_dirs()
+        if path is None:
+            path = (
+                tbcml.Path.get_documents_folder()
+                .add("temp")
+                .add(name)
+                .get_absolute_path()
+            )
+        path.generate_dirs()
+        self.path = path
 
     def __enter__(self):
         return self.path
