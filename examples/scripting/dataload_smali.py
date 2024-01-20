@@ -17,6 +17,9 @@ smali_set = tbcml.SmaliHandler.java_to_smali(
     ),  # java is in java folder of repo
     "com.tbcml.DataLoad",
     "Start(Landroid/content/Context;)V",
+    javac_class_path=tbcml.Path(
+        "/opt/android-sdk/platforms/android-34/android.jar"
+    ),  # this should be the path to the android.jar file in your android-sdk folder
 )
 if smali_set is None:
     raise ValueError("Failed to convert java code to smali code")
