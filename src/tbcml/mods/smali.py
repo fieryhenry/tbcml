@@ -148,14 +148,14 @@ class SmaliHandler:
     """Injects smali into an apk.
     https://github.com/ksg97031/frida-gadget"""
 
-    def __init__(self, apk: "tbcml.Apk", decode_resources: bool = False):
+    def __init__(self, apk: "tbcml.Apk"):
         """Initializes the SmaliHandler
 
         Args:
             apk (tbcml.Apk): The apk to inject into
         """
         self.apk = apk
-        self.apk.extract_smali(decode_resources=decode_resources)
+        self.apk.extract_smali(decode_resources=self.apk.has_decoded_resources())
         self.main_activity = ["jp", "co", "ponos", "battlecats", "MyActivity.smali"]
 
     def find_main_activity_smali(self) -> Optional["tbcml.Path"]:
@@ -302,6 +302,7 @@ class SmaliHandler:
         class_name: str,
         func_sig: str,
         display_errors: bool = True,
+        javac_class_path: Optional["tbcml.Path"] = None,
     ) -> Optional[SmaliSet]:
         """Compiles java code into smali code
 
@@ -325,8 +326,13 @@ class SmaliHandler:
             for _ in range(parents):
                 top_level_path = top_level_path.parent()
             top_level_path.copy(temp_folder)
+            if javac_class_path is not None:
+                class_path_str = f"--class-path {javac_class_path}"
+            else:
+                class_path_str = ""
+            cmd = f"javac --source 8 --target 8 '{java_path}' -d '{temp_folder}' {class_path_str}"
             command = tbcml.Command(
-                f"javac --source 8 --target 8 '{java_path}' -d '{temp_folder}'",
+                cmd,
                 cwd=temp_folder,
             )
             result = command.run()
