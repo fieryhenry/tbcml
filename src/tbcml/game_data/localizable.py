@@ -36,6 +36,7 @@ class Localizable(tbcml.Modification):
     modification_type: tbcml.ModificationType = tbcml.ModificationType.LOCALIZABLE
 
     def __post_init__(self):
+        self.modified = False
         Localizable.Schema()
 
     @staticmethod
@@ -58,7 +59,7 @@ class Localizable(tbcml.Modification):
             self.strings[string.key.get()] = string
 
     def apply_strings(self, game_data: "tbcml.GamePacks"):
-        if self.strings is None:
+        if self.strings is None or not self.modified:
             return
         name, csv = Localizable.get_csv(game_data)
         if csv is None:
@@ -103,6 +104,7 @@ class Localizable(tbcml.Modification):
             self.strings = {}
 
         self.strings[key] = new_item
+        self.modified = True
 
     def get_string(self, key: str) -> Optional[str]:
         if self.strings is None:
