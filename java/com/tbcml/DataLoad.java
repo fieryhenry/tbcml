@@ -4,7 +4,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.net.URL;
+import java.net.URI;
 import java.util.Base64;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -85,8 +85,9 @@ public class DataLoad {
                     StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
                     StrictMode.setThreadPolicy(policy);
                     Log.d("tbcml", "Downloading " + url + " to " + gameFile.getAbsolutePath());
-                    URL url2 = new URL(url);
-                    InputStream localInputStream2 = url2.openStream();
+                    URI uri = new URI(url);
+                    InputStream localInputStream2 = uri.toURL().openStream();
+
                     byte[] data2 = new byte[2048];
                     FileOutputStream fos2 = new FileOutputStream(gameFile);
                     BufferedOutputStream dest22 = new BufferedOutputStream(fos2, 2048);
