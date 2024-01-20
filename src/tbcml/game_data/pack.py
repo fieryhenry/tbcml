@@ -591,7 +591,6 @@ class GamePacks:
         Returns:
             Optional[GameFile]: The file if it exists, None otherwise.
         """
-        print(file_name)
         if not file_name.strip():
             raise FileNotFoundError("File name cannot be empty")
         file = self.find_file(file_name)
