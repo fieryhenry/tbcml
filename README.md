@@ -29,7 +29,7 @@ Note that most of these features a work in progress and may not work properly.
 - [Modification of game data](examples/cats/name_desc_edit.py)
 - [Frida gadget hooking](examples/scripting/mailbox_hack.py)
 - [Smali code injection](examples/scripting/dataload_smali.py)
-- Java to smali code conversion
+- [Java to smali code conversion](examples/scripting/dataload_smali.py)
 - [Patching of libnative-lib.so file](examples/scripting/mailbox_ps.py)
 - [Modification of apk assets](examples/apk/asset_edit.py)
 - BCU Pack Imports
