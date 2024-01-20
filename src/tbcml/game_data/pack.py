@@ -429,6 +429,9 @@ class GamePacks:
         show_error: bool = False,
         use_cache: bool = True,
         update_cache: bool = True,
+        remove_padding: bool = True,
+        remove_comments: bool = True,
+        remove_empty: bool = True,
     ) -> Optional["tbcml.CSV"]:
         if use_cache:
             csv = self.csv_cache.get(file_name)
@@ -441,7 +444,13 @@ class GamePacks:
         file = self.find_file(file_name, show_error)
         if file is None:
             return
-        csv = tbcml.CSV(file.dec_data, delimeter=delimeter)
+        csv = tbcml.CSV(
+            file.dec_data,
+            delimeter=delimeter,
+            remove_padding=remove_padding,
+            remove_comments=remove_comments,
+            remove_empty=remove_empty,
+        )
         if update_cache:
             self.csv_cache[file_name] = csv
 
@@ -582,6 +591,7 @@ class GamePacks:
         Returns:
             Optional[GameFile]: The file if it exists, None otherwise.
         """
+        print(file_name)
         if not file_name.strip():
             raise FileNotFoundError("File name cannot be empty")
         file = self.find_file(file_name)
