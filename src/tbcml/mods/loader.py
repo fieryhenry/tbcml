@@ -134,6 +134,7 @@ class ModLoader:
         custom_enc_iv: Optional[str] = None,
         open_path: bool = False,
         add_modded_html: bool = True,
+        raise_error: bool = True,
     ):
         """Applies a mod / mods to the apk to create a modded apk.
 
@@ -143,6 +144,7 @@ class ModLoader:
             custom_enc_iv (Optional[str], optional): Custom game pack encryption iv, same use case / issues as key as shown above. Defaults to None.
             open_path (bool, optional): Whether to open the folder containing the final apk after everything has been loaded. Defaults to False.
             add_modded_html (bool, optional): Whether to modify the transfer screen to display your current mods. Defaults to True.
+            raise_error (bool): Whether to raise an error if applying mods fails. Defaults to True
 
         Raises:
             ModLoaderUninitializedException: If the apk has not been initialized (didn't call initialize())
@@ -154,13 +156,15 @@ class ModLoader:
         if isinstance(mods, tbcml.Mod):
             mods = [mods]
 
-        self.apk.load_mods(
+        if not self.apk.load_mods(
             mods,
             self.game_packs,
             custom_enc_key,
             custom_enc_iv,
             add_modded_html=add_modded_html,
-        )
+        ):
+            if raise_error:
+                raise ValueError("Failed to load mods.")
 
         if open_path:
             self.apk.output_path.open()
