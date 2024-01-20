@@ -234,10 +234,10 @@ class Apk:
         if self.has_decoded_resources(default=decode_resources) == decode_resources:
             if self.original_extracted_path.has_files() and not force:
                 self.copy_extracted()
-                return
+                return True
 
         if not self.check_display_apktool_error():
-            return
+            return False
         decode_resources_str = "-r" if not decode_resources else ""
         temp_path = self.temp_path.add("extraction")
         with tbcml.TempFolder(
@@ -248,11 +248,12 @@ class Apk:
             )
             if res.exit_code != 0:
                 print(f"Failed to extract APK: {res.result}")
-                return
+                return False
             self.original_extracted_path.remove().generate_dirs()
             path.copy(self.original_extracted_path)
 
         self.copy_extracted()
+        return True
 
     def extract_smali(
         self,
@@ -624,11 +625,8 @@ class Apk:
         url = cc_versions.get(self.game_version.to_string())
         if url is None:
             return False
-        scraper = cloudscraper.create_scraper()  # type: ignore
-        stream = self.get_download_stream(scraper, url)
-        if stream is None:
-            return False
 
+        stream = tbcml.RequestHandler(url).get_stream()
         _total_length = int(stream.headers.get("content-length"))  # type: ignore
 
         dl = 0
@@ -645,6 +643,17 @@ class Apk:
         return True
 
     def download(
+        self,
+        progress: Optional[Callable[[float, int, int, bool], None]] = progress,
+        force: bool = False,
+    ) -> bool:
+        if self.download_v1(progress, force):
+            return True
+        if self.download_v2(progress, force):
+            return True
+        return False
+
+    def download_v1(
         self,
         progress: Optional[Callable[[float, int, int, bool], None]] = progress,
         force: bool = False,
@@ -679,7 +688,11 @@ class Apk:
             if stream is None:
                 return False
 
-            _total_length = int(stream.headers.get("content-length"))  # type: ignore
+            content_length = stream.headers.get("content-length")
+            if content_length is None:
+                return False
+
+            _total_length = int(content_length)
 
             dl = 0
             chunk_size = 1024
@@ -732,10 +745,10 @@ class Apk:
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
         }
         stream = tbcml.RequestHandler(url, headers).get_stream()
-        try:
-            _total_length = int(stream.headers.get("content-length"))  # type: ignore
-        except TypeError:
-            _total_length = 0
+        content_length = stream.headers.get("content-length")
+        if content_length is None:
+            return False
+        _total_length = int(content_length)
 
         dl = 0
         chunk_size = 1024
