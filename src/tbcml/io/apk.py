@@ -240,13 +240,16 @@ class Apk:
             return
         decode_resources_str = "-r" if not decode_resources else ""
         temp_path = self.temp_path.add("extraction")
-        with tbcml.TempFolder(path=temp_path) as path:
+        with tbcml.TempFolder(
+            path=temp_path
+        ) as path:  # extract to temp folder so if user cancels mid-extraction nothing bad happens
             res = self.run_apktool(
                 f"d -f -s {decode_resources_str} {self.apk_path} -o {path}"
             )
             if res.exit_code != 0:
                 print(f"Failed to extract APK: {res.result}")
                 return
+            self.original_extracted_path.remove().generate_dirs()
             path.copy(self.original_extracted_path)
 
         self.copy_extracted()
