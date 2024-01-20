@@ -99,8 +99,14 @@ class ModLoader:
             allowed_script_mods=allowed_script_mods,
             apk_folder=custom_apk_folder,
         )
-        self.apk.download(download_progress)
-        self.apk.extract(decode_resources=decode_resources)
+        if not self.apk.download(download_progress):
+            if print_errors:
+                print("Failed to download apk.")
+            return
+        if not self.apk.extract(decode_resources=decode_resources):
+            if print_errors:
+                print("Failed to extract apk.")
+            return
         try:
             self.apk.download_server_files()
         except tbcml.GameVersionSearchError:
