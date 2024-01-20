@@ -689,8 +689,10 @@ class CatForm:
         name_file_name, name_csv = Cat.get_name_csv(game_data, cat_id)
         stats_file_name, stats_csv = Cat.get_stats_csv(game_data, cat_id)
         self.apply_csv(name_csv, stats_csv, game_data, cat_id)
-        game_data.set_csv(name_file_name, name_csv)
-        game_data.set_csv(stats_file_name, stats_csv)
+        if self.name.has_been_set() or self.description.has_been_set():
+            game_data.set_csv(name_file_name, name_csv)
+        if self.stats is not None:
+            game_data.set_csv(stats_file_name, stats_csv)
 
     def set_icons(self, cat_id: int, game_data: "tbcml.GamePacks"):
         game_data.set_img(self.get_upgrade_icon_file_name(cat_id), self.upgrade_icon)
@@ -1028,7 +1030,9 @@ class Cat(tbcml.Modification):
             f"Unit_Explanation{cat_id+1}_{game_data.localizable.get_lang()}.csv"
         )
         name_csv = game_data.get_csv(
-            file_name_desc, country_code=game_data.country_code
+            file_name_desc,
+            country_code=game_data.country_code,
+            remove_empty=False,
         )
         return file_name_desc, name_csv
 
@@ -1064,7 +1068,12 @@ class Cat(tbcml.Modification):
         game_data: "tbcml.GamePacks",
     ) -> tuple[str, Optional["tbcml.CSV"]]:
         file_name = f"unitevolve_{game_data.localizable.get_lang()}.csv"
-        csv = game_data.get_csv(file_name, country_code=game_data.country_code)
+        csv = game_data.get_csv(
+            file_name,
+            country_code=game_data.country_code,
+            remove_comments=False,
+            remove_empty=False,
+        )
 
         return file_name, csv
 
