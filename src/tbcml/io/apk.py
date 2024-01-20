@@ -217,20 +217,38 @@ class Apk:
         print(message)
         return False
 
+    def has_decoded_resources(self, default: bool = True) -> bool:
+        apktool_yml = self.extracted_path.add("apktool.yml")
+        if not apktool_yml.exists():
+            return default
+        yml = tbcml.YamlFile(apktool_yml)
+        version_info = yml.get("versionInfo")
+        if version_info is None:
+            return default
+        version_code = version_info.get("versionCode")
+        if version_code is None:
+            return False
+        return True
+
     def extract(self, decode_resources: bool = True, force: bool = False):
-        if self.original_extracted_path.has_files() and not force:
-            self.copy_extracted()
-            return
+        if self.has_decoded_resources(default=decode_resources) == decode_resources:
+            if self.original_extracted_path.has_files() and not force:
+                self.copy_extracted()
+                return
 
         if not self.check_display_apktool_error():
             return
         decode_resources_str = "-r" if not decode_resources else ""
-        res = self.run_apktool(
-            f"d -f -s {decode_resources_str} {self.apk_path} -o {self.original_extracted_path}"
-        )
-        if res.exit_code != 0:
-            print(f"Failed to extract APK: {res.result}")
-            return
+        temp_path = self.temp_path.add("extraction")
+        with tbcml.TempFolder(path=temp_path) as path:
+            res = self.run_apktool(
+                f"d -f -s {decode_resources_str} {self.apk_path} -o {path}"
+            )
+            if res.exit_code != 0:
+                print(f"Failed to extract APK: {res.result}")
+                return
+            path.copy(self.original_extracted_path)
+
         self.copy_extracted()
 
     def extract_smali(
@@ -242,7 +260,9 @@ class Apk:
 
         decode_resources_str = "-r" if not decode_resources else ""
 
-        with tbcml.TempFolder() as temp_folder:
+        temp_path = self.temp_path.add("smali_extraction")
+
+        with tbcml.TempFolder(path=temp_path) as temp_folder:
             res = self.run_apktool(
                 f"d -f {decode_resources_str} {self.apk_path} -o {temp_folder}"
             )
@@ -262,11 +282,12 @@ class Apk:
 
     def pack(self):
         if not self.check_display_apktool_error():
-            return
+            return False
         res = self.run_apktool(f"b {self.extracted_path} -o {self.final_apk_path}")
         if res.exit_code != 0:
             print(f"Failed to pack APK: {res.result}")
-            return
+            return False
+        return True
 
     def sign(
         self,
@@ -278,12 +299,12 @@ class Apk:
             self.zip_align()
         if use_jarsigner:
             if not self.check_display_jarsigner_error():
-                return
+                return False
         else:
             if not self.check_display_apk_signer_error():
-                return
+                return False
         if not self.check_display_keytool_error():
-            return
+            return False
         key_store_name = "tbcml.keystore"
         key_store_path = tbcml.Path.get_documents_folder().add(key_store_name)
         if not key_store_path.exists():
@@ -294,7 +315,7 @@ class Apk:
             res = cmd.run()
             if res.exit_code != 0:
                 print(f"Failed to generate keystore: {res.result}")
-                return
+                return False
 
         if use_jarsigner:
             cmd = tbcml.Command(
@@ -309,7 +330,8 @@ class Apk:
             res = cmd.run()
         if res.exit_code != 0:
             print(f"Failed to sign APK: {res.result}")
-            return
+            return False
+        return True
 
     def zip_align(self):
         if not self.check_display_zipalign_error():
@@ -373,14 +395,17 @@ class Apk:
         self,
         packs: "tbcml.GamePacks",
         copy_path: Optional["tbcml.Path"] = None,
-    ):
+    ) -> bool:
         self.add_packs_lists(packs)
         tbcml.LibFiles(self).patch()
         self.copy_modded_packs()
-        self.pack()
-        self.sign()
+        if not self.pack():
+            return False
+        if not self.sign():
+            return False
         if copy_path is not None:
             self.copy_final_apk(copy_path)
+        return True
 
     def copy_final_apk(self, path: "tbcml.Path"):
         if path == self.get_final_apk_path():
@@ -1010,17 +1035,20 @@ class Apk:
 
     def add_libgadget_config(self, used_arcs: list[str]):
         config = self.create_libgadget_config()
-        with tbcml.TempFile("libfrida-gadget.config") as temp_file:
+        with tbcml.TempFile(
+            path=self.temp_path.add("libfrida-gadget.config")
+        ) as temp_file:
             config.to_data().to_file(temp_file)
             for architecture in used_arcs:
                 self.add_to_lib_folder(architecture, temp_file)
 
     def add_libgadget_scripts(self, scripts: dict[str, str]):
-        for architecture, script_str in scripts.items():
-            script_path = self.temp_path.add("libbc_script.js.so")
-            tbcml.Data(script_str).to_file(script_path)
-            self.add_to_lib_folder(architecture, script_path)
-            script_path.remove()
+        with tbcml.TempFile(
+            path=self.temp_path.add("libbc_script.js.so")
+        ) as script_path:
+            for architecture, script_str in scripts.items():
+                tbcml.Data(script_str).to_file(script_path)
+                self.add_to_lib_folder(architecture, script_path)
 
     @staticmethod
     def get_libgadgets_path(
@@ -1213,10 +1241,9 @@ class Apk:
     def add_assets_from_pack(self, pack: "tbcml.PackFile"):
         if pack.is_server_pack(pack.pack_name):
             return
-        temp_dir = self.temp_path.add("assets")
-        pack.extract(temp_dir, encrypt=True)
-        self.add_assets(temp_dir.add(pack.pack_name))
-        temp_dir.remove()
+        with tbcml.TempFolder(path=self.temp_path.add("assets")) as temp_dir:
+            dir = pack.extract(temp_dir, encrypt=True)
+            self.add_assets(dir)
         pack.clear_files()
         pack.add_file(
             tbcml.GameFile(
@@ -1419,7 +1446,7 @@ class Apk:
         key: Optional[str] = None,
         iv: Optional[str] = None,
         add_modded_html: bool = True,
-    ):
+    ) -> bool:
         if game_packs is None:
             game_packs = tbcml.GamePacks.from_apk(self)
 
@@ -1443,4 +1470,6 @@ class Apk:
 
         self.add_mods_files(mods)
 
-        self.load_packs_into_game(game_packs)
+        if not self.load_packs_into_game(game_packs):
+            return False
+        return True
