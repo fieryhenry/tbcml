@@ -364,16 +364,20 @@ class PackFile:
         ).encrypt(ls_data)
         return self.pack_name, pack_data, ls_data
 
-    def extract(self, path: "tbcml.Path", encrypt: bool = False):
+    def extract(self, path: "tbcml.Path", encrypt: bool = False) -> "tbcml.Path":
         """Extract the pack as separate files into a directory.
 
         Args:
             path (tbcml.Path): The path to extract the pack to.
+
+        Returns:
+            tbcml.Path: the path of the pack folder
         """
         path = path.add(self.pack_name)
         path.generate_dirs()
         for file in self.files.values():
             file.extract(path, encrypt)
+        return path
 
 
 class GamePacks:
