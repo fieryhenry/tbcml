@@ -25,6 +25,7 @@ from .game_data.cat_base.enemy import Enemy, EnemyStats
 
 from .game_data.localizable import Localizable
 from .game_data.localizable import Localizable, LocalizableItem
+from .game_data.map.stage import Stage, StageEnemyData, StageInfo, Map, MapType
 
 from .game_data.bcu import BCUZip
 
@@ -123,6 +124,11 @@ __all__ = [
     "Localizable",
     "LocalizableItem",
     "Localizable",
+    "Stage",
+    "StageEnemyData",
+    "StageInfo",
+    "Map",
+    "MapType",
     "BCUZip",
     "Model",
     "Texture",

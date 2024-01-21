@@ -10,6 +10,7 @@ class ModificationType(enum.Enum):
     ENEMY = "enemy"
     SHOP = "shop"
     LOCALIZABLE = "localizable"
+    MAP = "map"
 
     @staticmethod
     def from_str_value(string: str) -> Optional["ModificationType"]:
@@ -27,6 +28,8 @@ class ModificationType(enum.Enum):
             return tbcml.ItemShop
         if self == ModificationType.LOCALIZABLE:
             return tbcml.Localizable
+        if self == ModificationType.MAP:
+            return tbcml.Map
         raise NotImplementedError()
 
 
