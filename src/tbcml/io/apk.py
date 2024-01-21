@@ -521,7 +521,9 @@ class Apk:
             game_version.GameVersion: List of APK versions
         """
         if cc == tbcml.CountryCode.EN or cc == tbcml.CountryCode.JP:
-            return Apk.get_all_versions_en(cc)
+            versions = Apk.get_all_versions_en(cc)
+            if versions:
+                return versions
         url = Apk.get_apk_version_url(cc)
         scraper = cloudscraper.create_scraper()  # type: ignore
         resp = scraper.get(url)
@@ -663,6 +665,8 @@ class Apk:
     ) -> bool:
         if self.apk_path.exists() and not force:
             return True
+        if self.download_v1_all(progress):
+            return True
         if (
             self.country_code == tbcml.CountryCode.EN
             or self.country_code == tbcml.CountryCode.JP
@@ -671,44 +675,48 @@ class Apk:
                 self.country_code == tbcml.CountryCode.EN,
                 progress,
             )
-        else:
-            url = self.get_download_url()
-            scraper = cloudscraper.create_scraper()  # type: ignore
-            scraper.headers.update(
-                {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"
-                }
-            )
-            stream = self.get_download_stream(scraper, url)
-            if stream is None:
-                stream = self.get_download_stream(scraper, url[:-1] + "1")
-            # if stream is None:
-            #    stream = self.get_download_stream(scraper, url.replace("APK", "XAPK"))
-            # sif stream is None:
-            # stream = self.get_download_stream(
-            #    scraper, url.replace("APK", "XAPK")[:-1] + "1"
-            # )
-            if stream is None:
-                return False
+        return False
 
-            content_length = stream.headers.get("content-length")
-            if content_length is None:
-                return False
+    def download_v1_all(
+        self, progress: Optional[Callable[[float, int, int, bool], None]] = progress
+    ) -> bool:
+        url = self.get_download_url()
+        scraper = cloudscraper.create_scraper()  # type: ignore
+        scraper.headers.update(
+            {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"
+            }
+        )
+        stream = self.get_download_stream(scraper, url)
+        if stream is None:
+            stream = self.get_download_stream(scraper, url[:-1] + "1")
+        # if stream is None:
+        #    stream = self.get_download_stream(scraper, url.replace("APK", "XAPK"))
+        # sif stream is None:
+        # stream = self.get_download_stream(
+        #    scraper, url.replace("APK", "XAPK")[:-1] + "1"
+        # )
+        if stream is None:
+            return False
 
-            _total_length = int(content_length)
+        content_length = stream.headers.get("content-length")
+        if content_length is None:
+            return False
 
-            dl = 0
-            chunk_size = 1024
-            buffer: list[bytes] = []
-            for d in stream.iter_content(chunk_size=chunk_size):
-                dl += len(d)
-                buffer.append(d)
-                if progress is not None:
-                    progress(dl / _total_length, dl, _total_length, True)
+        _total_length = int(content_length)
 
-            apk = tbcml.Data(b"".join(buffer))
-            apk.to_file(self.apk_path)
-            return True
+        dl = 0
+        chunk_size = 1024
+        buffer: list[bytes] = []
+        for d in stream.iter_content(chunk_size=chunk_size):
+            dl += len(d)
+            buffer.append(d)
+            if progress is not None:
+                progress(dl / _total_length, dl, _total_length, True)
+
+        apk = tbcml.Data(b"".join(buffer))
+        apk.to_file(self.apk_path)
+        return True
 
     def download_apk_en(
         self,
@@ -879,6 +887,10 @@ class Apk:
             url = "https://apkpure.net/%EB%83%A5%EC%BD%94-%EB%8C%80%EC%A0%84%EC%9F%81/jp.co.ponos.battlecatskr/versions"
         elif cc == tbcml.CountryCode.TW:
             url = "https://apkpure.net/%E8%B2%93%E5%92%AA%E5%A4%A7%E6%88%B0%E7%88%AD/jp.co.ponos.battlecatstw/versions"
+        elif cc == tbcml.CountryCode.EN:
+            url = (
+                "https://apkpure.net/the-battle-cats/jp.co.ponos.battlecatsen/versions"
+            )
         else:
             raise ValueError(f"Country code {cc} not supported")
         return url
