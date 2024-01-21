@@ -603,7 +603,10 @@ class Apk:
         scraper: "cloudscraper.CloudScraper",
         url: str,
     ) -> Optional[requests.Response]:
-        stream = scraper.get(url, stream=True, timeout=10)
+        try:
+            stream = scraper.get(url, stream=True, timeout=10)
+        except requests.RequestException:
+            return None
         if stream.headers.get("content-length") is None:
             return None
         return stream
