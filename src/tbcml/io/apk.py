@@ -852,7 +852,7 @@ class Apk:
         )
 
     def get_download_url(self) -> str:
-        return f"https://d.apkpure.com/b/APK/jp.co.ponos.battlecats{self.country_code.get_patching_code()}?versionCode={self.game_version.game_version}0"
+        return f"https://d.apkpure.net/b/APK/jp.co.ponos.battlecats{self.country_code.get_patching_code()}?versionCode={self.game_version.game_version}0"
 
     @staticmethod
     def get_all_versions_en(
@@ -871,11 +871,11 @@ class Apk:
     @staticmethod
     def get_apk_version_url(cc: "tbcml.CountryCode") -> str:
         if cc == tbcml.CountryCode.JP:
-            url = "https://m.apkpure.com/%E3%81%AB%E3%82%83%E3%82%93%E3%81%93%E5%A4%A7%E6%88%A6%E4%BA%89/jp.co.ponos.battlecats/versions"
+            url = "https://apkpure.net/%E3%81%AB%E3%82%83%E3%82%93%E3%81%93%E5%A4%A7%E6%88%A6%E4%BA%89/jp.co.ponos.battlecats/versions"
         elif cc == tbcml.CountryCode.KR:
-            url = "https://m.apkpure.com/%EB%83%A5%EC%BD%94-%EB%8C%80%EC%A0%84%EC%9F%81/jp.co.ponos.battlecatskr/versions"
+            url = "https://apkpure.net/%EB%83%A5%EC%BD%94-%EB%8C%80%EC%A0%84%EC%9F%81/jp.co.ponos.battlecatskr/versions"
         elif cc == tbcml.CountryCode.TW:
-            url = "https://m.apkpure.com/%E8%B2%93%E5%92%AA%E5%A4%A7%E6%88%B0%E7%88%AD/jp.co.ponos.battlecatstw/versions"
+            url = "https://apkpure.net/%E8%B2%93%E5%92%AA%E5%A4%A7%E6%88%B0%E7%88%AD/jp.co.ponos.battlecatstw/versions"
         else:
             raise ValueError(f"Country code {cc} not supported")
         return url
