@@ -123,7 +123,15 @@ class CSV:
         return line
 
     def to_data(self) -> "tbcml.Data":
-        return tbcml.Data("\n".join([self.delimeter.join(line) for line in self.lines]))
+        return tbcml.Data(
+            "\n".join(
+                [
+                    self.delimeter.join(line)
+                    for line in self.lines
+                    if line or self.remove_empty
+                ]
+            )
+        )
 
     def extend(
         self,
