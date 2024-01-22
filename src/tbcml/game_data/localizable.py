@@ -4,15 +4,17 @@ import tbcml
 
 from tbcml.io.csv_fields import (
     StringCSVField,
-    CSVField,
-    StrListCSVField,
 )
 
 
 @dataclass
 class LocalizableItem:
-    key: StringCSVField = CSVField.to_field(StringCSVField, 0)
-    value: StrListCSVField = CSVField.to_field(StrListCSVField, 1)
+    key: Optional[str] = None
+    value: Optional[str] = None
+
+    def __post_init__(self):
+        self.csv__key = StringCSVField(col_index=0)
+        self.csv__value = StringCSVField(col_index=1)
 
     def read_csv(self, index: int, csv: "tbcml.CSV") -> bool:
         csv.index = index
@@ -22,12 +24,6 @@ class LocalizableItem:
     def apply_csv(self, index: int, csv: "tbcml.CSV"):
         csv.index = index
         tbcml.Modification.apply_csv_fields(self, csv, remove_others=False)
-
-    def get_value(self) -> str:
-        return "\t".join(self.value.get())
-
-    def set_value(self, string: str):
-        self.value.set(string.split("\t"))
 
 
 @dataclass
@@ -56,7 +52,8 @@ class Localizable(tbcml.Modification):
         for i in range(len(csv.lines)):
             string = LocalizableItem()
             string.read_csv(i, csv)
-            self.strings[string.key.get()] = string
+            if string.key is not None:
+                self.strings[string.key] = string
 
     def apply_strings(self, game_data: "tbcml.GamePacks"):
         if self.strings is None or not self.modified:
@@ -70,10 +67,14 @@ class Localizable(tbcml.Modification):
             current_item = LocalizableItem()
             current_item.read_csv(i, csv)
 
-            modded_item = self.strings.get(current_item.key.get())
+            if current_item.key is None:
+                continue
+
+            modded_item = self.strings.get(current_item.key)
             if modded_item is not None:
                 modded_item.apply_csv(i, csv)
-                remaining_items.pop(modded_item.key.get())
+                if modded_item.key is not None:
+                    remaining_items.pop(modded_item.key)
 
         for i, item in enumerate(remaining_items.values()):
             item.apply_csv(i + length, csv)
@@ -92,13 +93,13 @@ class Localizable(tbcml.Modification):
         html = "Strings:<br>"
 
         for key, value in self.strings.items():
-            html += f'<span style="color:#000">{key} : {value.get_value()}</span>'
+            html += f'<span style="color:#000">{key} : {value}</span>'
         return html
 
     def set_string(self, key: str, value: str):
         new_item = LocalizableItem()
-        new_item.key.set(key)
-        new_item.set_value(value)
+        new_item.key = key
+        new_item.value = value
 
         if self.strings is None:
             self.strings = {}
@@ -113,7 +114,7 @@ class Localizable(tbcml.Modification):
         item = self.strings.get(key)
         if item is None:
             return None
-        return item.get_value()
+        return item.value
 
     def get_lang(self) -> str:
         lang = self.get_string("lang")

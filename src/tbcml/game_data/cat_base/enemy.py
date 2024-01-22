@@ -4,7 +4,6 @@ import tbcml
 
 from tbcml.io.csv_fields import (
     IntCSVField,
-    CSVField,
     BoolCSVField,
     StringCSVField,
     StrListCSVField,
@@ -15,110 +14,216 @@ from marshmallow_dataclass import dataclass
 
 @dataclass
 class EnemyStats:
-    hp: IntCSVField = CSVField.to_field(IntCSVField, 0)
-    kbs: IntCSVField = CSVField.to_field(IntCSVField, 1)
-    speed: IntCSVField = CSVField.to_field(IntCSVField, 2)
-    attack_1_damage: IntCSVField = CSVField.to_field(IntCSVField, 3)
-    attack_interval: IntCSVField = CSVField.to_field(IntCSVField, 4)
-    attack_range: IntCSVField = CSVField.to_field(IntCSVField, 5)
-    money_drop: IntCSVField = CSVField.to_field(IntCSVField, 6)
-    collision_start: IntCSVField = CSVField.to_field(IntCSVField, 7)
-    collision_width: IntCSVField = CSVField.to_field(IntCSVField, 8)
-    unused: IntCSVField = CSVField.to_field(IntCSVField, 9)
-    red: BoolCSVField = CSVField.to_field(BoolCSVField, 10)
-    area_attack: BoolCSVField = CSVField.to_field(BoolCSVField, 11)
-    attack_1_foreswing: IntCSVField = CSVField.to_field(IntCSVField, 12)
-    floating: BoolCSVField = CSVField.to_field(BoolCSVField, 13)
-    black: BoolCSVField = CSVField.to_field(BoolCSVField, 14)
-    metal: BoolCSVField = CSVField.to_field(BoolCSVField, 15)
-    traitless: BoolCSVField = CSVField.to_field(BoolCSVField, 16)
-    angel: BoolCSVField = CSVField.to_field(BoolCSVField, 17)
-    alien: BoolCSVField = CSVField.to_field(BoolCSVField, 18)
-    zombie: BoolCSVField = CSVField.to_field(BoolCSVField, 19)
-    knockback_prob: IntCSVField = CSVField.to_field(IntCSVField, 20)
-    freeze_prob: IntCSVField = CSVField.to_field(IntCSVField, 21)
-    freeze_duration: IntCSVField = CSVField.to_field(IntCSVField, 22)
-    slow_prob: IntCSVField = CSVField.to_field(IntCSVField, 23)
-    slow_duration: IntCSVField = CSVField.to_field(IntCSVField, 24)
-    crit_prob: IntCSVField = CSVField.to_field(IntCSVField, 25)
-    base_destroyer: BoolCSVField = CSVField.to_field(BoolCSVField, 26)
-    wave_prob: IntCSVField = CSVField.to_field(IntCSVField, 27)
-    wave_level: IntCSVField = CSVField.to_field(IntCSVField, 28)
-    weaken_prob: IntCSVField = CSVField.to_field(IntCSVField, 29)
-    weaken_duration: IntCSVField = CSVField.to_field(IntCSVField, 30)
-    weaken_percentage: IntCSVField = CSVField.to_field(IntCSVField, 31)
-    strengthen_hp_start_percentage: IntCSVField = CSVField.to_field(IntCSVField, 32)
-    strengthen_hp_boost_percentage: IntCSVField = CSVField.to_field(IntCSVField, 33)
-    survive_lethal_strike_prob: IntCSVField = CSVField.to_field(IntCSVField, 34)
-    attack_1_ld_start: IntCSVField = CSVField.to_field(IntCSVField, 35)
-    attack_1_ld_range: IntCSVField = CSVField.to_field(IntCSVField, 36)
-    wave_immunity: BoolCSVField = CSVField.to_field(BoolCSVField, 37)
-    wave_blocker: BoolCSVField = CSVField.to_field(BoolCSVField, 38)
-    knockback_immunity: BoolCSVField = CSVField.to_field(BoolCSVField, 39)
-    freeze_immunity: BoolCSVField = CSVField.to_field(BoolCSVField, 40)
-    slow_immunity: BoolCSVField = CSVField.to_field(BoolCSVField, 41)
-    weaken_immunity: BoolCSVField = CSVField.to_field(BoolCSVField, 42)
-    burrow_count: IntCSVField = CSVField.to_field(IntCSVField, 43)
-    burrow_distance: IntCSVField = CSVField.to_field(IntCSVField, 44)
-    revive_count: IntCSVField = CSVField.to_field(IntCSVField, 45)
-    revive_time: IntCSVField = CSVField.to_field(IntCSVField, 46)
-    revive_hp_percentage: IntCSVField = CSVField.to_field(IntCSVField, 47)
-    witch: BoolCSVField = CSVField.to_field(BoolCSVField, 48)
-    base: BoolCSVField = CSVField.to_field(BoolCSVField, 49)
-    attacks_before_set_attack_state: IntCSVField = CSVField.to_field(IntCSVField, 50)
-    time_before_death: IntCSVField = CSVField.to_field(IntCSVField, 51)
-    attack_state: IntCSVField = CSVField.to_field(IntCSVField, 52)
-    spawn_anim_model_id: IntCSVField = CSVField.to_field(IntCSVField, 53)
-    soul_model_anim_id: IntCSVField = CSVField.to_field(IntCSVField, 54)
-    attack_2_damage: IntCSVField = CSVField.to_field(IntCSVField, 55)
-    attack_3_damange: IntCSVField = CSVField.to_field(IntCSVField, 56)
-    attack_2_foreswing: IntCSVField = CSVField.to_field(IntCSVField, 57)
-    attack_3_foreswing: IntCSVField = CSVField.to_field(IntCSVField, 58)
-    attack_1_use_ability: BoolCSVField = CSVField.to_field(BoolCSVField, 59)
-    attack_2_use_ability: BoolCSVField = CSVField.to_field(BoolCSVField, 60)
-    attack_3_use_ability: BoolCSVField = CSVField.to_field(BoolCSVField, 61)
-    has_entry_maanim: BoolCSVField = CSVField.to_field(BoolCSVField, 62)
-    has_death_maanim: BoolCSVField = CSVField.to_field(BoolCSVField, 63)
-    barrier_hp: IntCSVField = CSVField.to_field(IntCSVField, 64)
-    warp_prob: IntCSVField = CSVField.to_field(IntCSVField, 65)
-    warp_duration: IntCSVField = CSVField.to_field(IntCSVField, 66)
-    warp_min_range: IntCSVField = CSVField.to_field(IntCSVField, 67)
-    warp_max_range: IntCSVField = CSVField.to_field(IntCSVField, 68)
-    starred_alien: BoolCSVField = CSVField.to_field(BoolCSVField, 69)
-    warp_blocker: BoolCSVField = CSVField.to_field(BoolCSVField, 70)
-    eva_angel: BoolCSVField = CSVField.to_field(BoolCSVField, 71)
-    relic: BoolCSVField = CSVField.to_field(BoolCSVField, 72)
-    curse_prob: IntCSVField = CSVField.to_field(IntCSVField, 73)
-    curse_duration: IntCSVField = CSVField.to_field(IntCSVField, 74)
-    savage_blow_prob: IntCSVField = CSVField.to_field(IntCSVField, 75)
-    savage_blow_damage_addition: IntCSVField = CSVField.to_field(IntCSVField, 76)
-    dodge_prob: IntCSVField = CSVField.to_field(IntCSVField, 77)
-    dodge_duration: IntCSVField = CSVField.to_field(IntCSVField, 78)
-    toxic_prob: IntCSVField = CSVField.to_field(IntCSVField, 79)
-    toxic_hp_percentage: IntCSVField = CSVField.to_field(IntCSVField, 80)
-    surge_prob: IntCSVField = CSVField.to_field(IntCSVField, 81)
-    surge_start: IntCSVField = CSVField.to_field(IntCSVField, 82)
-    surge_range: IntCSVField = CSVField.to_field(IntCSVField, 83)
-    surge_level: IntCSVField = CSVField.to_field(IntCSVField, 84)
-    surge_immunity: BoolCSVField = CSVField.to_field(BoolCSVField, 85)
-    wave_is_mini: BoolCSVField = CSVField.to_field(BoolCSVField, 86)
-    shield_hp: IntCSVField = CSVField.to_field(IntCSVField, 87)
-    sheild_kb_heal_percentage: IntCSVField = CSVField.to_field(IntCSVField, 88)
-    death_surge_prob: IntCSVField = CSVField.to_field(IntCSVField, 89)
-    death_surge_start: IntCSVField = CSVField.to_field(IntCSVField, 90)
-    death_surge_range: IntCSVField = CSVField.to_field(IntCSVField, 91)
-    death_surge_level: IntCSVField = CSVField.to_field(IntCSVField, 92)
-    aku: BoolCSVField = CSVField.to_field(BoolCSVField, 93)
-    baron: BoolCSVField = CSVField.to_field(BoolCSVField, 94)
-    attack_2_ld_flag: BoolCSVField = CSVField.to_field(BoolCSVField, 95)
-    attack_2_ld_start: IntCSVField = CSVField.to_field(IntCSVField, 96)
-    attack_2_ld_range: IntCSVField = CSVField.to_field(IntCSVField, 97)
-    attack_3_ld_flag: BoolCSVField = CSVField.to_field(BoolCSVField, 98)
-    attack_3_ld_start: IntCSVField = CSVField.to_field(IntCSVField, 99)
-    attack_3_ld_range: IntCSVField = CSVField.to_field(IntCSVField, 100)
-    behemoth: BoolCSVField = CSVField.to_field(BoolCSVField, 101)
-    unkown_102: IntCSVField = CSVField.to_field(IntCSVField, 102)
-    counter_surge: BoolCSVField = CSVField.to_field(BoolCSVField, 103)
+    hp: Optional[int] = None
+    kbs: Optional[int] = None
+    speed: Optional[int] = None
+    attack_1_damage: Optional[int] = None
+    attack_interval: Optional[int] = None
+    attack_range: Optional[int] = None
+    money_drop: Optional[int] = None
+    collision_start: Optional[int] = None
+    collision_width: Optional[int] = None
+    unused: Optional[int] = None
+    red: Optional[bool] = None
+    area_attack: Optional[bool] = None
+    attack_1_foreswing: Optional[int] = None
+    floating: Optional[bool] = None
+    black: Optional[bool] = None
+    metal: Optional[bool] = None
+    traitless: Optional[bool] = None
+    angel: Optional[bool] = None
+    alien: Optional[bool] = None
+    zombie: Optional[bool] = None
+    knockback_prob: Optional[int] = None
+    freeze_prob: Optional[int] = None
+    freeze_duration: Optional[int] = None
+    slow_prob: Optional[int] = None
+    slow_duration: Optional[int] = None
+    crit_prob: Optional[int] = None
+    base_destroyer: Optional[bool] = None
+    wave_prob: Optional[int] = None
+    wave_level: Optional[int] = None
+    weaken_prob: Optional[int] = None
+    weaken_duration: Optional[int] = None
+    weaken_percentage: Optional[int] = None
+    strengthen_hp_start_percentage: Optional[int] = None
+    strengthen_hp_boost_percentage: Optional[int] = None
+    survive_lethal_strike_prob: Optional[int] = None
+    attack_1_ld_start: Optional[int] = None
+    attack_1_ld_range: Optional[int] = None
+    wave_immunity: Optional[bool] = None
+    wave_blocker: Optional[bool] = None
+    knockback_immunity: Optional[bool] = None
+    freeze_immunity: Optional[bool] = None
+    slow_immunity: Optional[bool] = None
+    weaken_immunity: Optional[bool] = None
+    burrow_count: Optional[int] = None
+    burrow_distance: Optional[int] = None
+    revive_count: Optional[int] = None
+    revive_time: Optional[int] = None
+    revive_hp_percentage: Optional[int] = None
+    witch: Optional[bool] = None
+    base: Optional[bool] = None
+    attacks_before_set_attack_state: Optional[int] = None
+    time_before_death: Optional[int] = None
+    attack_state: Optional[int] = None
+    spawn_anim_model_id: Optional[int] = None
+    soul_model_anim_id: Optional[int] = None
+    attack_2_damage: Optional[int] = None
+    attack_3_damange: Optional[int] = None
+    attack_2_foreswing: Optional[int] = None
+    attack_3_foreswing: Optional[int] = None
+    attack_1_use_ability: Optional[bool] = None
+    attack_2_use_ability: Optional[bool] = None
+    attack_3_use_ability: Optional[bool] = None
+    has_entry_maanim: Optional[bool] = None
+    has_death_maanim: Optional[bool] = None
+    barrier_hp: Optional[int] = None
+    warp_prob: Optional[int] = None
+    warp_duration: Optional[int] = None
+    warp_min_range: Optional[int] = None
+    warp_max_range: Optional[int] = None
+    starred_alien: Optional[bool] = None
+    warp_blocker: Optional[bool] = None
+    eva_angel: Optional[bool] = None
+    relic: Optional[bool] = None
+    curse_prob: Optional[int] = None
+    curse_duration: Optional[int] = None
+    savage_blow_prob: Optional[int] = None
+    savage_blow_damage_addition: Optional[int] = None
+    dodge_prob: Optional[int] = None
+    dodge_duration: Optional[int] = None
+    toxic_prob: Optional[int] = None
+    toxic_hp_percentage: Optional[int] = None
+    surge_prob: Optional[int] = None
+    surge_start: Optional[int] = None
+    surge_range: Optional[int] = None
+    surge_level: Optional[int] = None
+    surge_immunity: Optional[bool] = None
+    wave_is_mini: Optional[bool] = None
+    shield_hp: Optional[int] = None
+    sheild_kb_heal_percentage: Optional[int] = None
+    death_surge_prob: Optional[int] = None
+    death_surge_start: Optional[int] = None
+    death_surge_range: Optional[int] = None
+    death_surge_level: Optional[int] = None
+    aku: Optional[bool] = None
+    baron: Optional[bool] = None
+    attack_2_ld_flag: Optional[bool] = None
+    attack_2_ld_start: Optional[int] = None
+    attack_2_ld_range: Optional[int] = None
+    attack_3_ld_flag: Optional[bool] = None
+    attack_3_ld_start: Optional[int] = None
+    attack_3_ld_range: Optional[int] = None
+    behemoth: Optional[bool] = None
+    unkown_102: Optional[int] = None
+    counter_surge: Optional[bool] = None
+
+    def __post_init__(self):
+        self.csv__hp = IntCSVField(col_index=0)
+        self.csv__kbs = IntCSVField(col_index=1)
+        self.csv__speed = IntCSVField(col_index=2)
+        self.csv__attack_1_damage = IntCSVField(col_index=3)
+        self.csv__attack_interval = IntCSVField(col_index=4)
+        self.csv__attack_range = IntCSVField(col_index=5)
+        self.csv__money_drop = IntCSVField(col_index=6)
+        self.csv__collision_start = IntCSVField(col_index=7)
+        self.csv__collision_width = IntCSVField(col_index=8)
+        self.csv__unused = IntCSVField(col_index=9)
+        self.csv__red = BoolCSVField(col_index=10)
+        self.csv__area_attack = BoolCSVField(col_index=11)
+        self.csv__attack_1_foreswing = IntCSVField(col_index=12)
+        self.csv__floating = BoolCSVField(col_index=13)
+        self.csv__black = BoolCSVField(col_index=14)
+        self.csv__metal = BoolCSVField(col_index=15)
+        self.csv__traitless = BoolCSVField(col_index=16)
+        self.csv__angel = BoolCSVField(col_index=17)
+        self.csv__alien = BoolCSVField(col_index=18)
+        self.csv__zombie = BoolCSVField(col_index=19)
+        self.csv__knockback_prob = IntCSVField(col_index=20)
+        self.csv__freeze_prob = IntCSVField(col_index=21)
+        self.csv__freeze_duration = IntCSVField(col_index=22)
+        self.csv__slow_prob = IntCSVField(col_index=23)
+        self.csv__slow_duration = IntCSVField(col_index=24)
+        self.csv__crit_prob = IntCSVField(col_index=25)
+        self.csv__base_destroyer = BoolCSVField(col_index=26)
+        self.csv__wave_prob = IntCSVField(col_index=27)
+        self.csv__wave_level = IntCSVField(col_index=28)
+        self.csv__weaken_prob = IntCSVField(col_index=29)
+        self.csv__weaken_duration = IntCSVField(col_index=30)
+        self.csv__weaken_percentage = IntCSVField(col_index=31)
+        self.csv__strengthen_hp_start_percentage = IntCSVField(col_index=32)
+        self.csv__strengthen_hp_boost_percentage = IntCSVField(col_index=33)
+        self.csv__survive_lethal_strike_prob = IntCSVField(col_index=34)
+        self.csv__attack_1_ld_start = IntCSVField(col_index=35)
+        self.csv__attack_1_ld_range = IntCSVField(col_index=36)
+        self.csv__wave_immunity = BoolCSVField(col_index=37)
+        self.csv__wave_blocker = BoolCSVField(col_index=38)
+        self.csv__knockback_immunity = BoolCSVField(col_index=39)
+        self.csv__freeze_immunity = BoolCSVField(col_index=40)
+        self.csv__slow_immunity = BoolCSVField(col_index=41)
+        self.csv__weaken_immunity = BoolCSVField(col_index=42)
+        self.csv__burrow_count = IntCSVField(col_index=43)
+        self.csv__burrow_distance = IntCSVField(col_index=44)
+        self.csv__revive_count = IntCSVField(col_index=45)
+        self.csv__revive_time = IntCSVField(col_index=46)
+        self.csv__revive_hp_percentage = IntCSVField(col_index=47)
+        self.csv__witch = BoolCSVField(col_index=48)
+        self.csv__base = BoolCSVField(col_index=49)
+        self.csv__attacks_before_set_attack_state = IntCSVField(col_index=50)
+        self.csv__time_before_death = IntCSVField(col_index=51)
+        self.csv__attack_state = IntCSVField(col_index=52)
+        self.csv__spawn_anim_model_id = IntCSVField(col_index=53)
+        self.csv__soul_model_anim_id = IntCSVField(col_index=54)
+        self.csv__attack_2_damage = IntCSVField(col_index=55)
+        self.csv__attack_3_damange = IntCSVField(col_index=56)
+        self.csv__attack_2_foreswing = IntCSVField(col_index=57)
+        self.csv__attack_3_foreswing = IntCSVField(col_index=58)
+        self.csv__attack_1_use_ability = BoolCSVField(col_index=59)
+        self.csv__attack_2_use_ability = BoolCSVField(col_index=60)
+        self.csv__attack_3_use_ability = BoolCSVField(col_index=61)
+        self.csv__has_entry_maanim = BoolCSVField(col_index=62)
+        self.csv__has_death_maanim = BoolCSVField(col_index=63)
+        self.csv__barrier_hp = IntCSVField(col_index=64)
+        self.csv__warp_prob = IntCSVField(col_index=65)
+        self.csv__warp_duration = IntCSVField(col_index=66)
+        self.csv__warp_min_range = IntCSVField(col_index=67)
+        self.csv__warp_max_range = IntCSVField(col_index=68)
+        self.csv__starred_alien = BoolCSVField(col_index=69)
+        self.csv__warp_blocker = BoolCSVField(col_index=70)
+        self.csv__eva_angel = BoolCSVField(col_index=71)
+        self.csv__relic = BoolCSVField(col_index=72)
+        self.csv__curse_prob = IntCSVField(col_index=73)
+        self.csv__curse_duration = IntCSVField(col_index=74)
+        self.csv__savage_blow_prob = IntCSVField(col_index=75)
+        self.csv__savage_blow_damage_addition = IntCSVField(col_index=76)
+        self.csv__dodge_prob = IntCSVField(col_index=77)
+        self.csv__dodge_duration = IntCSVField(col_index=78)
+        self.csv__toxic_prob = IntCSVField(col_index=79)
+        self.csv__toxic_hp_percentage = IntCSVField(col_index=80)
+        self.csv__surge_prob = IntCSVField(col_index=81)
+        self.csv__surge_start = IntCSVField(col_index=82)
+        self.csv__surge_range = IntCSVField(col_index=83)
+        self.csv__surge_level = IntCSVField(col_index=84)
+        self.csv__surge_immunity = BoolCSVField(col_index=85)
+        self.csv__wave_is_mini = BoolCSVField(col_index=86)
+        self.csv__shield_hp = IntCSVField(col_index=87)
+        self.csv__sheild_kb_heal_percentage = IntCSVField(col_index=88)
+        self.csv__death_surge_prob = IntCSVField(col_index=89)
+        self.csv__death_surge_start = IntCSVField(col_index=90)
+        self.csv__death_surge_range = IntCSVField(col_index=91)
+        self.csv__death_surge_level = IntCSVField(col_index=92)
+        self.csv__aku = BoolCSVField(col_index=93)
+        self.csv__baron = BoolCSVField(col_index=94)
+        self.csv__attack_2_ld_flag = BoolCSVField(col_index=95)
+        self.csv__attack_2_ld_start = IntCSVField(col_index=96)
+        self.csv__attack_2_ld_range = IntCSVField(col_index=97)
+        self.csv__attack_3_ld_flag = BoolCSVField(col_index=98)
+        self.csv__attack_3_ld_start = IntCSVField(col_index=99)
+        self.csv__attack_3_ld_range = IntCSVField(col_index=100)
+        self.csv__behemoth = BoolCSVField(col_index=101)
+        self.csv__unkown_102 = IntCSVField(col_index=102)
+        self.csv__counter_surge = BoolCSVField(col_index=103)
 
     def apply_csv(self, enemy_id: int, csv: "tbcml.CSV"):
         csv.index = enemy_id + 2
@@ -130,13 +235,13 @@ class EnemyStats:
 
     def has_targeted_effect(self) -> bool:
         to_check = [
-            self.knockback_prob.value,
-            self.freeze_prob.value,
-            self.slow_prob.value,
-            self.weaken_prob.value,
-            self.warp_prob.value,
-            self.curse_prob.value,
-            self.dodge_prob.value,
+            self.knockback_prob,
+            self.freeze_prob,
+            self.slow_prob,
+            self.weaken_prob,
+            self.warp_prob,
+            self.curse_prob,
+            self.dodge_prob,
         ]
         return any(to_check)
 
@@ -144,12 +249,19 @@ class EnemyStats:
 @dataclass
 class Enemy(tbcml.Modification):
     enemy_id: int = field(metadata={"required": True})
-    name: StringCSVField = CSVField.to_field(StringCSVField, 0)
-    description: StrListCSVField = CSVField.to_field(StrListCSVField, 0, length=5)
+    modification_type: tbcml.ModificationType = tbcml.ModificationType.ENEMY
+
+    name: Optional[str] = None
+    description: Optional[list[str]] = None
     stats: Optional[EnemyStats] = None
     anim: Optional["tbcml.Model"] = None
     icon: Optional["tbcml.BCImage"] = None
-    modification_type: tbcml.ModificationType = tbcml.ModificationType.ENEMY
+
+    def __post_init__(self):
+        self.csv__name = StringCSVField(col_index=0)
+        self.csv__description = StrListCSVField(col_index=0, length=5)
+
+        Enemy.Schema()
 
     def set_enemy_id(self, id: int):
         self.enemy_id = id
@@ -174,9 +286,6 @@ class Enemy(tbcml.Modification):
             self.stats = EnemyStats()
         return self.stats
 
-    def __post_init__(self):
-        Enemy.Schema()
-
     def apply(self, game_data: "tbcml.GamePacks"):
         self.apply_name(game_data)
         self.apply_description(game_data)
@@ -188,14 +297,16 @@ class Enemy(tbcml.Modification):
         file_name, csv = Enemy.get_name_csv(game_data)
         if csv is not None:
             csv.index = self.enemy_id
-            self.name.write_to_csv(csv)
+            self.csv__name.value = self.name
+            self.csv__name.write_to_csv(csv)
             game_data.set_csv(file_name, csv)
 
     def apply_description(self, game_data: "tbcml.GamePacks"):
         file_name, csv = Enemy.get_descripion_csv(game_data)
         if csv is not None:
             csv.index = self.enemy_id
-            self.description.write_to_csv(csv)
+            self.csv__description.value = self.description
+            self.csv__description.write_to_csv(csv)
             game_data.set_csv(file_name, csv)
 
     def apply_stats(self, game_data: "tbcml.GamePacks"):
@@ -223,13 +334,16 @@ class Enemy(tbcml.Modification):
         _, csv = Enemy.get_name_csv(game_data)
         if csv is not None:
             csv.index = self.enemy_id
-            self.name.read_from_csv(csv)
+            self.csv__name.read_from_csv(csv)
+            self.name = self.csv__name.value
 
     def read_descripion(self, game_data: "tbcml.GamePacks"):
         _, csv = Enemy.get_descripion_csv(game_data)
         if csv is not None:
             csv.index = self.enemy_id
-            self.description.read_from_csv(csv)
+            self.csv__description.read_from_csv(csv)
+            if self.csv__description.value is not None:
+                self.description = self.csv__description.value
 
     def read_stats(self, game_data: "tbcml.GamePacks"):
         _, csv = Enemy.get_stats_csv(game_data)

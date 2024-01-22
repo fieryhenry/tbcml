@@ -2,7 +2,6 @@ import enum
 from typing import Any, Optional, Sequence, TypeVar, Union
 import tbcml
 import json
-from dataclasses import fields
 
 
 class ModificationType(enum.Enum):
@@ -71,32 +70,37 @@ class Modification:
         remove_others: bool = True,
         field_offset: int = 0,
     ):
-        if not hasattr(obj, "__dataclass_fields__"):
-            raise ValueError("obj is not a dataclass!")
+        if not hasattr(obj, "__dict__"):
+            raise ValueError("obj is not a class!")
         if required_values is None:
             required_values = []
 
-        csv_fields: list[tbcml.CSVField[Any]] = []
-        for field in fields(obj):
-            name = field.name
-            value = getattr(obj, name)
+        field_dict: dict[str, Any] = obj.__dict__.copy()
+
+        csv_fields: list[tuple[str, tbcml.CSVField[Any]]] = []
+        for name, value in field_dict.items():
             if isinstance(value, tbcml.CSVField):
                 value.col_index += field_offset
-                csv_fields.append(value)  # type: ignore
+                new_name = name[len("csv__") :]
+                new_value = getattr(obj, new_name)
+                value.value = new_value
+
+                csv_fields.append((name, value))  # type: ignore
 
         if remove_others:
-            for value in csv_fields:
+            for _, value in csv_fields:
                 value.initialize_csv(csv, writing=True)
                 csv.set_line([], csv.index)
                 value.uninitialize_csv(csv)
 
-        for value in csv_fields:
+        for name, value in csv_fields:
             value.initialize_csv(csv, writing=True)
             original_len = len(csv.get_current_line() or [])
             for ind, val in required_values:
                 if ind < original_len:
                     continue
                 csv.set_str(val, ind)
+            value.uninitialize_csv(csv)
 
             value.write_to_csv(csv)
             value.col_index -= field_offset
@@ -108,26 +112,30 @@ class Modification:
         required_values: Optional[Sequence[tuple[int, Union[str, int]]]] = None,
         field_offset: int = 0,
     ):
-        if not hasattr(obj, "__dataclass_fields__"):
-            raise ValueError("obj is not a dataclass!")
+        if not hasattr(obj, "__dict__"):
+            raise ValueError("obj is not a class!")
 
-        for field in fields(obj):
-            name = field.name
-            value = getattr(obj, name)
-            if isinstance(value, tbcml.CSVField):
-                value.col_index += field_offset
-                default = None
-                for ind, val in required_values or []:
-                    if ind == value.col_index:
-                        default = val
-                        break
+        field_dict: dict[str, Any] = obj.__dict__.copy()
 
-                if default is None:
-                    value.read_from_csv(csv)
-                else:
-                    value.read_from_csv(csv, default=default)
+        for name, value in field_dict.items():
+            if not isinstance(value, tbcml.CSVField):
+                continue
+            value.col_index += field_offset
+            default = None
+            for ind, val in required_values or []:
+                if ind == value.col_index:
+                    default = val
+                    break
 
-                value.col_index -= field_offset
+            if default is None:
+                value.read_from_csv(csv)
+            else:
+                value.read_from_csv(csv, default=default)
+
+            value.col_index -= field_offset
+
+            new_name = name[len("csv__") :]
+            setattr(obj, new_name, value.value)  # type: ignore
 
     def pre_to_json(self) -> None:
         raise NotImplementedError
@@ -246,6 +254,10 @@ class Mod:
             )
             json_data = modification.to_json()
             zipfile.add_file(filepath, tbcml.Data(json_data))
+
+    @staticmethod
+    def from_file(path: "tbcml.Path"):
+        return Mod.from_zip(path.read())
 
     @staticmethod
     def from_zip(data: "tbcml.Data") -> "Mod":

@@ -4,7 +4,7 @@ import tbcml
 class CustomStage(tbcml.Stage):
     def __init__(self):
         super().__init__()
-        self.stage_csv_data.stage_info.base_health.set(10000)
+        self.stage_csv_data.stage_info.base_health = 10000
 
 
 class CustomMap(tbcml.Map):

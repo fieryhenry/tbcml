@@ -10,14 +10,12 @@ class CustomLocalizable(tbcml.Localizable):
 class CatFoodItem(tbcml.ShopItem):
     def __init__(self):
         super().__init__()
-        self.count.set(500)
-        self.cost.set(1)
-        self.gatya_item_id.set(22)
-        self.draw_item_value.set(True)
-        self.category_name.set("catfood")
-        self.imgcut_rect_id.set(
-            0
-        )  # haven't made my own sprite, so using speed ups sprite
+        self.count = 500
+        self.cost = 1
+        self.gatya_item_id = 22
+        self.draw_item_value = True
+        self.category_name = "catfood"
+        self.imgcut_rect_id = 0  # haven't made my own sprite, so using speed ups sprite
 
 
 class CustomShop(tbcml.ItemShop):

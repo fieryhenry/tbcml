@@ -109,8 +109,8 @@ class BasicCustomForm(tbcml.CatForm):
     def __init__(self):
         super().__init__(form_type=tbcml.CatFormType.FIRST)
 
-        self.name.set("Cool Cat")
-        self.description.set(["First line!", "Second Line!", "Third description line!"])
+        self.name = "Cool Cat"
+        self.description = ["First line!", "Second Line!", "Third description line!"]
 
 
 class BasicCustomCat(tbcml.Cat):

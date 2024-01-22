@@ -79,12 +79,14 @@ class BCImage:
             for y in range(y1, y2):
                 self.putpixel(x, y, (0, 0, 0, 0))
 
-    def get_subimage(self, rect: "tbcml.Rect") -> "BCImage":
+    def get_subimage(self, rect: "tbcml.Rect") -> Optional["BCImage"]:
+        if rect.x is None or rect.y is None or rect.w is None or rect.h is None:
+            return None
         return self.crop_rect(
-            rect.x.get(),
-            rect.y.get(),
-            rect.x.get() + rect.w.get(),
-            rect.y.get() + rect.h.get(),
+            rect.x,
+            rect.y,
+            rect.x + rect.w,
+            rect.y + rect.h,
         )
 
     def scale(self, scale: float):
@@ -156,23 +158,27 @@ class BCImage:
         self.__image = self.image.convert("RGBA")
 
     def paste_rect(self, image: "BCImage", rect: "tbcml.Rect"):
+        if rect.x is None or rect.y is None or rect.w is None or rect.h is None:
+            return
         self.image.paste(
             image.image,
             (
-                rect.x.get(),
-                rect.y.get(),
-                rect.x.get() + rect.w.get(),
-                rect.y.get() + rect.h.get(),
+                rect.x,
+                rect.y,
+                rect.x + rect.w,
+                rect.y + rect.h,
             ),
             image.image,
         )
 
     def wipe_rect(self, rect: "tbcml.Rect"):
+        if rect.x is None or rect.y is None or rect.w is None or rect.h is None:
+            return
         self.wipe_region(
-            rect.x.get(),
-            rect.y.get(),
-            rect.x.get() + rect.w.get(),
-            rect.y.get() + rect.h.get(),
+            rect.x,
+            rect.y,
+            rect.x + rect.w,
+            rect.y + rect.h,
         )
 
     def putpixel(self, x: int, y: int, color: tuple[int, int, int, int]):
@@ -211,9 +217,4 @@ class BCImage:
         self.image.putalpha(mask)
 
     def get_rect(self, x: int, y: int) -> "tbcml.Rect":
-        rect = tbcml.Rect()
-        rect.x.set(x)
-        rect.y.set(y)
-        rect.w.set(self.width)
-        rect.h.set(self.height)
-        return rect
+        return tbcml.Rect(x, y, self.width, self.height)

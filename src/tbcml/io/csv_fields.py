@@ -1,4 +1,5 @@
 from dataclasses import field
+from enum import Enum
 from typing import Any, Generic, Optional, TypeVar
 
 from marshmallow_dataclass import dataclass
@@ -12,9 +13,8 @@ T = TypeVar("T")
 
 @dataclass
 class CSVField(Generic[F]):
-    value: Optional[Any] = None  # marshmallow_dataclass can't do generics in fields atm
-
     def __post_init__(self):
+        self.value: Optional[F] = None
         self.original_index: Optional[int] = None
 
     def read_from_csv(self, csv: "tbcml.CSV", default: Any = None) -> None:
@@ -41,7 +41,10 @@ class CSVField(Generic[F]):
     def write_to_csv(self, csv: "tbcml.CSV"):
         if not self.initialize_csv(csv, writing=True):
             return
-        csv.set_str(self.value, self.col_index)
+        if isinstance(self.value, (str, int, Enum, bool)) or self.value is None:
+            csv.set_str(self.value, self.col_index)
+        else:
+            raise ValueError(f"Not Implimented for type: {type(self.value)}")
         self.uninitialize_csv(csv)
 
     def set(self, value: F):
@@ -83,7 +86,6 @@ class CSVField(Generic[F]):
 
 @dataclass
 class IntCSVField(CSVField[int]):
-    value: Optional[int] = None
     col_index: int = 0
     always_write: bool = False
     row_index: Optional[int] = None
@@ -101,7 +103,6 @@ class IntCSVField(CSVField[int]):
 
 @dataclass
 class BoolCSVField(CSVField[bool]):
-    value: Optional[bool] = None
     col_index: int = 0
     always_write: bool = False
     row_index: Optional[int] = None
@@ -119,7 +120,6 @@ class BoolCSVField(CSVField[bool]):
 
 @dataclass
 class StringCSVField(CSVField[str]):
-    value: Optional[str] = None
     col_index: int = 0
     always_write: bool = False
     row_index: Optional[int] = None
@@ -137,7 +137,6 @@ class StringCSVField(CSVField[str]):
 
 @dataclass
 class StrListCSVField(CSVField[list[str]]):
-    value: Optional[list[str]] = None
     col_index: int = 0
     always_write: bool = False
     length: Optional[int] = None
@@ -190,8 +189,63 @@ class StrListCSVField(CSVField[list[str]]):
 
 
 @dataclass
+class StrTupleCSVField(CSVField[tuple[str, ...]]):
+    col_index: int = 0
+    always_write: bool = False
+    length: Optional[int] = None
+    row_index: Optional[int] = None
+    row_offset: int = 0
+    blank: str = ""
+
+    def read_from_csv(self, csv: "tbcml.CSV", default: str = ""):
+        if not self.initialize_csv(csv, writing=False):
+            return
+        value = csv.get_str_list(self.col_index, self.length, default=default)
+        self.value = tuple(value)
+        self.uninitialize_csv(csv)
+
+    def write_to_csv(self, csv: "tbcml.CSV"):
+        if not self.initialize_csv(csv, writing=True):
+            return
+
+        if self.length is None:
+            length = len(csv.get_current_line() or [])
+        else:
+            length = self.length
+        if self.value is None:
+            self.value = tuple([self.blank] * length)
+        remaining = length - len(self.value)
+        if remaining > 0:
+            ls = list(self.value)
+            ls.extend([self.blank] * remaining)
+            self.value = tuple(ls)
+        elif remaining < 0:
+            self.value = self.value[:length]
+        csv.set_list(list(self.value), self.col_index)
+
+        self.uninitialize_csv(csv)
+
+    def get(self) -> tuple[str, ...]:
+        if self.value is None:
+            return tuple([self.blank] * (self.length or 0))
+        if self.length is None:
+            return self.value
+        required_length = self.length - len(self.value)
+        if required_length < 0:
+            return self.value[: self.length]
+
+        value = list(self.value).copy()
+        value.extend([self.blank] * required_length)
+        return tuple(value)
+
+    def set_element(self, value: str, index: int):
+        ls = list(self.get())
+        ls[index] = value
+        self.value = tuple(ls)
+
+
+@dataclass
 class IntListCSVField(CSVField[list[int]]):
-    value: Optional[list[int]] = None
     col_index: int = 0
     always_write: bool = False
     length: Optional[int] = None

@@ -7,8 +7,8 @@ class NewForm(tbcml.CatForm):
     def __init__(self):
         super().__init__(form_type=tbcml.CatFormType.FIRST)
 
-        self.name.set("cool name")
-        self.description.set(["cat that does stuff...", "example cat for tbcml"])
+        self.name = "cool name"
+        self.description = ["cat that does stuff...", "example cat for tbcml"]
 
 
 class NewCat(tbcml.Cat):

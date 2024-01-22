@@ -6,25 +6,35 @@ import tbcml
 from tbcml.io.csv_fields import (
     IntCSVField,
     StringCSVField,
-    CSVField,
     BoolCSVField,
 )
 
 
 @dataclass
 class ShopItem:
-    shop_id: IntCSVField = CSVField.to_field(IntCSVField, 0)
-    gatya_item_id: IntCSVField = CSVField.to_field(IntCSVField, 1)
-    count: IntCSVField = CSVField.to_field(IntCSVField, 2)
-    cost: IntCSVField = CSVField.to_field(IntCSVField, 3)
-    draw_item_value: BoolCSVField = CSVField.to_field(BoolCSVField, 4)
-    category_name: StringCSVField = CSVField.to_field(StringCSVField, 5)
-    imgcut_rect_id: IntCSVField = CSVField.to_field(IntCSVField, 6)
+    shop_id: Optional[int] = None
+    gatya_item_id: Optional[int] = None
+    count: Optional[int] = None
+    cost: Optional[int] = None
+    draw_item_value: Optional[bool] = None
+    category_name: Optional[str] = None
+    imgcut_rect_id: Optional[int] = None
+
+    def __post_init__(self):
+        self.csv__shop_id = IntCSVField(col_index=0)
+        self.csv__gatya_item_id = IntCSVField(col_index=1)
+        self.csv__count = IntCSVField(col_index=2)
+        self.csv__cost = IntCSVField(col_index=3)
+        self.csv__draw_item_value = BoolCSVField(col_index=4)
+        self.csv__category_name = StringCSVField(col_index=5)
+        self.csv__imgcut_rect_id = IntCSVField(col_index=6)
 
     def find_index(self, csv: "tbcml.CSV") -> Optional[int]:
+        if self.shop_id is None:
+            return None
         for i in range(len(csv.lines[1:])):
             csv.index = i + 1
-            if csv.get_str(0) == str(self.shop_id.get()):
+            if csv.get_str(0) == str(self.shop_id):
                 return csv.index
         return None
 
@@ -103,7 +113,8 @@ class ItemShop(tbcml.Modification):
         for i in range(len(csv.lines[1:])):
             item = ShopItem()
             item.read_csv(csv, i + 1)
-            self.items[item.shop_id.get()] = item
+            if item.shop_id is not None:
+                self.items[item.shop_id] = item
 
     def apply_data(self, game_data: "tbcml.GamePacks"):
         file_name, csv = self.get_data_csv(game_data)
@@ -132,9 +143,11 @@ class ItemShop(tbcml.Modification):
 
     def set_item(self, item: "ShopItem", shop_id: Optional[int] = None):
         if shop_id is not None:
-            item.shop_id.set(shop_id)
+            item.shop_id = shop_id
 
-        shop_id = item.shop_id.get()
+        shop_id = item.shop_id
+        if shop_id is None:
+            return
 
         if self.items is None:
             self.items = {}
@@ -145,14 +158,19 @@ class ItemShop(tbcml.Modification):
         if self.items is None:
             raise ValueError("You must read data first!")
         id = len(self.items)
-        item.shop_id.set(id)
+        item.shop_id = id
         self.items[id] = item
 
-    def get_item_img(self, item: "ShopItem") -> "tbcml.BCImage":
-        img = self.get_texture().get_cut(item.imgcut_rect_id.get())
+    def get_item_img(self, item: "ShopItem") -> Optional["tbcml.BCImage"]:
+        if item.imgcut_rect_id is None:
+            return None
+        img = self.get_texture().get_cut(item.imgcut_rect_id)
         if img is None:
-            return tbcml.BCImage()
+            return None
         return img
 
-    def set_item_img(self, item: "ShopItem", img: "tbcml.BCImage"):
-        self.get_texture().set_cut(item.imgcut_rect_id.get(), img)
+    def set_item_img(self, item: "ShopItem", img: "tbcml.BCImage") -> bool:
+        if item.imgcut_rect_id is None:
+            return False
+        self.get_texture().set_cut(item.imgcut_rect_id, img)
+        return True

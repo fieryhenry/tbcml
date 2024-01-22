@@ -5,21 +5,25 @@ import tbcml
 
 from marshmallow_dataclass import dataclass
 
-from tbcml.io.csv_fields import CSVField, IntCSVField, BoolCSVField
+from tbcml.io.csv_fields import IntCSVField, BoolCSVField
 
 
 @dataclass
 class NonStoryStageInfo:
-    castle_type: IntCSVField = CSVField.to_field(IntCSVField, 0, row_index=0)
-    no_continues: BoolCSVField = CSVField.to_field(BoolCSVField, 1, row_index=0)
-    extra_stage_probability: IntCSVField = CSVField.to_field(
-        IntCSVField, 2, row_index=0
-    )
-    extra_stage_map_id: IntCSVField = CSVField.to_field(IntCSVField, 3, row_index=0)
-    extra_stage_stage_index: IntCSVField = CSVField.to_field(
-        IntCSVField, 4, row_index=0
-    )
-    unknown: IntCSVField = CSVField.to_field(IntCSVField, 5, row_index=0)
+    castle_type: Optional[int] = None
+    no_continues: Optional[bool] = None
+    extra_stage_probability: Optional[int] = None
+    extra_stage_map_id: Optional[int] = None
+    extra_stage_stage_index: Optional[int] = None
+    unknown: Optional[int] = None
+
+    def __post_init__(self):
+        self.csv__castle_type = IntCSVField(col_index=0, row_index=0)
+        self.csv__no_continues = BoolCSVField(col_index=1, row_index=0)
+        self.csv__extra_stage_probability = IntCSVField(col_index=2, row_index=0)
+        self.csv__extra_stage_map_id = IntCSVField(col_index=3, row_index=0)
+        self.csv__extra_stage_stage_index = IntCSVField(col_index=4, row_index=0)
+        self.csv__unknown = IntCSVField(col_index=5, row_index=0)
 
     def apply_csv(self, csv: "tbcml.CSV"):
         tbcml.Modification.apply_csv_fields(self, csv, remove_others=False)
@@ -30,16 +34,28 @@ class NonStoryStageInfo:
 
 @dataclass
 class StageInfo:
-    width: IntCSVField = CSVField.to_field(IntCSVField, 0)
-    base_health: IntCSVField = CSVField.to_field(IntCSVField, 1)
-    min_production_frames: IntCSVField = CSVField.to_field(IntCSVField, 2)
-    max_production_frames: IntCSVField = CSVField.to_field(IntCSVField, 3)
-    background_id: IntCSVField = CSVField.to_field(IntCSVField, 4)
-    max_enemy_count: IntCSVField = CSVField.to_field(IntCSVField, 5)
-    castle_enemy_id: IntCSVField = CSVField.to_field(IntCSVField, 6)
-    trial_mode_limit: IntCSVField = CSVField.to_field(IntCSVField, 7)
-    unknown_1: IntCSVField = CSVField.to_field(IntCSVField, 8)
-    unknown_2: IntCSVField = CSVField.to_field(IntCSVField, 9)
+    width: Optional[int] = None
+    base_health: Optional[int] = None
+    min_production_frames: Optional[int] = None
+    max_production_frames: Optional[int] = None
+    background_id: Optional[int] = None
+    max_enemy_count: Optional[int] = None
+    castle_enemy_id: Optional[int] = None
+    trial_mode_limit: Optional[int] = None
+    unknown_1: Optional[int] = None
+    unknown_2: Optional[int] = None
+
+    def __post_init__(self):
+        self.csv__width = IntCSVField(col_index=0)
+        self.csv__base_health = IntCSVField(col_index=1)
+        self.csv__min_production_frames = IntCSVField(col_index=2)
+        self.csv__max_production_frames = IntCSVField(col_index=3)
+        self.csv__background_id = IntCSVField(col_index=4)
+        self.csv__max_enemy_count = IntCSVField(col_index=5)
+        self.csv__castle_enemy_id = IntCSVField(col_index=6)
+        self.csv__trial_mode_limit = IntCSVField(col_index=7)
+        self.csv__unknown_1 = IntCSVField(col_index=8)
+        self.csv__unknown_2 = IntCSVField(col_index=9)
 
     def apply_csv(self, index: int, csv: "tbcml.CSV"):
         csv.index = index
@@ -52,20 +68,36 @@ class StageInfo:
 
 @dataclass
 class StageEnemyData:
-    enemy_id: IntCSVField = CSVField.to_field(IntCSVField, 0)
-    max_enemy_count: IntCSVField = CSVField.to_field(IntCSVField, 1)
-    start_frame: IntCSVField = CSVField.to_field(IntCSVField, 2)
-    min_spawn_interval: IntCSVField = CSVField.to_field(IntCSVField, 3)
-    max_spawn_interval: IntCSVField = CSVField.to_field(IntCSVField, 4)
-    spawn_base_percent: IntCSVField = CSVField.to_field(IntCSVField, 5)
-    min_z: IntCSVField = CSVField.to_field(IntCSVField, 6)
-    max_z: IntCSVField = CSVField.to_field(IntCSVField, 7)
-    boss_flag: BoolCSVField = CSVField.to_field(BoolCSVField, 8)
-    magnification: IntCSVField = CSVField.to_field(IntCSVField, 9)
-    trial_score: IntCSVField = CSVField.to_field(IntCSVField, 10)
-    unknown_1: IntCSVField = CSVField.to_field(IntCSVField, 11)
-    unknown_2: IntCSVField = CSVField.to_field(IntCSVField, 12)
-    unknown_3: IntCSVField = CSVField.to_field(IntCSVField, 13)
+    enemy_id: Optional[int] = None
+    max_enemy_count: Optional[int] = None
+    start_frame: Optional[int] = None
+    min_spawn_interval: Optional[int] = None
+    max_spawn_interval: Optional[int] = None
+    spawn_base_percent: Optional[int] = None
+    min_z: Optional[int] = None
+    max_z: Optional[int] = None
+    boss_flag: Optional[bool] = None
+    magnification: Optional[int] = None
+    trial_score: Optional[int] = None
+    unknown_1: Optional[int] = None
+    unknown_2: Optional[int] = None
+    unknown_3: Optional[int] = None
+
+    def __post_init__(self):
+        self.csv__enemy_id = IntCSVField(col_index=0)
+        self.csv__max_enemy_count = IntCSVField(col_index=1)
+        self.csv__start_frame = IntCSVField(col_index=2)
+        self.csv__min_spawn_interval = IntCSVField(col_index=3)
+        self.csv__max_spawn_interval = IntCSVField(col_index=4)
+        self.csv__spawn_base_percent = IntCSVField(col_index=5)
+        self.csv__min_z = IntCSVField(col_index=6)
+        self.csv__max_z = IntCSVField(col_index=7)
+        self.csv__boss_flag = BoolCSVField(col_index=8)
+        self.csv__magnification = IntCSVField(col_index=9)
+        self.csv__trial_score = IntCSVField(col_index=10)
+        self.csv__unknown_1 = IntCSVField(col_index=11)
+        self.csv__unknown_2 = IntCSVField(col_index=12)
+        self.csv__unknown_3 = IntCSVField(col_index=13)
 
     def apply_csv(self, index: int, csv: "tbcml.CSV"):
         csv.index = index

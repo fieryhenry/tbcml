@@ -9,12 +9,12 @@ class NewForm(tbcml.CatForm):
         )  # not needed if you are just writing stats, not reading anything
 
         stats = self.get_stats()
-        stats.hp.set(5000)
-        stats.cost.set(0)
-        stats.attack_1_damage.set(8000)
-        stats.speed.set(100)
-        stats.attack_interval.set(0)
-        stats.area_attack.set(True)
+        stats.hp = 5000
+        stats.cost = 0
+        stats.attack_1_damage = 8000
+        stats.speed = 100
+        stats.attack_interval = 0
+        stats.area_attack = True
 
 
 class NewCat(tbcml.Cat):

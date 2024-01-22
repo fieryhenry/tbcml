@@ -38,8 +38,8 @@ class AssassinBearForm(tbcml.CatForm):
         ```python
         stats = self.get_stats()
 
-        stats.recharge_time.set(0)
-        stats.cost.set(0)
+        stats.recharge_time = 0
+        stats.cost = 0
         ```
         """
 
