@@ -42,6 +42,7 @@ from .io.csv_fields import (
     BoolCSVField,
     StringCSVField,
     StrListCSVField,
+    StrTupleCSVField,
 )
 from .io.apk import Apk
 from .io.path import Path, PathStr
@@ -96,6 +97,7 @@ __all__ = [
     "BoolCSVField",
     "StringCSVField",
     "StrListCSVField",
+    "StrTupleCSVField",
     "Modification",
     "ModPath",
     "Mod",
