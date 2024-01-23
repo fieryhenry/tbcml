@@ -1,3 +1,5 @@
+__version__ = "1.1.0"
+
 from .mods.bc_mod import (
     Mod,
     Modification,
