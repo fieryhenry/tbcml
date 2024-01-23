@@ -44,3 +44,6 @@ Changelog = "https://github.com/fieryhenry/tbcml/blob/master/CHANGELOG.md"
 
 [tool.setuptools.dynamic]
 version = { attr = "tbcml.__version__" }
+
+[tool.setuptools]
+package-dir = { "" = "src" }
