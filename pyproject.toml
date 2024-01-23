@@ -1,10 +1,46 @@
 [build-system]
-requires = ["setuptools>=42", "wheel"]
+requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.pytest.ini_options]
-addopts = ["--cov=tbcml"]
-testpaths = ["tests"]
+[project]
+name = "tbcml"
+authors = [{ name = "fieryhenry" }]
+description = "A modding library for writing Battle Cats mods in Python."
+license = { text = "MIT License" }
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "beautifulsoup4",
+    "cloudscraper",
+    "cryptography",
+    "Pillow",
+    "pycryptodomex",
+    "PyYAML",
+    "requests",
+    "ffmpeg-python",
+    "marshmallow-dataclass",
+]
+dynamic = ["version"]
+keywords = ["battle cats", "modding", "mod"]
 
-[tool.mypi]
-mypi_path = "src"
+[project.optional-dependencies]
+scripting = ["lief"]
+
+[project.urls]
+Homepage = "https://github.com/fieryhenry/tbcml"
+Repository = "https://github.com/fieryhenry/tbcml"
+Issues = "https://github.com/fieryhenry/tbcml/issues"
+Changelog = "https://github.com/fieryhenry/tbcml/blob/master/CHANGELOG.md"
+
+
+[tool.setuptools.dynamic]
+version = { attr = "tbcml.__version__" }
