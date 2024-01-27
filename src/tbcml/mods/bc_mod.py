@@ -57,7 +57,9 @@ class Modification:
 
     @staticmethod
     def from_json(obj: type[T], data: str) -> T:
-        return obj.Schema().loads(data)  # type: ignore
+        cls = obj.Schema().loads(data)  # type: ignore
+        cls.post_from_json()  # type: ignore
+        return cls  # type: ignore
 
     def apply(self, game_data: "tbcml.GamePacks"):
         ...
@@ -138,7 +140,10 @@ class Modification:
             setattr(obj, new_name, value.value)  # type: ignore
 
     def pre_to_json(self) -> None:
-        raise NotImplementedError
+        ...
+
+    def post_from_json(self) -> None:
+        ...
 
     def get_custom_html(self) -> str:
         return ""
