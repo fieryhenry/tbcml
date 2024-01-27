@@ -2,16 +2,25 @@ import tbcml
 
 
 class CustomStage(tbcml.Stage):
-    def __init__(self):
-        super().__init__()
-        self.stage_csv_data.stage_info.base_health = 10000
+    def __init__(
+        self,
+        game_data: tbcml.GamePacks,
+        parent_map: tbcml.Map,
+        stage_index: int,
+    ):
+        super().__init__(name="Epic Stage", base_health=10000, parent_map=parent_map)
+
+        # text name is only used for the Post to SNS feature i'm pretty sure, actual stage names are all stored as images annoyingly
+
+        self.read_stage_name_img(game_data, stage_index=stage_index)
+
+        self.get_in_battle_img().flip_y()
 
 
 class CustomMap(tbcml.Map):
-    def __init__(self):
+    def __init__(self, game_data: tbcml.GamePacks):
         super().__init__(map_index=0, map_type=tbcml.MapType.EMPIRE_OF_CATS)
-
-        self.stages.append(CustomStage())
+        self.stages.append(CustomStage(game_data, parent_map=self, stage_index=0))
 
 
 loader = tbcml.ModLoader("en", "12.3.0")
@@ -23,7 +32,7 @@ mod = tbcml.Mod(
     description="Modifies korea to have 10k base health",
 )
 
-mod.add_modification(CustomMap())
+mod.add_modification(CustomMap(loader.get_game_packs()))
 
 apk = loader.get_apk()
 
