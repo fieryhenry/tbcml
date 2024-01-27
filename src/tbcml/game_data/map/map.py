@@ -209,8 +209,10 @@ class MapType(enum.Enum):
         if img_code is None:
             return None
         if self.is_main_story():
-            stage_index = tbcml.Stage.convert_main_story_stage_id(stage_index)
-            stage_index_str = str(stage_index).zfill(3)
+            ind = tbcml.Stage.convert_main_story_stage_id(stage_index)
+            if ind is None:
+                return None
+            stage_index_str = str(ind).zfill(3)
             return f"{img_code}{stage_index_str}_n_{lang}.png"
 
         if map_index is None:
@@ -219,6 +221,25 @@ class MapType(enum.Enum):
         map_index_str = str(map_index).zfill(3)
         stage_index_str = str(stage_index).zfill(2)
         return f"mapsn{map_index_str}_{stage_index_str}_{img_code}_{lang}.png"
+
+    def get_map_texture_imgcut_name(self, lang: str):
+        name = self.get_map_texture_img_name(lang)
+        if name is None:
+            return None
+
+        return name.replace(".png", ".imgcut")
+
+    def get_map_texture_img_name(
+        self,
+        lang: str,
+    ) -> Optional[str]:
+        if self == MapType.EMPIRE_OF_CATS:
+            return f"img019_{lang}.png"
+        if self == MapType.INTO_THE_FUTURE:
+            return f"img019_w.png"
+        if self == MapType.CATS_OF_THE_COSMOS:
+            return f"img019_space.png"
+        return None
 
 
 @dataclass
@@ -245,6 +266,20 @@ class Map(tbcml.Modification):
             file_name, country_code=game_data.country_code
         )
 
+    def get_map_texture(
+        self, game_data: "tbcml.GamePacks"
+    ) -> Optional["tbcml.Texture"]:
+        name = self.map_type.get_map_texture_img_name(game_data.get_lang())
+        if name is None:
+            return None
+        texture_name = self.map_type.get_map_texture_imgcut_name(game_data.get_lang())
+        if texture_name is None:
+            return None
+
+        texture = tbcml.Texture()
+        texture.read_from_game_file_names(game_data, name, texture_name)
+        return texture
+
     def apply_stage_name_csv(self, game_data: "tbcml.GamePacks"):
         if not self.stages:
             return
@@ -256,6 +291,19 @@ class Map(tbcml.Modification):
             stage.apply_stage_name_csv(csv, self.map_type, self.map_index, i)
 
         return game_data.set_csv(file_name, csv)
+
+    def apply_map_texture(self, game_data: "tbcml.GamePacks"):
+        map_texture = self.get_map_texture(game_data)
+        if map_texture is None:
+            return
+        for i, stage in enumerate(self.stages):
+            if stage.story_map_name_img is None:
+                continue
+            rect_id = stage.convert_main_story_stage_id(i)
+            if rect_id is None:
+                continue
+            map_texture.set_cut(rect_id, stage.story_map_name_img)
+        return map_texture.apply(game_data)
 
     def read_stage_name_csv(
         self, game_data: "tbcml.GamePacks", create_new_stages: bool = True
@@ -276,6 +324,18 @@ class Map(tbcml.Modification):
                     continue
             stage.read_stage_name_csv(csv, self.map_type, self.map_index, i)
 
+    def read_map_texture(self, game_data: "tbcml.GamePacks"):
+        if not self.stages:
+            return
+        map_texture = self.get_map_texture(game_data)
+        if map_texture is None:
+            return
+        for i, stage in enumerate(self.stages):
+            rect_id = stage.convert_main_story_stage_id(i)
+            if rect_id is None:
+                continue
+            stage.story_map_name_img = map_texture.get_cut(rect_id)
+
     def get_stage(self, index: int) -> Optional["tbcml.Stage"]:
         if index < 0 or index >= len(self.stages):
             return None
@@ -284,6 +344,8 @@ class Map(tbcml.Modification):
     def apply_stages(self, game_data: "tbcml.GamePacks"):
         for i, stage in enumerate(self.stages):
             stage.apply(game_data, i, self.map_type, self.map_index)
+
+        self.apply_map_texture(game_data)
 
     def read_stages(self, game_data: "tbcml.GamePacks"):
         i = 0
@@ -295,6 +357,8 @@ class Map(tbcml.Modification):
                 break
             self.stages.append(stage)
             i += 1
+
+        self.read_map_texture(game_data)
 
     def apply(self, game_data: "tbcml.GamePacks"):
         self.apply_stages(game_data)
