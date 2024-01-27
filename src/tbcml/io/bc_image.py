@@ -26,6 +26,10 @@ class BCImage:
         self.to_data()
 
     @property
+    def size(self):
+        return self.image.size
+
+    @property
     def image(self) -> Image.Image:
         if not self.__image:
             if not self.b64:
