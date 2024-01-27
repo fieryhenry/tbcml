@@ -410,6 +410,9 @@ class GamePacks:
         self.localizable = tbcml.Localizable()
         self.localizable.read(self)
 
+    def get_lang(self) -> str:
+        return self.localizable.get_lang()
+
     def get_pack(self, pack_name: str) -> Optional["PackFile"]:
         """Get a pack from the game packs.
 
@@ -452,7 +455,7 @@ class GamePacks:
             remove_empty=remove_empty,
         )
         if update_cache:
-            self.csv_cache[file_name] = csv
+            self.csv_cache[file_name] = csv.copy()
 
         return csv
 
@@ -460,12 +463,9 @@ class GamePacks:
         self,
         file_name: str,
         csv: Optional["tbcml.CSV"] = None,
-        update_cache: bool = True,
     ) -> Optional["GameFile"]:
         if csv is None:
             return None
-        if update_cache:
-            self.csv_cache[file_name] = csv
         return self.set_file(file_name, csv.to_data())
 
     def get_img(
