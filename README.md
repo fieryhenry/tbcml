@@ -191,7 +191,7 @@ python3 script.py
 
   When prompted for a mirror, any of them should work (pick recommended
   mirrors if they exist, but if they don't, then I picked "GH Mirrors
-  by Kcubeterm" at it seemed to work fine)
+  by Kcubeterm" and it seemed to work fine)
 
   Then run the following commands:
 
