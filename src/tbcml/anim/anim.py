@@ -149,6 +149,11 @@ class Texture:
 
         self.apply_img(game_data, imgname_save_overwrite)
 
+    def apply(self, game_data: "tbcml.GamePacks"):
+        csv = tbcml.CSV()
+        self.apply_csv(csv, game_data)
+        game_data.set_csv(self.imgcut_name, csv)
+
     def apply_img(
         self, game_data: "tbcml.GamePacks", imgname_save_overwrite: Optional[str] = None
     ):
@@ -246,6 +251,15 @@ class Texture:
         self.rects = new_rects
 
         return True
+
+    def read_from_game_file_names(
+        self, game_data: "tbcml.GamePacks", img_name: str, imgcut_name: str
+    ):
+        self.read_img(game_data, img_name)
+        csv = game_data.get_csv(imgcut_name)
+        if csv is None:
+            return
+        self.read_csv(csv, imgcut_name)
 
 
 @dataclass
