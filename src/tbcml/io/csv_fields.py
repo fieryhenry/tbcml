@@ -47,7 +47,7 @@ class CSVField(Generic[F]):
             raise ValueError(f"Not Implimented for type: {type(self.value)}")
         self.uninitialize_csv(csv)
 
-    def set(self, value: F):
+    def set(self, value: Optional[F]):
         self.value = value
 
     def set_ignore_none(self, value: Optional[F]):
