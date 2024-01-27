@@ -4,23 +4,27 @@ import tbcml
 class CustomStage(tbcml.Stage):
     def __init__(
         self,
-        game_data: tbcml.GamePacks,
         parent_map: tbcml.Map,
         stage_index: int,
     ):
         super().__init__(name="Epic Stage", base_health=10000, parent_map=parent_map)
-
         # text name is only used for the Post to SNS feature i'm pretty sure, actual stage names are all stored as images annoyingly
 
-        self.read_stage_name_img(game_data, stage_index=stage_index)
+        # copy original story map stage name image (image that appears on the story map, doesn't exist for non-story maps)
+        self.sync_story_map_name_img(stage_index)
+        # copy original stage name image (image that appears in battle, for non-story maps this also controls the name that appears on the story map)
+        self.sync_name_img(stage_index)
 
+        self.get_story_map_name_img().flip_x()
         self.get_in_battle_img().flip_y()
 
 
 class CustomMap(tbcml.Map):
     def __init__(self, game_data: tbcml.GamePacks):
         super().__init__(map_index=0, map_type=tbcml.MapType.EMPIRE_OF_CATS)
-        self.stages.append(CustomStage(game_data, parent_map=self, stage_index=0))
+        self.read(game_data)
+
+        self.set_stage(0, CustomStage(parent_map=self, stage_index=0))
 
 
 loader = tbcml.ModLoader("en", "12.3.0")
