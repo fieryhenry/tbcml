@@ -116,7 +116,9 @@ class StageCSV:
 
     def apply_csv(self, csv: "tbcml.CSV"):
         index = 0
-        if self.non_story_stage_info is not None:
+        if len(csv.lines[0]) < 7:
+            if self.non_story_stage_info is None:
+                self.non_story_stage_info = NonStoryStageInfo()
             self.non_story_stage_info.apply_csv(csv)
             index += 1
 
@@ -149,7 +151,8 @@ class Stage:
     parent_map: Optional["tbcml.Map"] = None
 
     name: Optional[str] = None
-    in_battle_name_img: Optional["tbcml.BCImage"] = None
+    name_img: Optional["tbcml.BCImage"] = None
+    story_map_name_img: Optional["tbcml.BCImage"] = None
 
     base_health: Optional[int] = None
     min_production_frames: Optional[int] = None
@@ -162,12 +165,65 @@ class Stage:
     unknown_2: Optional[int] = None
 
     class Meta:
-        fields = ["stage_csv_data", "name", "in_battle_name_img"]
+        fields = ["stage_csv_data", "name", "name_img", "story_map_name_img"]
+
+    def get_original_stage(self, index: int):
+        if self.parent_map is None:
+            return None
+        original_stage = self.parent_map.get_stage(index)
+        if original_stage is None:
+            return None
+        return original_stage
+
+    def sync_all(self, index: int):
+        original_stage = self.get_original_stage(index)
+        if original_stage is None:
+            return
+
+        self.stage_csv_data = original_stage.stage_csv_data
+        self.name = original_stage.name
+        self.name_img = original_stage.name_img
+        self.story_map_name_img = original_stage.story_map_name_img
+        self.update_stage_info_vars()
+
+    def sync_stage_csv(self, index: int):
+        original_stage = self.get_original_stage(index)
+        if original_stage is None:
+            return
+
+        self.stage_csv_data = original_stage.stage_csv_data
+        self.update_stage_info_vars()
+
+    def sync_name(self, index: int):
+        original_stage = self.get_original_stage(index)
+        if original_stage is None:
+            return
+
+        self.name = original_stage.name
+
+    def sync_name_img(self, index: int):
+        original_stage = self.get_original_stage(index)
+        if original_stage is None:
+            return
+
+        self.name_img = original_stage.name_img
+
+    def sync_story_map_name_img(self, index: int):
+        original_stage = self.get_original_stage(index)
+        if original_stage is None:
+            return
+
+        self.story_map_name_img = original_stage.story_map_name_img
 
     def get_in_battle_img(self) -> "tbcml.BCImage":
-        if self.in_battle_name_img is None:
-            self.in_battle_name_img = tbcml.BCImage.from_size(256, 64)
-        return self.in_battle_name_img
+        if self.name_img is None:
+            self.name_img = tbcml.BCImage.from_size(256, 64)
+        return self.name_img
+
+    def get_story_map_name_img(self) -> "tbcml.BCImage":
+        if self.story_map_name_img is None:
+            self.story_map_name_img = tbcml.BCImage.from_size(224, 45)
+        return self.story_map_name_img
 
     def __post_init__(self):
         self.stage_csv_copy = copy.deepcopy(self.stage_csv_data)
@@ -240,10 +296,13 @@ class Stage:
         return file_name, game_data.get_img(file_name)
 
     @staticmethod
-    def convert_main_story_stage_id(id: int) -> int:
+    def convert_main_story_stage_id(id: int) -> Optional[int]:
         if id in [46, 47]:
             return id
-        return 45 - id
+        new_id = 45 - id
+        if new_id < 0:
+            return None
+        return new_id
 
     def apply_stage_name_csv(
         self,
@@ -258,6 +317,8 @@ class Stage:
         row_index = map_index
         if map_type.is_main_story():
             row_index = Stage.convert_main_story_stage_id(stage_index)
+            if row_index is None:
+                return
             col_index = 0
 
         csv_name = StringCSVField(col_index=col_index, row_index=row_index)
@@ -271,14 +332,14 @@ class Stage:
         map_type: "tbcml.MapType",
         map_index: Optional[int],
     ):
-        if self.in_battle_name_img is None:
+        if self.name_img is None:
             return
         file_name = map_type.get_stage_name_img_file_name(
             map_index, stage_index, game_data.get_lang()
         )
         if file_name is None:
             return
-        game_data.set_img(file_name, self.in_battle_name_img)
+        game_data.set_img(file_name, self.name_img)
 
     def read_stage_name_csv(
         self,
@@ -291,6 +352,8 @@ class Stage:
         row_index = map_index
         if map_type.is_main_story():
             row_index = Stage.convert_main_story_stage_id(stage_index)
+            if row_index is None:
+                return
             col_index = 0
 
         csv_name = StringCSVField(col_index=col_index, row_index=row_index)
@@ -314,7 +377,7 @@ class Stage:
         _, img = self.get_stage_name_img(game_data, stage_index, map_type, map_index)
         if img is None:
             return
-        self.in_battle_name_img = img
+        self.name_img = img
 
     def apply(
         self,
@@ -384,8 +447,10 @@ class Stage:
 
     def pre_to_json(self):
         self.apply_stage_info_vars()
-        if self.in_battle_name_img is not None:
-            self.in_battle_name_img.save_b64()
+        if self.name_img is not None:
+            self.name_img.save_b64()
+        if self.story_map_name_img is not None:
+            self.story_map_name_img.save_b64()
 
     def post_from_json(self):
         self.stage_csv_data = self.stage_csv_copy
