@@ -1,3 +1,3 @@
-from tbcml.game_data.map import stage
+from tbcml.game_data.map import stage, map
 
-__all__ = ["stage"]
+__all__ = ["stage", "map"]
