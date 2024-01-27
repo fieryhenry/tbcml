@@ -111,7 +111,12 @@ class BasicCustomForm(tbcml.CatForm):
 
         # you can either set properties in the constructor as shown above, or
         # like this:
+
         self.description = ["First line!", "Second Line!", "Third description line!"]
+        
+        # note that if you use .read() it will overwrite any previously defined
+        # values, so you may not be able to put the values in the constructor
+        # if you want to use .read()
 
 
 class BasicCustomCat(tbcml.Cat):
