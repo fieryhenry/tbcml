@@ -9,11 +9,7 @@ class CustomStage(tbcml.Stage):
     ):
         super().__init__(name="Epic Stage", base_health=10000, parent_map=parent_map)
         # text name is only used for the Post to SNS feature i'm pretty sure, actual stage names are all stored as images annoyingly
-
-        # copy original story map stage name image (image that appears on the story map, doesn't exist for non-story maps)
-        self.sync_story_map_name_img(stage_index)
-        # copy original stage name image (image that appears in battle, for non-story maps this also controls the name that appears on the story map)
-        self.sync_name_img(stage_index)
+        self.sync(stage_index)  # used to sync data with the original stage
 
         self.get_story_map_name_img().flip_x()
         self.get_in_battle_img().flip_y()
