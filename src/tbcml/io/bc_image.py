@@ -128,8 +128,8 @@ class BCImage:
     def add_image(self, image: "BCImage", x: int, y: int):
         self.image.paste(image.image, (x, y), image.image)
 
-    def save(self, path: "tbcml.Path"):
-        self.image.save(path.to_str(), format="PNG")
+    def save(self, path: "tbcml.PathStr"):
+        self.image.save(tbcml.Path(path).to_str(), format="PNG")
 
     def to_data(self):
         if self.image.tobytes() == self.__original_img.tobytes() and len(self.b64) > 0:  # type: ignore
