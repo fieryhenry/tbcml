@@ -1,3 +1,4 @@
+import dataclasses
 import enum
 from typing import Any, Optional, Sequence, TypeVar, Union
 import tbcml
@@ -147,6 +148,18 @@ class Modification:
 
     def get_custom_html(self) -> str:
         return ""
+
+    @staticmethod
+    def sync(curr: Any, new: Any):
+        if not dataclasses.is_dataclass(curr) or not dataclasses.is_dataclass(new):
+            return
+        for field in dataclasses.fields(curr):
+            curr_value = getattr(curr, field.name)
+            new_value = getattr(new, field.name)
+            if curr_value is None:
+                setattr(curr, field.name, new_value)
+                continue
+            Modification.sync(curr_value, new_value)
 
 
 class Mod:
@@ -324,6 +337,8 @@ class Mod:
         self.to_zip().to_file(path)
 
     def add_modification(self, modification: "Modification"):
+        if not isinstance(modification, Modification):  # type: ignore
+            raise ValueError("modification does not inherit Modification!")
         self.modifications.append(modification)
 
     def add_script(self, script: "tbcml.FridaScript"):
