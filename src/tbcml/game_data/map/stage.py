@@ -154,6 +154,7 @@ class Stage:
     name_img: Optional["tbcml.BCImage"] = None
     story_map_name_img: Optional["tbcml.BCImage"] = None
 
+    width: Optional[int] = None
     base_health: Optional[int] = None
     min_production_frames: Optional[int] = None
     max_production_frames: Optional[int] = None
@@ -175,45 +176,13 @@ class Stage:
             return None
         return original_stage
 
-    def sync_all(self, index: int):
+    def sync(self, index: int):
         original_stage = self.get_original_stage(index)
         if original_stage is None:
             return
 
-        self.stage_csv_data = original_stage.stage_csv_data
-        self.name = original_stage.name
-        self.name_img = original_stage.name_img
-        self.story_map_name_img = original_stage.story_map_name_img
+        tbcml.Modification.sync(self, original_stage)
         self.update_stage_info_vars()
-
-    def sync_stage_csv(self, index: int):
-        original_stage = self.get_original_stage(index)
-        if original_stage is None:
-            return
-
-        self.stage_csv_data = original_stage.stage_csv_data
-        self.update_stage_info_vars()
-
-    def sync_name(self, index: int):
-        original_stage = self.get_original_stage(index)
-        if original_stage is None:
-            return
-
-        self.name = original_stage.name
-
-    def sync_name_img(self, index: int):
-        original_stage = self.get_original_stage(index)
-        if original_stage is None:
-            return
-
-        self.name_img = original_stage.name_img
-
-    def sync_story_map_name_img(self, index: int):
-        original_stage = self.get_original_stage(index)
-        if original_stage is None:
-            return
-
-        self.story_map_name_img = original_stage.story_map_name_img
 
     def get_in_battle_img(self) -> "tbcml.BCImage":
         if self.name_img is None:
@@ -230,6 +199,7 @@ class Stage:
         self.apply_stage_info_vars()
 
     def apply_stage_info_vars(self):
+        self.stage_csv_data.stage_info.width = self.width
         self.stage_csv_data.stage_info.base_health = self.base_health
         self.stage_csv_data.stage_info.min_production_frames = (
             self.min_production_frames
@@ -245,6 +215,7 @@ class Stage:
         self.stage_csv_data.stage_info.unknown_2 = self.unknown_2
 
     def update_stage_info_vars(self):
+        self.width = self.stage_csv_data.stage_info.width
         self.base_health = self.stage_csv_data.stage_info.base_health
         self.min_production_frames = (
             self.stage_csv_data.stage_info.min_production_frames
