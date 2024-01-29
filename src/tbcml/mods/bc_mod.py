@@ -159,6 +159,10 @@ class Modification:
             if curr_value is None:
                 setattr(curr, field.name, new_value)
                 continue
+            if isinstance(curr_value, list) and not curr_value:
+                setattr(curr, field.name, new_value)
+                continue
+
             Modification.sync(curr_value, new_value)
 
 
