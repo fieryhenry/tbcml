@@ -41,7 +41,7 @@ class StageInfo:
     background_id: Optional[int] = None
     max_enemy_count: Optional[int] = None
     castle_enemy_id: Optional[int] = None
-    trial_mode_limit: Optional[int] = None
+    trial_mode_duration_mins: Optional[int] = None
     unknown_1: Optional[int] = None
     unknown_2: Optional[int] = None
 
@@ -53,7 +53,7 @@ class StageInfo:
         self.csv__background_id = IntCSVField(col_index=4)
         self.csv__max_enemy_count = IntCSVField(col_index=5)
         self.csv__castle_enemy_id = IntCSVField(col_index=6)
-        self.csv__trial_mode_limit = IntCSVField(col_index=7)
+        self.csv__trial_mode_duration_mins = IntCSVField(col_index=7)
         self.csv__unknown_1 = IntCSVField(col_index=8)
         self.csv__unknown_2 = IntCSVField(col_index=9)
 
@@ -111,8 +111,18 @@ class StageEnemyData:
 @dataclass
 class StageCSV:
     non_story_stage_info: Optional[NonStoryStageInfo] = None
-    stage_info: StageInfo = field(default_factory=StageInfo)
-    stage_enemy_data: list[StageEnemyData] = field(default_factory=list)
+    stage_info: Optional[StageInfo] = None
+    stage_enemy_data: Optional[list[StageEnemyData]] = None
+
+    def get_stage_info(self) -> StageInfo:
+        if self.stage_info is None:
+            self.stage_info = StageInfo()
+        return self.stage_info
+
+    def get_stage_enemy_data(self) -> list[StageEnemyData]:
+        if self.stage_enemy_data is None:
+            self.stage_enemy_data = []
+        return self.stage_enemy_data
 
     def apply_csv(self, csv: "tbcml.CSV"):
         index = 0
@@ -122,10 +132,15 @@ class StageCSV:
             self.non_story_stage_info.apply_csv(csv)
             index += 1
 
-        self.stage_info.apply_csv(index, csv)
+        if self.stage_info is None:
+            stage_info = StageInfo()
+        else:
+            stage_info = self.stage_info
+
+        stage_info.apply_csv(index, csv)
         index += 1
 
-        for i, sed in enumerate(self.stage_enemy_data):
+        for i, sed in enumerate(self.stage_enemy_data or []):
             sed.apply_csv(i + index, csv)
 
     def read_csv(self, csv: "tbcml.CSV"):
@@ -135,6 +150,7 @@ class StageCSV:
             self.non_story_stage_info.read_csv(csv)
             index += 1
 
+        self.stage_info = StageInfo()
         self.stage_info.read_csv(index, csv)
         index += 1
 
@@ -146,8 +162,170 @@ class StageCSV:
 
 
 @dataclass
+class DropItem:
+    probability_score: int
+    item_id: int
+    amount: int
+    is_timed_score: bool
+
+    def get_drop_item_type(self):
+        if self.item_id >= 10000:
+            return 2
+        if self.item_id >= 1000:
+            return 1
+        return 0
+
+
+@dataclass
+class MapStageDataStage:
+    energy: Optional[int] = None
+    xp: Optional[int] = None
+    main_music_id: Optional[int] = None
+    boss_music_hp_percentage: Optional[int] = None
+    boss_music_id: Optional[int] = None
+    drop_items: Optional[list[DropItem]] = None
+    drop_reward_type: Optional[int] = None
+
+    def __post_init__(self):
+        self.csv__energy = IntCSVField(col_index=0)
+        self.csv__xp = IntCSVField(col_index=1)
+        self.csv__main_music_id = IntCSVField(col_index=2)
+        self.csv__boss_music_hp_percentage = IntCSVField(col_index=3)
+        self.csv__boss_music_id = IntCSVField(col_index=4)
+        self.csv__drop_reward_type = IntCSVField(col_index=8)
+
+    def read_csv(self, index: int, csv: "tbcml.CSV", score_reward_stage_id: int):
+        csv.index = index
+        tbcml.Modification.read_csv_fields(self, csv)
+
+        self.drop_items = []
+
+        drop_item_prob = IntCSVField(col_index=5)
+        drop_item_id = IntCSVField(col_index=6)
+        drop_item_amount = IntCSVField(col_index=7)
+
+        drop_item_prob.read_from_csv(csv, -1)
+        drop_item_id.read_from_csv(csv, -1)
+        drop_item_amount.read_from_csv(csv, -1)
+
+        drop_item = DropItem(
+            drop_item_prob.get(),
+            drop_item_id.get(),
+            drop_item_amount.get(),
+            is_timed_score=False,
+        )
+        self.drop_items.append(drop_item)
+
+        if self.drop_reward_type is None:
+            return
+
+        is_timed = (
+            csv.get_int(15) == 1 and score_reward_stage_id != -1
+        ) and self.drop_reward_type > -3
+
+        start_index = 9
+        if is_timed:
+            start_index = 16
+
+        index = start_index
+        while True:
+            if csv.get_int(index, -1) == -1:
+                break
+            drop_item_prob.col_index = index
+            drop_item_id.col_index = index + 1
+            drop_item_amount.col_index = index + 2
+
+            drop_item_prob.read_from_csv(csv, -1)
+            drop_item_id.read_from_csv(csv, -1)
+            drop_item_amount.read_from_csv(csv, -1)
+
+            drop_item = DropItem(
+                drop_item_prob.get(),
+                drop_item_id.get(),
+                drop_item_amount.get(),
+                is_timed_score=is_timed,
+            )
+
+            self.drop_items.append(drop_item)
+            index += 3
+
+    def apply_csv(
+        self,
+        index: int,
+        csv: "tbcml.CSV",
+        score_reward_stage_id: int,
+        warn: bool = True,
+    ):
+        csv.index = index
+
+        is_timed = (
+            self.drop_items
+            and len(self.drop_items) >= 2
+            and self.drop_items[1].is_timed_score
+        )
+        if is_timed:
+            if score_reward_stage_id == -1 and warn:
+                print(
+                    "WARNING: map score_reward_stage_id == -1, timed scores may not appear!"
+                )
+
+        tbcml.Modification.apply_csv_fields(
+            self, csv, remove_others=bool(self.drop_items)
+        )
+
+        if not self.drop_items:
+            csv.set_str(-1, 5)
+            return
+
+        drop_item_prob = IntCSVField(col_index=5)
+        drop_item_id = IntCSVField(col_index=6)
+        drop_item_amount = IntCSVField(col_index=7)
+
+        drop_item = self.drop_items[0]
+
+        drop_item_prob.set(drop_item.probability_score)
+        drop_item_id.set(drop_item.item_id)
+        drop_item_amount.set(drop_item.amount)
+
+        drop_item_prob.write_to_csv(csv)
+        drop_item_id.write_to_csv(csv)
+        drop_item_amount.write_to_csv(csv)
+
+        if self.drop_reward_type is None:
+            csv.set_str(-1, 8)
+            return
+
+        start_index = 9
+        if is_timed:
+            csv.set_str(1, 15)
+            for i in range(9, 15):
+                csv.set_str(-2, i)
+            start_index = 16
+
+        index = start_index
+
+        for item in self.drop_items[1:]:
+            drop_item_prob.col_index = index
+            drop_item_id.col_index = index + 1
+            drop_item_amount.col_index = index + 2
+
+            drop_item_prob.set(item.probability_score)
+            drop_item_id.set(item.item_id)
+            drop_item_amount.set(item.amount)
+
+            drop_item_prob.write_to_csv(csv)
+            drop_item_id.write_to_csv(csv)
+            drop_item_amount.write_to_csv(csv)
+
+            index += 3
+
+        csv.set_str(-1, index)
+
+
+@dataclass
 class Stage:
     stage_csv_data: StageCSV = field(default_factory=StageCSV)
+    map_stage_data_stage: Optional[MapStageDataStage] = None
     parent_map: Optional["tbcml.Map"] = None
 
     name: Optional[str] = None
@@ -161,12 +339,31 @@ class Stage:
     background_id: Optional[int] = None
     max_enemy_count: Optional[int] = None
     castle_enemy_id: Optional[int] = None
-    trial_mode_limit: Optional[int] = None
+    trial_mode_duration_mins: Optional[int] = None
     unknown_1: Optional[int] = None
     unknown_2: Optional[int] = None
 
     class Meta:
         fields = ["stage_csv_data", "name", "name_img", "story_map_name_img"]
+
+    def read_map_stage_data_csv(
+        self,
+        index: int,
+        csv: "tbcml.CSV",
+        score_reward_stage_id: int,
+    ):
+        self.map_stage_data_stage = MapStageDataStage()
+        self.map_stage_data_stage.read_csv(index, csv, score_reward_stage_id)
+
+    def apply_map_stage_data_csv(
+        self,
+        index: int,
+        csv: "tbcml.CSV",
+        score_reward_stage_id: int,
+    ):
+        if self.map_stage_data_stage is None:
+            return
+        self.map_stage_data_stage.apply_csv(index, csv, score_reward_stage_id)
 
     def get_original_stage(self, index: int):
         if self.parent_map is None:
@@ -199,6 +396,8 @@ class Stage:
         self.apply_stage_info_vars()
 
     def apply_stage_info_vars(self):
+        if self.stage_csv_data.stage_info is None:
+            self.stage_csv_data.stage_info = StageInfo()
         self.stage_csv_data.stage_info.width = self.width
         self.stage_csv_data.stage_info.base_health = self.base_health
         self.stage_csv_data.stage_info.min_production_frames = (
@@ -210,11 +409,15 @@ class Stage:
         self.stage_csv_data.stage_info.background_id = self.background_id
         self.stage_csv_data.stage_info.max_enemy_count = self.max_enemy_count
         self.stage_csv_data.stage_info.castle_enemy_id = self.castle_enemy_id
-        self.stage_csv_data.stage_info.trial_mode_limit = self.trial_mode_limit
+        self.stage_csv_data.stage_info.trial_mode_duration_mins = (
+            self.trial_mode_duration_mins
+        )
         self.stage_csv_data.stage_info.unknown_1 = self.unknown_1
         self.stage_csv_data.stage_info.unknown_2 = self.unknown_2
 
     def update_stage_info_vars(self):
+        if self.stage_csv_data.stage_info is None:
+            return
         self.width = self.stage_csv_data.stage_info.width
         self.base_health = self.stage_csv_data.stage_info.base_health
         self.min_production_frames = (
@@ -226,7 +429,9 @@ class Stage:
         self.background_id = self.stage_csv_data.stage_info.background_id
         self.max_enemy_count = self.stage_csv_data.stage_info.max_enemy_count
         self.castle_enemy_id = self.stage_csv_data.stage_info.castle_enemy_id
-        self.trial_mode_limit = self.stage_csv_data.stage_info.trial_mode_limit
+        self.trial_mode_duration_mins = (
+            self.stage_csv_data.stage_info.trial_mode_duration_mins
+        )
         self.unknown_1 = self.stage_csv_data.stage_info.unknown_1
         self.unknown_2 = self.stage_csv_data.stage_info.unknown_2
 
