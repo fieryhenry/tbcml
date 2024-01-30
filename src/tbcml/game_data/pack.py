@@ -463,9 +463,14 @@ class GamePacks:
         self,
         file_name: str,
         csv: Optional["tbcml.CSV"] = None,
+        update_cache: bool = True,
     ) -> Optional["GameFile"]:
         if csv is None:
             return None
+
+        if update_cache:
+            self.csv_cache[file_name] = csv.copy()
+
         return self.set_file(file_name, csv.to_data())
 
     def get_img(
