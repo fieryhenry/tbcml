@@ -76,7 +76,7 @@ class GameVersion:
         return f"game_version({self.game_version}) {self.to_string()}"
 
     @staticmethod
-    def from_string(game_version: str) -> "GameVersion":
+    def from_string(game_version: str, raise_error: bool = False) -> "GameVersion":
         """Converts a string to a GameVersion object.
 
         Args:
@@ -94,6 +94,8 @@ class GameVersion:
         try:
             return GameVersion(int(final))
         except ValueError:
+            if raise_error:
+                raise ValueError("Invalid game version!")
             return GameVersion(0)
 
     @staticmethod
