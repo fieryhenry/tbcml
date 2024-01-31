@@ -359,7 +359,8 @@ class Mod:
             modifiction = Mod.modification_from_json((modification_type, dt.to_str()))
             mod.add_modification(modifiction)
 
-    def save(self, path: "tbcml.Path"):
+    def save(self, path: "tbcml.PathStr"):
+        path = tbcml.Path(path)
         self.to_zip().to_file(path)
 
     def add_modification(self, modification: "Modification"):
