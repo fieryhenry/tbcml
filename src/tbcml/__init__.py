@@ -9,6 +9,7 @@ from .mods.bc_mod import (
 from .mods.smali import SmaliHandler, SmaliSet, Smali
 from .mods.frida_script import FridaScript, FridaGadgetHelper
 from .mods.loader import ModLoader
+from .mods.compilation import CompilationTarget
 
 from .game_data.cat_base.item_shop import ItemShop
 from .game_data.cat_base.item_shop import ShopItem, ItemShop
@@ -110,6 +111,7 @@ __all__ = [
     "FridaScript",
     "FridaGadgetHelper",
     "ModLoader",
+    "CompilationTarget",
     "ShopItem",
     "ItemShop",
     "ItemShop",

@@ -41,6 +41,7 @@ class ModPath(enum.Enum):
     GAME_FILES = "game_files"
     APK_FILES = "apk_files"
     LIB_PATCHES = "lib_patches"
+    COMPILATION_TARGETS = "compiled_game_files"
 
 
 T = TypeVar("T")
@@ -198,6 +199,11 @@ class Mod:
         self.smali: tbcml.SmaliSet = tbcml.SmaliSet.create_empty()
         self.patches: tbcml.LibPatches = tbcml.LibPatches.create_empty()
 
+        self.compilation_targets: list[tbcml.CompilationTarget] = []
+
+    def add_compilation_target(self, target: "tbcml.CompilationTarget"):
+        self.compilation_targets.append(target)
+
     def add_apk_file(
         self,
         apk_path: "tbcml.PathStr",
@@ -247,11 +253,16 @@ class Mod:
         self.add_scripts_to_zip(zipfile)
         self.add_game_files_to_zip(zipfile)
         self.add_apk_files_to_zip(zipfile)
+        self.add_compilation_targets_to_zip(zipfile)
 
         self.smali.add_to_zip(zipfile)
         self.patches.add_to_zip(zipfile)
 
         return zipfile.to_data()
+
+    def add_compilation_targets_to_zip(self, zipfile: "tbcml.Zip"):
+        for i, target in enumerate(self.compilation_targets):
+            target.add_to_zip(i, zipfile)
 
     def add_apk_files_to_zip(self, zipfile: "tbcml.Zip"):
         for name, data in self.apk_files.items():
@@ -294,11 +305,22 @@ class Mod:
         Mod.scripts_from_zip(zipfile, mod)
         Mod.game_files_from_zip(zipfile, mod)
         Mod.apk_files_from_zip(zipfile, mod)
+        Mod.compilation_targets_from_zip(zipfile, mod)
 
         mod.smali = tbcml.SmaliSet.from_zip(zipfile)
         mod.patches = tbcml.LibPatches.from_zip(zipfile)
 
         return mod
+
+    @staticmethod
+    def compilation_targets_from_zip(zipfile: "tbcml.Zip", mod: "Mod"):
+        for i in range(
+            len(Mod.get_files_in_mod_path(zipfile, ModPath.COMPILATION_TARGETS))
+        ):
+            target = tbcml.CompilationTarget.from_zip(i, zipfile)
+            if target is None:
+                continue
+            mod.add_compilation_target(target)
 
     @staticmethod
     def get_files_in_mod_path(zipfile: "tbcml.Zip", path_type: ModPath):
@@ -372,9 +394,47 @@ class Mod:
         for modification in self.modifications:
             modification.apply(game_packs)
 
+    def compile_modifications(
+        self,
+        game_packs: "tbcml.GamePacks",
+        existing_target: Optional["tbcml.CompilationTarget"] = None,
+        clear_modifications: bool = True,
+        add_target: bool = True,
+    ):
+        game_packs.clear_log()
+        game_packs.set_log_enabled(True)
+
+        self.apply_modifications(game_packs)
+
+        if existing_target is None:
+            existing_target = tbcml.CompilationTarget(
+                game_packs.country_code.get_code(), game_packs.gv.to_string(), {}
+            )
+
+        for file, data in game_packs.log.items():
+            existing_target.set_file(file, data)
+
+        game_packs.set_log_enabled(False)
+        game_packs.clear_log()
+
+        if clear_modifications:
+            self.modifications.clear()
+
+        if add_target:
+            self.add_compilation_target(existing_target)
+
+        return existing_target
+
     def apply_game_files(self, game_packs: "tbcml.GamePacks"):
         for file, data in self.game_files.items():
             game_packs.set_file(file, data)
+
+    def apply_compilations(self, game_packs: "tbcml.GamePacks"):
+        for target in self.compilation_targets:
+            if not target.check_game_data(game_packs):
+                continue
+            for file, data in target.files.items():
+                game_packs.set_file(file, data)
 
     def apply_apk_files(self, apk: "tbcml.Apk"):
         for file, data in self.apk_files.items():
@@ -383,8 +443,9 @@ class Mod:
             path.write(data)
 
     def apply_to_game_data(self, game_packs: "tbcml.GamePacks"):
-        self.apply_modifications(game_packs)
         self.apply_game_files(game_packs)
+        self.apply_compilations(game_packs)
+        self.apply_modifications(game_packs)
 
     def apply_to_apk(self, apk: "tbcml.Apk"):
         self.apply_apk_files(apk)

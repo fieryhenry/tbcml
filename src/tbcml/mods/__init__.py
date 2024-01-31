@@ -1,11 +1,10 @@
 from tbcml.mods import (
     bc_mod,
+    compilation,
     frida_script,
     smali,
     loader,
 )
-from tbcml.mods import bc_mod
-from tbcml.mods import loader
 
 __all__ = [
     "bc_mod",
@@ -13,4 +12,5 @@ __all__ = [
     "smali",
     "loader",
     "bc_mod",
+    "compilation",
 ]
