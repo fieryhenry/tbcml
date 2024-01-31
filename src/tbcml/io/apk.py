@@ -520,10 +520,7 @@ class Apk:
         Returns:
             game_version.GameVersion: List of APK versions
         """
-        if cc == tbcml.CountryCode.EN or cc == tbcml.CountryCode.JP:
-            versions = Apk.get_all_versions_en(cc)
-            if versions:
-                return versions
+
         url = Apk.get_apk_version_url(cc)
         scraper = cloudscraper.create_scraper()  # type: ignore
         resp = scraper.get(url)
@@ -546,6 +543,10 @@ class Apk:
     def get_latest_version_v1(cc: "tbcml.CountryCode"):
         versions = Apk.get_all_versions(cc)
         if not versions:
+            if cc == tbcml.CountryCode.EN or cc == tbcml.CountryCode.JP:
+                versions = Apk.get_all_versions_en(cc)
+                if versions:
+                    return versions
             return None
         versions.sort(key=lambda version: version.game_version, reverse=True)
 
