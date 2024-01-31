@@ -176,6 +176,10 @@ target = tbcml.CompilationTarget(
 mod.compile_modifications(loader.get_game_packs(), existing_target=target)
 ```
 
+Note that at the moment, this does not merge changes from multiple mods, so if 2
+mods have changes to the same file, only the changes from the last mod will be
+used.
+
 The target_country_codes is a list of country codes (e.g "en,jp,kr,tw")
 or you can put a `!` in front of the country code to exclude it (e.g
 `!jp`). You can put a `*`in front of the country code to match any country code.
