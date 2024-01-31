@@ -402,7 +402,17 @@ class GamePacks:
         self.modified_packs: dict[str, bool] = {}
         self.csv_cache: dict[str, tbcml.CSV] = {}
 
+        self.logging = False
+
+        self.log: dict[str, tbcml.Data] = {}
+
         self.init_data()
+
+    def set_log_enabled(self, enabled: bool):
+        self.logging = enabled
+
+    def clear_log(self):
+        self.log = {}
 
     def init_data(self):
         """Initialize the data objects."""
@@ -598,6 +608,8 @@ class GamePacks:
         """
         if not file_name.strip():
             raise FileNotFoundError("File name cannot be empty")
+        if self.logging:
+            self.log[file_name] = data.copy()
         file = self.find_file(file_name)
         if file is None:
             if GameFile.is_anim(file_name):
