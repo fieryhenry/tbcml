@@ -143,6 +143,8 @@ mod = tbcml.Mod(
 cat = BasicCustomCat()
 mod.add_modification(cat)
 
+mod.save("test.zip") # save the compiled mod to a zip file (optional)
+
 apk.set_app_name("The Battle Cats Basic Mod")
 
 # package name should be different to base game if you want your modded app
@@ -162,6 +164,27 @@ initializing the loader
 ```python
 loader.initialize(allowed_script_mods=False)
 ```
+
+If you have a large mod, you may want to compile the modifications into raw game
+files so that it is faster to load the mod. You can do this by running the
+following code:
+
+```python
+target = tbcml.CompilationTarget(
+    target_country_codes="en", target_game_versions="12.3.0"
+)
+mod.compile_modifications(loader.get_game_packs(), existing_target=target)
+```
+
+The target_country_codes is a list of country codes (e.g "en,jp,kr,tw")
+or you can put a `!` in front of the country code to exclude it (e.g
+`!jp`). You can put a `*`in front of the country code to match any country code.
+
+The target_game_versions is a list of game versions (e.g "11.3.0,12.3.0") or
+you can put a `!` in front of the game version to exclude it (e.g `!11.3.0`).
+You can put a `*`in front of the game version to match any game version. You can
+also use the `>` and `<` operators to match any version greater than or less
+than the specified version (and `>=` and `<=`).
 
 Run the script
 
