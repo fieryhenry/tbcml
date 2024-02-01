@@ -373,7 +373,6 @@ class Map(tbcml.Modification):
         game_data: "tbcml.GamePacks",
     ) -> tuple[Optional[str], Optional["tbcml.CSV"]]:
         file_name = self.map_type.get_map_stage_data_csv_file_name(self.map_index)
-        print(file_name)
         if file_name is None:
             return None, None
         return file_name, game_data.get_csv(file_name)
