@@ -694,7 +694,7 @@ class GamePacks:
 
     def extract(
         self,
-        path: "tbcml.Path",
+        path: "tbcml.PathStr",
         clear: bool = False,
         only_local: bool = False,
     ):
@@ -705,6 +705,7 @@ class GamePacks:
             clear (bool, optional): Whether to clear the path before extracting. Defaults to False.
             only_local (bool, optional): Whether to only extract local packs. Defaults to False.
         """
+        path = tbcml.Path(path)
         if clear:
             path.remove()
         for pack in self.packs.values():
