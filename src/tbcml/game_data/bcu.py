@@ -295,6 +295,8 @@ class BCUForm:
         stats.behemoth_dodge_duration = self.get_proc_time(procs, "BSTHUNT")
         stats.attack_1_use_ability = True
         stats.counter_surge = self.check_ability(base_stats["abi"], 19)
+        stats.summon_id = BCUForm.get_proc_value(procs, "SPIRIT", "id")
+        stats.sage_slayer = self.check_ability(base_stats["abi"], 20)
 
         return stats
 

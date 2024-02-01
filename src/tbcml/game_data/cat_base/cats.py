@@ -200,6 +200,8 @@ class FormStats:
     behemoth_dodge_duration: Optional[int] = None
     unknown_108: Optional[int] = None
     counter_surge: Optional[bool] = None
+    summon_id: Optional[int] = None
+    sage_slayer: Optional[bool] = None
 
     def __post_init__(self):
         self.csv__hp = IntCSVField(col_index=0)
@@ -312,6 +314,8 @@ class FormStats:
         self.csv__behemoth_dodge_duration = IntCSVField(col_index=107)
         self.csv__unknown_108 = IntCSVField(col_index=108)
         self.csv__counter_surge = BoolCSVField(col_index=109)
+        self.csv__summon_id = IntCSVField(col_index=110)
+        self.csv__sage_slayer = BoolCSVField(col_index=111)
 
     def apply_csv(self, form_type: "CatFormType", csv: "tbcml.CSV"):
         index = form_type.get_index()
@@ -1157,10 +1161,11 @@ class Cat(tbcml.Modification):
         game_data.set_csv(name, csv)
 
     def read(self, game_data: "tbcml.GamePacks"):
-        self.read_forms(game_data)
+        success = self.read_forms(game_data)
         self.read_unit_buy(game_data)
         self.read_nyanko_picture_book(game_data)
         self.read_talents(game_data)
+        return success
 
     @staticmethod
     def get_cat_id_str(cat_id: int) -> str:
@@ -1292,7 +1297,7 @@ class Cat(tbcml.Modification):
     def read_talents(self, game_data: "tbcml.GamePacks"):
         self.read_talents_csv(self.get_talents_csv(game_data)[1])
 
-    def read_forms(self, game_data: "tbcml.GamePacks"):
+    def read_forms(self, game_data: "tbcml.GamePacks") -> bool:
         _, name_csv = self.get_name_csv(game_data, self.cat_id)
         _, stat_csv = self.get_stats_csv(game_data, self.cat_id)
 
@@ -1304,7 +1309,7 @@ class Cat(tbcml.Modification):
             total_forms = len(name_csv.lines)
 
         if total_forms is None:
-            raise ValueError("Could not find name or stat csv!")
+            return False
 
         self.forms = {}
 
@@ -1314,6 +1319,8 @@ class Cat(tbcml.Modification):
 
         for form in self.forms.values():
             form.read_csv(name_csv, stat_csv, self.cat_id, game_data)
+
+        return True
 
     def set_form(self, form: CatForm, form_type: Optional["tbcml.CatFormType"] = None):
         if self.forms is None:
