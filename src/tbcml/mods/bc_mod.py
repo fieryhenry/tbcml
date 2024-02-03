@@ -63,8 +63,7 @@ class Modification:
         cls.post_from_json()  # type: ignore
         return cls  # type: ignore
 
-    def apply(self, game_data: "tbcml.GamePacks"):
-        ...
+    def apply(self, game_data: "tbcml.GamePacks"): ...
 
     @staticmethod
     def apply_csv_fields(
@@ -73,6 +72,7 @@ class Modification:
         required_values: Optional[Sequence[tuple[int, Union[str, int]]]] = None,
         remove_others: bool = True,
         field_offset: int = 0,
+        length: Optional[int] = None,
     ):
         if not hasattr(obj, "__dict__"):
             raise ValueError("obj is not a class!")
@@ -103,10 +103,10 @@ class Modification:
             for ind, val in required_values:
                 if ind < original_len:
                     continue
-                csv.set_str(val, ind)
+                csv.set_str(val, ind, length)
             value.uninitialize_csv(csv)
 
-            value.write_to_csv(csv)
+            value.write_to_csv(csv, length)
             value.col_index -= field_offset
 
     @staticmethod
@@ -141,11 +141,9 @@ class Modification:
             new_name = name[len("csv__") :]
             setattr(obj, new_name, value.value)  # type: ignore
 
-    def pre_to_json(self) -> None:
-        ...
+    def pre_to_json(self) -> None: ...
 
-    def post_from_json(self) -> None:
-        ...
+    def post_from_json(self) -> None: ...
 
     def get_custom_html(self) -> str:
         return ""
@@ -289,8 +287,8 @@ class Mod:
             zipfile.add_file(filepath, tbcml.Data(json_data))
 
     @staticmethod
-    def from_file(path: "tbcml.Path"):
-        return Mod.from_zip(path.read())
+    def from_file(path: "tbcml.PathStr"):
+        return Mod.from_zip(tbcml.Path(path).read())
 
     @staticmethod
     def from_zip(data: "tbcml.Data") -> "Mod":
