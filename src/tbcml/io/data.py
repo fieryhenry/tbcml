@@ -45,7 +45,8 @@ class Data:
     def is_empty(self) -> bool:
         return len(self.data) == 0
 
-    def to_file(self, path: "tbcml.Path"):
+    def to_file(self, path: "tbcml.PathStr"):
+        path = tbcml.Path(path)
         with open(path.path, "wb") as f:
             f.write(self.data)
 
