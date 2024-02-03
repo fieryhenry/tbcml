@@ -5,7 +5,7 @@ from typing import Optional
 from marshmallow_dataclass import dataclass
 
 import tbcml
-from tbcml.io.csv_fields import IntCSVField
+from tbcml.io.csv_fields import BoolCSVField, IntCSVField, StringCSVField
 
 
 class MapType(enum.Enum):
@@ -194,6 +194,53 @@ class MapType(enum.Enum):
 
         return f"stage{map_type_str}{map_index_pad_3}_{stage_index_pad_2}.csv"
 
+    def get_map_abs_index(self, map_index: int) -> Optional[int]:
+        if self == MapType.STORIES_OF_LEGEND:
+            return 0 + map_index
+        if self == MapType.REGULAR_EVENT:
+            return 1000 + map_index
+        if self == MapType.COLLAB:
+            return 2000 + map_index
+        if self == MapType.EMPIRE_OF_CATS:
+            return 3000 + map_index
+        if self == MapType.INTO_THE_FUTURE:
+            return 3003 + map_index
+        if self == MapType.CATS_OF_THE_COSMOS:
+            return 3006 + map_index
+        if self == MapType.EXTRA:
+            return 4000 + map_index
+        if self == MapType.DOJO_CATCLAW:
+            return 6000 + map_index
+        if self == MapType.TOWER:
+            return 7000 + map_index
+        if self == MapType.DOJO_RANKING:
+            return 11000 + map_index
+        if self == MapType.CHALLENGE:
+            return 12000 + map_index
+        if self == MapType.UNCANNY_LEGEND:
+            return 13000 + map_index
+        if self == MapType.DRINK:
+            return 14000 + map_index
+        if self == MapType.LEGEND_QUEST:
+            return 16000 + map_index
+        if self == MapType.OUTBREAKS:
+            if map_index < 3:
+                return 20000 + map_index
+            if map_index < 6:
+                return 21000 + (map_index - 3)
+            if map_index < 9:
+                return 22000 + (map_index - 6)
+        if self == MapType.GAUNTLET:
+            return 24000 + map_index
+        if self == MapType.ENGIMA:
+            return 25000 + map_index
+        if self == MapType.COLLAB_GAUNTLET:
+            return 27000 + map_index
+        if self == MapType.BEHEMOTH:
+            return 31000 + map_index
+
+        return None
+
     def get_map_img_code(self) -> Optional[str]:
         if self == MapType.EMPIRE_OF_CATS:
             return "ec"
@@ -333,16 +380,88 @@ class MapStageDataInfo:
 
 
 @dataclass
+class MapOptionInfo:
+    star_count: Optional[int] = None
+    star_multiplier_1: Optional[int] = None
+    star_multiplier_2: Optional[int] = None
+    star_multiplier_3: Optional[int] = None
+    star_multiplier_4: Optional[int] = None
+    guerrilla_set: Optional[int] = None
+    reset_type: Optional[int] = None
+    one_time_display: Optional[bool] = None
+    display_order: Optional[int] = None
+    interval: Optional[int] = None
+    challenge_flag: Optional[bool] = None
+    difficulty_mask: Optional[int] = None
+    hide_after_clear: Optional[bool] = None
+    map_name: Optional[str] = None
+
+    def __post_init__(self):
+        self.csv__star_count = IntCSVField(col_index=1)
+        self.csv__star_multiplier_1 = IntCSVField(col_index=2)
+        self.csv__star_multiplier_2 = IntCSVField(col_index=3)
+        self.csv__star_multiplier_3 = IntCSVField(col_index=4)
+        self.csv__star_multiplier_4 = IntCSVField(col_index=5)
+        self.csv__guerrilla_set = IntCSVField(col_index=6)
+        self.csv__reset_type = IntCSVField(col_index=7)
+        self.csv__one_time_display = BoolCSVField(col_index=8)
+        self.csv__display_order = IntCSVField(col_index=9)
+        self.csv__interval = IntCSVField(col_index=10)
+        self.csv__challenge_flag = BoolCSVField(col_index=11)
+        self.csv__difficulty_mask = IntCSVField(col_index=12)
+        self.csv__hide_after_clear = IntCSVField(col_index=13)
+        self.csv__map_name = StringCSVField(col_index=14)
+
+    @staticmethod
+    def find_index(
+        map_index: int, map_type: MapType, csv: "tbcml.CSV"
+    ) -> Optional[int]:
+        abs_index = map_type.get_map_abs_index(map_index)
+        if abs_index is None:
+            return None
+        for i in range(1, len(csv.lines)):
+            csv.index = i
+            if csv.get_int(0) == abs_index:
+                return i
+        return None
+
+    def apply_csv(self, map_index: int, map_type: MapType, csv: "tbcml.CSV"):
+        index = MapOptionInfo.find_index(map_index, map_type, csv)
+        if index is None:
+            index = len(csv.lines)
+            csv.index = index
+            abs_id = map_type.get_map_abs_index(map_index)
+            if abs_id is not None:
+                csv.set_str(abs_id, 0)
+
+        csv.index = index
+        tbcml.Modification.apply_csv_fields(self, csv, remove_others=False)
+
+    def read_csv(self, map_index: int, map_type: MapType, csv: "tbcml.CSV"):
+        index = MapOptionInfo.find_index(map_index, map_type, csv)
+        if index is None:
+            return
+        csv.index = index
+        tbcml.Modification.read_csv_fields(self, csv)
+
+
+@dataclass
 class Map(tbcml.Modification):
     map_index: int
     map_type: MapType
     stages: list["tbcml.Stage"] = field(default_factory=list)
     map_name_img: Optional["tbcml.BCImage"] = None
     map_stage_data_info: Optional[MapStageDataInfo] = None
+    map_option_info: Optional[MapOptionInfo] = None
     modification_type: tbcml.ModificationType = tbcml.ModificationType.MAP
 
     def __post_init__(self):
         Map.Schema()
+
+    def get_map_option_info(self) -> "MapOptionInfo":
+        if self.map_option_info is None:
+            self.map_option_info = MapOptionInfo()
+        return self.map_option_info
 
     def get_map_stage_data_info(self) -> "MapStageDataInfo":
         if self.map_stage_data_info is None:
@@ -376,6 +495,12 @@ class Map(tbcml.Modification):
         if file_name is None:
             return None, None
         return file_name, game_data.get_csv(file_name)
+
+    def get_map_option_csv(
+        self, game_data: "tbcml.GamePacks"
+    ) -> tuple[str, Optional["tbcml.CSV"]]:
+        filename = "Map_option.csv"
+        return filename, game_data.get_csv(filename)
 
     def get_map_texture(
         self, game_data: "tbcml.GamePacks"
@@ -433,6 +558,17 @@ class Map(tbcml.Modification):
 
         return game_data.set_csv(file_name, csv)
 
+    def apply_map_option_csv(self, game_data: "tbcml.GamePacks"):
+        if not self.map_option_info:
+            return
+        file_name, csv = self.get_map_option_csv(game_data)
+        if csv is None:
+            return
+        map_option_info = self.get_map_option_info()
+        map_option_info.apply_csv(self.map_index, self.map_type, csv)
+
+        return game_data.set_csv(file_name, csv)
+
     def apply_map_texture(self, game_data: "tbcml.GamePacks"):
         map_texture = self.get_map_texture(game_data)
         if map_texture is None:
@@ -480,13 +616,25 @@ class Map(tbcml.Modification):
         if csv is None:
             return
 
-        map_stage_data_info = self.get_map_stage_data_info()
+        map_stage_data_info = MapStageDataInfo()
         map_stage_data_info.read_csv(csv)
+
+        self.map_stage_data_info = map_stage_data_info
 
         for i, stage in enumerate(self.stages):
             stage.read_map_stage_data_csv(
-                i + 2, csv, self.get_map_stage_data_info().score_reward_stage_id or -1
+                i + 2, csv, map_stage_data_info.score_reward_stage_id or -1
             )
+
+    def read_map_option_csv(self, game_data: "tbcml.GamePacks"):
+        _, csv = self.get_map_option_csv(game_data)
+        if csv is None:
+            return
+
+        map_option_info = MapOptionInfo()
+        map_option_info.read_csv(self.map_index, self.map_type, csv)
+
+        self.map_option_info = map_option_info
 
     def read_map_texture(self, game_data: "tbcml.GamePacks"):
         if not self.stages:
@@ -535,12 +683,14 @@ class Map(tbcml.Modification):
         self.apply_stage_name_csv(game_data)
         self.apply_map_name_img(game_data)
         self.apply_map_stage_data_csv(game_data)
+        self.apply_map_option_csv(game_data)
 
     def read(self, game_data: "tbcml.GamePacks"):
         self.read_stages(game_data)
         self.read_stage_name_csv(game_data)
         self.read_map_name_img(game_data)
         self.read_map_stage_data_csv(game_data)
+        self.read_map_option_csv(game_data)
 
     def pre_to_json(self) -> None:
         for stage in self.stages:
