@@ -34,12 +34,12 @@ Note that most of these features a work in progress and may not work properly.
 - [Modification of apk assets](examples/apk/asset_edit.py)
 - BCU Pack Imports
 - Repacking and signing of modified apks
-- [Custom encryption key and iv](examples/apk/custom_enc_key.py) so that your
-  pack files cannot be easily decrypted by other people
+- [Custom encryption key and iv](examples/apk/custom_enc_key.py)
 
 Note that the scripting functionality is very limited, especially in later
 game versions (> 8.4.0) as function and class names have been stripped from the
 binary.
+
 Discord: <https://discord.gg/DvmMgvn5ZB> (The server is the same one which is
 used for save editing as I haven't made a modding specific one
 yet)
@@ -77,7 +77,7 @@ use the scripting features.
 pip install tbcml
 ```
 
-If you want scripting (frida or smali patching or libnative patching), you will
+If you want scripting (frida scripting or libnative patching), you will
 also need to install tbcml[scripting]
 
 ```bash
@@ -155,6 +155,18 @@ apk.set_package_name("jp.co.ponos.battlecats.basicmod")
 loader.apply(mod, open_path=False)
 
 print(apk.final_apk_path)
+```
+
+If you don't want to use inheritance, then you can structure the code like this:
+
+```python
+...
+cat = tbcml.Cat(cat_id=0)
+form = tbcml.CatForm(form_type=tbcml.CatFormType.FIRST, name="Cool Cat")
+form.description = ["First line!", "Second Line!", "Third description line!"]
+cat.set_form(form)
+mod.add_modification(cat)
+...
 ```
 
 If you want to do disable script modding (e.g for security reasons), you will
