@@ -626,6 +626,76 @@ class Map(tbcml.Modification):
                 i + 2, csv, map_stage_data_info.score_reward_stage_id or -1
             )
 
+    def get_stage_option_csv(
+        self, game_data: "tbcml.GamePacks"
+    ) -> tuple[str, Optional["tbcml.CSV"]]:
+        file_name = "Stage_option.csv"
+        return file_name, game_data.get_csv(file_name, remove_comments=False)
+
+    def read_stage_option_csv(self, game_data: "tbcml.GamePacks"):
+        _, csv = self.get_stage_option_csv(game_data)
+        if csv is None:
+            return
+
+        indexes = tbcml.StageOptionInfo.find_indexes(self.map_index, self.map_type, csv)
+        if indexes is None:
+            return
+
+        for stage in self.stages:
+            stage.stage_option_info = []
+
+        for index in indexes:
+            csv.index = index
+            info = tbcml.StageOptionInfo()
+            info.read_csv(csv, index)
+            stage_index = csv.get_int(2)
+            if stage_index == -1:
+                for stage in self.stages:
+                    stage.get_stage_option_info().append(info)
+            else:
+                stage = self.get_stage(stage_index)
+                if not stage:
+                    stage = tbcml.Stage()
+                    self.set_stage_extend(stage_index, stage)
+                stage.get_stage_option_info().append(info)
+
+    def apply_stage_option_csv(self, game_data: "tbcml.GamePacks"):
+        file_name, csv = self.get_stage_option_csv(game_data)
+        if csv is None:
+            return
+
+        indexes = tbcml.StageOptionInfo.find_indexes(self.map_index, self.map_type, csv)
+        if indexes:
+            new_csv_lines: list[list[str]] = []
+            for i, line in enumerate(csv.lines):
+                if i not in indexes:
+                    new_csv_lines.append(line)
+            csv.lines = new_csv_lines
+
+        done_options: list[tuple[int, Optional[int]]] = []  # [stage_id, star_id]
+
+        abs_map_id = self.map_type.get_map_abs_index(self.map_index)
+
+        index = len(csv.lines)
+        for i, stage in enumerate(self.stages):
+            for option in stage.get_stage_option_info():
+                tp = (i, option.star_id)
+                if tp in done_options:
+                    continue
+                csv.index = index
+                csv.set_str(abs_map_id, 0)
+                csv.set_str(i, 2)
+                option.apply_csv(csv, index)
+                done_options.append(tp)
+                index += 1
+
+        game_data.set_csv(file_name, csv)
+
+    def set_stage_extend(self, stage_index: int, stage: "tbcml.Stage"):
+        if stage_index >= len(self.stages):
+            self.stages.extend([tbcml.Stage()] * (stage_index - len(self.stages) + 1))
+        self.stages[stage_index] = stage
+
     def read_map_option_csv(self, game_data: "tbcml.GamePacks"):
         _, csv = self.get_map_option_csv(game_data)
         if csv is None:
@@ -665,6 +735,8 @@ class Map(tbcml.Modification):
 
         self.apply_map_texture(game_data)
 
+        self.apply_stage_option_csv(game_data)
+
     def read_stages(self, game_data: "tbcml.GamePacks"):
         i = 0
         self.stages = []
@@ -677,6 +749,7 @@ class Map(tbcml.Modification):
             i += 1
 
         self.read_map_texture(game_data)
+        self.read_stage_option_csv(game_data)
 
     def apply(self, game_data: "tbcml.GamePacks"):
         self.apply_stages(game_data)

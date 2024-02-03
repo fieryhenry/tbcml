@@ -9,6 +9,70 @@ from tbcml.io.csv_fields import BoolCSVField, IntCSVField, StringCSVField
 
 
 @dataclass
+class StageOptionInfo:
+    star_id: Optional[int] = None
+    rarity_restriction_bit_mask: Optional[int] = None
+    deploy_limit: Optional[int] = None
+    slot_formation_limit: Optional[int] = None
+    deploy_cost_limit_lower: Optional[int] = None
+    deploy_cost_limit_upper: Optional[int] = None
+    group_id: Optional[int] = None
+    reverse_rarity_bits: bool = True
+
+    class Meta:
+        exclude = ["reverse_rarity_bits"]
+
+    def __post_init__(self):
+
+        if self.rarity_restriction_bit_mask is not None and self.reverse_rarity_bits:
+            self.rarity_restriction_bit_mask = int(
+                "{:b}".format(self.rarity_restriction_bit_mask)[::-1], 2
+            )
+
+        self.csv__star_id = IntCSVField(col_index=1)
+        self.csv__rarity_restriction_bit_mask = IntCSVField(col_index=3)
+        self.csv__deploy_limit = IntCSVField(col_index=4)
+        self.csv__slot_formation_limit = IntCSVField(col_index=5)
+        self.csv__deploy_cost_limit_lower = IntCSVField(col_index=6)
+        self.csv__deploy_cost_limit_upper = IntCSVField(col_index=7)
+        self.csv__group_id = IntCSVField(col_index=8)
+
+    @staticmethod
+    def find_indexes(
+        map_id: int,
+        map_type: "tbcml.MapType",
+        csv: "tbcml.CSV",
+    ) -> Optional[list[int]]:
+        abs_map_id = map_type.get_map_abs_index(map_id)
+        if abs_map_id is None:
+            return None
+        indexes: list[int] = []
+        for i in range(1, len(csv.lines)):
+            csv.index = i
+            if csv.get_int(0) == map_id:
+                indexes.append(i)
+        if not indexes:
+            return None
+        return indexes
+
+    def apply_csv(
+        self,
+        csv: "tbcml.CSV",
+        index: int,
+    ):
+        csv.index = index
+        tbcml.Modification.apply_csv_fields(self, csv, remove_others=False, length=9)
+
+    def read_csv(
+        self,
+        csv: "tbcml.CSV",
+        index: int,
+    ):
+        csv.index = index
+        tbcml.Modification.read_csv_fields(self, csv)
+
+
+@dataclass
 class NonStoryStageInfo:
     castle_type: Optional[int] = None
     no_continues: Optional[bool] = None
@@ -106,6 +170,9 @@ class StageEnemyData:
     def read_csv(self, index: int, csv: "tbcml.CSV"):
         csv.index = index
         tbcml.Modification.read_csv_fields(self, csv)
+
+    def copy(self) -> "StageEnemyData":
+        return copy.deepcopy(self)
 
 
 @dataclass
@@ -332,6 +399,8 @@ class Stage:
     name_img: Optional["tbcml.BCImage"] = None
     story_map_name_img: Optional["tbcml.BCImage"] = None
 
+    stage_option_info: Optional[list[StageOptionInfo]] = None
+
     width: Optional[int] = None
     base_health: Optional[int] = None
     min_production_frames: Optional[int] = None
@@ -344,7 +413,18 @@ class Stage:
     unknown_2: Optional[int] = None
 
     class Meta:
-        fields = ["stage_csv_data", "name", "name_img", "story_map_name_img"]
+        fields = [
+            "stage_csv_data",
+            "name",
+            "name_img",
+            "story_map_name_img",
+            "stage_option_info",
+        ]
+
+    def get_stage_option_info(self) -> list[StageOptionInfo]:
+        if self.stage_option_info is None:
+            self.stage_option_info = []
+        return self.stage_option_info
 
     def read_map_stage_data_csv(
         self,
