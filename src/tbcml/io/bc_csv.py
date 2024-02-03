@@ -202,9 +202,12 @@ class CSV:
         self,
         item: Optional[Union[str, int, enum.Enum, bool]],
         index: Optional[int] = None,
+        length: Optional[int] = None,
     ):
         if index is not None:
             self.str_index = index
+        if length is None:
+            length = self.str_index + 1
         line = self.get_current_line()
         if line is None:
             self.extend_to(
@@ -219,10 +222,10 @@ class CSV:
             line[self.str_index] = to_str(item, self.is_int)
         except IndexError:
             if isinstance(item, int):
-                line.extend(["0"] * (self.str_index - len(line)))
+                line.extend(["0"] * (length - len(line)))
             else:
-                line.extend([""] * (self.str_index - len(line)))
-            line.append(to_str(item, self.is_int))
+                line.extend([""] * (length - len(line)))
+            line[self.str_index] = to_str(item, self.is_int)
         self.set_line(line, self.index)
         self.str_index += 1
 
