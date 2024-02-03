@@ -38,11 +38,11 @@ class CSVField(Generic[F]):
             return
         csv.index = self.original_index
 
-    def write_to_csv(self, csv: "tbcml.CSV"):
+    def write_to_csv(self, csv: "tbcml.CSV", length: Optional[int] = None):
         if not self.initialize_csv(csv, writing=True):
             return
         if isinstance(self.value, (str, int, Enum, bool)) or self.value is None:
-            csv.set_str(self.value, self.col_index)
+            csv.set_str(self.value, self.col_index, length)
         else:
             raise ValueError(f"Not Implimented for type: {type(self.value)}")
         self.uninitialize_csv(csv)
@@ -150,7 +150,9 @@ class StrListCSVField(CSVField[list[str]]):
         self.value = csv.get_str_list(self.col_index, self.length, default=default)
         self.uninitialize_csv(csv)
 
-    def write_to_csv(self, csv: "tbcml.CSV"):
+    def write_to_csv(self, csv: "tbcml.CSV", length: Optional[int] = None):
+        if length is None:
+            length = self.length
         if not self.initialize_csv(csv, writing=True):
             return
 
@@ -204,7 +206,9 @@ class StrTupleCSVField(CSVField[tuple[str, ...]]):
         self.value = tuple(value)
         self.uninitialize_csv(csv)
 
-    def write_to_csv(self, csv: "tbcml.CSV"):
+    def write_to_csv(self, csv: "tbcml.CSV", length: Optional[int] = None):
+        if length is None:
+            length = self.length
         if not self.initialize_csv(csv, writing=True):
             return
 
@@ -259,7 +263,9 @@ class IntListCSVField(CSVField[list[int]]):
         self.value = csv.get_int_list(self.col_index, self.length, default=default)
         self.uninitialize_csv(csv)
 
-    def write_to_csv(self, csv: "tbcml.CSV"):
+    def write_to_csv(self, csv: "tbcml.CSV", length: Optional[int] = None):
+        if length is None:
+            length = self.length
         if not self.initialize_csv(csv, writing=True):
             return
 
