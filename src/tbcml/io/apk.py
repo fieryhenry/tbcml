@@ -545,8 +545,7 @@ class Apk:
         if not versions:
             if cc == tbcml.CountryCode.EN or cc == tbcml.CountryCode.JP:
                 versions = Apk.get_all_versions_en(cc)
-                if versions:
-                    return versions
+        if not versions:
             return None
         versions.sort(key=lambda version: version.game_version, reverse=True)
 
