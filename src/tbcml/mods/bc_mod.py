@@ -74,40 +74,39 @@ class Modification:
         field_offset: int = 0,
         length: Optional[int] = None,
     ):
-        if not hasattr(obj, "__dict__"):
-            raise ValueError("obj is not a class!")
-        if required_values is None:
-            required_values = []
+        csv_name_len = len("csv__")
 
-        field_dict: dict[str, Any] = obj.__dict__.copy()
+        cleared_lines: dict[int, bool] = {}
 
-        csv_fields: list[tuple[str, tbcml.CSVField[Any]]] = []
-        for name, value in field_dict.items():
+        for name, value in obj.__dict__.items():
             if isinstance(value, tbcml.CSVField):
                 value.col_index += field_offset
-                new_name = name[len("csv__") :]
+                new_name = name[csv_name_len:]
                 new_value = getattr(obj, new_name)
                 value.value = new_value
 
-                csv_fields.append((name, value))  # type: ignore
+                if remove_others:
+                    value.initialize_csv(csv, writing=True)
+                    if not cleared_lines.get(csv.index):
+                        cleared_lines[csv.index] = True
+                        if csv.index >= len(csv.lines) or csv.lines[csv.index]:
+                            csv.set_line([], csv.index)
+                    value.uninitialize_csv(csv)
 
-        if remove_others:
-            for _, value in csv_fields:
-                value.initialize_csv(csv, writing=True)
-                csv.set_line([], csv.index)
-                value.uninitialize_csv(csv)
+                if required_values:
+                    value.initialize_csv(csv, writing=True)
+                    original_len = 0
+                    if csv.index < len(csv.lines):
+                        original_len = len(csv.lines[csv.index])
 
-        for name, value in csv_fields:
-            value.initialize_csv(csv, writing=True)
-            original_len = len(csv.get_current_line() or [])
-            for ind, val in required_values:
-                if ind < original_len:
-                    continue
-                csv.set_str(val, ind, length)
-            value.uninitialize_csv(csv)
+                    for ind, val in required_values:
+                        if ind < original_len:
+                            continue
+                        csv.set_str(val, ind, length)
+                    value.uninitialize_csv(csv)
 
-            value.write_to_csv(csv, length)
-            value.col_index -= field_offset
+                value.write_to_csv(csv, length)
+                value.col_index -= field_offset
 
     @staticmethod
     def read_csv_fields(
@@ -116,30 +115,25 @@ class Modification:
         required_values: Optional[Sequence[tuple[int, Union[str, int]]]] = None,
         field_offset: int = 0,
     ):
-        if not hasattr(obj, "__dict__"):
-            raise ValueError("obj is not a class!")
+        csv_str_len = len("csv__")
 
-        field_dict: dict[str, Any] = obj.__dict__.copy()
+        for name, value in obj.__dict__.items():
+            if isinstance(value, tbcml.CSVField):
+                value.col_index += field_offset
+                if not required_values:
+                    value.read_from_csv(csv)
+                else:
+                    for ind, val in required_values:
+                        if ind == value.col_index:
+                            value.read_from_csv(csv, default=val)
+                            break
+                    else:
+                        value.read_from_csv(csv)
 
-        for name, value in field_dict.items():
-            if not isinstance(value, tbcml.CSVField):
-                continue
-            value.col_index += field_offset
-            default = None
-            for ind, val in required_values or []:
-                if ind == value.col_index:
-                    default = val
-                    break
+                value.col_index -= field_offset
 
-            if default is None:
-                value.read_from_csv(csv)
-            else:
-                value.read_from_csv(csv, default=default)
-
-            value.col_index -= field_offset
-
-            new_name = name[len("csv__") :]
-            setattr(obj, new_name, value.value)  # type: ignore
+                new_name = name[csv_str_len:]
+                setattr(obj, new_name, value.value)  # type: ignore
 
     def pre_to_json(self) -> None: ...
 

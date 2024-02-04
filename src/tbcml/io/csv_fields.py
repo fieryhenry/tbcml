@@ -157,7 +157,10 @@ class StrListCSVField(CSVField[list[str]]):
             return
 
         if self.length is None:
-            length = len(csv.get_current_line() or [])
+            if csv.index >= len(csv.lines):
+                length = 0
+            else:
+                length = len(csv.lines[csv.index])
         else:
             length = self.length
         if self.value is None:
@@ -213,7 +216,10 @@ class StrTupleCSVField(CSVField[tuple[str, ...]]):
             return
 
         if self.length is None:
-            length = len(csv.get_current_line() or [])
+            if csv.index >= len(csv.lines):
+                length = 0
+            else:
+                length = len(csv.lines[csv.index])
         else:
             length = self.length
         if self.value is None:
@@ -270,7 +276,10 @@ class IntListCSVField(CSVField[list[int]]):
             return
 
         if self.length is None:
-            length = len(csv.get_current_line() or [])
+            if csv.index >= len(csv.lines):
+                length = 0
+            else:
+                length = len(csv.lines[csv.index])
         else:
             length = self.length
         if self.value is None:

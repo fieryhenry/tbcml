@@ -652,7 +652,7 @@ class CatTalents:
         index = CatTalents.find_index(cat_id, csv) or len(csv.lines)
         csv.index = index
         tbcml.Modification.apply_csv_fields(self, csv, remove_others=False)
-        line_length = len(csv.get_current_line() or [])
+        line_length = len(csv.lines[0])
         total_talents = (line_length - 2) // 14
         if total_talents < 0:
             return
@@ -669,7 +669,7 @@ class CatTalents:
             return False
         csv.index = index
         tbcml.Modification.read_csv_fields(self, csv)
-        line_length = len(csv.get_current_line() or [])
+        line_length = len(csv.lines[0])
         total_talents = (line_length - 2) // 14
         if total_talents < 0:
             return False
