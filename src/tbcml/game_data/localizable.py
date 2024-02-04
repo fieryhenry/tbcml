@@ -93,7 +93,7 @@ class Localizable(tbcml.Modification):
         html = "Strings:<br>"
 
         for key, value in self.strings.items():
-            html += f'<span style="color:#000">{key} : {value}</span>'
+            html += f'<span style="color:#000">{key} : {value.value}</span>'
         return html
 
     def set_string(self, key: str, value: str):
