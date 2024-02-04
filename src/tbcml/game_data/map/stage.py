@@ -17,18 +17,8 @@ class StageOptionInfo:
     deploy_cost_limit_lower: Optional[int] = None
     deploy_cost_limit_upper: Optional[int] = None
     group_id: Optional[int] = None
-    reverse_rarity_bits: bool = True
-
-    class Meta:
-        exclude = ["reverse_rarity_bits"]
 
     def __post_init__(self):
-
-        if self.rarity_restriction_bit_mask is not None and self.reverse_rarity_bits:
-            self.rarity_restriction_bit_mask = int(
-                "{:b}".format(self.rarity_restriction_bit_mask)[::-1], 2
-            )
-
         self.csv__star_id = IntCSVField(col_index=1)
         self.csv__rarity_restriction_bit_mask = IntCSVField(col_index=3)
         self.csv__deploy_limit = IntCSVField(col_index=4)
