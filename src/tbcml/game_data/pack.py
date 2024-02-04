@@ -401,12 +401,17 @@ class GamePacks:
         self.gv = gv
         self.modified_packs: dict[str, bool] = {}
         self.csv_cache: dict[str, tbcml.CSV] = {}
+        self.cache: dict[str, GameFile] = {}
 
         self.logging = False
 
         self.log: dict[str, tbcml.Data] = {}
 
         self.init_data()
+
+    def get_log(self):
+        self.apply_all_csvs()
+        return self.log
 
     def set_log_enabled(self, enabled: bool):
         self.logging = enabled
@@ -480,8 +485,13 @@ class GamePacks:
 
         if update_cache:
             self.csv_cache[file_name] = csv.copy()
+            return None
 
         return self.set_file(file_name, csv.to_data())
+
+    def apply_all_csvs(self):
+        for file_name, csv in self.csv_cache.items():
+            self.set_file(file_name, csv.to_data())
 
     def get_img(
         self, file_name: str, show_error: bool = False
@@ -511,6 +521,9 @@ class GamePacks:
         Returns:
             Optional[GameFile]: The file if it exists, None otherwise.
         """
+        file = self.cache.get(file_name)
+        if file is not None:
+            return file
         found_files: list[GameFile] = []
         for pack_name, pack in self.packs.items():
             file = pack.files.get(file_name)
@@ -530,17 +543,23 @@ class GamePacks:
             else:
                 return None
         elif len(found_files) == 1:
+            self.cache[file_name] = found_files[0]
             return found_files[0]
         elif len(found_files) == 2:
             if not PackFile.is_server_pack(found_files[0].pack_name):
+                self.cache[file_name] = found_files[0]
                 return found_files[0]
             elif not PackFile.is_server_pack(found_files[1].pack_name):
+                self.cache[file_name] = found_files[1]
                 return found_files[1]
             elif len(found_files[0].dec_data) > len(found_files[1].dec_data):
+                self.cache[file_name] = found_files[0]
                 return found_files[0]
             elif len(found_files[0].dec_data) < len(found_files[1].dec_data):
+                self.cache[file_name] = found_files[1]
                 return found_files[1]
             else:
+                self.cache[file_name] = found_files[0]
                 return found_files[0]
         else:
             if show_error:
@@ -558,6 +577,7 @@ class GamePacks:
         Returns:
             list[tuple[str, tbcml.Data, tbcml.Data]]: The pack lists. The first element is the pack name, the second is the encrypted pack data, the third is the encrypted list data.
         """
+        self.apply_all_csvs()
         packs_lists: list[tuple[str, "tbcml.Data", "tbcml.Data"]] = []
         should_reencrypt = (
             key is not None or iv is not None
@@ -705,6 +725,7 @@ class GamePacks:
             clear (bool, optional): Whether to clear the path before extracting. Defaults to False.
             only_local (bool, optional): Whether to only extract local packs. Defaults to False.
         """
+        self.apply_all_csvs()
         path = tbcml.Path(path)
         if clear:
             path.remove()

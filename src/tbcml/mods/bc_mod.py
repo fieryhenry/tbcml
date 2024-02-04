@@ -404,14 +404,14 @@ class Mod:
                 game_packs.country_code.get_code(), game_packs.gv.to_string(), {}
             )
 
-        for file, data in game_packs.log.items():
+        for file, data in game_packs.get_log().items():
             existing_target.set_file(file, data)
 
         game_packs.set_log_enabled(False)
         game_packs.clear_log()
 
         if clear_modifications:
-            self.modifications.clear()
+            self.modifications = []
 
         if add_target:
             self.add_compilation_target(existing_target)

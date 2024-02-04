@@ -4,19 +4,14 @@ from typing import Any, Optional, Union
 import tbcml
 
 
-def to_str(
-    item: Optional[Union[str, int, enum.Enum, bool]], is_int: bool = True
-) -> str:
+def to_str(item: Optional[Union[str, int, bool]], is_int: bool = True) -> str:
+    if isinstance(item, (int, str)):
+        return str(item)
     if item is None:
         if is_int:
             return "0"
-        else:
-            return ""
-    if isinstance(item, enum.Enum):
-        item = item.value
-    if isinstance(item, bool):
-        item = int(item)
-    return str(item)
+        return ""
+    return str(int(item))
 
 
 class DelimeterType(enum.Enum):
@@ -159,33 +154,28 @@ class CSV:
 
     def set_str(
         self,
-        item: Optional[Union[str, int, enum.Enum, bool]],
+        item: Optional[Union[str, int, bool]],
         index: int,
         length: Optional[int] = None,
     ):
-        if length is None:
-            length = index + 1
+        if item is None and self.ignore_none:
+            return
         if self.index >= len(self.lines):
             self.extend_to(
                 self.index + 1,
             )
-            line = []
         line = self.lines[self.index]
-        if self.ignore_none and item is None:
-            return line
-        if isinstance(item, enum.Enum):
-            item = item.value
-        try:
+
+        if index < len(line):
             line[index] = to_str(item, self.is_int)
-        except IndexError:
+        else:
+            if length is None:
+                length = index + 1
             if isinstance(item, int):
                 line.extend(["0"] * (length - len(line)))
             else:
                 line.extend([""] * (length - len(line)))
             line[index] = to_str(item, self.is_int)
-        self.set_line(line, self.index)
-
-        return line
 
     def get_str(self, index: int, default: str = "") -> str:
         try:

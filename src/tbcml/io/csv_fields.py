@@ -1,5 +1,4 @@
 from dataclasses import field
-from enum import Enum
 from typing import Any, Generic, Optional, TypeVar
 
 from marshmallow_dataclass import dataclass
@@ -41,10 +40,7 @@ class CSVField(Generic[F]):
     def write_to_csv(self, csv: "tbcml.CSV", length: Optional[int] = None):
         if not self.initialize_csv(csv, writing=True):
             return
-        if isinstance(self.value, (str, int, Enum, bool)) or self.value is None:
-            csv.set_str(self.value, self.col_index, length)
-        else:
-            raise ValueError(f"Not Implimented for type: {type(self.value)}")
+        csv.set_str(self.value, self.col_index, length)  # type: ignore
         self.uninitialize_csv(csv)
 
     def set(self, value: Optional[F]):
