@@ -132,7 +132,6 @@ apk.extract()
 
 # Download server files data
 apk.download_server_files()
-apk.copy_server_files()
 
 # Get the game data
 game_packs = GamePacks.from_apk(apk)
