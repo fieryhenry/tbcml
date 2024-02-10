@@ -752,6 +752,40 @@ class BCUZip:
 
         return None
 
+    def get_bcu_music(
+        self,
+        game_id: int,
+        bcu_index: int,
+    ) -> Optional[tuple["tbcml.AudioFile", "tbcml.SoundSetting"]]:
+        musics: Optional[list[dict[str, Any]]] = self.pack_json.get("musics", {}).get(
+            "data"
+        )
+        if musics is None:
+            return None
+
+        for music in musics:
+            val = music.get("val")
+            if val is None:
+                continue
+            id = val.get("id", {}).get("id")
+            if id == bcu_index:
+                id_str = str(id).zfill(3)
+                file = self.get_file_by_name(f"{id_str}.ogg")
+                if file is None:
+                    continue
+                audio_file = tbcml.AudioFile(game_id, True, file.data)
+
+                loop = val.get("loop")
+                if loop is not None:
+                    loop = bool(loop)
+
+                sound_setting = tbcml.SoundSetting(
+                    game_id, bgm=True, loop=loop, priority=-1
+                )
+                return audio_file, sound_setting
+
+        return None
+
     def get_files_by_dir(self, dir: "tbcml.Path") -> dict[str, BCUFile]:
         files: dict[str, BCUFile] = {}
         for file in self.files:
