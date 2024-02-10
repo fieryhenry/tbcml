@@ -242,7 +242,10 @@ class Apk:
         force: bool = False,
         use_apktool: bool = True,
     ):
-        if self.has_decoded_resources() == decode_resources:
+        if (
+            self.has_decoded_resources() == decode_resources
+            and use_apktool == self.did_use_apktool()
+        ):
             if self.original_extracted_path.has_files() and not force:
                 self.copy_extracted()
                 return True
