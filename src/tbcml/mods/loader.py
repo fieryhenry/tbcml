@@ -63,6 +63,8 @@ class ModLoader:
     def initialize(
         self,
         decode_resources: bool = True,
+        use_apktool: bool = True,
+        force_extract: bool = False,
         print_errors: bool = True,
         allowed_script_mods: bool = True,
         custom_apk_folder: Optional["tbcml.Path"] = None,
@@ -71,13 +73,17 @@ class ModLoader:
         Must be called before doing anything really.
 
         Args:
-            decode_resources (bool, optional): Whether to decode encoded apk resources such as resources.arsc or AndroidManifest.xml. Defaults to True. Should be disabled if apktool fails to pack the apk
+            decode_resources (bool, optional): Whether to decode encoded apk resources such as resources.arsc or AndroidManifest.xml. Defaults to True. Should be disabled if apktool fails to pack the apk. Will be disabled if use_apktool is False
+            use_apktool (bool, optional): Whether to use apktool to extract the apk, disable if apktool isn't supported for your device. If disabled, resources cannot be decoded atm.
+            force_extract (bool, optional): Whether to always extract the apk, even if it has already been extracted before.
             print_errors (bool, optional): Whether to show errors if they occur. Defaults to True.
             allowed_script_mods (bool, optional): If custom scripts / code is able to be loaded into the apk. Defaults to True.
             custom_apk_folder (Optional[tbcml.Path], optional): If you want to specify where the apk is downloaded / extracted to. Defaults to None which means leave as default (Documents/tbcml/APKs).
         """
         self.__get_apk(
             decode_resources=decode_resources,
+            use_apktool=use_apktool,
+            force_extract=force_extract,
             print_errors=print_errors,
             allowed_script_mods=allowed_script_mods,
             custom_apk_folder=custom_apk_folder,
@@ -86,6 +92,8 @@ class ModLoader:
     def __get_apk(
         self,
         decode_resources: bool = True,
+        use_apktool: bool = True,
+        force_extract: bool = False,
         print_errors: bool = True,
         allowed_script_mods: bool = True,
         custom_apk_folder: Optional["tbcml.Path"] = None,
@@ -103,7 +111,11 @@ class ModLoader:
             if print_errors:
                 print("Failed to download apk.")
             return
-        if not self.apk.extract(decode_resources=decode_resources):
+        if not self.apk.extract(
+            decode_resources=decode_resources,
+            use_apktool=use_apktool,
+            force=force_extract,
+        ):
             if print_errors:
                 print("Failed to extract apk.")
             return
@@ -140,6 +152,7 @@ class ModLoader:
         custom_enc_iv: Optional[str] = None,
         open_path: bool = False,
         add_modded_html: bool = True,
+        use_apktool: bool = True,
         raise_error: bool = True,
     ):
         """Applies a mod / mods to the apk to create a modded apk.
@@ -150,6 +163,7 @@ class ModLoader:
             custom_enc_iv (Optional[str], optional): Custom game pack encryption iv, same use case / issues as key as shown above. Defaults to None.
             open_path (bool, optional): Whether to open the folder containing the final apk after everything has been loaded. Defaults to False.
             add_modded_html (bool, optional): Whether to modify the transfer screen to display your current mods. Defaults to True.
+            use_apktool (bool, optional): Whether to use apktool to pack the apk, if False resources will not be encoded.
             raise_error (bool): Whether to raise an error if applying mods fails. Defaults to True
 
         Raises:
@@ -168,6 +182,7 @@ class ModLoader:
             custom_enc_key,
             custom_enc_iv,
             add_modded_html=add_modded_html,
+            use_apktool=use_apktool,
         ):
             if raise_error:
                 raise ValueError("Failed to load mods.")

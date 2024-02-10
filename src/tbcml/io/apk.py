@@ -217,8 +217,8 @@ class Apk:
         print(message)
         return False
 
-    def has_decoded_resources(self, default: bool = True) -> bool:
-        apktool_yml = self.extracted_path.add("apktool.yml")
+    def has_decoded_resources_apktool(self, default: bool = True) -> bool:
+        apktool_yml = self.original_extracted_path.add("apktool.yml")
         if not apktool_yml.exists():
             return default
         yml = tbcml.YamlFile(apktool_yml)
@@ -230,12 +230,42 @@ class Apk:
             return False
         return True
 
-    def extract(self, decode_resources: bool = True, force: bool = False):
-        if self.has_decoded_resources(default=decode_resources) == decode_resources:
+    def did_use_apktool(self) -> bool:
+        return self.original_extracted_path.add("apktool.yml").exists()
+
+    def has_decoded_resources(self) -> bool:
+        return not self.original_extracted_path.add("resources.arsc").exists()
+
+    def extract(
+        self,
+        decode_resources: bool = True,
+        force: bool = False,
+        use_apktool: bool = True,
+    ):
+        if self.has_decoded_resources() == decode_resources:
             if self.original_extracted_path.has_files() and not force:
                 self.copy_extracted()
                 return True
 
+        if use_apktool:
+            return self.extract_apktool(decode_resources)
+        else:
+            return self.extract_zip()  # TODO: decode resources without apktool
+
+    def extract_zip(self):
+        if not self.apk_path.exists():
+            return False
+        temp_path = self.temp_path.add("extraction")
+        with tbcml.TempFolder(path=temp_path) as path:
+            zip_file = tbcml.Zip(self.apk_path.read())
+            zip_file.extract(path)
+            self.original_extracted_path.remove().generate_dirs()
+            path.copy(self.original_extracted_path)
+
+        self.copy_extracted()
+        return True
+
+    def extract_apktool(self, decode_resources: bool = True):
         if not self.check_display_apktool_error():
             return False
         decode_resources_str = "-r" if not decode_resources else ""
@@ -284,7 +314,26 @@ class Apk:
             for dex_file in dex_files:
                 dex_file.remove()
 
-    def pack(self):
+    def pack(self, use_apktool: bool = True):
+        if self.did_use_apktool() != use_apktool:
+            print(self.did_use_apktool())
+            if self.did_use_apktool():
+                print(
+                    "WARNING: apktool was used when extracting, but you have specified to not use it to pack the apk"
+                )
+            else:
+                print(
+                    "WARNING: apktool was not used when extracting, but you have specified to use it to pack the apk"
+                )
+        if use_apktool:
+            return self.pack_apktool()
+        return self.pack_zip()
+
+    def pack_zip(self):
+        tbcml.Zip.compress_directory(self.extracted_path, self.final_apk_path)
+        return True
+
+    def pack_apktool(self):
         if not self.check_display_apktool_error():
             return False
         res = self.run_apktool(f"b {self.extracted_path} -o {self.final_apk_path}")
@@ -399,11 +448,12 @@ class Apk:
         self,
         packs: "tbcml.GamePacks",
         copy_path: Optional["tbcml.Path"] = None,
+        use_apktool: bool = True,
     ) -> bool:
         self.add_packs_lists(packs)
         tbcml.LibFiles(self).patch()
         self.copy_modded_packs()
-        if not self.pack():
+        if not self.pack(use_apktool=use_apktool):
             return False
         if not self.sign():
             return False
@@ -1477,6 +1527,7 @@ class Apk:
         key: Optional[str] = None,
         iv: Optional[str] = None,
         add_modded_html: bool = True,
+        use_apktool: bool = True,
     ) -> bool:
         if game_packs is None:
             game_packs = tbcml.GamePacks.from_apk(self)
@@ -1501,6 +1552,6 @@ class Apk:
 
         self.add_mods_files(mods)
 
-        if not self.load_packs_into_game(game_packs):
+        if not self.load_packs_into_game(game_packs, use_apktool=use_apktool):
             return False
         return True
