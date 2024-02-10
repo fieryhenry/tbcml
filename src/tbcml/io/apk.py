@@ -1367,29 +1367,37 @@ class Apk:
             self.extracted_path.add("assets").add(filename)
         )
 
-    def get_all_audio(self) -> dict[int, tuple[str, "tbcml.Data"]]:
-        audio_files: dict[int, tuple[str, "tbcml.Data"]] = {}
-        file_paths: list[tbcml.Path] = []
+    def get_all_audio(self) -> dict[int, "tbcml.Path"]:
+        audio_files: dict[int, "tbcml.Path"] = {}
         for file in self.extracted_path.get_files():
             if not file.get_extension() == "caf" and not file.get_extension() == "ogg":
                 continue
             base_name = file.get_file_name_without_extension()
             if not base_name.startswith("snd"):
                 continue
-            file_paths.append(file)
+            id_str = base_name.strip("snd")
+            if not id_str.isdigit():
+                continue
+            audio_files[int(id_str)] = file
 
         for file in self.get_server_path().get_files():
             if not file.get_extension() == "caf" and not file.get_extension() == "ogg":
                 continue
-            file_paths.append(file)
-
-        for file in file_paths:
-            id = file.get_file_name_without_extension().strip("snd")
-            if not id.isdigit():
+            id_str = file.get_file_name_without_extension().strip("snd")
+            if not id_str.isdigit():
                 continue
-            audio_files[int(id)] = (file.get_extension(), file.read())
-
+            audio_files[int(id_str)] = file
         return audio_files
+
+    def get_free_audio_id(self, all_audio: Optional[dict[int, "tbcml.Path"]] = None):
+        if all_audio is None:
+            all_audio = self.get_all_audio()
+
+        i = 0
+        while True:
+            if i not in all_audio:
+                return i
+            i += 1
 
     def get_asset(self, asset_name: str) -> "tbcml.Path":
         return self.extracted_path.add("assets").add(asset_name)
