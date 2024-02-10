@@ -12,6 +12,11 @@ from tbcml.io.csv_fields import BoolCSVField, IntCSVField, StringCSVField
 class StageOptionInfo:
     star_id: Optional[int] = None
     rarity_restriction_bit_mask: Optional[int] = None
+    """Bits to restrict the rarity allowed. Least significant bit is normal:
+    legend,uber,super,rare,special,normal
+    e.g
+    0b001001 = allow super and normal 
+    """
     deploy_limit: Optional[int] = None
     slot_formation_limit: Optional[int] = None
     deploy_cost_limit_lower: Optional[int] = None
