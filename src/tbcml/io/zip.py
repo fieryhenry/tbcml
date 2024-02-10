@@ -22,6 +22,15 @@ class Zip:
         )
 
     @staticmethod
+    def compress_directory(directory_path: "tbcml.Path", output_path: "tbcml.Path"):
+        with zipfile.ZipFile(output_path.to_str_forwards(), "w") as zipf:
+            for file in directory_path.get_files_recursive():
+                zipf.write(
+                    file.to_str_forwards(),
+                    file.replace(directory_path.to_str(), "").to_str_forwards(),
+                )
+
+    @staticmethod
     def from_file(path: "tbcml.Path") -> "Zip":
         return Zip(path.read())
 
