@@ -317,22 +317,28 @@ class Apk:
             for dex_file in dex_files:
                 dex_file.remove()
 
-    def pack(self, use_apktool: bool = True):
-        if self.did_use_apktool() != use_apktool:
-            print(self.did_use_apktool())
-            if self.did_use_apktool():
-                print(
-                    "WARNING: apktool was used when extracting, but you have specified to not use it to pack the apk"
-                )
-            else:
-                print(
-                    "WARNING: apktool was not used when extracting, but you have specified to use it to pack the apk"
-                )
+    def pack(self, use_apktool: Optional[bool] = None):
+        if use_apktool is None:
+            use_apktool = self.did_use_apktool()
+        else:
+            if self.did_use_apktool() != use_apktool:
+                if self.did_use_apktool():
+                    print(
+                        "WARNING: apktool was used when extracting, but you have specified to not use it to pack the apk"
+                    )
+                else:
+                    print(
+                        "WARNING: apktool was not used when extracting, but you have specified to use it to pack the apk"
+                    )
         if use_apktool:
             return self.pack_apktool()
         return self.pack_zip()
 
     def pack_zip(self):
+        if self.has_decoded_resources():
+            print(
+                "WARNING: The resources for the apk seem to be decoded, this will cause issues as they will not be encoded atm."
+            )
         tbcml.Zip.compress_directory(self.extracted_path, self.final_apk_path)
         return True
 
@@ -451,7 +457,7 @@ class Apk:
         self,
         packs: "tbcml.GamePacks",
         copy_path: Optional["tbcml.Path"] = None,
-        use_apktool: bool = True,
+        use_apktool: Optional[bool] = None,
     ) -> bool:
         self.add_packs_lists(packs)
         tbcml.LibFiles(self).patch()
@@ -1530,7 +1536,7 @@ class Apk:
         key: Optional[str] = None,
         iv: Optional[str] = None,
         add_modded_html: bool = True,
-        use_apktool: bool = True,
+        use_apktool: Optional[bool] = None,
     ) -> bool:
         if game_packs is None:
             game_packs = tbcml.GamePacks.from_apk(self)

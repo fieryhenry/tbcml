@@ -152,7 +152,7 @@ class ModLoader:
         custom_enc_iv: Optional[str] = None,
         open_path: bool = False,
         add_modded_html: bool = True,
-        use_apktool: bool = True,
+        use_apktool: Optional[bool] = None,
         raise_error: bool = True,
     ):
         """Applies a mod / mods to the apk to create a modded apk.
@@ -163,7 +163,7 @@ class ModLoader:
             custom_enc_iv (Optional[str], optional): Custom game pack encryption iv, same use case / issues as key as shown above. Defaults to None.
             open_path (bool, optional): Whether to open the folder containing the final apk after everything has been loaded. Defaults to False.
             add_modded_html (bool, optional): Whether to modify the transfer screen to display your current mods. Defaults to True.
-            use_apktool (bool, optional): Whether to use apktool to pack the apk, if False resources will not be encoded.
+            use_apktool (Optional[bool], optional): Whether to use apktool to pack the apk, if False resources will not be encoded. If None, it will autodetect the value based on what you did when you extracted the apk
             raise_error (bool): Whether to raise an error if applying mods fails. Defaults to True
 
         Raises:
