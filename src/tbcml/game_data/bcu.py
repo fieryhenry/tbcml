@@ -91,7 +91,7 @@ class BCUForm:
         stats.kbs = base_stats["hb"]
         stats.speed = base_stats["speed"]
         stats.attack_1_damage = base_stats["atks"]["pool"][0]["atk"]
-        stats.attack_interval = base_stats["tba"] // 2
+        stats.attack_interval = base_stats["tba"]
         stats.attack_range = base_stats["range"]
         stats.cost = base_stats["price"]
         stats.recharge_time = base_stats["resp"] // 2
@@ -119,12 +119,16 @@ class BCUForm:
         stats.attacks_only = self.check_ability(base_stats["abi"], 3)
         stats.extra_money = bool(self.get_proc_mult(procs, "BOUNTY") // 100)
         stats.base_destroyer = bool(self.get_proc_mult(procs, "ATKBASE") // 300)
+        stats.wave_prob = max(
+            self.get_proc_prob(procs, "WAVE"), self.get_proc_prob(procs, "MINWAVE")
+        )
         stats.wave_level = max(
             self.get_proc_level(procs, "WAVE"),
             self.get_proc_level(procs, "MINIWAVE"),
         )
         stats.weaken_prob = self.get_proc_prob(procs, "WEAK")
         stats.weaken_duration = self.get_proc_time(procs, "WEAK")
+        stats.weaken_percentage = self.get_proc_mult(procs, "WEAK")
         stats.strengthen_hp_start_percentage = self.get_proc_health(procs, "STRONG")
         stats.strengthen_hp_boost_percentage = self.get_proc_mult(procs, "STRONG")
         stats.lethal_strike_prob = self.get_proc_prob(procs, "LETHAL")
@@ -145,12 +149,13 @@ class BCUForm:
         stats.attacks_before_set_attack_state = base_stats["loop"]
         stats.attack_state = 2 if self.check_ability(base_stats["abi"], 11) else 0
         stats.attack_2_damage = self.get_attack(base_stats["atks"]["pool"], 1, "atk")
-        stats.attack_2_damage = self.get_attack(base_stats["atks"]["pool"], 2, "atk")
+        stats.attack_3_damage = self.get_attack(base_stats["atks"]["pool"], 2, "atk")
         stats.attack_1_foreswing = self.get_attack(base_stats["atks"]["pool"], 0, "pre")
         stats.attack_2_foreswing = self.get_attack(base_stats["atks"]["pool"], 1, "pre")
-        stats.attack_2_foreswing = self.get_attack(base_stats["atks"]["pool"], 2, "pre")
+        stats.attack_3_foreswing = self.get_attack(base_stats["atks"]["pool"], 2, "pre")
+        stats.attack_1_use_ability = True
         stats.attack_2_use_ability = True
-        stats.attack_2_use_ability = True
+        stats.attack_3_use_ability = True
         stats.soul_model_anim_id = base_stats["death"]["id"]
         stats.barrier_break_prob = self.get_proc_prob(procs, "BREAK")
         stats.warp_prob = self.get_proc_prob(procs, "WARP")
@@ -191,11 +196,11 @@ class BCUForm:
             self.get_attack(base_stats["atks"]["pool"], 1, "ld1")
             - stats.attack_2_ld_start
         )
-        stats.attack_2_ld_flag = (
+        stats.attack_3_ld_flag = (
             self.get_attack(base_stats["atks"]["pool"], 2, "ld") != 0
         )
-        stats.attack_2_ld_start = self.get_attack(base_stats["atks"]["pool"], 2, "ld0")
-        stats.attack_2_ld_range = (
+        stats.attack_3_ld_start = self.get_attack(base_stats["atks"]["pool"], 2, "ld0")
+        stats.attack_3_ld_range = (
             self.get_attack(base_stats["atks"]["pool"], 2, "ld1")
             - stats.attack_2_ld_start
         )
@@ -451,7 +456,7 @@ class BCUEnemy:
         stats.kbs = base_stats["hb"]
         stats.speed = base_stats["speed"]
         stats.attack_1_damage = base_stats["atks"]["pool"][0]["atk"]
-        stats.attack_interval = base_stats["tba"] // 2
+        stats.attack_interval = base_stats["tba"]
         stats.attack_range = base_stats["range"]
         stats.money_drop = base_stats["drop"]
         stats.collision_width = base_stats["width"]
@@ -481,8 +486,13 @@ class BCUEnemy:
             BCUForm.get_proc_level(procs, "WAVE"),
             BCUForm.get_proc_level(procs, "MINIWAVE"),
         )
+        stats.wave_prob = max(
+            BCUForm.get_proc_prob(procs, "WAVE"),
+            BCUForm.get_proc_prob(procs, "MINIWAVE"),
+        )
         stats.weaken_prob = BCUForm.get_proc_prob(procs, "WEAK")
         stats.weaken_duration = BCUForm.get_proc_time(procs, "WEAK")
+        stats.weaken_percentage = BCUForm.get_proc_mult(procs, "WEAK")
         stats.strengthen_hp_start_percentage = BCUForm.get_proc_health(procs, "STRONG")
         stats.strengthen_hp_boost_percentage = BCUForm.get_proc_mult(procs, "STRONG")
         stats.survive_lethal_strike_prob = BCUForm.get_proc_prob(procs, "LETHAL")
@@ -506,18 +516,19 @@ class BCUEnemy:
         stats.attacks_before_set_attack_state = base_stats["loop"]
         stats.attack_state = 2 if BCUForm.check_ability(base_stats["abi"], 11) else 0
         stats.attack_2_damage = BCUForm.get_attack(base_stats["atks"]["pool"], 1, "atk")
-        stats.attack_2_damage = BCUForm.get_attack(base_stats["atks"]["pool"], 2, "atk")
+        stats.attack_3_damage = BCUForm.get_attack(base_stats["atks"]["pool"], 2, "atk")
         stats.attack_1_foreswing = BCUForm.get_attack(
             base_stats["atks"]["pool"], 0, "pre"
         )
         stats.attack_2_foreswing = BCUForm.get_attack(
             base_stats["atks"]["pool"], 1, "pre"
         )
-        stats.attack_2_foreswing = BCUForm.get_attack(
+        stats.attack_3_foreswing = BCUForm.get_attack(
             base_stats["atks"]["pool"], 2, "pre"
         )
+        stats.attack_1_use_ability = True
         stats.attack_2_use_ability = True
-        stats.attack_2_use_ability = True
+        stats.attack_3_use_ability = True
         stats.soul_model_anim_id = base_stats["death"]["id"]
         stats.barrier_hp = BCUForm.get_proc_health(procs, "BARRIER")
         stats.warp_prob = BCUForm.get_proc_prob(procs, "WARP")
@@ -571,14 +582,14 @@ class BCUEnemy:
             BCUForm.get_attack(base_stats["atks"]["pool"], 1, "ld1")
             - stats.attack_2_ld_start
         )
-        stats.attack_2_ld_flag = (
+        stats.attack_3_ld_flag = (
             BCUForm.get_attack(base_stats["atks"]["pool"], 2, "ld0") != 0
             or BCUForm.get_attack(base_stats["atks"]["pool"], 2, "ld1") != 0
         )
-        stats.attack_2_ld_start = BCUForm.get_attack(
+        stats.attack_3_ld_start = BCUForm.get_attack(
             base_stats["atks"]["pool"], 2, "ld0"
         )
-        stats.attack_2_ld_range = (
+        stats.attack_3_ld_range = (
             BCUForm.get_attack(base_stats["atks"]["pool"], 2, "ld1")
             - stats.attack_2_ld_start
         )
