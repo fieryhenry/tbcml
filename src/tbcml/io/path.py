@@ -128,13 +128,11 @@ class Path:
 
     @staticmethod
     @typing.overload
-    def join(*paths: str) -> "Path":
-        ...
+    def join(*paths: str) -> "Path": ...
 
     @staticmethod
     @typing.overload
-    def join(*paths: "Path") -> "Path":
-        ...
+    def join(*paths: "Path") -> "Path": ...
 
     @staticmethod
     def join(*paths: typing.Union[str, "Path"]) -> "Path":
@@ -142,12 +140,10 @@ class Path:
         return Path(os.path.join(*_paths))
 
     @typing.overload
-    def add(self, *paths: "Path") -> "Path":
-        ...
+    def add(self, *paths: "Path") -> "Path": ...
 
     @typing.overload
-    def add(self, *paths: str) -> "Path":
-        ...
+    def add(self, *paths: str) -> "Path": ...
 
     def add(self, *paths: typing.Union[str, "Path"]) -> "Path":
         _paths: list[str] = [str(path) for path in paths]
