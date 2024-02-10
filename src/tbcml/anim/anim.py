@@ -102,13 +102,8 @@ class TextureMetadata:
         id = parts[0]
         self.img_name = f"{id}_{form}.png"
 
-    def set_id(self, id: str):
-        if self.img_name is None:
-            raise ValueError("img_name is None!")
-        name = self.img_name
-        parts = name.split("_")
-        form = parts[1]
-        self.img_name = f"{id}_{form}"
+    def set_id(self, id: str, form: str):
+        self.img_name = f"{id}_{form}.png"
 
 
 @dataclass
@@ -168,16 +163,10 @@ class Texture:
     def read_img(self, game_data: "tbcml.GamePacks", img_name: str):
         self.image = game_data.get_img(img_name)
 
-    def set_unit_form(self, form: str):
+    def set_id(self, id: str, form: str):
         if self.metadata.img_name is None:
             raise ValueError("metadata image name cannot be None!")
-        self.metadata.set_unit_form(form)
-        self.imgcut_name = self.metadata.img_name.replace(".png", ".imgcut")
-
-    def set_id(self, id: str):
-        if self.metadata.img_name is None:
-            raise ValueError("metadata image name cannot be None!")
-        self.metadata.set_id(id)
+        self.metadata.set_id(id, form)
         self.imgcut_name = self.metadata.img_name.replace(".png", ".imgcut")
 
     def get_rect(self, id: int) -> Optional["Rect"]:
@@ -755,15 +744,16 @@ class Model(tbcml.Modification):
     def deepcopy(self) -> "Model":
         return copy.deepcopy(self)
 
-    def set_unit_form(self, form: str):
-        self.texture.set_unit_form(form)
+    def set_unit_form(self, id: int, form: str):
+        id_str = tbcml.PaddedInt(id, 3).to_str()
+        self.texture.set_id(id_str, form)
         self.mamodel.set_unit_form(form)
         for anim in self.anims:
             anim.set_unit_form(form)
 
-    def set_id(self, id: int):
+    def set_id(self, id: int, form: str):
         id_str = tbcml.PaddedInt(id, 3).to_str()
-        self.texture.set_id(id_str)
+        self.texture.set_id(id_str, form)
         self.mamodel.set_id(id_str)
         for anim in self.anims:
             anim.set_id(id_str)
