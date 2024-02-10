@@ -5,7 +5,8 @@ import tbcml
 
 
 def to_str(item: Optional[Union[str, int, bool]], is_int: bool = True) -> str:
-    if isinstance(item, (int, str)):
+    item_type = type(item)
+    if item_type == int or item_type == str:
         return str(item)
     if item is None:
         if is_int:
