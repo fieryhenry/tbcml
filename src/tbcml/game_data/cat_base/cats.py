@@ -150,7 +150,7 @@ class FormStats:
     time_before_death: Optional[int] = None
     attack_state: Optional[int] = None
     attack_2_damage: Optional[int] = None
-    attack_3_damange: Optional[int] = None
+    attack_3_damage: Optional[int] = None
     attack_2_foreswing: Optional[int] = None
     attack_3_foreswing: Optional[int] = None
     attack_1_use_ability: Optional[bool] = None
@@ -264,7 +264,7 @@ class FormStats:
         self.csv__time_before_death = IntCSVField(col_index=57)
         self.csv__attack_state = IntCSVField(col_index=58)
         self.csv__attack_2_damage = IntCSVField(col_index=59)
-        self.csv__attack_3_damange = IntCSVField(col_index=60)
+        self.csv__attack_3_damage = IntCSVField(col_index=60)
         self.csv__attack_2_foreswing = IntCSVField(col_index=61)
         self.csv__attack_3_foreswing = IntCSVField(col_index=62)
         self.csv__attack_1_use_ability = BoolCSVField(col_index=63)
@@ -390,7 +390,7 @@ class FormStats:
         self.time_before_death = enemy_stats.time_before_death
         self.attack_state = enemy_stats.attack_state
         self.attack_2_damage = enemy_stats.attack_2_damage
-        self.attack_3_damange = enemy_stats.attack_3_damange
+        self.attack_3_damage = enemy_stats.attack_3_damage
         self.attack_2_foreswing = enemy_stats.attack_2_foreswing
         self.attack_3_foreswing = enemy_stats.attack_3_foreswing
         self.attack_1_use_ability = enemy_stats.attack_1_use_ability

@@ -70,7 +70,7 @@ class EnemyStats:
     spawn_anim_model_id: Optional[int] = None
     soul_model_anim_id: Optional[int] = None
     attack_2_damage: Optional[int] = None
-    attack_3_damange: Optional[int] = None
+    attack_3_damage: Optional[int] = None
     attack_2_foreswing: Optional[int] = None
     attack_3_foreswing: Optional[int] = None
     attack_1_use_ability: Optional[bool] = None
@@ -176,7 +176,7 @@ class EnemyStats:
         self.csv__spawn_anim_model_id = IntCSVField(col_index=53)
         self.csv__soul_model_anim_id = IntCSVField(col_index=54)
         self.csv__attack_2_damage = IntCSVField(col_index=55)
-        self.csv__attack_3_damange = IntCSVField(col_index=56)
+        self.csv__attack_3_damage = IntCSVField(col_index=56)
         self.csv__attack_2_foreswing = IntCSVField(col_index=57)
         self.csv__attack_3_foreswing = IntCSVField(col_index=58)
         self.csv__attack_1_use_ability = BoolCSVField(col_index=59)
