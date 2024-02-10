@@ -40,6 +40,7 @@ from .game_data.map.stage import (
 from .game_data.map.map import Map, MapType
 
 from .game_data.bcu import BCUZip
+from .game_data.misc.sound_setting import SoundSetting
 
 from .anim.anim import Model, Texture, Rect, AnimModificationType, AnimType
 
@@ -75,7 +76,7 @@ from .io.lib import (
 from .io.json_file import JsonFile
 from .io.file_handler import FileSize
 from .io.xml_parse import XML
-from .io.audio import AudioFile, Audio
+from .io.audio import AudioFile
 from .io.bc_image import BCImage
 from .io.bc_image import BCImage
 from .io.zip import Zip
@@ -149,6 +150,7 @@ __all__ = [
     "Map",
     "MapType",
     "BCUZip",
+    "SoundSetting",
     "Model",
     "Texture",
     "Rect",
@@ -177,7 +179,6 @@ __all__ = [
     "FileSize",
     "XML",
     "AudioFile",
-    "Audio",
     "BCImage",
     "BCImage",
     "Zip",

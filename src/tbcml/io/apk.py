@@ -1358,36 +1358,38 @@ class Apk:
             return self.extracted_path.add("res").add("raw")
         return self.extracted_path.add("assets")
 
-    def add_audio(self, audio: "tbcml.AudioFile"):
-        audio.caf_to_little_endian().data.to_file(
-            self.get_pack_location().add(audio.get_apk_name())
+    def add_audio(
+        self,
+        audio_file: "tbcml.AudioFile",
+    ):
+        filename = audio_file.get_apk_file_name()
+        audio_file.caf_to_little_endian().data.to_file(
+            self.extracted_path.add("assets").add(filename)
         )
 
-    def get_all_audio(self) -> "tbcml.Audio":
-        audio_files: dict[str, "tbcml.AudioFile"] = {}
-        for file in self.get_pack_location().get_files():
+    def get_all_audio(self) -> dict[int, tuple[str, "tbcml.Data"]]:
+        audio_files: dict[int, tuple[str, "tbcml.Data"]] = {}
+        file_paths: list[tbcml.Path] = []
+        for file in self.extracted_path.get_files():
             if not file.get_extension() == "caf" and not file.get_extension() == "ogg":
                 continue
-            audio_files[file.basename()] = tbcml.AudioFile.from_file(file)
+            base_name = file.get_file_name_without_extension()
+            if not base_name.startswith("snd"):
+                continue
+            file_paths.append(file)
+
         for file in self.get_server_path().get_files():
             if not file.get_extension() == "caf" and not file.get_extension() == "ogg":
                 continue
-            audio_files[file.basename()] = tbcml.AudioFile.from_file(file)
+            file_paths.append(file)
 
-        return tbcml.Audio(audio_files)
+        for file in file_paths:
+            id = file.get_file_name_without_extension().strip("snd")
+            if not id.isdigit():
+                continue
+            audio_files[int(id)] = (file.get_extension(), file.read())
 
-    def find_audio_path(self, audio: "tbcml.AudioFile") -> Optional["tbcml.Path"]:
-        for file in self.get_pack_location().get_files():
-            if not file.get_extension() == "caf" and not file.get_extension() == "ogg":
-                continue
-            if file.basename() == audio.get_apk_name():
-                return file
-        for file in self.get_server_path().get_files():
-            if not file.get_extension() == "caf" and not file.get_extension() == "ogg":
-                continue
-            if file.basename() == audio.get_apk_name():
-                return file
-        return None
+        return audio_files
 
     def get_asset(self, asset_name: str) -> "tbcml.Path":
         return self.extracted_path.add("assets").add(asset_name)

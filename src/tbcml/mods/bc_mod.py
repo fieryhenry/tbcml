@@ -11,6 +11,7 @@ class ModificationType(enum.Enum):
     SHOP = "shop"
     LOCALIZABLE = "localizable"
     MAP = "map"
+    SOUND_SETTING = "sound_setting"
 
     @staticmethod
     def from_str_value(string: str) -> Optional["ModificationType"]:
@@ -30,6 +31,8 @@ class ModificationType(enum.Enum):
             return tbcml.Localizable
         if self == ModificationType.MAP:
             return tbcml.Map
+        if self == ModificationType.SOUND_SETTING:
+            return tbcml.SoundSetting
         raise NotImplementedError()
 
 
@@ -40,6 +43,7 @@ class ModPath(enum.Enum):
     SMALI = "smali"
     GAME_FILES = "game_files"
     APK_FILES = "apk_files"
+    AUDIO_FILES = "audio_files"
     LIB_PATCHES = "lib_patches"
     COMPILATION_TARGETS = "compiled_game_files"
 
@@ -58,10 +62,10 @@ class Modification:
         return self.Schema().dumps(self)  # type: ignore
 
     @staticmethod
-    def from_json(obj: type[T], data: str) -> T:
-        cls = obj.Schema().loads(data)  # type: ignore
-        cls.post_from_json()  # type: ignore
-        return cls  # type: ignore
+    def from_json(obj: Any, data: str) -> Any:
+        cls = obj.Schema().loads(data)
+        cls.post_from_json()
+        return cls
 
     def apply(self, game_data: "tbcml.GamePacks"): ...
 
@@ -187,6 +191,7 @@ class Mod:
 
         self.game_files: dict[str, tbcml.Data] = {}
         self.apk_files: dict[tbcml.Path, tbcml.Data] = {}
+        self.audio_files: dict[int, tbcml.AudioFile] = {}
 
         self.smali: tbcml.SmaliSet = tbcml.SmaliSet.create_empty()
         self.patches: tbcml.LibPatches = tbcml.LibPatches.create_empty()
@@ -211,6 +216,38 @@ class Mod:
             raise ValueError("Either local_path or data must be specified!")
         path = tbcml.Path(apk_path)
         self.apk_files[path] = data
+
+    def add_audio_file_data(
+        self,
+        id: int,
+        data: "tbcml.Data",
+        is_bgm: bool,
+        sound_setting: Optional["tbcml.SoundSetting"] = None,
+    ):
+        audio_file = tbcml.AudioFile(id, is_bgm, data)
+        self.add_audio_file(audio_file, sound_setting)
+
+    def add_audio_file(
+        self,
+        audio_file: "tbcml.AudioFile",
+        sound_setting: Optional["tbcml.SoundSetting"],
+    ):
+        if sound_setting is None:
+            sound_setting = tbcml.SoundSetting(audio_file.id, bgm=audio_file.is_bgm)
+
+        self.add_modification(sound_setting)
+
+        self.audio_files[audio_file.id] = audio_file
+
+    def add_audio_file_path(
+        self,
+        id: int,
+        path: "tbcml.PathStr",
+        is_bgm: bool,
+        sound_setting: Optional["tbcml.SoundSetting"] = None,
+    ):
+        path = tbcml.Path(path)
+        self.add_audio_file_data(id, path.read(), is_bgm, sound_setting)
 
     def metadata_to_json(self) -> str:
         data = {
@@ -245,6 +282,7 @@ class Mod:
         self.add_scripts_to_zip(zipfile)
         self.add_game_files_to_zip(zipfile)
         self.add_apk_files_to_zip(zipfile)
+        self.add_audio_files_to_zip(zipfile)
         self.add_compilation_targets_to_zip(zipfile)
 
         self.smali.add_to_zip(zipfile)
@@ -260,6 +298,14 @@ class Mod:
         for name, data in self.apk_files.items():
             path = tbcml.Path(ModPath.APK_FILES.value).add(name)
             zipfile.add_file(path, data)
+
+    def add_audio_files_to_zip(self, zipfile: "tbcml.Zip"):
+        for id, audio in self.audio_files.items():
+            ext = audio.get_sound_format()
+            path = tbcml.Path(ModPath.AUDIO_FILES.value).add(
+                f"{str(id).zfill(3)}.{ext}"
+            )
+            zipfile.add_file(path, audio.data)
 
     def add_game_files_to_zip(self, zipfile: "tbcml.Zip"):
         for name, data in self.game_files.items():
@@ -297,6 +343,7 @@ class Mod:
         Mod.scripts_from_zip(zipfile, mod)
         Mod.game_files_from_zip(zipfile, mod)
         Mod.apk_files_from_zip(zipfile, mod)
+        Mod.audio_files_from_zip(zipfile, mod)
         Mod.compilation_targets_from_zip(zipfile, mod)
 
         mod.smali = tbcml.SmaliSet.from_zip(zipfile)
@@ -325,6 +372,19 @@ class Mod:
             if data is not None:
                 key = path.remove_prefix(ModPath.APK_FILES.value)
                 mod.apk_files[key] = data
+
+    @staticmethod
+    def audio_files_from_zip(zipfile: "tbcml.Zip", mod: "Mod"):
+        for path in Mod.get_files_in_mod_path(zipfile, ModPath.AUDIO_FILES):
+            data = zipfile.get_file(path)
+            if data is not None:
+                key = path.basename()
+                if not key.isdigit():
+                    continue
+                key = int(key)
+                is_bgm = tbcml.AudioFile.get_is_bgm(path.get_extension())
+                audio_file = tbcml.AudioFile(key, is_bgm, data)
+                mod.audio_files[key] = audio_file
 
     @staticmethod
     def game_files_from_zip(zipfile: "tbcml.Zip", mod: "Mod"):
@@ -435,6 +495,10 @@ class Mod:
             path.parent().generate_dirs()
             path.write(data)
 
+    def apply_audio_files(self, apk: "tbcml.Apk"):
+        for audio in self.audio_files.values():
+            apk.add_audio(audio)
+
     def apply_to_game_data(self, game_packs: "tbcml.GamePacks"):
         self.apply_game_files(game_packs)
         self.apply_compilations(game_packs)
@@ -442,6 +506,7 @@ class Mod:
 
     def apply_to_apk(self, apk: "tbcml.Apk"):
         self.apply_apk_files(apk)
+        self.apply_audio_files(apk)
 
     def modifications_to_json(self) -> list[tuple[str, str]]:
         data: list[tuple[str, str]] = []
