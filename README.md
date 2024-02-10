@@ -157,6 +157,19 @@ loader.apply(mod, open_path=False)
 print(apk.final_apk_path)
 ```
 
+If apktool isn't supported for your achitecture, you can set
+`use_apktool=False` when creating the apk object / initializing the loader. This
+will just extract the apk like a zip file and then repackage it like a zip file.
+
+However, this does not decode the resources, so you will not be able to modify
+stuff such as the app name, package name, or other resources. You can still
+modify the game data though. In the future, I may add support for decoding and
+encoding resources without apktool.
+
+```python
+loader.initialize(use_apktool=False)
+```
+
 If you don't want to use inheritance, then you can structure the code like this:
 
 ```python
