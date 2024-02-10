@@ -266,7 +266,7 @@ class Enemy(tbcml.Modification):
     def set_enemy_id(self, id: int):
         self.enemy_id = id
         if self.anim is not None:
-            self.anim.set_id(id)
+            self.anim.set_id(id, "e")
 
     def get_release_id(self) -> int:
         return self.enemy_id + 2
@@ -427,3 +427,11 @@ class Enemy(tbcml.Modification):
         maanim_paths.append(f"{enemy_id_str}_e_entry.maanim")
         maanim_paths.append(f"{enemy_id_str}_e_soul.maanim")
         return maanim_paths
+
+    def import_from_bcu(self, bcu_zip: "tbcml.BCUZip", bcu_id: int) -> bool:
+        bcu_enemy = bcu_zip.get_bcu_enemy(self.enemy_id, bcu_id)
+        if bcu_enemy is None:
+            return False
+
+        bcu_enemy.write_to_enemy(self)
+        return True

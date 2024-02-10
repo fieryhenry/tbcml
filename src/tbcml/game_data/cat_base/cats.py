@@ -333,6 +333,7 @@ class FormStats:
             (57, -1),
             (63, 1),
             (66, -1),
+            (110, -1),
         ]
 
         return required
@@ -1024,8 +1025,8 @@ class CatForm:
         if enemy.anim is not None:
             self.anim = enemy.anim.deepcopy()
             self.anim.flip_x()
-            self.anim.set_unit_form(self.form_type.value)
-            self.anim.set_id(cat_id)
+            self.anim.set_unit_form(cat_id, self.form_type.value)
+            self.anim.set_id(cat_id, self.form_type.value)
             self.anim.mamodel.dup_ints()
 
         if enemy.icon is not None:
@@ -1067,15 +1068,15 @@ class CatForm:
 
     def set_cat_id(self, id: int):
         if self.anim is not None:
-            self.anim.set_id(id)
+            self.anim.set_id(id, self.form_type.value)
 
-    def set_form(self, form: Union[int, "tbcml.CatFormType"]):
+    def set_form(self, form: Union[int, "tbcml.CatFormType"], cat_id: int):
         if isinstance(form, int):
             form = tbcml.CatFormType.from_index(form)
 
         self.form_type = form
         if self.anim is not None:
-            self.anim.set_unit_form(form.value)
+            self.anim.set_unit_form(cat_id, form.value)
 
 
 @dataclass
@@ -1120,6 +1121,20 @@ class Cat(tbcml.Modification):
 
     def __post_init__(self):
         Cat.Schema()
+
+    def get_form(self, form: Union[int, "tbcml.CatFormType"]):
+        if isinstance(form, int):
+            form = tbcml.CatFormType.from_index(form)
+
+        if self.forms is None:
+            self.forms = {}
+
+        form_obj = self.forms.get(form)
+        if form_obj is None:
+            form_obj = CatForm(form)
+            self.forms[form] = form_obj
+
+        return form_obj
 
     def get_talents(self) -> CatTalents:
         if self.talents is None:
@@ -1348,3 +1363,11 @@ class Cat(tbcml.Modification):
         if self.forms is not None:
             for form in self.forms.values():
                 form.set_cat_id(id)
+
+    def import_from_bcu(self, bcu_zip: "tbcml.BCUZip", bcu_id: int) -> bool:
+        bcu_cat = bcu_zip.get_bcu_cat(self.cat_id, bcu_id)
+        if bcu_cat is None:
+            return False
+
+        bcu_cat.write_to_cat(self)
+        return True
