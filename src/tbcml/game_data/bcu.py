@@ -632,6 +632,11 @@ class BCUZip:
         self.json, self.files = self.decrypt(enc_data)
         self.pack_json = self.get_pack_json()
 
+    @staticmethod
+    def from_file(path: "tbcml.PathStr"):
+        path = tbcml.Path(path)
+        return BCUZip(path.read())
+
     def get_key_iv(self, enc_data: "tbcml.Data"):
         if len(enc_data) < 0x20:
             raise InvalidBCUZipException("BCU Zip file is too small for header info!")
