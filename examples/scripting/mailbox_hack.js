@@ -1,27 +1,18 @@
 let presents_url = "{{PRESENTS_URL}}"
 let is_file = "{{IS_FILE}}"
 
+let func_name = "_ZN5Botan11PK_Verifier14verify_messageEPKhjS2_j" // 32 bit
+
 if (is_64_bit()) {
-    let func_name = "_ZN5Botan11PK_Verifier14verify_messageEPKhmS2_m" // 64 bit
-
-    // Botan::PK_Verifier::verify_message(unsigned char const*, unsigned long, unsigned char const*, unsigned long)
-    Interceptor.attach(Module.findExportByName("libnative-lib.so", func_name), {
-        onLeave: function (retval) {
-            retval.replace(0x1)
-        }
-    })
-}
-else {
-    let func_name = "_ZN5Botan11PK_Verifier14verify_messageEPKhjS2_j" // 32 bit
-
-    // Botan::PK_Verifier::verify_message(unsigned char const*, unsigned long, unsigned char const*, unsigned long)
-    Interceptor.attach(Module.findExportByName("libnative-lib.so", func_name), {
-        onLeave: function (retval) {
-            retval.replace(0x1)
-        }
-    })
+    func_name = "_ZN5Botan11PK_Verifier14verify_messageEPKhmS2_m" // 64 bit
 }
 
+// Botan::PK_Verifier::verify_message(unsigned char const*, unsigned long, unsigned char const*, unsigned long)
+Interceptor.attach(Module.findExportByName("libnative-lib.so", func_name), {
+    onLeave: function (retval) {
+        retval.replace(0x1)
+    }
+})
 
 function get_nonce_from_url(url) {
     if (!url.toString().includes("nonce=")) {
