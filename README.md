@@ -191,8 +191,8 @@ loader.initialize(allowed_script_mods=False)
 ```
 
 If you have a large mod, you may want to compile the modifications into raw game
-files so that it is faster to load the mod. You can do this by running the
-following code:
+files so that it is faster to load the mod (Also useful when debugging). You can
+do this by running the following code:
 
 ```python
 target = tbcml.CompilationTarget(
