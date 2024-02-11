@@ -146,7 +146,7 @@ class MapType(enum.Enum):
         map_index_pad_3 = str(map_index).zfill(3)
         if self == MapType.INTO_THE_FUTURE:
             map_str = str(map_index + 4).zfill(2)
-            return f"stageItF{map_str}_{stage_index_pad_2}.csv"
+            return f"stageW{map_str}_{stage_index_pad_2}.csv"
         if self == MapType.CATS_OF_THE_COSMOS:
             map_str = str(map_index + 7).zfill(2)
             return f"stageSpace{map_str}_{stage_index_pad_2}.csv"
