@@ -217,19 +217,6 @@ class Apk:
         print(message)
         return False
 
-    def has_decoded_resources_apktool(self, default: bool = True) -> bool:
-        apktool_yml = self.original_extracted_path.add("apktool.yml")
-        if not apktool_yml.exists():
-            return default
-        yml = tbcml.YamlFile(apktool_yml)
-        version_info = yml.get("versionInfo")
-        if version_info is None:
-            return default
-        version_code = version_info.get("versionCode")
-        if version_code is None:
-            return False
-        return True
-
     def did_use_apktool(self) -> bool:
         return self.original_extracted_path.add("apktool.yml").exists()
 
