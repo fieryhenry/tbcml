@@ -509,6 +509,14 @@ class GamePacks:
         file = self.set_file(file_name, img.to_data())
         return file
 
+    def delete_file(self, file_name: str):
+        file = self.find_file(file_name)
+        if file is None:
+            return False
+
+        del self.packs[file.pack_name].files[file.file_name]
+        return True
+
     def find_file(
         self, file_name: str, show_error: bool = False
     ) -> Optional["GameFile"]:
