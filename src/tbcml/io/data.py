@@ -224,6 +224,10 @@ class Data:
             bytes_data += integer.to_bytes(4, endianess)
         return Data(bytes_data)
 
+    @staticmethod
+    def from_int(val: int, endianness: Literal["little", "big"]):
+        return Data(val.to_bytes(4, endianness))
+
     def strip(self) -> "Data":
         return Data(self.data.strip())
 
