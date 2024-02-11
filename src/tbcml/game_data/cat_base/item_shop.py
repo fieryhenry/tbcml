@@ -56,6 +56,7 @@ class ShopItem:
 class ItemShop(tbcml.Modification):
     items: Optional[dict[int, "ShopItem"]] = None
     texture: Optional["tbcml.Texture"] = None
+    total_items: Optional[int] = None
     modification_type: tbcml.ModificationType = tbcml.ModificationType.SHOP
 
     def get_texture(self) -> "tbcml.Texture":
@@ -124,6 +125,16 @@ class ItemShop(tbcml.Modification):
         for item in self.items.values():
             item.apply_csv(csv)
 
+        if self.total_items is not None:
+            new_lines: list[list[str]] = [csv.lines[0]]
+            for i in range(len(csv.lines[1:])):
+                index = i + 1
+                csv.index = index
+                if csv.get_int(0, default=-1) in range(self.total_items):
+                    new_lines.append(csv.lines[index])
+
+            csv.lines = new_lines
+
         game_data.set_csv(file_name, csv)
 
     def read(self, game_data: "tbcml.GamePacks"):
@@ -138,8 +149,7 @@ class ItemShop(tbcml.Modification):
         if self.texture is not None:
             self.texture.save_b64()
 
-    def get_custom_html(self) -> str:
-        ...
+    def get_custom_html(self) -> str: ...
 
     def set_item(self, item: "ShopItem", shop_id: Optional[int] = None):
         if shop_id is not None:
