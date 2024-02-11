@@ -23,15 +23,12 @@ class Patch:
     def __init__(self):
         pass
 
-    def apply_patch(self, lib: "Lib"):
-        ...
+    def apply_patch(self, lib: "Lib"): ...
 
-    def serialize(self) -> dict[str, Any]:
-        ...
+    def serialize(self) -> dict[str, Any]: ...
 
     @staticmethod
-    def deserialize(data: dict[str, Any]) -> Any:
-        ...
+    def deserialize(data: dict[str, Any]) -> Any: ...
 
 
 class FuncPatch(Patch):
@@ -438,7 +435,6 @@ class LibFiles:
         duplicates: dict[tbcml.Path, list[tbcml.Path]] = {}
         original_data_dict: dict[str, tbcml.Data] = {}
         for pack in self.modified_packs:
-            duplicates[pack] = []
             pack_base_name = pack.basename()
             original_pack_path = self.get_pack_folder_original().add(pack_base_name)
             if pack_base_name.endswith("1.pack") and self.apk.is_java():
@@ -459,7 +455,10 @@ class LibFiles:
                 if orignal_pack_path_data is None:
                     orignal_pack_path_data = original_pack_path.read()
                     original_data_dict[pack_base_name] = orignal_pack_path_data
+
                 if orignal_pack_path_data.to_bytes() == original_data.to_bytes():
+                    if pack not in duplicates:
+                        duplicates[pack] = []
                     duplicates[pack].append(original)
 
         return duplicates
