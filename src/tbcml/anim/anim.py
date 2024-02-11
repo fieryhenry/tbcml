@@ -154,6 +154,7 @@ class Texture:
 
     def read_img(self, game_data: "tbcml.GamePacks", img_name: str):
         self.image = game_data.get_img(img_name)
+        self.metadata.img_name = img_name
 
     def set_id(self, id: str, form: str):
         if self.metadata.img_name is None:
@@ -241,6 +242,7 @@ class Texture:
         if csv is None:
             return
         self.read_csv(csv, imgcut_name)
+        self.metadata.img_name = img_name
 
 
 @dataclass
