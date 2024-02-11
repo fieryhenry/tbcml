@@ -94,14 +94,6 @@ class TextureMetadata:
     def apply_csv(self, csv: "tbcml.CSV"):
         tbcml.Modification.apply_csv_fields(self, csv)
 
-    def set_unit_form(self, form: str):
-        if self.img_name is None:
-            raise ValueError("img_name is None!")
-        name = self.img_name
-        parts = name.split("_")
-        id = parts[0]
-        self.img_name = f"{id}_{form}.png"
-
     def set_id(self, id: str, form: str):
         self.img_name = f"{id}_{form}.png"
 
