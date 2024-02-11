@@ -36,7 +36,11 @@ class ModLoader:
 
     """
 
-    def __init__(self, country_code: "tbcml.CC", game_version: "tbcml.GV"):
+    def __init__(
+        self,
+        country_code: "tbcml.CC",
+        game_version: "tbcml.GV",
+    ):
         """Initialize ModLoader
 
         Args:
@@ -68,6 +72,7 @@ class ModLoader:
         print_errors: bool = True,
         allowed_script_mods: bool = True,
         custom_apk_folder: Optional["tbcml.Path"] = None,
+        lang: Optional["tbcml.LanguageStr"] = None,
     ):
         """Initializes the mod loader, loads apk + game packs.
         Must be called before doing anything really.
@@ -80,6 +85,9 @@ class ModLoader:
             allowed_script_mods (bool, optional): If custom scripts / code is able to be loaded into the apk. Defaults to True.
             custom_apk_folder (Optional[tbcml.Path], optional): If you want to specify where the apk is downloaded / extracted to. Defaults to None which means leave as default (Documents/tbcml/APKs).
         """
+        if isinstance(lang, str):
+            lang = tbcml.Language(lang)
+
         self.__get_apk(
             decode_resources=decode_resources,
             use_apktool=use_apktool,
@@ -87,6 +95,7 @@ class ModLoader:
             print_errors=print_errors,
             allowed_script_mods=allowed_script_mods,
             custom_apk_folder=custom_apk_folder,
+            lang=lang,
         )
 
     def __get_apk(
@@ -94,6 +103,7 @@ class ModLoader:
         decode_resources: bool = True,
         use_apktool: bool = True,
         force_extract: bool = False,
+        lang: Optional["tbcml.Language"] = None,
         print_errors: bool = True,
         allowed_script_mods: bool = True,
         custom_apk_folder: Optional["tbcml.Path"] = None,
@@ -120,7 +130,7 @@ class ModLoader:
                 print("Failed to extract apk.")
             return
         try:
-            self.apk.download_server_files()
+            self.apk.download_server_files(lang=lang, display=bool(download_progress))
         except tbcml.GameVersionSearchError:
             # old versions (<7.0) aren't supported for downloading game files atm + some really old versions don't have any
             if print_errors:
@@ -128,7 +138,7 @@ class ModLoader:
                     "Please use a newer version of the game to download server files."
                 )
 
-        self.game_packs = tbcml.GamePacks.from_apk(self.apk)
+        self.game_packs = tbcml.GamePacks.from_apk(self.apk, lang=lang)
 
     def get_game_packs(self) -> "tbcml.GamePacks":
         """Gets the game packs from a ModLoader instance, will never be None, unlike .game_packs attribute
@@ -177,10 +187,10 @@ class ModLoader:
             mods = [mods]
 
         if not self.apk.load_mods(
-            mods,
-            self.game_packs,
-            custom_enc_key,
-            custom_enc_iv,
+            mods=mods,
+            game_packs=self.game_packs,
+            key=custom_enc_key,
+            iv=custom_enc_iv,
             add_modded_html=add_modded_html,
             use_apktool=use_apktool,
         ):

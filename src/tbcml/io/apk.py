@@ -430,8 +430,6 @@ class Apk:
     ):
         files = packs.to_packs_lists(self.key, self.iv)
         for pack_name, pack_data, list_data in files:
-            if len(pack_name.split("_")) > 1:
-                continue
             self.add_pack_list(pack_name, pack_data, list_data)
 
     def add_pack_list(
@@ -567,7 +565,25 @@ class Apk:
         return versions
 
     @staticmethod
-    def get_all_versions(
+    def get_all_versions(cc: "tbcml.CountryCode"):
+        versions: set[int] = set()
+        versions.update([gv.game_version for gv in Apk.get_all_versions_v1(cc)])
+        if cc == tbcml.CountryCode.EN or cc == tbcml.CountryCode.JP:
+            versions.update([gv.game_version for gv in Apk.get_all_versions_en(cc)])
+        versions.update([gv.game_version for gv in Apk.get_all_versions_v2(cc)])
+
+        versions_ls: list[int] = list(versions)
+        versions_ls.sort()
+
+        versions_obj: list[tbcml.GameVersion] = []
+
+        for v in versions:
+            versions_obj.append(tbcml.GameVersion(v))
+
+        return versions_obj
+
+    @staticmethod
+    def get_all_versions_v1(
         cc: "tbcml.CountryCode",
     ) -> list["tbcml.GameVersion"]:
         """
@@ -600,7 +616,7 @@ class Apk:
 
     @staticmethod
     def get_latest_version_v1(cc: "tbcml.CountryCode"):
-        versions = Apk.get_all_versions(cc)
+        versions = Apk.get_all_versions_v1(cc)
         if not versions:
             if cc == tbcml.CountryCode.EN or cc == tbcml.CountryCode.JP:
                 versions = Apk.get_all_versions_en(cc)
@@ -974,8 +990,9 @@ class Apk:
         self,
         display: bool = False,
         force: bool = False,
+        lang: Optional["tbcml.Language"] = None,
     ):
-        sfh = tbcml.ServerFileHandler(self)
+        sfh = tbcml.ServerFileHandler(self, lang=lang)
         sfh.extract_all(display=display, force=force)
 
     @staticmethod
@@ -1402,14 +1419,26 @@ class Apk:
     def get_asset(self, asset_name: str) -> "tbcml.Path":
         return self.extracted_path.add("assets").add(asset_name)
 
-    def get_download_tsvs(self) -> list["tbcml.Path"]:
-        base_name = "download_%s.tsv"
+    def get_download_tsvs(
+        self, lang: Optional["tbcml.Language"] = None
+    ) -> list["tbcml.Path"]:
+        if lang is None:
+            base_name = "download_%s.tsv"
+        else:
+            base_name = f"download{lang.value}_%s.tsv"
         files: list["tbcml.Path"] = []
         counter = 0
         while True:
-            file = self.get_asset(base_name % counter)
+            name = base_name % counter
+            file = self.get_asset(name)
             if not file.exists():
-                break
+                if lang is None:
+                    new_name = f"en/{name}"
+                else:
+                    new_name = f"{lang.value}/{name}"
+                file = self.get_asset(new_name)
+                if not file.exists():
+                    break
             files.append(file)
             counter += 1
         return files
@@ -1543,13 +1572,14 @@ class Apk:
         self,
         mods: list["tbcml.Mod"],
         game_packs: Optional["tbcml.GamePacks"] = None,
+        lang: Optional["tbcml.Language"] = None,
         key: Optional[str] = None,
         iv: Optional[str] = None,
         add_modded_html: bool = True,
         use_apktool: Optional[bool] = None,
     ) -> bool:
         if game_packs is None:
-            game_packs = tbcml.GamePacks.from_apk(self)
+            game_packs = tbcml.GamePacks.from_apk(self, lang=lang)
 
         if key is not None:
             self.set_key(key)

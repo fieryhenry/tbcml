@@ -28,6 +28,16 @@ class GameFile:
         self.__dec_data: Optional["tbcml.Data"] = dec_data
         self.original_dec_data: Optional["tbcml.Data"] = None
 
+    def get_lang(self) -> Optional["tbcml.Language"]:
+        parts = self.pack_name.split("_")
+        if len(parts) == 1:
+            return None
+        lang_str = parts[-1]
+        if lang_str == "en":
+            return None
+
+        return tbcml.Language(lang_str)
+
     @property
     def dec_data(self):
         return self.decrypt_data()
@@ -69,7 +79,11 @@ class GameFile:
         if self.enc_data is not None:
             if self.__dec_data is None or self.__dec_data == self.original_dec_data:
                 return self.enc_data
-            if PackFile.is_image_data_local_pack(self.pack_name) and not force_server:
+            if (
+                PackFile.is_image_data_local_pack(self.pack_name)
+                and not force_server
+                and self.__dec_data == self.original_dec_data
+            ):
                 return self.enc_data
         if self.__dec_data is None:
             raise ValueError("dec data or enc data need to be provided")
@@ -264,6 +278,14 @@ class PackFile:
         Returns:
             str: The converted pack name.
         """
+        is_lang = False
+        parts = pack_name.split("_")
+        if len(parts) >= 3:
+            if parts[-1] != "en":
+                is_lang = True
+                pack_name = f"{parts[0]}_{parts[-1]}"
+            else:
+                pack_name = parts[0]
         packs = [
             "MapServer",
             "NumberServer",
@@ -271,15 +293,14 @@ class PackFile:
             "ImageServer",
             "ImageDataServer",
         ]
-        lgs = tbcml.Languages.get_all()
+        if is_lang:
+            for i, pack in enumerate(packs):
+                packs[i] += f"_{parts[-1]}"
+
         file_name = pack_name
         for pack in packs:
             if pack in file_name:
                 file_name = pack.replace("Server", "Local")
-                break
-        for lang in lgs:
-            if f"_{lang}" in file_name:
-                file_name = file_name.replace(f"_{lang}", "")
                 break
         return file_name
 
@@ -388,6 +409,7 @@ class GamePacks:
         packs: dict[str, PackFile],
         country_code: "tbcml.CountryCode",
         gv: "tbcml.GameVersion",
+        lang: Optional["tbcml.Language"] = None,
     ):
         """Create a GamePacks object.
 
@@ -399,8 +421,11 @@ class GamePacks:
         self.packs = packs
         self.country_code = country_code
         self.gv = gv
+        self.lang = lang
+
         self.modified_packs: dict[str, bool] = {}
         self.csv_cache: dict[str, tbcml.CSV] = {}
+        self.modified_csv_cache: dict[str, tbcml.CSV] = {}
         self.cache: dict[str, GameFile] = {}
 
         self.logging = False
@@ -485,12 +510,13 @@ class GamePacks:
 
         if update_cache:
             self.csv_cache[file_name] = csv.copy()
-            return None
+            self.modified_csv_cache[file_name] = csv.copy()
+        #   return None
 
         return self.set_file(file_name, csv.to_data())
 
     def apply_all_csvs(self):
-        for file_name, csv in self.csv_cache.items():
+        for file_name, csv in self.modified_csv_cache.items():
             self.set_file(file_name, csv.to_data())
 
     def get_img(
@@ -518,7 +544,9 @@ class GamePacks:
         return True
 
     def find_file(
-        self, file_name: str, show_error: bool = False
+        self,
+        file_name: str,
+        show_error: bool = False,
     ) -> Optional["GameFile"]:
         """Find a file in the game packs.
 
@@ -533,18 +561,16 @@ class GamePacks:
         if file is not None:
             return file
         found_files: list[GameFile] = []
-        for pack_name, pack in self.packs.items():
+        for pack in self.packs.values():
             file = pack.files.get(file_name)
             if file is None:
                 continue
-            split_pack_name = pack_name.split("_")
-            if len(split_pack_name) > 1:
-                if split_pack_name[1] in tbcml.Languages.get_all_strings():
+            file_lang = file.get_lang()
+            if file_lang is not None:
+                if self.lang != file_lang:
                     continue
-            file = pack.files.get(file_name)
-            if file is None:
-                continue
             found_files.append(file)
+
         if len(found_files) == 0:
             if show_error:
                 print(f"Could not find file {file_name}")
@@ -560,6 +586,10 @@ class GamePacks:
             elif not PackFile.is_server_pack(found_files[1].pack_name):
                 self.cache[file_name] = found_files[1]
                 return found_files[1]
+            elif self.lang is not None and found_files[0].get_lang() == self.lang:
+                return found_files[0]
+            elif self.lang is not None and found_files[1].get_lang() == self.lang:
+                return found_files[1]
             elif len(found_files[0].dec_data) > len(found_files[1].dec_data):
                 self.cache[file_name] = found_files[0]
                 return found_files[0]
@@ -570,6 +600,10 @@ class GamePacks:
                 self.cache[file_name] = found_files[0]
                 return found_files[0]
         else:
+            if self.lang is not None:
+                for file in found_files:
+                    if file.get_lang() == self.lang:
+                        return file
             if show_error:
                 print(f"Found multiple files for {file_name}")
             else:
@@ -692,7 +726,9 @@ class GamePacks:
             self.set_file_from_path(file_path)
 
     @staticmethod
-    def from_apk(apk: "tbcml.Apk") -> "GamePacks":
+    def from_apk(
+        apk: "tbcml.Apk", lang: Optional["tbcml.Language"] = None
+    ) -> "GamePacks":
         """Create a GamePacks object from an APK.
 
         Args:
@@ -718,7 +754,7 @@ class GamePacks:
             if pack is None:
                 continue
             packs[pack_name] = pack
-        return GamePacks(packs, apk.country_code, apk.game_version)
+        return GamePacks(packs, apk.country_code, apk.game_version, lang=lang)
 
     def extract(
         self,

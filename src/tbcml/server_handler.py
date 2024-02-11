@@ -1,9 +1,10 @@
 """Module for handling game server stuff"""
+
 import base64
 import datetime
 import json
 import time
-from typing import Any
+from typing import Any, Optional
 
 import requests
 from cryptography.hazmat.backends import default_backend
@@ -21,14 +22,17 @@ class GameVersionSearchError(Exception):
 class ServerFileHandler:
     """Class for handling downloading game files from the game server"""
 
-    def __init__(self, apk: "tbcml.Apk"):
+    def __init__(self, apk: "tbcml.Apk", lang: Optional["tbcml.Language"]):
         """Initializes the ServerFileHandler class
 
         Args:
             apk (tbcml.Apk): The APK object to use, used for country code and game version list
         """
         self.apk = apk
-        self.tsv_paths = self.apk.get_download_tsvs()
+        self.lang = lang
+        self.tsv_paths = self.apk.get_download_tsvs(lang=lang)
+        if lang is not None:
+            self.en_tsv_paths = self.apk.get_download_tsvs(lang=None)
         self.game_versions = self.find_game_versions()
         self.tsvs: dict[int, "tbcml.CSV"] = {}
         self.file_map = self.create_file_map()
@@ -119,6 +123,9 @@ class ServerFileHandler:
                 game_version % 100,
             )
 
+        if self.lang is not None:
+            str_code += f"_{self.lang.value}"
+
         url = f"https://nyanko-assets.ponosgames.com/iphone/{project_name}/download/{str_code}.zip"
         return url
 
@@ -176,6 +183,7 @@ class ServerFileHandler:
         self,
         index: int,
         force: bool = False,
+        display: bool = False,
     ) -> bool:
         """Extracts game files to the server files path for a given game version
 
@@ -215,6 +223,8 @@ class ServerFileHandler:
 
             if found and hashes_equal:
                 return False
+        if display:
+            print(f"Downloading server zip file {index+1}/{len(self.tsv_paths)}")
         zipf = self.download(index)
         path = tbcml.Apk.get_server_path_static(
             self.apk.country_code, self.apk.apk_folder
@@ -233,8 +243,7 @@ class ServerFileHandler:
             force (bool, optional): Whether to force extraction even if the files already exist. Defaults to False.
         """
         for i in range(len(self.tsv_paths)):
-            if self.extract(i, force) and display:
-                print(f"Downloaded server file {i+1}/{len(self.tsv_paths)}")
+            self.extract(i, force, display=display)
 
     def find_game_versions(self) -> list[int]:
         """Finds all game versions in the libnative.so file
@@ -277,8 +286,27 @@ class ServerFileHandler:
         )
         if start_index == -1:
             raise GameVersionSearchError("Could not find game versions")
-        length = len(self.tsv_paths)
+        end_index1 = lib_file.search(
+            tbcml.Data.from_int(0xFFFFFFFF, "little"), start=start_index
+        )
+        end_index2 = lib_file.search(
+            tbcml.Data.from_int_list([0, 0, 0, 0], "little"), start=start_index
+        )
+        end_index = min(end_index1, end_index2)
+        length = (end_index - start_index) // 4
         data = lib_file.read_int_list(start_index, length)
+
+        if (
+            self.apk.country_code != tbcml.CountryCode.EN
+            or self.lang is None
+            or len(data) <= len(self.tsv_paths)
+        ):
+            return data[: len(self.tsv_paths)]
+
+        en_length = len(self.en_tsv_paths)
+        length = len(self.tsv_paths)
+        index = self.lang.get_index()
+        data = data[en_length + length * index : en_length + length * (index + 1)]
         return data
 
 
