@@ -599,8 +599,10 @@ class Map(tbcml.Modification):
         if csv is None:
             return
 
-        row = self.map_index
-        total_stages = len(csv.get_line(row)) - 1
+        if self.map_type.is_main_story():
+            total_stages = len(csv.lines) - 1
+        else:
+            total_stages = len(csv.get_line(self.map_index)) - 1
         for i in range(total_stages):
             stage = self.get_stage(i)
             if stage is None:
