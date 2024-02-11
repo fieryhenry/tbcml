@@ -60,19 +60,6 @@ loader.initialize()
 game_data = loader.get_game_packs()
 apk = loader.get_apk()
 
-mod = tbcml.Mod(
-    "Assassin Bear Cat",
-    "fieryhenry",
-    "Replaces basic cat first form to be the assassin bear enemy",
-)
+mod = tbcml.Mod()
 
-cat = AssassinBear(game_data)
-mod.add_modification(cat)
-
-apk.set_app_name("Assassin Bear")
-apk.set_package_name("jp.co.ponos.battlecats.assassinbear")
-
-loader.apply(mod)
-
-# loader.initialize_adb()
-# loader.install_adb(run_game=True)
+mod.add_modification(AssassinBear(game_data))
