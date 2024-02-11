@@ -83,7 +83,7 @@ from .io.zip import Zip
 from .io.temp_file import TempFile, TempFolder
 from .io.yaml import YamlFile
 from .crypto import AesCipher, Hash, HashAlgorithm, Random, Hmac
-from .langs import Languages
+from .langs import Language, LanguageStr
 from .request import RequestHandler
 from .server_handler import ServerFileHandler, EventData, GameVersionSearchError
 from .game_data.pack import GamePacks, PackFile, GameFile
@@ -190,7 +190,8 @@ __all__ = [
     "HashAlgorithm",
     "Random",
     "Hmac",
-    "Languages",
+    "Language",
+    "LanguageStr",
     "RequestHandler",
     "ServerFileHandler",
     "EventData",
