@@ -1,4 +1,5 @@
 """A module for injecting smali code into the APK."""
+
 from typing import Optional
 
 import tbcml
@@ -98,7 +99,7 @@ class SmaliSet:
             SmaliSet: The created SmaliSet
         """
         base_path = tbcml.Path(tbcml.ModPath.SMALI.value)
-        smali_edits = {}
+        smali_edits: dict[str, Smali] = {}
         for file in zip_file.get_paths():
             if not file.path.startswith(base_path.to_str_forwards()):
                 continue
