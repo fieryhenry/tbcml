@@ -8,6 +8,7 @@ class CompilationTarget:
         target_country_codes: str,
         target_game_versions: str,
         files: Optional[dict[str, "tbcml.Data"]] = None,
+        target_langs: Optional[str] = None,
     ):
         """Initialize compilation target
 
@@ -15,12 +16,15 @@ class CompilationTarget:
             target_country_codes (str): country codes this targets e.g `*` `en,jp,kr` `en` `!en,!kr`
             target_game_versions (str): game version this targets e.g `*` `12.3.0,13.0` `>13` `<=8.4`
             files (dict[str, tbcml.Data]): dictionary of file names and contents
+            target_langs (str): en langs this targets e.g `*` `fr,en,th,de` `de` `!it,!es`
         """
         self.target_country_codes = target_country_codes
+        self.target_country_codes = self.target_country_codes.replace("ja", "jp")
         self.target_game_versions = target_game_versions
         if files is None:
             files = {}
         self.files = files
+        self.target_langs = target_langs
 
     def set_file(self, name: str, data: "tbcml.Data"):
         self.files[name] = data
@@ -34,6 +38,7 @@ class CompilationTarget:
         metadata: dict[str, Any] = {
             "target_country_codes": self.target_country_codes,
             "target_game_versions": self.target_game_versions,
+            "target_langs": self.target_langs,
         }
 
         metadata_dt = tbcml.JsonFile.from_object(metadata).to_data()
@@ -61,6 +66,7 @@ class CompilationTarget:
 
         target_country_codes = metadata_obj.get("target_country_codes")
         target_game_versions = metadata_obj.get("target_game_versions")
+        target_langs = metadata_obj.get("target_langs")
         if target_country_codes is None or target_game_versions is None:
             return None
 
@@ -76,24 +82,42 @@ class CompilationTarget:
 
             files[name] = file
 
-        return CompilationTarget(target_country_codes, target_game_versions, files)
+        return CompilationTarget(
+            target_country_codes,
+            target_game_versions,
+            files,
+            target_langs,
+        )
 
-    def check_country_code(self, cc: "tbcml.CountryCode"):
-        cc_code = cc.get_code()
-        cc_requesting_code = cc.get_request_code()
-        codes = self.target_country_codes.split(",")
-        for code in codes:
-            code = code.lower().strip()
-            if code == "*":
+    def check_string(self, targets: str, string: str):
+        string = string.lower()
+        targets_ls = targets.split(",")
+        for target in targets_ls:
+            target = target.lower().strip()
+            if target == "*":
                 return True
-            if code.startswith("!"):
-                exclude = code.split("!")[1]
-                if exclude == cc_code or exclude == cc_requesting_code:
+            if target.startswith("!"):
+                exclude = target.split("!")[1]
+                if exclude == string:
                     return False
-            if code == cc_code or code == cc_requesting_code:
+            if target == string:
                 return True
 
         return False
+
+    def check_country_code(self, cc: "tbcml.CountryCode"):
+        return self.check_string(self.target_country_codes, cc.get_code())
+
+    def check_lang(self, lang: Optional["tbcml.Language"], cc: "tbcml.CountryCode"):
+        if cc != tbcml.CountryCode.EN or self.target_langs is None:
+            return True
+
+        if lang is None:
+            lang_str = "en"
+        else:
+            lang_str = lang.value
+
+        return self.check_string(self.target_langs, lang_str)
 
     def check_game_version(self, gv: "tbcml.GameVersion"):
         versions = self.target_game_versions.split(",")
@@ -161,6 +185,8 @@ class CompilationTarget:
         return False
 
     def check_game_data(self, game_packs: "tbcml.GamePacks"):
-        return self.check_country_code(
-            game_packs.country_code
-        ) and self.check_game_version(game_packs.gv)
+        return (
+            self.check_country_code(game_packs.country_code)
+            and self.check_game_version(game_packs.gv)
+            and self.check_lang(game_packs.lang, game_packs.country_code)
+        )
