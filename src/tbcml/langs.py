@@ -5,9 +5,9 @@ from typing import Literal, Union
 
 LanguageStr = Union[
     "Language",
-    Literal["de"],
     Literal["fr"],
     Literal["it"],
+    Literal["de"],
     Literal["es"],
     Literal["th"],
 ]
@@ -16,9 +16,9 @@ LanguageStr = Union[
 class Language(enum.Enum):
     """Enum for all supported languages in the en version of the game."""
 
-    DE = "de"
     FR = "fr"
     IT = "it"
+    DE = "de"
     ES = "es"
     TH = "th"
 
@@ -41,12 +41,12 @@ class Language(enum.Enum):
         return [lang.value for lang in Language.get_all()]
 
     def get_index(self):
-        # i have no idea what these should be, just guessing.
-        if self == Language.DE:
-            return 0
+        # im not confident on these numbers, but it's the order in which the filenames are allocated in the binary
         if self == Language.FR:
-            return 1
+            return 0
         if self == Language.IT:
+            return 1
+        if self == Language.DE:
             return 2
         if self == Language.ES:
             return 3
