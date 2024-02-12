@@ -24,13 +24,13 @@ class StageOptionInfo:
     group_id: Optional[int] = None
 
     def __post_init__(self):
-        self.csv__star_id = IntCSVField(col_index=1)
-        self.csv__rarity_restriction_bit_mask = IntCSVField(col_index=3)
-        self.csv__deploy_limit = IntCSVField(col_index=4)
-        self.csv__slot_formation_limit = IntCSVField(col_index=5)
-        self.csv__deploy_cost_limit_lower = IntCSVField(col_index=6)
-        self.csv__deploy_cost_limit_upper = IntCSVField(col_index=7)
-        self.csv__group_id = IntCSVField(col_index=8)
+        self._csv__star_id = IntCSVField(col_index=1)
+        self._csv__rarity_restriction_bit_mask = IntCSVField(col_index=3)
+        self._csv__deploy_limit = IntCSVField(col_index=4)
+        self._csv__slot_formation_limit = IntCSVField(col_index=5)
+        self._csv__deploy_cost_limit_lower = IntCSVField(col_index=6)
+        self._csv__deploy_cost_limit_upper = IntCSVField(col_index=7)
+        self._csv__group_id = IntCSVField(col_index=8)
 
     @staticmethod
     def find_indexes(
@@ -77,12 +77,12 @@ class NonStoryStageInfo:
     unknown: Optional[int] = None
 
     def __post_init__(self):
-        self.csv__castle_type = IntCSVField(col_index=0, row_index=0)
-        self.csv__no_continues = BoolCSVField(col_index=1, row_index=0)
-        self.csv__extra_stage_probability = IntCSVField(col_index=2, row_index=0)
-        self.csv__extra_stage_map_id = IntCSVField(col_index=3, row_index=0)
-        self.csv__extra_stage_stage_index = IntCSVField(col_index=4, row_index=0)
-        self.csv__unknown = IntCSVField(col_index=5, row_index=0)
+        self._csv__castle_type = IntCSVField(col_index=0, row_index=0)
+        self._csv__no_continues = BoolCSVField(col_index=1, row_index=0)
+        self._csv__extra_stage_probability = IntCSVField(col_index=2, row_index=0)
+        self._csv__extra_stage_map_id = IntCSVField(col_index=3, row_index=0)
+        self._csv__extra_stage_stage_index = IntCSVField(col_index=4, row_index=0)
+        self._csv__unknown = IntCSVField(col_index=5, row_index=0)
 
     def apply_csv(self, csv: "tbcml.CSV"):
         tbcml.Modification.apply_csv_fields(self, csv, remove_others=False)
@@ -105,16 +105,16 @@ class StageInfo:
     unknown_2: Optional[int] = None
 
     def __post_init__(self):
-        self.csv__width = IntCSVField(col_index=0)
-        self.csv__base_health = IntCSVField(col_index=1)
-        self.csv__min_production_frames = IntCSVField(col_index=2)
-        self.csv__max_production_frames = IntCSVField(col_index=3)
-        self.csv__background_id = IntCSVField(col_index=4)
-        self.csv__max_enemy_count = IntCSVField(col_index=5)
-        self.csv__castle_enemy_id = IntCSVField(col_index=6)
-        self.csv__trial_mode_duration_mins = IntCSVField(col_index=7)
-        self.csv__unknown_1 = IntCSVField(col_index=8)
-        self.csv__unknown_2 = IntCSVField(col_index=9)
+        self._csv__width = IntCSVField(col_index=0)
+        self._csv__base_health = IntCSVField(col_index=1)
+        self._csv__min_production_frames = IntCSVField(col_index=2)
+        self._csv__max_production_frames = IntCSVField(col_index=3)
+        self._csv__background_id = IntCSVField(col_index=4)
+        self._csv__max_enemy_count = IntCSVField(col_index=5)
+        self._csv__castle_enemy_id = IntCSVField(col_index=6)
+        self._csv__trial_mode_duration_mins = IntCSVField(col_index=7)
+        self._csv__unknown_1 = IntCSVField(col_index=8)
+        self._csv__unknown_2 = IntCSVField(col_index=9)
 
     def apply_csv(self, index: int, csv: "tbcml.CSV"):
         csv.index = index
@@ -143,20 +143,20 @@ class StageEnemyData:
     unknown_3: Optional[int] = None
 
     def __post_init__(self):
-        self.csv__enemy_id = IntCSVField(col_index=0)
-        self.csv__max_enemy_count = IntCSVField(col_index=1)
-        self.csv__start_frame = IntCSVField(col_index=2)
-        self.csv__min_spawn_interval = IntCSVField(col_index=3)
-        self.csv__max_spawn_interval = IntCSVField(col_index=4)
-        self.csv__spawn_base_percent = IntCSVField(col_index=5)
-        self.csv__min_z = IntCSVField(col_index=6)
-        self.csv__max_z = IntCSVField(col_index=7)
-        self.csv__boss_flag = BoolCSVField(col_index=8)
-        self.csv__magnification = IntCSVField(col_index=9)
-        self.csv__trial_score = IntCSVField(col_index=10)
-        self.csv__unknown_1 = IntCSVField(col_index=11)
-        self.csv__unknown_2 = IntCSVField(col_index=12)
-        self.csv__unknown_3 = IntCSVField(col_index=13)
+        self._csv__enemy_id = IntCSVField(col_index=0)
+        self._csv__max_enemy_count = IntCSVField(col_index=1)
+        self._csv__start_frame = IntCSVField(col_index=2)
+        self._csv__min_spawn_interval = IntCSVField(col_index=3)
+        self._csv__max_spawn_interval = IntCSVField(col_index=4)
+        self._csv__spawn_base_percent = IntCSVField(col_index=5)
+        self._csv__min_z = IntCSVField(col_index=6)
+        self._csv__max_z = IntCSVField(col_index=7)
+        self._csv__boss_flag = BoolCSVField(col_index=8)
+        self._csv__magnification = IntCSVField(col_index=9)
+        self._csv__trial_score = IntCSVField(col_index=10)
+        self._csv__unknown_1 = IntCSVField(col_index=11)
+        self._csv__unknown_2 = IntCSVField(col_index=12)
+        self._csv__unknown_3 = IntCSVField(col_index=13)
 
     def apply_csv(self, index: int, csv: "tbcml.CSV"):
         csv.index = index
@@ -249,12 +249,12 @@ class MapStageDataStage:
     drop_reward_type: Optional[int] = None
 
     def __post_init__(self):
-        self.csv__energy = IntCSVField(col_index=0)
-        self.csv__xp = IntCSVField(col_index=1)
-        self.csv__main_music_id = IntCSVField(col_index=2)
-        self.csv__boss_music_hp_percentage = IntCSVField(col_index=3)
-        self.csv__boss_music_id = IntCSVField(col_index=4)
-        self.csv__drop_reward_type = IntCSVField(col_index=8)
+        self._csv__energy = IntCSVField(col_index=0)
+        self._csv__xp = IntCSVField(col_index=1)
+        self._csv__main_music_id = IntCSVField(col_index=2)
+        self._csv__boss_music_hp_percentage = IntCSVField(col_index=3)
+        self._csv__boss_music_id = IntCSVField(col_index=4)
+        self._csv__drop_reward_type = IntCSVField(col_index=8)
 
     def read_csv(self, index: int, csv: "tbcml.CSV", score_reward_stage_id: int):
         csv.index = index

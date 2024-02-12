@@ -60,11 +60,11 @@ class Rect:
     name: Optional[str] = None
 
     def __post_init__(self):
-        self.csv__x = IntCSVField(col_index=0)
-        self.csv__y = IntCSVField(col_index=1)
-        self.csv__w = IntCSVField(col_index=2)
-        self.csv__h = IntCSVField(col_index=3)
-        self.csv__name = StringCSVField(col_index=4)
+        self._csv__x = IntCSVField(col_index=0)
+        self._csv__y = IntCSVField(col_index=1)
+        self._csv__w = IntCSVField(col_index=2)
+        self._csv__h = IntCSVField(col_index=3)
+        self._csv__name = StringCSVField(col_index=4)
 
     def read_csv(self, index: int, csv: "tbcml.CSV"):
         csv.index = index
@@ -83,10 +83,10 @@ class TextureMetadata:
     total_rects: Optional[int] = None
 
     def __post_init__(self):
-        self.csv__head_name = StringCSVField(col_index=0, row_index=0)
-        self.csv__version_code = StringCSVField(col_index=0, row_index=1)
-        self.csv__img_name = StringCSVField(col_index=0, row_index=2)
-        self.csv__total_rects = IntCSVField(col_index=0, row_index=3)
+        self._csv__head_name = StringCSVField(col_index=0, row_index=0)
+        self._csv__version_code = StringCSVField(col_index=0, row_index=1)
+        self._csv__img_name = StringCSVField(col_index=0, row_index=2)
+        self._csv__total_rects = IntCSVField(col_index=0, row_index=3)
 
     def read_csv(self, csv: "tbcml.CSV"):
         tbcml.Modification.read_csv_fields(self, csv)
@@ -252,9 +252,9 @@ class MamodelMetaData:
     total_parts: Optional[int] = None
 
     def __post_init__(self):
-        self.csv__head_name = StringCSVField(col_index=0, row_index=0)
-        self.csv__version_code = StringCSVField(col_index=0, row_index=1)
-        self.csv__total_parts = IntCSVField(col_index=0, row_index=2)
+        self._csv__head_name = StringCSVField(col_index=0, row_index=0)
+        self._csv__version_code = StringCSVField(col_index=0, row_index=1)
+        self._csv__total_parts = IntCSVField(col_index=0, row_index=2)
 
     def read_csv(self, csv: "tbcml.CSV"):
         tbcml.Modification.read_csv_fields(self, csv)
@@ -281,20 +281,20 @@ class ModelPart:
     name: Optional[str] = None
 
     def __post_init__(self):
-        self.csv__parent_id = IntCSVField(col_index=0)
-        self.csv__unit_id = IntCSVField(col_index=1)
-        self.csv__cut_id = IntCSVField(col_index=2)
-        self.csv__z_depth = IntCSVField(col_index=3)
-        self.csv__x = IntCSVField(col_index=4)
-        self.csv__y = IntCSVField(col_index=5)
-        self.csv__pivot_x = IntCSVField(col_index=6)
-        self.csv__pivot_y = IntCSVField(col_index=7)
-        self.csv__scale_x = IntCSVField(col_index=8)
-        self.csv__scale_y = IntCSVField(col_index=9)
-        self.csv__rotation = IntCSVField(col_index=10)
-        self.csv__alpha = IntCSVField(col_index=11)
-        self.csv__glow = IntCSVField(col_index=12)
-        self.csv__name = StringCSVField(col_index=13)
+        self._csv__parent_id = IntCSVField(col_index=0)
+        self._csv__unit_id = IntCSVField(col_index=1)
+        self._csv__cut_id = IntCSVField(col_index=2)
+        self._csv__z_depth = IntCSVField(col_index=3)
+        self._csv__x = IntCSVField(col_index=4)
+        self._csv__y = IntCSVField(col_index=5)
+        self._csv__pivot_x = IntCSVField(col_index=6)
+        self._csv__pivot_y = IntCSVField(col_index=7)
+        self._csv__scale_x = IntCSVField(col_index=8)
+        self._csv__scale_y = IntCSVField(col_index=9)
+        self._csv__rotation = IntCSVField(col_index=10)
+        self._csv__alpha = IntCSVField(col_index=11)
+        self._csv__glow = IntCSVField(col_index=12)
+        self._csv__name = StringCSVField(col_index=13)
 
     def read_csv(self, index: int, csv: "tbcml.CSV"):
         csv.index = index
@@ -326,9 +326,9 @@ class MamodelUnits:
     alpha_unit: Optional[int] = None
 
     def __post_init__(self):
-        self.csv__scale_unit = IntCSVField(col_index=0)
-        self.csv__angle_unit = IntCSVField(col_index=1)
-        self.csv__alpha_unit = IntCSVField(col_index=2)
+        self._csv__scale_unit = IntCSVField(col_index=0)
+        self._csv__angle_unit = IntCSVField(col_index=1)
+        self._csv__alpha_unit = IntCSVField(col_index=2)
 
     def read_csv(self, index: int, csv: "tbcml.CSV"):
         csv.index = index
@@ -350,13 +350,13 @@ class MamodelInts:
     comment: Optional[str] = None
 
     def __post_init__(self):
-        self.csv__int_0 = IntCSVField(col_index=0)
-        self.csv__int_1 = IntCSVField(col_index=1)
-        self.csv__int_2 = IntCSVField(col_index=2)
-        self.csv__int_3 = IntCSVField(col_index=3)
-        self.csv__int_4 = IntCSVField(col_index=4)
-        self.csv__int_5 = IntCSVField(col_index=5)
-        self.csv__comment = StringCSVField(col_index=6)
+        self._csv__int_0 = IntCSVField(col_index=0)
+        self._csv__int_1 = IntCSVField(col_index=1)
+        self._csv__int_2 = IntCSVField(col_index=2)
+        self._csv__int_3 = IntCSVField(col_index=3)
+        self._csv__int_4 = IntCSVField(col_index=4)
+        self._csv__int_5 = IntCSVField(col_index=5)
+        self._csv__comment = StringCSVField(col_index=6)
 
     def read_csv(self, index: int, csv: "tbcml.CSV"):
         csv.index = index
@@ -373,7 +373,7 @@ class MamodelIntsInts:
     total_ints: Optional[int] = None
 
     def __post_init__(self):
-        self.csv__total_ints = IntCSVField(col_index=0)
+        self._csv__total_ints = IntCSVField(col_index=0)
 
     def read_csv(self, index: int, csv: "tbcml.CSV"):
         csv.index = index
@@ -456,10 +456,10 @@ class KeyFrame:
     ease_power: Optional[int] = None
 
     def __post_init__(self):
-        self.csv__frame = IntCSVField(col_index=0)
-        self.csv__change_in_value = IntCSVField(col_index=1)
-        self.csv__ease_mode = IntCSVField(col_index=2)
-        self.csv__ease_power = IntCSVField(col_index=3)
+        self._csv__frame = IntCSVField(col_index=0)
+        self._csv__change_in_value = IntCSVField(col_index=1)
+        self._csv__ease_mode = IntCSVField(col_index=2)
+        self._csv__ease_power = IntCSVField(col_index=3)
 
     def read_csv(self, index: int, csv: "tbcml.CSV"):
         csv.index = index
@@ -477,9 +477,9 @@ class MaanimMetadata:
     total_parts: Optional[int] = None
 
     def __post_init__(self):
-        self.csv__head_name = StringCSVField(col_index=0, row_index=0)
-        self.csv__version_code = StringCSVField(col_index=0, row_index=1)
-        self.csv__total_parts = IntCSVField(col_index=0, row_index=2)
+        self._csv__head_name = StringCSVField(col_index=0, row_index=0)
+        self._csv__version_code = StringCSVField(col_index=0, row_index=1)
+        self._csv__total_parts = IntCSVField(col_index=0, row_index=2)
 
     def read_csv(self, csv: "tbcml.CSV"):
         tbcml.Modification.read_csv_fields(self, csv)
@@ -500,13 +500,13 @@ class KeyFrames:
     total_keyframes: Optional[int] = None
 
     def __post_init__(self):
-        self.csv__model_id = IntCSVField(col_index=0)
-        self.csv__modification_type = IntCSVField(col_index=1)
-        self.csv__loop = IntCSVField(col_index=2)
-        self.csv__min_value = IntCSVField(col_index=3)
-        self.csv__max_value = IntCSVField(col_index=4)
-        self.csv__name = StringCSVField(col_index=5)
-        self.csv__total_keyframes = IntCSVField(col_index=0, row_offset=1)
+        self._csv__model_id = IntCSVField(col_index=0)
+        self._csv__modification_type = IntCSVField(col_index=1)
+        self._csv__loop = IntCSVField(col_index=2)
+        self._csv__min_value = IntCSVField(col_index=3)
+        self._csv__max_value = IntCSVField(col_index=4)
+        self._csv__name = StringCSVField(col_index=5)
+        self._csv__total_keyframes = IntCSVField(col_index=0, row_offset=1)
 
     def read_csv(self, index: int, csv: "tbcml.CSV") -> int:
         csv.index = index

@@ -78,7 +78,7 @@ class Modification:
         field_offset: int = 0,
         length: Optional[int] = None,
     ):
-        csv_name_len = len("csv__")
+        csv_name_len = len("_csv__")
 
         cleared_lines: dict[int, bool] = {}
 
@@ -119,7 +119,7 @@ class Modification:
         required_values: Optional[Sequence[tuple[int, Union[str, int]]]] = None,
         field_offset: int = 0,
     ):
-        csv_str_len = len("csv__")
+        csv_str_len = len("_csv__")
 
         for name, value in obj.__dict__.items():
             if isinstance(value, tbcml.CSVField):

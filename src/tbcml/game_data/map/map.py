@@ -364,13 +364,13 @@ class MapStageDataInfo:
     map_pattern: Optional[int] = None
 
     def __post_init__(self):
-        self.csv__map_number = IntCSVField(col_index=0, row_index=0)
-        self.csv__item_reward_stage_id = IntCSVField(col_index=0, row_index=0)
-        self.csv__score_reward_stage_id = IntCSVField(col_index=0, row_index=0)
-        self.csv__display_condition = IntCSVField(col_index=0, row_index=0)
-        self.csv__play_condition = IntCSVField(col_index=0, row_index=0)
-        self.csv__display_user_rank = IntCSVField(col_index=0, row_index=0)
-        self.csv__map_pattern = IntCSVField(col_index=0, row_index=1)
+        self._csv__map_number = IntCSVField(col_index=0, row_index=0)
+        self._csv__item_reward_stage_id = IntCSVField(col_index=0, row_index=0)
+        self._csv__score_reward_stage_id = IntCSVField(col_index=0, row_index=0)
+        self._csv__display_condition = IntCSVField(col_index=0, row_index=0)
+        self._csv__play_condition = IntCSVField(col_index=0, row_index=0)
+        self._csv__display_user_rank = IntCSVField(col_index=0, row_index=0)
+        self._csv__map_pattern = IntCSVField(col_index=0, row_index=1)
 
     def apply_csv(self, csv: "tbcml.CSV"):
         tbcml.Modification.apply_csv_fields(self, csv, remove_others=False)
@@ -397,20 +397,20 @@ class MapOptionInfo:
     map_name: Optional[str] = None
 
     def __post_init__(self):
-        self.csv__star_count = IntCSVField(col_index=1)
-        self.csv__star_multiplier_1 = IntCSVField(col_index=2)
-        self.csv__star_multiplier_2 = IntCSVField(col_index=3)
-        self.csv__star_multiplier_3 = IntCSVField(col_index=4)
-        self.csv__star_multiplier_4 = IntCSVField(col_index=5)
-        self.csv__guerrilla_set = IntCSVField(col_index=6)
-        self.csv__reset_type = IntCSVField(col_index=7)
-        self.csv__one_time_display = BoolCSVField(col_index=8)
-        self.csv__display_order = IntCSVField(col_index=9)
-        self.csv__interval = IntCSVField(col_index=10)
-        self.csv__challenge_flag = BoolCSVField(col_index=11)
-        self.csv__difficulty_mask = IntCSVField(col_index=12)
-        self.csv__hide_after_clear = IntCSVField(col_index=13)
-        self.csv__map_name = StringCSVField(col_index=14)
+        self._csv__star_count = IntCSVField(col_index=1)
+        self._csv__star_multiplier_1 = IntCSVField(col_index=2)
+        self._csv__star_multiplier_2 = IntCSVField(col_index=3)
+        self._csv__star_multiplier_3 = IntCSVField(col_index=4)
+        self._csv__star_multiplier_4 = IntCSVField(col_index=5)
+        self._csv__guerrilla_set = IntCSVField(col_index=6)
+        self._csv__reset_type = IntCSVField(col_index=7)
+        self._csv__one_time_display = BoolCSVField(col_index=8)
+        self._csv__display_order = IntCSVField(col_index=9)
+        self._csv__interval = IntCSVField(col_index=10)
+        self._csv__challenge_flag = BoolCSVField(col_index=11)
+        self._csv__difficulty_mask = IntCSVField(col_index=12)
+        self._csv__hide_after_clear = IntCSVField(col_index=13)
+        self._csv__map_name = StringCSVField(col_index=14)
 
     @staticmethod
     def find_index(

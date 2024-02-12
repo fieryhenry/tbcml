@@ -13,8 +13,8 @@ class LocalizableItem:
     value: Optional[str] = None
 
     def __post_init__(self):
-        self.csv__key = StringCSVField(col_index=0)
-        self.csv__value = StringCSVField(col_index=1)
+        self._csv__key = StringCSVField(col_index=0)
+        self._csv__value = StringCSVField(col_index=1)
 
     def read_csv(self, index: int, csv: "tbcml.CSV") -> bool:
         csv.index = index

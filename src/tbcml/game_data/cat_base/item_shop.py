@@ -21,13 +21,13 @@ class ShopItem:
     imgcut_rect_id: Optional[int] = None
 
     def __post_init__(self):
-        self.csv__shop_id = IntCSVField(col_index=0)
-        self.csv__gatya_item_id = IntCSVField(col_index=1)
-        self.csv__count = IntCSVField(col_index=2)
-        self.csv__cost = IntCSVField(col_index=3)
-        self.csv__draw_item_value = BoolCSVField(col_index=4)
-        self.csv__category_name = StringCSVField(col_index=5)
-        self.csv__imgcut_rect_id = IntCSVField(col_index=6)
+        self._csv__shop_id = IntCSVField(col_index=0)
+        self._csv__gatya_item_id = IntCSVField(col_index=1)
+        self._csv__count = IntCSVField(col_index=2)
+        self._csv__cost = IntCSVField(col_index=3)
+        self._csv__draw_item_value = BoolCSVField(col_index=4)
+        self._csv__category_name = StringCSVField(col_index=5)
+        self._csv__imgcut_rect_id = IntCSVField(col_index=6)
 
     def find_index(self, csv: "tbcml.CSV") -> Optional[int]:
         if self.shop_id is None:
