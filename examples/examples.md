@@ -31,6 +31,7 @@ loader.apply(mod)
 - [Edit Name and Description of Unit](cats/name_desc_edit.py)
 - [Import Enemy as Unit](cats/import_enemy.py)
 - [Edit Unit Stats](cats/stats_edit.py)
+- [Add Ultra Form](cats/ultra_form.py)
 
 ### Scripting
 
