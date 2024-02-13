@@ -1,5 +1,6 @@
+import copy
 import enum
-from typing import Optional, Union
+from typing import Optional, Sequence, Union
 from dataclasses import field
 import tbcml
 
@@ -456,12 +457,12 @@ class UnitBuy:
     unknown_22: Optional[int] = None
     tf_id: Optional[int] = None
     uf_id: Optional[int] = None
-    evolve_level_tf: Optional[list[int]] = None
-    evolve_level_uf: Optional[list[int]] = None
+    evolve_level_tf: Optional[int] = None
+    evolve_level_uf: Optional[int] = None
     evolve_cost_tf: Optional[int] = None
-    evolve_items_tf: Optional[int] = None
-    evolve_cost_ff: Optional[int] = None
-    evolve_items_uf: Optional[int] = None
+    evolve_items_tf: Optional[list[int]] = None
+    evolve_cost_uf: Optional[int] = None
+    evolve_items_uf: Optional[list[int]] = None
     max_base_no_catseye: Optional[int] = None
     max_base_catseye: Optional[int] = None
     max_plus: Optional[int] = None
@@ -476,6 +477,28 @@ class UnitBuy:
     unknown_60: Optional[int] = None
     egg_val: Optional[int] = None
     egg_id: Optional[int] = None
+
+    def get_evolve_items_tf(self) -> list[tuple[int, int]]:
+        if self.evolve_items_tf is None:
+            return []
+        return [
+            (self.evolve_items_tf[i], self.evolve_items_tf[i + 1])
+            for i in range(0, len(self.evolve_items_tf), 2)
+        ]
+
+    def get_evolve_items_uf(self) -> list[tuple[int, int]]:
+        if self.evolve_items_uf is None:
+            return []
+        return [
+            (self.evolve_items_uf[i], self.evolve_items_uf[i + 1])
+            for i in range(0, len(self.evolve_items_uf), 2)
+        ]
+
+    def set_evolve_items_tf(self, items: Sequence[tuple[int, int]]):
+        self.evolve_items_tf = [item for pair in items for item in pair]
+
+    def set_evolve_items_uf(self, items: Sequence[tuple[int, int]]):
+        self.evolve_items_uf = [item for pair in items for item in pair]
 
     def __post_init__(self):
         self._csv__stage_unlock = IntCSVField(col_index=0)
@@ -498,7 +521,7 @@ class UnitBuy:
         self._csv__evolve_level_uf = IntCSVField(col_index=26)
         self._csv__evolve_cost_tf = IntCSVField(col_index=27)
         self._csv__evolve_items_tf = IntListCSVField(col_index=28, length=5 * 2)
-        self._csv__evolve_cost_ff = IntCSVField(col_index=38)
+        self._csv__evolve_cost_uf = IntCSVField(col_index=38)
         self._csv__evolve_items_uf = IntListCSVField(col_index=39, length=5 * 2)
         self._csv__max_base_no_catseye = IntCSVField(col_index=49)
         self._csv__max_base_catseye = IntCSVField(col_index=50)
@@ -810,6 +833,12 @@ class CatForm:
     upgrade_icon: Optional["tbcml.BCImage"] = None
     deploy_icon: Optional["tbcml.BCImage"] = None
 
+    def sync(self, parent: "tbcml.Cat", form_type: "tbcml.CatFormType"):
+        original_cat = parent.get_form(form_type)
+        if original_cat is not None:
+            original_cat = copy.deepcopy(original_cat)
+            tbcml.Modification.sync(self, original_cat)
+
     def get_stats(self) -> "tbcml.FormStats":
         if self.stats is None:
             self.stats = tbcml.FormStats()
@@ -1037,6 +1066,11 @@ class CatForm:
         if enemy.stats is not None:
             self.get_stats().import_enemy(enemy.stats)
 
+    def set_id(self, cat_id: int, form_type: CatFormType):
+        if self.anim is not None:
+            self.anim.set_id(cat_id, form_type.value)
+            self.anim.set_unit_form(cat_id, form_type.value)
+
     def import_enemy_from_id(
         self,
         cat_id: int,
@@ -1122,7 +1156,7 @@ class Cat(tbcml.Modification):
     def __post_init__(self):
         Cat.Schema()
 
-    def get_form(self, form: Union[int, "tbcml.CatFormType"]):
+    def get_form_create(self, form: Union[int, "tbcml.CatFormType"]):
         if isinstance(form, int):
             form = tbcml.CatFormType.from_index(form)
 
@@ -1135,6 +1169,15 @@ class Cat(tbcml.Modification):
             self.forms[form] = form_obj
 
         return form_obj
+
+    def get_form(self, form: Union[int, "tbcml.CatFormType"]) -> Optional[CatForm]:
+        if isinstance(form, int):
+            form = tbcml.CatFormType.from_index(form)
+
+        if self.forms is None:
+            return None
+
+        return self.forms.get(form)
 
     def get_talents(self) -> CatTalents:
         if self.talents is None:
@@ -1349,6 +1392,14 @@ class Cat(tbcml.Modification):
 
         self.forms[form_type] = form
 
+        self.set_cat_id_form(self.cat_id, form_type)
+
+    def set_cat_id_form(self, cat_id: int, form_type: "tbcml.CatFormType"):
+        if self.forms is not None:
+            form = self.forms.get(form_type)
+            if form is not None:
+                form.set_id(cat_id, form_type)
+
     def pre_to_json(self):
         for form in (self.forms or {}).values():
             form.pre_to_json()
@@ -1371,3 +1422,51 @@ class Cat(tbcml.Modification):
 
         bcu_cat.write_to_cat(self)
         return True
+
+    def add_ultra_form_catfruit_evol(
+        self,
+        form: Optional[CatForm],
+        evolve_items: Sequence[tuple[int, int]],
+        evolve_id: int = 25000,
+        evolve_cost: int = 100000,
+        evolve_level: int = 40,
+        evolve_text: Optional[list[str]] = None,
+    ):
+        if form is not None:
+            self.set_form(form, CatFormType.FOURTH)
+        unitbuy = self.get_unitbuy()
+        unitbuy.set_evolve_items_uf(evolve_items)
+        unitbuy.uf_id = evolve_id
+        unitbuy.evolve_cost_uf = evolve_cost
+        unitbuy.evolve_level_uf = evolve_level
+
+        evolve_text = evolve_text or ["", "", ""]
+        self.get_evolve_text().second_evol = evolve_text
+
+        nyanko_picture_book = self.get_nyanko_picture_book()
+        nyanko_picture_book.total_forms = 4
+        nyanko_picture_book.scale_4th = 100
+
+    def add_true_form_catfruit_evol(
+        self,
+        form: Optional[CatForm],
+        evolve_items: list[tuple[int, int]],
+        evolve_id: int = 15000,
+        evolve_cost: int = 100000,
+        evolve_level: int = 30,
+        evolve_text: Optional[list[str]] = None,
+    ):
+        if form is not None:
+            self.set_form(form, CatFormType.FOURTH)
+        unitbuy = self.get_unitbuy()
+        unitbuy.set_evolve_items_tf(evolve_items)
+        unitbuy.tf_id = evolve_id
+        unitbuy.evolve_cost_tf = evolve_cost
+        unitbuy.evolve_level_tf = evolve_level
+
+        evolve_text = evolve_text or ["", "", ""]
+        self.get_evolve_text().first_evol = evolve_text
+
+        nyanko_picture_book = self.get_nyanko_picture_book()
+        nyanko_picture_book.total_forms = 3
+        nyanko_picture_book.scale_3rd = 100
