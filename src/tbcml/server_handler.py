@@ -179,11 +179,10 @@ class ServerFileHandler:
             return False
         return True
 
-    def extract(
+    def needs_extracting(
         self,
         index: int,
         force: bool = False,
-        display: bool = False,
     ) -> bool:
         """Extracts game files to the server files path for a given game version
 
@@ -223,13 +222,7 @@ class ServerFileHandler:
 
             if found and hashes_equal:
                 return False
-        if display:
-            print(f"Downloading server zip file {index+1}/{len(self.tsv_paths)}")
-        zipf = self.download(index)
-        path = tbcml.Apk.get_server_path_static(
-            self.apk.country_code, self.apk.apk_folder
-        )
-        zipf.extract(path)
+
         return True
 
     def extract_all(
@@ -241,9 +234,26 @@ class ServerFileHandler:
 
         Args:
             force (bool, optional): Whether to force extraction even if the files already exist. Defaults to False.
+            display (bool, optional): Whether to display text with the current download progress. Defualts to False.
         """
+        to_extract: list[int] = []
         for i in range(len(self.tsv_paths)):
-            self.extract(i, force, display=display)
+            if self.needs_extracting(i, force):
+                to_extract.append(i)
+
+        for i, index in enumerate(to_extract):
+            if display:
+                print(
+                    f"Downloading server zip file {i+1}/{len(to_extract)} (id {index})"
+                )
+            self.extract(index)
+
+    def extract(self, index: int):
+        zipf = self.download(index)
+        path = tbcml.Apk.get_server_path_static(
+            self.apk.country_code, self.apk.apk_folder
+        )
+        zipf.extract(path)
 
     def find_game_versions(self) -> list[int]:
         """Finds all game versions in the libnative.so file
