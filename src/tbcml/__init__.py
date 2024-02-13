@@ -42,7 +42,22 @@ from .game_data.map.map import Map, MapType
 from .game_data.bcu import BCUZip
 from .game_data.misc.sound_setting import SoundSetting
 
-from .anim.anim import Model, Texture, Rect, AnimModificationType, AnimType
+from .anim.model import (
+    Model,
+    Texture,
+    Rect,
+    AnimModificationType,
+    AnimType,
+    UnitAnim,
+    KeyFrame,
+    KeyFrames,
+    ModelPart,
+)
+
+from .anim.anim import (
+    Anim,
+    AnimModificationType,
+)
 
 from .io.bc_csv import (
     CSV,
@@ -152,8 +167,14 @@ __all__ = [
     "BCUZip",
     "SoundSetting",
     "Model",
+    "UnitAnim",
     "Texture",
     "Rect",
+    "AnimModificationType",
+    "KeyFrames",
+    "KeyFrame",
+    "ModelPart",
+    "Anim",
     "AnimModificationType",
     "AnimType",
     "CSV",

@@ -1,3 +1,3 @@
-from tbcml.anim import anim
+from tbcml.anim import model, anim, viewer
 
-__all__ = ["anim"]
+__all__ = ["model", "anim", "viewer"]
