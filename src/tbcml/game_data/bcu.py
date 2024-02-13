@@ -329,7 +329,7 @@ class BCUCat:
 
     def write_to_cat(self, cat: "tbcml.Cat"):
         for i, form in enumerate(self.forms):
-            form_real = cat.get_form(i)
+            form_real = cat.get_form_create(i)
             form.write_to_cat_form(form_real)
 
         unitbuy = cat.get_unitbuy()
