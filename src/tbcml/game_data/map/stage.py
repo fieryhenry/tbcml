@@ -453,6 +453,8 @@ class Stage:
         if original_stage is None:
             return
 
+        original_stage = copy.deepcopy(original_stage)
+
         tbcml.Modification.sync(self, original_stage)
         self.update_stage_info_vars()
 
