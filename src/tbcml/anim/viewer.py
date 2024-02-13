@@ -43,7 +43,7 @@ class AnimViewer(QtWidgets.QOpenGLWidget):
         self.anim.set_frame(self.frame)
         self.anim.draw_frame(painter, 10 * self.zoom, 10 * self.zoom)
 
-        print(self.get_fps())
+        # print(self.get_fps())
 
     def paintEvent(self, event: QtGui.QPaintEvent):
         painter = QtGui.QPainter(self)
