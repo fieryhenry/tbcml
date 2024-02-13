@@ -63,7 +63,7 @@ class Anim:
             or end_frame is None
             or start_change is None
             or end_change is None
-        ):  # TODO: can be optimized
+        ):
 
             return None
 
@@ -114,9 +114,7 @@ class Anim:
             ):
                 continue
 
-            if (
-                local_frame < c_frame or local_frame >= n_frame
-            ):  # TODO: Can be optimized
+            if local_frame < c_frame or local_frame >= n_frame:
                 continue
 
             ease_val = self.ease(
@@ -179,13 +177,13 @@ class Anim:
             # Calculate weighted sum
             total = 0
             for i in range(low, high + 1):
-                val = (keyframes[i].change_in_value or 0) * 4096  # TODO: remove or 0
+                val = (keyframes[i].change_in_value or 0) * 4096
 
                 # Calculated weight factor
                 for j in range(low, high + 1):
                     if i != j:
-                        i_frame = keyframes[i].frame or 0  # TODO: remove or 0
-                        j_frame = keyframes[j].frame or 0  # TODO: remove or 0
+                        i_frame = keyframes[i].frame or 0
+                        j_frame = keyframes[j].frame or 0
 
                         val *= (local_frame - j_frame) / (i_frame - j_frame)
                 total += val
@@ -440,7 +438,7 @@ class Anim:
         sizer_y: float,
         scale_unit: int,
         angle_unit: int,
-    ) -> tuple[list[float], float, float]:
+    ) -> tuple[list[float], float, float]:  # TODO: optimize
         siz_x, siz_y = sizer_x, sizer_y
         if part.anim is None:
             return matrix, siz_x, siz_y
