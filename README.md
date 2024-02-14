@@ -170,6 +170,14 @@ encoding resources without apktool.
 loader.initialize(use_apktool=False)
 ```
 
+If you want to modify a different langauge and you are using an en apk, you can
+change the language when you initialize the loader. Valid langs are "fr", "it",
+"de", "es", and "th".
+
+```python
+loader.initialize(lang="fr")
+```
+
 If you don't want to use inheritance, then you can structure the code like this:
 
 ```python
