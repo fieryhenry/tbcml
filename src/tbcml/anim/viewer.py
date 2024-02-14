@@ -34,7 +34,7 @@ class AnimViewer(QtWidgets.QOpenGLWidget):
         self.frame = 0
         self.clock = QtCore.QTimer()
         self.clock.timeout.connect(self.update_frame)
-        self.clock.start()
+        self.clock.start(1000 // 30)
 
         self.setMouseTracking(True)
 
