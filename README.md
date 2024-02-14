@@ -20,7 +20,8 @@ Most features are not documented yet and many may not work properly atm.
 
 ## Functionality
 
-Note that most of these features a work in progress and may not work properly.
+Note that most of these features are a work in progress and may not work
+properly.
 
 - [Downloading and extracting apks](examples/apk/download_and_extract.py)
 - [Downloading server files](examples/apk/download_server_files.py) and event data
