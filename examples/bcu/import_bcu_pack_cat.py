@@ -1,5 +1,7 @@
 import tbcml
 
+# NOTE: You should always have permission from the original pack author to use their work in your mod if you plan to distribute it.
+
 
 class CustomCat(tbcml.Cat):
     def __init__(self, bcuzip: tbcml.BCUZip):
