@@ -32,7 +32,7 @@ Note that most of these features a work in progress and may not work properly.
 - [Java to smali code conversion](examples/scripting/dataload_smali.py)
 - [Patching of libnative-lib.so file](examples/scripting/mailbox_ps.py)
 - [Modification of apk assets](examples/apk/asset_edit.py)
-- BCU Pack Imports
+- [BCU Pack Imports](examples/bcu/import_bcu_pack_cat.py)
 - Repacking and signing of modified apks
 - [Custom encryption key and iv](examples/apk/custom_enc_key.py)
 
