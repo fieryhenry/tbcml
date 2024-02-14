@@ -807,6 +807,11 @@ class CatForm:
     
     It is a list of 3 elements, each element is a new line.
     """
+    cat_guide_text: Optional[list[str]] = None
+    """Text that specifies how to unlock the form
+
+    It is a list of 3 elements, each element is a new line.
+    """
     stats: Optional[FormStats] = None
     """Stats of the form.
     See `FormStats` for more documentation
@@ -862,9 +867,11 @@ class CatForm:
     def apply_game_data(self, cat_id: int, game_data: "tbcml.GamePacks"):
         name_file_name, name_csv = Cat.get_name_csv(game_data, cat_id)
         stats_file_name, stats_csv = Cat.get_stats_csv(game_data, cat_id)
-        self.apply_csv(name_csv, stats_csv, game_data, cat_id)
+        nypb_file_name, nypb_csv = Cat.get_cat_guide_text_csv(game_data)
+        self.apply_csv(name_csv, stats_csv, nypb_csv, game_data, cat_id)
         game_data.set_csv(name_file_name, name_csv)
         game_data.set_csv(stats_file_name, stats_csv)
+        game_data.set_csv(nypb_file_name, nypb_csv)
 
     def set_icons(self, cat_id: int, game_data: "tbcml.GamePacks"):
         game_data.set_img(self.get_upgrade_icon_file_name(cat_id), self.upgrade_icon)
@@ -873,6 +880,7 @@ class CatForm:
     def read_game_data(self, cat_id: int, game_data: "tbcml.GamePacks"):
         self.read_stats(cat_id, game_data)
         self.read_name_desc(cat_id, game_data)
+        self.read_cat_guide_text(cat_id, game_data)
         self.read_anim(cat_id, game_data)
         self.read_icons(cat_id, game_data)
 
@@ -888,6 +896,12 @@ class CatForm:
         if name_csv is None:
             return
         self.read_name_desc_csv(name_csv)
+
+    def read_cat_guide_text(self, cat_id: int, game_data: "tbcml.GamePacks"):
+        _, csv = Cat.get_cat_guide_text_csv(game_data)
+        if csv is None:
+            return
+        self.read_cat_guide_text_csv(csv, cat_id)
 
     def get_upgrade_icon_file_name(self, cat_id: int):
         return f"udi{Cat.get_cat_id_str(cat_id)}_{self.form_type.value}.png"
@@ -933,6 +947,7 @@ class CatForm:
         self,
         name_csv: Optional["tbcml.CSV"],
         stat_csv: Optional["tbcml.CSV"],
+        cat_guide_text_csv: Optional["tbcml.CSV"],
         game_data: Optional["tbcml.GamePacks"],
         cat_id: Optional[int],
     ):
@@ -940,6 +955,8 @@ class CatForm:
             self.apply_name_desc(name_csv)
         if self.stats is not None and stat_csv is not None:
             self.stats.apply_csv(self.form_type, stat_csv)
+        if cat_guide_text_csv is not None and cat_id is not None:
+            self.apply_cat_guide_text_csv(cat_guide_text_csv, cat_id)
         if self.anim is not None and game_data is not None:
             self.anim.apply(game_data)
         if cat_id is not None and game_data is not None:
@@ -957,10 +974,28 @@ class CatForm:
 
         tbcml.Modification.read_csv_fields(self, csv)
 
+    def read_cat_guide_text_csv(self, csv: "tbcml.CSV", cat_id: int):
+        csv.index = cat_id
+
+        row = self.form_type.get_index() * 3
+        field = StrListCSVField(col_index=row, length=3, blank="＠")
+
+        field.read_from_csv(csv)
+
+    def apply_cat_guide_text_csv(self, csv: "tbcml.CSV", cat_id: int):
+        csv.index = cat_id
+
+        row = self.form_type.get_index() * 3
+        field = StrListCSVField(col_index=row, length=3, blank="＠")
+        field.set(self.cat_guide_text)
+
+        field.write_to_csv(csv)
+
     def read_csv(
         self,
         name_csv: Optional["tbcml.CSV"],
         stat_csv: Optional["tbcml.CSV"],
+        cat_guide_text_csv: Optional["tbcml.CSV"],
         cat_id: Optional[int],
         game_data: Optional["tbcml.GamePacks"],
     ):
@@ -969,6 +1004,8 @@ class CatForm:
         if stat_csv is not None:
             self.stats = FormStats()
             self.stats.read_csv(self.form_type, stat_csv)
+        if cat_guide_text_csv is not None and cat_id is not None:
+            self.read_cat_guide_text_csv(cat_guide_text_csv, cat_id)
         if game_data is not None and cat_id is not None:
             self.read_anim(cat_id, game_data)
             self.read_icons(cat_id, game_data)
@@ -1244,6 +1281,15 @@ class Cat(tbcml.Modification):
         return file_name_desc, name_csv
 
     @staticmethod
+    def get_cat_guide_text_csv(game_data: "tbcml.GamePacks"):
+        file_name = f"nyankoPictureBook_{game_data.get_lang()}.csv"
+
+        csv = game_data.get_csv(
+            file_name, country_code=game_data.country_code, remove_empty=False
+        )
+        return file_name, csv
+
+    @staticmethod
     def get_stats_csv(
         game_data: "tbcml.GamePacks", cat_id: int
     ) -> tuple[str, Optional["tbcml.CSV"]]:
@@ -1312,13 +1358,15 @@ class Cat(tbcml.Modification):
     def apply_forms(self, game_data: "tbcml.GamePacks"):
         file_name_desc, name_csv = Cat.get_name_csv(game_data, self.cat_id)
         file_name_stat, stat_csv = Cat.get_stats_csv(game_data, self.cat_id)
+        file_name_nypb, nypb_csv = Cat.get_cat_guide_text_csv(game_data)
 
         if self.forms:
             for form in self.forms.values():
-                form.apply_csv(name_csv, stat_csv, game_data, self.cat_id)
+                form.apply_csv(name_csv, stat_csv, nypb_csv, game_data, self.cat_id)
 
         game_data.set_csv(file_name_desc, name_csv)
         game_data.set_csv(file_name_stat, stat_csv)
+        game_data.set_csv(file_name_nypb, nypb_csv)
 
     def read_unit_buy_csv(self, csv: Optional["tbcml.CSV"]):
         if csv is None:
@@ -1358,6 +1406,7 @@ class Cat(tbcml.Modification):
     def read_forms(self, game_data: "tbcml.GamePacks") -> bool:
         _, name_csv = self.get_name_csv(game_data, self.cat_id)
         _, stat_csv = self.get_stats_csv(game_data, self.cat_id)
+        _, nyanko_pic_book = self.get_cat_guide_text_csv(game_data)
 
         total_forms = None
 
@@ -1376,7 +1425,7 @@ class Cat(tbcml.Modification):
             self.forms[form_type] = CatForm(form_type)
 
         for form in self.forms.values():
-            form.read_csv(name_csv, stat_csv, self.cat_id, game_data)
+            form.read_csv(name_csv, stat_csv, nyanko_pic_book, self.cat_id, game_data)
 
         return True
 
@@ -1431,9 +1480,12 @@ class Cat(tbcml.Modification):
         evolve_cost: int = 100000,
         evolve_level: int = 40,
         evolve_text: Optional[list[str]] = None,
+        cat_guide_text: Optional[list[str]] = None,
     ):
         if form is not None:
             self.set_form(form, CatFormType.FOURTH)
+            form.cat_guide_text = cat_guide_text
+
         unitbuy = self.get_unitbuy()
         unitbuy.set_evolve_items_uf(evolve_items)
         unitbuy.uf_id = evolve_id
@@ -1455,9 +1507,11 @@ class Cat(tbcml.Modification):
         evolve_cost: int = 100000,
         evolve_level: int = 30,
         evolve_text: Optional[list[str]] = None,
+        cat_guide_text: Optional[list[str]] = None,
     ):
         if form is not None:
             self.set_form(form, CatFormType.FOURTH)
+            form.cat_guide_text = cat_guide_text
         unitbuy = self.get_unitbuy()
         unitbuy.set_evolve_items_tf(evolve_items)
         unitbuy.tf_id = evolve_id

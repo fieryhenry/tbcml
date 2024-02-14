@@ -49,6 +49,10 @@ class NewCat(tbcml.Cat):
             evolve_cost=1000,
             evolve_level=35,
             evolve_text=["Evolve line 1", "Evolve line 2", "Evolve line 3!"],
+            cat_guide_text=[
+                "Once Lvl 35 is reached, use",
+                "XP and Catfruit to Evolve.",
+            ],
         )
 
 
