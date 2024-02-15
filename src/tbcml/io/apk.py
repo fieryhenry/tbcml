@@ -221,7 +221,7 @@ class Apk:
         return self.original_extracted_path.add("apktool.yml").exists()
 
     def has_decoded_resources(self) -> bool:
-        return not self.original_extracted_path.add("resources.arsc").exists()
+        return self.extracted_path.add("AndroidManifest.xml").readable()
 
     def extract(
         self,
@@ -252,7 +252,7 @@ class Apk:
             self.original_extracted_path.remove().generate_dirs()
             path.copy(self.original_extracted_path)
 
-        self.copy_extracted()
+        self.copy_extracted(force=True)
         return True
 
     def extract_apktool(self, decode_resources: bool = True):
@@ -271,8 +271,7 @@ class Apk:
                 return False
             self.original_extracted_path.remove().generate_dirs()
             path.copy(self.original_extracted_path)
-
-        self.copy_extracted()
+        self.copy_extracted(force=True)
         return True
 
     def extract_smali(
