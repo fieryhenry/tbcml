@@ -133,7 +133,7 @@ class PackFile:
         self.__files: dict[str, GameFile] = {}
         self.loaded = False
         self.modified = False
-        self.enc_data: Optional[tbcml.Data] = None
+        self.enc_path: Optional[tbcml.Path] = None
         self.key: Optional[str] = None
         self.iv: Optional[str] = None
         self.list_map: dict[str, tuple[int, int]] = {}
@@ -329,7 +329,7 @@ class PackFile:
     @staticmethod
     def from_pack_file(
         enc_list_data: "tbcml.Data",
-        enc_pack_data: "tbcml.Data",
+        enc_pack_path: "tbcml.Path",
         country_code: "tbcml.CountryCode",
         pack_name: str,
         gv: "tbcml.GameVersion",
@@ -340,7 +340,7 @@ class PackFile:
 
         Args:
             enc_list_data (tbcml.Data): Encrypted list data.
-            enc_pack_data (tbcml.Data): Encrypted pack data.
+            enc_pack_path (tbcml.Path): Path to encrypted pack data.
             country_code (country_code.CountryCode): The country code of the game data.
             pack_name (str): The name of the pack.
             gv (game_version.GameVersion): The game version.
@@ -354,25 +354,29 @@ class PackFile:
 
         pack_file = PackFile(pack_name, country_code, gv)
         pack_file.create_list_map(ls_data)
-        pack_file.enc_data = enc_pack_data
+        pack_file.enc_path = enc_pack_path
         pack_file.key = key
         pack_file.iv = iv
 
         return pack_file
 
     def load_files(self):
-        if self.enc_data is None or self.loaded:
+        if self.enc_path is None or self.loaded:
             return
-        for file_name, (start, size) in self.list_map.items():
-            self.__files[file_name] = GameFile(
-                tbcml.Data(self.enc_data.data[start : start + size]),
-                file_name,
-                self.pack_name,
-                self.country_code,
-                self.gv,
-                key=self.key,
-                iv=self.iv,
-            )
+        path = self.enc_path.path
+        with open(path, "rb") as f:
+            for file_name, (start, size) in self.list_map.items():
+                f.seek(start, 0)
+                data = f.read(size)
+                self.__files[file_name] = GameFile(
+                    tbcml.Data(data),
+                    file_name,
+                    self.pack_name,
+                    self.country_code,
+                    self.gv,
+                    key=self.key,
+                    iv=self.iv,
+                )
         self.loaded = True
 
     def to_pack_list_file(
@@ -763,11 +767,10 @@ class GamePacks:
             pack_lang = PackFile.get_lang(pack_name)
             if pack_lang != lang:
                 continue
-            pack_data = pack_file.read()
             list_data = list_file.read()
             pack = PackFile.from_pack_file(
                 list_data,
-                pack_data,
+                pack_file,
                 apk.country_code,
                 pack_name,
                 apk.game_version,
