@@ -1,15 +1,22 @@
 # see https://github.com/fieryhenry/mailboxhack for more information on what this script does
 import sys
-from tbcml import (
-    Mod,
-    FridaScript,
-    Path,
-    ModLoader,
-)
+from tbcml import Mod, FridaScript, Path, ModLoader, is_lief_installed
 
-loader = ModLoader("en", "12.3.0")
+if not is_lief_installed():
+    print(
+        "Please install the scripting dependencies to use this. (pip install -r requirements_scripting.txt) when in tbcml folder"
+    )
+    exit(1)
+
+loader = ModLoader("en", "13.1.1")  # change to whatever you want
 print("Initializing mod loader")
 loader.initialize()
+
+# if you are having issues with apktool do this instead:
+# loader.initialize(decode_resources=False)
+
+# and if that still doesn't work do this instead:
+# loader.initialize(decode_resources=False, use_apktool=False)
 
 apk = loader.get_apk()
 
@@ -50,16 +57,20 @@ mod = Mod(
 
 mod.add_script(script)
 
+# the below lines may not work if you set decode_resources to False when
+# initializing the loader
+
 apk.set_app_name("Battle Cats Mail Box Hack")
-apk.set_package_name(
-    "jp.co.ponos.battlecatsen.mailboxhack"
-)  # may not work if you set decode_resources to False when extracting the APK
+apk.set_package_name("jp.co.ponos.battlecatsen.mailboxhack")
 
 print("Applying mods to game...")
 
 loader.apply(mod)
 
 print(apk.final_apk_path)
+
+# uncomment the lines below to install the apk and run the game if you have a
+# device connected with adb
 
 # loader.initialize_adb()
 # loader.install_adb(run_game=True)
