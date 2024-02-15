@@ -19,6 +19,10 @@ ARC = Union[
 ARCS = Union[list[ARC], Literal["all"], Literal["32"], Literal["64"]]
 
 
+def is_lief_installed() -> bool:
+    return lief is not None
+
+
 class Patch:
     def __init__(self):
         pass
@@ -299,7 +303,9 @@ class Lib:
         return lief.parse(str(self.path))  # type: ignore
 
     def not_installed_error(self):
-        print("Please pip install tbcml[scripting] to use this feature")
+        print(
+            "Please install the scripting dependencies to use lib patching / frida importing (pip install -r requirements_scripting.txt)"
+        )
 
     def add_library(self, library_path: "tbcml.Path"):
         if self.lib is None:

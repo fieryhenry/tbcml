@@ -87,6 +87,7 @@ from .io.lib import (
     StringReplacePatch,
     ARC,
     ARCS,
+    is_lief_installed,
 )
 from .io.json_file import JsonFile
 from .io.file_handler import FileSize
@@ -227,6 +228,7 @@ __all__ = [
     "GameVersion",
     "AdbHandler",
     "BulkAdbHandler",
+    "is_lief_installed",
     "mods",
     "game_data",
     "io",
