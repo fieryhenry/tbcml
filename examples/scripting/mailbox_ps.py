@@ -8,7 +8,7 @@ from tbcml import (
     ModLoader,
 )
 
-loader = ModLoader("en", "12.3.0")
+loader = ModLoader("en", "13.1.1")
 loader.initialize()
 
 mod = Mod(
@@ -40,13 +40,13 @@ Interceptor.attach(Module.findExportByName("libnative-lib.so", func_name), {
 """
 
 script_32 = FridaScript(
-    name="Force Verify Nyanko Signature",
+    name="Force Verify Nyanko Signature 32bit",
     content=script_32,
     architectures="32",
     description="Overwrites a botan cryptography function to always return 1",
 )
 script_64 = FridaScript(
-    name="Force Verify Nyanko Signature",
+    name="Force Verify Nyanko Signature 64bit",
     content=script_64,
     architectures="64",
     description="Overwrites a botan cryptography function to always return 1",
@@ -70,8 +70,8 @@ mod.patches.add_patch(patch)
 
 apk = loader.get_apk()
 
-apk.set_app_name("12.3.0")
-apk.set_package_name("jp.co.ponos.battlecatste")
+apk.set_app_name("Battle Cats Private Server")
+apk.set_package_name("jp.co.ponos.battlecatsps")
 
 loader.apply(mod)
 
