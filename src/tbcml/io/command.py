@@ -24,11 +24,9 @@ class Command:
     def __init__(
         self,
         command: str,
-        display_output: bool = True,
         cwd: Optional["tbcml.Path"] = None,
     ):
         self.command = command
-        self.display_output = display_output
         self.process = None
         self.thread = None
         if isinstance(cwd, tbcml.Path):
@@ -36,7 +34,7 @@ class Command:
         else:
             self.cwd = cwd
 
-    def run(self, inputData: str = "\n") -> CommandResult:
+    def run(self, inputData: str = "\n", display: bool = False) -> CommandResult:
         self.process = subprocess.Popen(
             self.command,
             stdout=subprocess.PIPE,
@@ -47,6 +45,8 @@ class Command:
             cwd=self.cwd,
         )
         output, _ = self.process.communicate(inputData)
+        if display:
+            print(output)
         return_code = self.process.wait()
         return CommandResult(output, return_code)
 

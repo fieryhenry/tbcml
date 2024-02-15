@@ -160,25 +160,25 @@ class Apk:
 
     @staticmethod
     def check_jarsigner_installed() -> bool:
-        cmd = tbcml.Command("jarsigner", False)
+        cmd = tbcml.Command("jarsigner")
         res = cmd.run()
         return res.exit_code == 0
 
     @staticmethod
     def check_apksigner_installed() -> bool:
-        cmd = tbcml.Command("apksigner", False)
+        cmd = tbcml.Command("apksigner")
         res = cmd.run()
         return res.exit_code == 0
 
     @staticmethod
     def check_zipalign_installed() -> bool:
-        cmd = tbcml.Command("zipalign", False)
+        cmd = tbcml.Command("zipalign")
         res = cmd.run()
         return res.exit_code == 2
 
     @staticmethod
     def check_keytool_installed() -> bool:
-        cmd = tbcml.Command("keytool", False)
+        cmd = tbcml.Command("keytool")
         res = cmd.run()
         return res.exit_code == 0
 
@@ -358,7 +358,6 @@ class Apk:
         if not key_store_path.exists():
             cmd = tbcml.Command(
                 f'keytool -genkey -v -keystore {key_store_path} -alias tbcml -keyalg RSA -keysize 2048 -validity 10000 -storepass {password} -keypass {password} -dname "CN=, OU=, O=, L=, S=, C="',
-                False,
             )
             res = cmd.run()
             if res.exit_code != 0:
@@ -368,7 +367,6 @@ class Apk:
         if use_jarsigner:
             cmd = tbcml.Command(
                 f"jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore {key_store_path} {self.final_apk_path} tbcml",
-                True,
             )
             res = cmd.run(password)
         else:
