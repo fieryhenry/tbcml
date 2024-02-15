@@ -179,6 +179,34 @@ class ServerFileHandler:
             return False
         return True
 
+    @staticmethod
+    def get_server_metadata_path() -> "tbcml.Path":
+        return tbcml.Path.get_documents_folder().add("server_latest.json")
+
+    @staticmethod
+    def get_server_metadata() -> dict[str, int]:
+        path = ServerFileHandler.get_server_metadata_path()
+        if not path.exists():
+            path.write(tbcml.Data("{}"))
+        data = path.read()
+        return tbcml.JsonFile(data).get_json()
+
+    def get_latest_local_server_version(self) -> Optional[int]:
+        return self.get_server_metadata().get(self.apk.country_code.get_code())
+
+    def set_latest_local_server_version(self, version: int):
+        dt = self.get_server_metadata()
+        dt[self.apk.country_code.get_code()] = version
+        self.set_server_metadata(dt)
+
+    def reset_latest_local_server_version(self):
+        self.set_latest_local_server_version(0)
+
+    @staticmethod
+    def set_server_metadata(data: dict[str, int]):
+        path = ServerFileHandler.get_server_metadata_path()
+        tbcml.JsonFile.from_object(data).to_data().to_file(path)
+
     def needs_extracting(
         self,
         index: int,
@@ -236,10 +264,18 @@ class ServerFileHandler:
             force (bool, optional): Whether to force extraction even if the files already exist. Defaults to False.
             display (bool, optional): Whether to display text with the current download progress. Defualts to False.
         """
+        version = self.get_latest_local_server_version()
+        if version is not None and not force:
+            start_point = version
+        else:
+            start_point = 0
         to_extract: list[int] = []
-        for i in range(len(self.tsv_paths)):
+        max_version = start_point
+        for i in range(start_point, len(self.tsv_paths)):
             if self.needs_extracting(i, force):
                 to_extract.append(i)
+            else:
+                max_version = max(i, max_version)
 
         for i, index in enumerate(to_extract):
             if display:
@@ -247,6 +283,10 @@ class ServerFileHandler:
                     f"Downloading server zip file {i+1}/{len(to_extract)} (id {index})"
                 )
             self.extract(index)
+            max_version = max(max_version, index)
+
+        if max_version > start_point:
+            self.set_latest_local_server_version(max_version)
 
     def extract(self, index: int):
         zipf = self.download(index)

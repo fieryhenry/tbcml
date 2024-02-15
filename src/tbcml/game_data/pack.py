@@ -28,16 +28,6 @@ class GameFile:
         self.__dec_data: Optional["tbcml.Data"] = dec_data
         self.original_dec_data: Optional["tbcml.Data"] = None
 
-    def get_lang(self) -> Optional["tbcml.Language"]:
-        parts = self.pack_name.split("_")
-        if len(parts) == 1:
-            return None
-        lang_str = parts[-1]
-        if lang_str == "en":
-            return None
-
-        return tbcml.Language(lang_str)
-
     @property
     def dec_data(self):
         return self.decrypt_data()
@@ -140,8 +130,39 @@ class PackFile:
         self.pack_name = pack_name
         self.country_code = country_code
         self.gv = gv
-        self.files: dict[str, GameFile] = {}
+        self.__files: dict[str, GameFile] = {}
+        self.loaded = False
         self.modified = False
+        self.enc_data: Optional[tbcml.Data] = None
+        self.key: Optional[str] = None
+        self.iv: Optional[str] = None
+        self.list_map: dict[str, tuple[int, int]] = {}
+
+    def check_file(self, file_name: str) -> bool:
+        if not self.list_map or not self.loaded:
+            return file_name in self.__files
+        return file_name in self.list_map
+
+    def get_file(self, file_name: str) -> Optional[GameFile]:
+        self.load_files()
+
+        return self.__files.get(file_name)
+
+    def get_files(self) -> list[GameFile]:
+        self.load_files()
+
+        return list(self.__files.values())
+
+    @staticmethod
+    def get_lang(pack_name: str) -> Optional["tbcml.Language"]:
+        parts = pack_name.split("_")
+        if len(parts) == 1:
+            return None
+        lang_str = parts[-1]
+        if lang_str == "en":
+            return None
+
+        return tbcml.Language(lang_str)
 
     def add_file(self, file: "GameFile"):
         """Add a file to the pack.
@@ -149,7 +170,8 @@ class PackFile:
         Args:
             file (GameFile): The file to add.
         """
-        self.files[file.file_name] = file
+        self.load_files()
+        self.__files[file.file_name] = file
 
     def add_files(self, files: list["GameFile"]):
         """Add multiple files to the pack.
@@ -166,11 +188,11 @@ class PackFile:
         Args:
             files (dict[str, GameFile]): The files to set.
         """
-        self.files = files
+        self.__files = files
 
     def clear_files(self):
         """Clear the files in the pack."""
-        self.files = {}
+        self.__files = {}
 
     def remove_file(self, file_name: str):
         """Remove a file from the pack.
@@ -178,7 +200,8 @@ class PackFile:
         Args:
             file_name (str): The name of the file to remove.
         """
-        self.files.pop(file_name)
+        self.load_files()
+        self.__files.pop(file_name)
 
     def set_modified(self, modified: bool):
         """Set the modified status of the pack.
@@ -235,14 +258,6 @@ class PackFile:
             cc, pack_name, gv, force_server, key, iv
         )
 
-    def get_files(self) -> list[GameFile]:
-        """Get all the files in the pack.
-
-        Returns:
-            list[GameFile]: The files in the pack.
-        """
-        return list(self.files.values())
-
     def set_file(self, file_name: str, file_data: "tbcml.Data") -> Optional[GameFile]:
         """Set a file in the pack.
 
@@ -253,7 +268,7 @@ class PackFile:
         Returns:
             Optional[GameFile]: The file if it exists, None otherwise.
         """
-        file = self.files.get(file_name)
+        file = self.get_file(file_name)
         if file is None:
             file = GameFile(
                 None,
@@ -304,6 +319,13 @@ class PackFile:
                 break
         return file_name
 
+    def create_list_map(self, list_file: "tbcml.CSV"):
+        total_files = int(list_file.lines[0][0])
+        for i in range(total_files):
+            line = list_file.lines[i + 1]
+            tp = (int(line[1]), int(line[2]))
+            self.list_map[line[0]] = tp
+
     @staticmethod
     def from_pack_file(
         enc_list_data: "tbcml.Data",
@@ -326,34 +348,32 @@ class PackFile:
         Returns:
             Optional[PackFile]: The PackFile if it was created successfully, None otherwise.
         """
-        list_key = "b484857901742afc"
-        ls_dec_data = tbcml.AesCipher(list_key.encode("utf-8")).decrypt(enc_list_data)
+        list_key = b"b484857901742afc"
+        ls_dec_data = tbcml.AesCipher(list_key).decrypt(enc_list_data)
         ls_data = tbcml.CSV(ls_dec_data)
 
-        total_files = ls_data.read_line()
-        if total_files is None:
-            return None
-        total_files = int(total_files[0])
         pack_file = PackFile(pack_name, country_code, gv)
-        files: dict[str, GameFile] = {}
-        for _ in range(total_files):
-            line = ls_data.read_line()
-            if line is None:
-                return None
-            file_name = line[0]
-            start = int(line[1])
-            size = int(line[2])
-            files[file_name] = GameFile(
-                tbcml.Data(enc_pack_data.data[start : start + size]),
-                file_name,
-                pack_name,
-                country_code,
-                gv,
-                key=key,
-                iv=iv,
-            )
-        pack_file.set_files(files)
+        pack_file.create_list_map(ls_data)
+        pack_file.enc_data = enc_pack_data
+        pack_file.key = key
+        pack_file.iv = iv
+
         return pack_file
+
+    def load_files(self):
+        if self.enc_data is None or self.loaded:
+            return
+        for file_name, (start, size) in self.list_map.items():
+            self.__files[file_name] = GameFile(
+                tbcml.Data(self.enc_data.data[start : start + size]),
+                file_name,
+                self.pack_name,
+                self.country_code,
+                self.gv,
+                key=self.key,
+                iv=self.iv,
+            )
+        self.loaded = True
 
     def to_pack_list_file(
         self,
@@ -365,11 +385,12 @@ class PackFile:
         Returns:
             tuple[str, tbcml.Data, tbcml.Data]: The pack name, encrypted pack data, and encrypted list data.
         """
+        self.load_files()
         ls_data = tbcml.CSV()
-        ls_data.lines.append([str(len(self.files))])
+        ls_data.lines.append([str(len(self.get_files()))])
         offset = 0
         pack_data_ls: list[tbcml.Data] = []
-        for file in self.files.values():
+        for file in self.get_files():
             data = file.encrypt(key=key, iv=iv)
             ls_data.lines.append([file.file_name, str(offset), str(len(data))])
             pack_data_ls.append(data)
@@ -396,7 +417,7 @@ class PackFile:
         """
         path = path.add(self.pack_name)
         path.generate_dirs()
-        for file in self.files.values():
+        for file in self.get_files():
             file.extract(path, encrypt)
         return path
 
@@ -535,14 +556,6 @@ class GamePacks:
         file = self.set_file(file_name, img.to_data())
         return file
 
-    def delete_file(self, file_name: str):
-        file = self.find_file(file_name)
-        if file is None:
-            return False
-
-        del self.packs[file.pack_name].files[file.file_name]
-        return True
-
     def find_file(
         self,
         file_name: str,
@@ -562,10 +575,10 @@ class GamePacks:
             return file
         found_files: list[GameFile] = []
         for pack in self.packs.values():
-            file = pack.files.get(file_name)
+            file = pack.get_file(file_name)
             if file is None:
                 continue
-            file_lang = file.get_lang()
+            file_lang = PackFile.get_lang(file.pack_name)
             if file_lang is not None:
                 if self.lang != file_lang:
                     continue
@@ -586,9 +599,15 @@ class GamePacks:
             elif not PackFile.is_server_pack(found_files[1].pack_name):
                 self.cache[file_name] = found_files[1]
                 return found_files[1]
-            elif self.lang is not None and found_files[0].get_lang() == self.lang:
+            elif (
+                self.lang is not None
+                and PackFile.get_lang(found_files[0].pack_name) == self.lang
+            ):
                 return found_files[0]
-            elif self.lang is not None and found_files[1].get_lang() == self.lang:
+            elif (
+                self.lang is not None
+                and PackFile.get_lang(found_files[1].pack_name) == self.lang
+            ):
                 return found_files[1]
             elif len(found_files[0].dec_data) > len(found_files[1].dec_data):
                 self.cache[file_name] = found_files[0]
@@ -602,7 +621,7 @@ class GamePacks:
         else:
             if self.lang is not None:
                 for file in found_files:
-                    if file.get_lang() == self.lang:
+                    if PackFile.get_lang(file.pack_name) == self.lang:
                         return file
             if show_error:
                 print(f"Found multiple files for {file_name}")
@@ -738,22 +757,26 @@ class GamePacks:
             GamePacks: The GamePacks object.
         """
         packs: dict[str, PackFile] = {}
+
         for pack_file, list_file in apk.get_packs_lists():
+            pack_name = list_file.get_file_name_without_extension()
+            pack_lang = PackFile.get_lang(pack_name)
+            if pack_lang != lang:
+                continue
             pack_data = pack_file.read()
             list_data = list_file.read()
-            pack_name = list_file.get_file_name_without_extension()
             pack = PackFile.from_pack_file(
                 list_data,
                 pack_data,
                 apk.country_code,
                 pack_name,
                 apk.game_version,
-                key=apk.key,
-                iv=apk.iv,
+                apk.key,
+                apk.iv,
             )
-            if pack is None:
-                continue
-            packs[pack_name] = pack
+            if pack is not None:
+                packs[pack_name] = pack
+
         return GamePacks(packs, apk.country_code, apk.game_version, lang=lang)
 
     def extract(
