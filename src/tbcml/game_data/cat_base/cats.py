@@ -1026,6 +1026,10 @@ class CatForm:
         path = tbcml.Path.get_asset_file_path(f"uni_{self.form_type.value}.png")
         return tbcml.BCImage(path.read().to_base_64())
 
+    def get_upgrade_bg(self) -> "tbcml.BCImage":
+        path = tbcml.Path.get_asset_file_path(f"udi_{self.form_type.value}.png")
+        return tbcml.BCImage(path.read().to_base_64())
+
     def import_enemy_deploy_icon(
         self,
         enemy_icon: "tbcml.BCImage",
@@ -1047,6 +1051,25 @@ class CatForm:
         border_img.paste(base_image, 14, 26)
         self.deploy_icon = border_img
 
+    def import_enemy_upgrade_icon(
+        self,
+        enemy_icon: "tbcml.BCImage",
+        offset: tuple[int, int] = (-140, -20),
+        scale: float = 2.5,
+    ):
+        enemy_icon.scale(scale)
+        enemy_icon.convert_to_rgba()
+
+        base_image = tbcml.BCImage.from_size(512, 128)
+        base_image.paste(enemy_icon, offset[0], offset[1])
+        base_image = self.crop_upgrade_icon(base_image)
+
+        bg_img = self.get_upgrade_bg()
+        bg_img = CatForm.format_bcu_upgrade_icon_s(bg_img)
+        bg_img.convert_to_rgba()
+        bg_img.paste(base_image, 0, 0)
+        self.upgrade_icon = bg_img
+
     def format_bcu_deploy_icon(self):
         deploy_icon = self.get_deploy_icon()
         if deploy_icon.width == 128 and deploy_icon.height == 128:
@@ -1058,24 +1081,38 @@ class CatForm:
 
     def format_bcu_upgrade_icon(self):
         upgrade_icon = self.get_upgrade_icon()
+        base_image = CatForm.format_bcu_upgrade_icon_s(upgrade_icon)
+        self.upgrade_icon = base_image
+
+    @staticmethod
+    def format_bcu_upgrade_icon_s(upgrade_icon: "tbcml.BCImage"):
         if upgrade_icon.width == 85 and upgrade_icon.height == 32:
             upgrade_icon.scale(3.5)
 
         base_image = tbcml.BCImage.from_size(512, 128)
         base_image.paste(upgrade_icon, 13, 1)
 
+        return CatForm.crop_upgrade_icon(base_image)
+
+    @staticmethod
+    def crop_upgrade_icon(img: "tbcml.BCImage") -> "tbcml.BCImage":
         start_pos = (146, 112)
         end_pos = (118, 70)
         start_offset = 0
         start_width = 311 - start_pos[0]
         for i in range(start_pos[1] - end_pos[1]):
             for j in range(start_width):
-                base_image.putpixel(
+                img.putpixel(
                     start_pos[0] + j + start_offset, start_pos[1] - i, (0, 0, 0, 0)
                 )
             start_offset += 1
             start_width -= 1
-        self.upgrade_icon = base_image
+
+        img = img.crop_rect(13, 1, 307, 112)
+        base_img = tbcml.BCImage.from_size(512, 128)
+        base_img.paste(img, 13, 1)
+
+        return base_img
 
     def import_enemy(
         self,
@@ -1083,6 +1120,8 @@ class CatForm:
         enemy: "tbcml.Enemy",
         deploy_icon_offset: tuple[int, int] = (-20, -20),
         deploy_icon_scale: float = 2.5,
+        upgrade_icon_offset: tuple[int, int] = (-140, -20),
+        upgrade_icon_scale: float = 2.5,
     ):
         if enemy.name is not None:
             self.name = enemy.name
@@ -1098,6 +1137,9 @@ class CatForm:
         if enemy.icon is not None:
             self.import_enemy_deploy_icon(
                 enemy.icon, deploy_icon_offset, deploy_icon_scale
+            )
+            self.import_enemy_upgrade_icon(
+                enemy.icon, upgrade_icon_offset, upgrade_icon_scale
             )
 
         if enemy.stats is not None:
@@ -1115,10 +1157,19 @@ class CatForm:
         game_data: "tbcml.GamePacks",
         deploy_icon_offset: tuple[int, int] = (-20, -20),
         deploy_icon_scale: float = 2.5,
+        upgrade_icon_offset: tuple[int, int] = (-140, -20),
+        upgrade_icon_scale: float = 2.5,
     ) -> "tbcml.Enemy":
         enemy = tbcml.Enemy(enemy_id)
         enemy.read(game_data)
-        self.import_enemy(cat_id, enemy, deploy_icon_offset, deploy_icon_scale)
+        self.import_enemy(
+            cat_id,
+            enemy,
+            deploy_icon_offset,
+            deploy_icon_scale,
+            upgrade_icon_offset,
+            upgrade_icon_scale,
+        )
         return enemy
 
     def import_enemy_from_release_id(
@@ -1128,6 +1179,8 @@ class CatForm:
         game_data: "tbcml.GamePacks",
         deploy_icon_offset: tuple[int, int] = (-20, -20),
         deploy_icon_scale: float = 2.5,
+        upgrade_icon_offset: tuple[int, int] = (-140, -20),
+        upgrade_icon_scale: float = 2.5,
     ) -> "tbcml.Enemy":
         return self.import_enemy_from_id(
             cat_id,
@@ -1135,6 +1188,8 @@ class CatForm:
             game_data,
             deploy_icon_offset,
             deploy_icon_scale,
+            upgrade_icon_offset,
+            upgrade_icon_scale,
         )
 
     def set_cat_id(self, id: int):
