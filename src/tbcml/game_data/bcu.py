@@ -804,7 +804,8 @@ class BCUZip:
                 files[file.name] = file
         return files
 
-    def extract(self, output_dir: "tbcml.Path"):
+    def extract(self, output_dir: "tbcml.PathStr"):
+        output_dir = tbcml.Path(output_dir)
         output_dir.generate_dirs()
         for file in self.files:
             file.extract(output_dir)
