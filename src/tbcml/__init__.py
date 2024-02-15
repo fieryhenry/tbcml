@@ -93,7 +93,7 @@ from .io.file_handler import FileSize
 from .io.xml_parse import XML
 from .io.audio import AudioFile
 from .io.bc_image import BCImage
-from .io.thread_helper import run_in_threads
+from .io.thread_helper import run_in_threads, run_in_thread
 from .io.zip import Zip
 from .io.temp_file import TempFile, TempFolder
 from .io.yaml import YamlFile
@@ -202,6 +202,7 @@ __all__ = [
     "AudioFile",
     "BCImage",
     "run_in_threads",
+    "run_in_thread",
     "Zip",
     "TempFile",
     "TempFolder",

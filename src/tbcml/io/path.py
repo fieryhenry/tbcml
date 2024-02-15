@@ -31,8 +31,8 @@ class Path:
 
     def run(self, arg: str = "", display_output: bool = False) -> "tbcml.CommandResult":
         cmd_text = self.path + " " + arg
-        cmd = tbcml.Command(cmd_text, display_output=display_output)
-        return cmd.run()
+        cmd = tbcml.Command(cmd_text)
+        return cmd.run(display=display_output)
 
     @staticmethod
     def get_lib(lib_name: str) -> "Path":
@@ -65,9 +65,9 @@ class Path:
             os.startfile(self.path)
         elif os.name == "posix":
             cmd = f"dbus-send --session --dest=org.freedesktop.FileManager1 --type=method_call --print-reply /org/freedesktop/FileManager1 org.freedesktop.FileManager1.ShowItems array:string:'file://{self.path}' string:''"
-            tbcml.Command(cmd, display_output=False).run_in_thread()
+            tbcml.Command(cmd).run_in_thread()
         elif os.name == "mac":
-            tbcml.Command(f"open {self.path}", display_output=False).run()
+            tbcml.Command(f"open {self.path}").run()
         else:
             raise OSError("Unknown OS")
 
@@ -76,9 +76,9 @@ class Path:
             os.startfile(self.path)
         elif os.name == "posix":
             cmd = f"xdg-open {self.path}"
-            tbcml.Command(cmd, display_output=False).run_in_thread()
+            tbcml.Command(cmd).run_in_thread()
         elif os.name == "mac":
-            tbcml.Command(f"open {self.path}", display_output=False).run()
+            tbcml.Command(f"open {self.path}").run()
         else:
             raise OSError("Unknown OS")
 
@@ -163,11 +163,6 @@ class Path:
             shutil.rmtree(self.path, ignore_errors=ignoreErrors)
         return self
 
-    def remove_tree_thread(self, ignoreErrors: bool = False) -> "Path":
-        if self.exists():
-            tbcml.Command(f"rm -rf {self.path}", display_output=False).run_in_thread()
-        return self
-
     def remove(self, in_thread: bool = False) -> "Path":
         if in_thread:
             return self.remove_thread()
@@ -175,15 +170,18 @@ class Path:
             if self.is_directory():
                 self.remove_tree()
             else:
-                os.remove(self.path)
+                self.remove_file()
         return self
+
+    def remove_file(self):
+        os.remove(self.path)
 
     def remove_thread(self) -> "Path":
         if self.exists():
             if self.is_directory():
-                self.remove_tree_thread()
+                tbcml.run_in_thread(self.remove_tree)
             else:
-                tbcml.Command(f"rm {self.path}", display_output=False).run_in_thread()
+                tbcml.run_in_thread(self.remove_file)
         return self
 
     def has_files(self) -> bool:

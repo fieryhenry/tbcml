@@ -1,5 +1,5 @@
 import threading
-from typing import Any, Callable, Generator, TypeVar
+from typing import Any, Callable, Generator, Optional, TypeVar
 
 T = TypeVar("T")
 
@@ -15,6 +15,12 @@ class Thread:
     def get_return(self):
         return self.retval
 
+    def set_thread_obj(self, obj: threading.Thread):
+        self.thread = obj
+
+    def get_thread(self) -> threading.Thread:
+        return self.thread
+
 
 def chunks(lst: list[T], n: int) -> Generator[list[T], None, None]:
     """Yield successive n-sized chunks from lst."""
@@ -28,6 +34,10 @@ def run_chunk(funcs: list[Thread]):
         func.run()
 
 
+def run_thread(thread: Thread):
+    thread.run()
+
+
 def create_threads(
     funcs: list[Callable[..., Any]], args: list[tuple[Any, ...]]
 ) -> list[Thread]:
@@ -36,6 +46,18 @@ def create_threads(
         thread = Thread(func, arg)
         threads.append(thread)
     return threads
+
+
+def run_in_thread(
+    func: Callable[..., Any], args: Optional[tuple[Any, ...]] = None
+) -> Thread:
+    if args is None:
+        args = ()
+    thread_obj = Thread(func, args)
+    thread = threading.Thread(target=run_thread, args=(thread_obj,))
+    thread.start()
+    thread_obj.set_thread_obj(thread)
+    return thread_obj
 
 
 def run_in_threads(
