@@ -216,6 +216,10 @@ class Path:
         else:
             raise FileNotFoundError(f"File not found: {self.path}")
 
+    def readable(self) -> bool:
+        with open(self.path, "r") as f:
+            return f.readable()
+
     def write(self, data: "tbcml.Data"):
         data.to_file(self)
 
