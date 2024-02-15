@@ -12,6 +12,7 @@ class CustomCat(tbcml.Cat):
 
 zip_data = tbcml.Path("examples/bcu/99ogmqbr.pack.bcuzip").read()
 zip = tbcml.BCUZip(zip_data)
+zip.extract("bcu_out")
 
 mod = tbcml.Mod()
 mod.add_modification(CustomCat(zip))
