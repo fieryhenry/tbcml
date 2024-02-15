@@ -112,6 +112,13 @@ class Data:
         result = struct.unpack("<i", self.read_bytes(4))[0]
         return result
 
+    def read_any(self, type: str, length: int) -> tuple[Any, ...]:
+        result = struct.unpack(type, self.read_bytes(length))
+        return result
+
+    def is_end(self) -> bool:
+        return self.pos >= len(self)
+
     def read_int_list(self, length: int) -> list[int]:
         result: list[int] = []
         for _ in range(length):
