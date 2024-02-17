@@ -47,7 +47,10 @@ class XML:
 
     def get_attribute(self, path: str, attribute: str) -> Optional[str]:
         attribute = self.get_attribute_name(attribute)
-        element = self.root.find(path)
+        if path == "manifest":
+            element = self.root
+        else:
+            element = self.root.find(path)
         if element is None:
             return None
         return element.get(attribute)
