@@ -1481,10 +1481,18 @@ class Apk:
     def set_app_name(self, name: str) -> bool:
         return self.edit_xml_string("app_name", name)
 
+    def replace_str_manifest(self, old: str, new: str):
+        manifest = self.get_manifest_path()
+        manifest_str = manifest.read().to_str()
+        manifest_str = manifest_str.replace(old, new)
+        manifest.write(tbcml.Data(manifest_str))
+
     def set_package_name(self, package_name: str) -> bool:
         manifest = self.parse_manifest()
         if manifest is None:
             return False
+
+        current_package = manifest.get_attribute("manifest", "package")
 
         manifest.set_attribute("manifest", "package", package_name)
 
@@ -1507,6 +1515,10 @@ class Apk:
 
         self.set_manifest(manifest)
         self.package_name = package_name
+
+        if current_package is not None:
+            self.replace_str_manifest(current_package, package_name)
+
         return True
 
     def copy_to_android_download_folder(self):
