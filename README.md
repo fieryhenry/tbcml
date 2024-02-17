@@ -238,6 +238,9 @@ Everything else
 python3 script.py
 ```
 
+You can then install the apk on your device. If the apk fails to install, you
+may need to uninstall the previous version first.
+
 ## Install on Android
 
 - Termux (via [F-Droid](https://f-droid.org/en/packages/com.termux/)) You cannot
