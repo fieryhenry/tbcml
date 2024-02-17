@@ -52,7 +52,7 @@ considered donating to my kofi:
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/fieryhenry)
 
-[![wakatime](https://wakatime.com/badge/user/ab1fc9e5-e285-49d1-8dc6-2f2e0198c8f6/project/0350bd63-7366-48f1-8a0d-72dab553a007.svg)](https://wakatime.com/badge/user/ab1fc9e5-e285-49d1-8dc6-2f2e0198c8f6/project/0350bd63-7366-48f1-8a0d-72dab553a007)
+[![wakatime](https://wakatime.com/badge/github/fieryhenry/tbcml.svg)](https://wakatime.com/badge/github/fieryhenry/tbcml)
 
 ## Getting Started
 
