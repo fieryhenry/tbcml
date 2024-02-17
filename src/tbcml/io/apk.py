@@ -221,7 +221,10 @@ class Apk:
         return self.original_extracted_path.add("apktool.yml").exists()
 
     def has_decoded_resources(self) -> bool:
-        return self.extracted_path.add("AndroidManifest.xml").readable()
+        manifest_path = self.original_extracted_path.add("AndroidManifest.xml")
+        if not manifest_path.exists():
+            return False
+        return manifest_path.readable()
 
     def extract(
         self,
@@ -229,11 +232,11 @@ class Apk:
         force: bool = False,
         use_apktool: bool = True,
     ):
-        if (
-            self.has_decoded_resources() == decode_resources
-            and use_apktool == self.did_use_apktool()
-        ):
-            if self.original_extracted_path.has_files() and not force:
+        if self.original_extracted_path.has_files() and not force:
+            if (
+                self.has_decoded_resources() == decode_resources
+                and use_apktool == self.did_use_apktool()
+            ):
                 self.copy_extracted()
                 return True
 
