@@ -25,5 +25,5 @@ apk.set_app_name("Antiban")
 
 loader.apply(mod)
 
-loader.initialize_adb()
-loader.install_adb(run_game=True)
+# loader.initialize_adb()
+# loader.install_adb(run_game=True)
