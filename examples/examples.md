@@ -37,6 +37,7 @@ loader.apply(mod)
 
 - [Mailbox Hack Script](scripting/mailbox_hack.py)
 - [Smali Injection](scripting/dataload_smali.py)
+- [Antiban Script](scripting/antiban.py)
 
 ### BCU
 
