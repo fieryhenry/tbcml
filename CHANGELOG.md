@@ -1,5 +1,38 @@
 # Changelog
 
+## 2.0.0 (???)
+
+Feature list is not complete, but here are some of the changes:
+
+### Added
+
+- ModLoader class to reduce boilerplate code when creating mods
+- Support for different languages when using an en apk (e.g fr, es, it, de, th)
+- Way to compile the mod to raw game files. This is useful to reduce the time it
+  takes to apply the mod to the game and is useful when debugging mods
+- Options to extract and pack the apk without using apktool
+- More examples in the examples folder
+- Different sources of apks to download from (e.g apkpure uptodown and
+  archive.org)
+- ADB support to install the modded apk to a device
+
+### Changed
+
+- Rewrote lots of the code to make the library easier to use and more
+  maintainable
+- The way you create game data mods, now you can create / inherit a class that
+  is a subclass of Modifcation and set attributes on it to modify the object
+  (e.g. `self.hp = 100`). These classes can be added to a mod easily with
+  `mod.add_modification(modification)`.
+- The code is more efficient, for example instead of copying the whole
+  original_extracted folder to extracted, it now only copies the files that
+  have been modified, also pack files are only read and decrypted when they are
+  needed.
+
+### Fixed
+
+- Probably a lot of bugs due to the rewrite
+
 ## 1.1.0 (2023-11-22)
 
 ### Added
