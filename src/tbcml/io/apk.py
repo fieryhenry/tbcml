@@ -994,17 +994,14 @@ class Apk:
         return Apk.get_server_path_static(self.country_code, self.apk_folder)
 
     @staticmethod
-    def from_apk_path(
-        apk_path: "tbcml.Path",
-        cc_overwrite: Optional["tbcml.CountryCode"] = None,
-        gv_overwrite: Optional["tbcml.GameVersion"] = None,
-        apk_folder: Optional["tbcml.Path"] = None,
-    ) -> "Apk":
+    def get_package_name_version_from_apk(apk_path: "tbcml.Path"):
         cmd = f'aapt dump badging "{apk_path}"'
         result = tbcml.Command(cmd).run()
+        if not result.success:
+            return None, None
         output = result.result
-        version_name = ""
         package_name = ""
+        version_name = ""
         for line in output.splitlines():
             if "versionName" in line:
                 version_name = line.split("versionName='")[1].split("'")[0]
@@ -1012,16 +1009,32 @@ class Apk:
                 package_name = line.split("name='")[1].split("'")[0]
 
         cc_str = package_name.replace("jp.co.ponos.battlecats", "")
-        if cc_overwrite is None:
-            cc = tbcml.CountryCode.from_patching_code(cc_str)
-        else:
+        cc = tbcml.CountryCode.from_patching_code(cc_str)
+        gv = tbcml.GameVersion.from_string(version_name)
+
+        return cc, gv
+
+    @staticmethod
+    def from_apk_path(
+        apk_path: "tbcml.Path",
+        cc_overwrite: Optional["tbcml.CountryCode"] = None,
+        gv_overwrite: Optional["tbcml.GameVersion"] = None,
+        apk_folder: Optional["tbcml.Path"] = None,
+        allowed_script_mods: bool = True,
+    ) -> "Apk":
+        cc, gv = Apk.get_package_name_version_from_apk(apk_path)
+
+        if cc is None:
             cc = cc_overwrite
-        if gv_overwrite is None:
-            gv = tbcml.GameVersion.from_string(version_name)
-        else:
+        if gv is None:
             gv = gv_overwrite
 
-        apk = Apk(gv, cc, apk_folder=apk_folder)
+        if gv is None or cc is None:
+            raise ValueError("Failed to get cc or gv from apk.")
+
+        apk = Apk(
+            gv, cc, apk_folder=apk_folder, allowed_script_mods=allowed_script_mods
+        )
         apk_path.copy(apk.apk_path)
         apk.original_extracted_path.remove_tree().generate_dirs()
         return apk

@@ -73,6 +73,7 @@ class ModLoader:
         allowed_script_mods: bool = True,
         custom_apk_folder: Optional["tbcml.Path"] = None,
         lang: Optional["tbcml.LanguageStr"] = None,
+        apk_path: Optional["tbcml.Path"] = None,
     ):
         """Initializes the mod loader, loads apk + game packs.
         Must be called before doing anything really.
@@ -84,6 +85,8 @@ class ModLoader:
             print_errors (bool, optional): Whether to show errors if they occur. Defaults to True.
             allowed_script_mods (bool, optional): If custom scripts / code is able to be loaded into the apk. Defaults to True.
             custom_apk_folder (Optional[tbcml.Path], optional): If you want to specify where the apk is downloaded / extracted to. Defaults to None which means leave as default (Documents/tbcml/APKs).
+            lang (Optional["fr", "it", "de", "es", "th"], optional): If you are using an en apk, change what language should be used. Defaults to None which is the country code
+            apk_path (Optional[tbcml.Path], optional): Path to an apk file if you already have a downloaded apk file. Note that you should probably change the custom_apk_folder if using a non-original tbc apk
         """
         if isinstance(lang, str):
             lang = tbcml.Language(lang)
@@ -96,6 +99,7 @@ class ModLoader:
             allowed_script_mods=allowed_script_mods,
             custom_apk_folder=custom_apk_folder,
             lang=lang,
+            apk_path=apk_path,
         )
 
     def __get_apk(
@@ -106,21 +110,35 @@ class ModLoader:
         lang: Optional["tbcml.Language"] = None,
         print_errors: bool = True,
         allowed_script_mods: bool = True,
-        custom_apk_folder: Optional["tbcml.Path"] = None,
+        custom_apk_folder: Optional["tbcml.PathStr"] = None,
         download_progress: Optional[
             Callable[[float, int, int, bool], None]
         ] = Apk.progress,
+        apk_path: Optional["tbcml.PathStr"] = None,
     ):
-        self.apk = tbcml.Apk(
-            game_version=self.game_version,
-            country_code=self.country_code,
-            allowed_script_mods=allowed_script_mods,
-            apk_folder=custom_apk_folder,
-        )
-        if not self.apk.download(download_progress):
-            if print_errors:
-                print("Failed to download apk.")
-            return
+        if custom_apk_folder is not None:
+            custom_apk_folder = tbcml.Path(custom_apk_folder)
+
+        if apk_path is not None:
+            apk_path = tbcml.Path(apk_path)
+            self.apk = tbcml.Apk.from_apk_path(
+                apk_path,
+                cc_overwrite=self.country_code,
+                gv_overwrite=self.game_version,
+                apk_folder=custom_apk_folder,
+                allowed_script_mods=allowed_script_mods,
+            )
+        else:
+            self.apk = tbcml.Apk(
+                game_version=self.game_version,
+                country_code=self.country_code,
+                allowed_script_mods=allowed_script_mods,
+                apk_folder=custom_apk_folder,
+            )
+            if not self.apk.download(download_progress):
+                if print_errors:
+                    print("Failed to download apk.")
+                return
         if not self.apk.extract(
             decode_resources=decode_resources,
             use_apktool=use_apktool,
