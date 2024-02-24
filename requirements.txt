@@ -1,6 +1,6 @@
 beautifulsoup4==4.12.2
 cloudscraper==1.2.71
-cryptography==42.0.2
+cryptography==42.0.4
 Pillow==10.2.0
 pycryptodomex==3.19.1
 requests==2.31.0
