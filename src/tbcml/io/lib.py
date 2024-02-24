@@ -345,8 +345,7 @@ class Lib:
 
 
 class LibFiles:
-    def __init__(self, apk: "tbcml.Apk"):
-        self.libs_folder = apk.extracted_path.add("lib")
+    def __init__(self, apk: "tbcml.PKG"):
         self.apk = apk
         self.so_files = self.get_so_files()
         self.modified_packs = self.get_modified_packs()
@@ -372,10 +371,8 @@ class LibFiles:
 
     def get_so_files(self):
         files: dict[str, "tbcml.Data"] = {}
-        for arc in self.libs_folder.get_dirs():
-            arc_name = arc.basename()
-            lib_path = self.apk.get_libnative_path(arc_name)
-            files[arc_name] = lib_path.read()
+        for arc, path in self.apk.get_lib_paths().items():
+            files[arc] = path.read()
         return files
 
     def get_modified_packs(self) -> list["tbcml.Path"]:
@@ -410,6 +407,8 @@ class LibFiles:
             self.so_files[arc] = so
 
     def replace_hashes_in_smali(self):
+        if isinstance(self.apk, tbcml.Ipa):
+            return
         smali_handler = self.apk.get_smali_handler()
         for pack_name, modified_hash in self.modified_packs_hashes.items():
             if pack_name.endswith("1.pack") and self.apk.is_java():
@@ -473,14 +472,13 @@ class LibFiles:
         return self.get_pack_folder_original().get_files(regex=".*\\.pack|.*\\.list")
 
     def get_pack_folder_original(self):
-        if self.apk.is_java():
-            return self.apk.original_extracted_path.add("res").add("raw")
-        else:
-            return self.apk.original_extracted_path.add("assets")
+        return self.apk.get_original_pack_location()
 
     def write(self):
         for arc, so in self.so_files.items():
             lib_path = self.apk.get_libnative_path(arc)
+            if lib_path is None:
+                continue
             lib_path.write(so)
 
     def overwrite_duplicate_packs(self):

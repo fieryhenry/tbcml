@@ -495,9 +495,15 @@ class Mod:
             path.parent().generate_dirs()
             path.write(data)
 
-    def apply_audio_files(self, apk: "tbcml.Apk"):
+    def apply_ipa_files(self, ipa: "tbcml.Ipa"):
+        for file, data in self.apk_files.items():
+            path = ipa.get_asset(file)
+            path.parent().generate_dirs()
+            path.write(data)
+
+    def apply_audio_files(self, pkg: "tbcml.PKG"):
         for audio in self.audio_files.values():
-            apk.add_audio(audio)
+            pkg.add_audio(audio)
 
     def apply_to_game_data(self, game_packs: "tbcml.GamePacks"):
         self.apply_game_files(game_packs)
@@ -507,6 +513,10 @@ class Mod:
     def apply_to_apk(self, apk: "tbcml.Apk"):
         self.apply_apk_files(apk)
         self.apply_audio_files(apk)
+
+    def apply_to_ipa(self, ipa: "tbcml.Ipa"):
+        self.apply_ipa_files(ipa)
+        self.apply_audio_files(ipa)
 
     def modifications_to_json(self) -> list[tuple[str, str]]:
         data: list[tuple[str, str]] = []

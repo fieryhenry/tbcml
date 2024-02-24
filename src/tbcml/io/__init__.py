@@ -16,6 +16,7 @@ from tbcml.io import (
     adb,
     csv_fields,
     thread_helper,
+    ipa,
 )
 
 __all__ = [
@@ -37,4 +38,5 @@ __all__ = [
     "csv_fields",
     "bc_image",
     "thread_helper",
+    "ipa",
 ]

@@ -1,5 +1,6 @@
 __version__ = "2.0.0"
 
+from typing import Union
 from .mods.bc_mod import (
     Mod,
     Modification,
@@ -9,6 +10,7 @@ from .mods.bc_mod import (
 from .mods.smali import SmaliHandler, SmaliSet, Smali
 from .mods.frida_script import FridaScript, FridaGadgetHelper
 from .mods.loader import ModLoader
+from .mods.ipaloader import IpaModLoader
 from .mods.compilation import CompilationTarget
 
 from .game_data.cat_base.item_shop import ItemShop
@@ -96,6 +98,7 @@ from .io.audio import AudioFile
 from .io.bc_image import BCImage
 from .io.thread_helper import run_in_threads, run_in_thread
 from .io.zip import Zip
+from .io.ipa import Ipa
 from .io.temp_file import TempFile, TempFolder
 from .io.yaml import YamlFile
 from .crypto import AesCipher, Hash, HashAlgorithm, Random, Hmac
@@ -105,6 +108,8 @@ from .server_handler import ServerFileHandler, EventData, GameVersionSearchError
 from .game_data.pack import GamePacks, PackFile, GameFile
 from .country_code import CountryCode, CC
 from .game_version import GameVersion, GV
+
+PKG = Union["Apk", "Ipa"]
 
 from . import (
     anim,
@@ -136,6 +141,7 @@ __all__ = [
     "FridaScript",
     "FridaGadgetHelper",
     "ModLoader",
+    "IpaModLoader",
     "CompilationTarget",
     "ShopItem",
     "ItemShop",
@@ -166,6 +172,7 @@ __all__ = [
     "Map",
     "MapType",
     "BCUZip",
+    "Ipa",
     "SoundSetting",
     "Model",
     "UnitAnim",

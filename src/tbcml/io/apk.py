@@ -56,6 +56,31 @@ class Apk:
     def get_id(self) -> str:
         return f"{self.country_code.get_code()} {self.game_version.to_string()}"
 
+    def get_game_packs(
+        self, lang: Optional["tbcml.Language"] = None
+    ) -> "tbcml.GamePacks":
+        packs: dict[str, tbcml.PackFile] = {}
+
+        for pack_file, list_file in self.get_packs_lists():
+            pack_name = list_file.get_file_name_without_extension()
+            pack_lang = tbcml.PackFile.get_lang(pack_name)
+            if pack_lang != lang:
+                continue
+            list_data = list_file.read()
+            pack = tbcml.PackFile.from_pack_file(
+                list_data,
+                pack_file,
+                self.country_code,
+                pack_name,
+                self.game_version,
+                self.key,
+                self.iv,
+            )
+            if pack is not None:
+                packs[pack_name] = pack
+
+        return tbcml.GamePacks(packs, self.country_code, self.game_version, lang=lang)
+
     def init_paths(self):
         self.apk_folder.generate_dirs()
         self.output_path = self.apk_folder.add(
@@ -381,6 +406,14 @@ class Apk:
             print(f"Failed to sign APK: {res.result}")
             return False
         return True
+
+    def get_lib_paths(self) -> dict[str, "tbcml.Path"]:
+        paths: dict[str, "tbcml.Path"] = {}
+        for dir in self.extracted_path.add("lib").get_dirs():
+            arc = dir.basename()
+            path = self.get_libnative_path(arc)
+            paths[arc] = path
+        return paths
 
     def zip_align(self):
         if not self.check_display_zipalign_error():
@@ -1375,6 +1408,11 @@ class Apk:
             return self.extracted_path.add("res").add("raw")
         return self.extracted_path.add("assets")
 
+    def get_original_pack_location(self) -> "tbcml.Path":
+        if self.is_java():
+            return self.original_extracted_path.add("res").add("raw")
+        return self.original_extracted_path.add("assets")
+
     def add_audio(
         self,
         audio_file: "tbcml.AudioFile",
@@ -1591,7 +1629,7 @@ class Apk:
         use_apktool: Optional[bool] = None,
     ) -> bool:
         if game_packs is None:
-            game_packs = tbcml.GamePacks.from_apk(self, lang=lang)
+            game_packs = tbcml.GamePacks.from_pkg(self, lang=lang)
 
         if key is not None:
             self.set_key(key)

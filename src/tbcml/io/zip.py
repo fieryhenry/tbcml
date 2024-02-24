@@ -9,6 +9,7 @@ class Zip:
     def __init__(
         self,
         file_data: Optional["tbcml.Data"] = None,
+        compression: int = zipfile.ZIP_DEFLATED,
     ):
         mode = "r"
         if file_data is None:
@@ -17,13 +18,15 @@ class Zip:
             mode = "w"
         self.file_data = file_data.to_bytes_io()
 
-        self.zip = zipfile.ZipFile(
-            self.file_data, mode=mode, compression=zipfile.ZIP_DEFLATED
-        )
+        self.zip = zipfile.ZipFile(self.file_data, mode=mode, compression=compression)
 
     @staticmethod
-    def compress_directory(directory_path: "tbcml.Path", output_path: "tbcml.Path"):
-        with zipfile.ZipFile(output_path.to_str_forwards(), "w") as zipf:
+    def compress_directory(
+        directory_path: "tbcml.Path",
+        output_path: "tbcml.Path",
+        compression: int = zipfile.ZIP_DEFLATED,
+    ):
+        with zipfile.ZipFile(output_path.to_str_forwards(), "w", compression) as zipf:
             for file in directory_path.get_files_recursive():
                 zipf.write(
                     file.to_str_forwards(),

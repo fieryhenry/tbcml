@@ -22,7 +22,7 @@ class GameVersionSearchError(Exception):
 class ServerFileHandler:
     """Class for handling downloading game files from the game server"""
 
-    def __init__(self, apk: "tbcml.Apk", lang: Optional["tbcml.Language"]):
+    def __init__(self, apk: "tbcml.PKG", lang: Optional["tbcml.Language"]):
         """Initializes the ServerFileHandler class
 
         Args:
@@ -234,9 +234,7 @@ class ServerFileHandler:
                     break
                 if self.file_map[name] != index:
                     continue
-                path = tbcml.Apk.get_server_path_static(
-                    self.apk.country_code, self.apk.apk_folder
-                ).add(name)
+                path = self.apk.get_server_path().add(name)
                 if not path.exists():
                     found = False
                     break
@@ -290,9 +288,7 @@ class ServerFileHandler:
 
     def extract(self, index: int):
         zipf = self.download(index)
-        path = tbcml.Apk.get_server_path_static(
-            self.apk.country_code, self.apk.apk_folder
-        )
+        path = self.apk.get_server_path()
         zipf.extract(path)
 
     def find_game_versions(self) -> list[int]:
@@ -312,7 +308,7 @@ class ServerFileHandler:
         arc = None
         for ac in arcs:
             lb = self.apk.get_libnative_path(ac)
-            if lb.exists():
+            if lb is not None and lb.exists():
                 lib = lb
                 arc = ac
                 break

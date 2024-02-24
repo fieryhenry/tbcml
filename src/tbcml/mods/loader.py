@@ -156,7 +156,7 @@ class ModLoader:
                     "Please use a newer version of the game to download server files."
                 )
 
-        self.game_packs = tbcml.GamePacks.from_apk(self.apk, lang=lang)
+        self.game_packs = tbcml.GamePacks.from_pkg(self.apk, lang=lang)
 
     def get_game_packs(self) -> "tbcml.GamePacks":
         """Gets the game packs from a ModLoader instance, will never be None, unlike .game_packs attribute

@@ -749,38 +749,18 @@ class GamePacks:
             self.set_file_from_path(file_path)
 
     @staticmethod
-    def from_apk(
-        apk: "tbcml.Apk", lang: Optional["tbcml.Language"] = None
+    def from_pkg(
+        apk: "tbcml.PKG", lang: Optional["tbcml.Language"] = None
     ) -> "GamePacks":
-        """Create a GamePacks object from an APK.
+        """Create a GamePacks object from a package.
 
         Args:
-            apk (tbcml.Apk): The APK.
+            apk (tbcml.PKG): The pkg.
 
         Returns:
             GamePacks: The GamePacks object.
         """
-        packs: dict[str, PackFile] = {}
-
-        for pack_file, list_file in apk.get_packs_lists():
-            pack_name = list_file.get_file_name_without_extension()
-            pack_lang = PackFile.get_lang(pack_name)
-            if pack_lang != lang:
-                continue
-            list_data = list_file.read()
-            pack = PackFile.from_pack_file(
-                list_data,
-                pack_file,
-                apk.country_code,
-                pack_name,
-                apk.game_version,
-                apk.key,
-                apk.iv,
-            )
-            if pack is not None:
-                packs[pack_name] = pack
-
-        return GamePacks(packs, apk.country_code, apk.game_version, lang=lang)
+        return apk.get_game_packs(lang)
 
     def extract(
         self,
