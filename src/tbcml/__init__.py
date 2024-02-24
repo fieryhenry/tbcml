@@ -100,7 +100,6 @@ from .io.thread_helper import run_in_threads, run_in_thread
 from .io.zip import Zip
 from .io.ipa import Ipa
 from .io.temp_file import TempFile, TempFolder
-from .io.yaml import YamlFile
 from .crypto import AesCipher, Hash, HashAlgorithm, Random, Hmac
 from .langs import Language, LanguageStr
 from .request import RequestHandler
@@ -214,7 +213,6 @@ __all__ = [
     "Zip",
     "TempFile",
     "TempFolder",
-    "YamlFile",
     "AesCipher",
     "Hash",
     "HashAlgorithm",
