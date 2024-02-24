@@ -12,7 +12,7 @@ class IpaModLoader:
     Basic Usage:
         ```
         loader = IpaModLoader("en", "12.3.0")
-        loader.initialize()
+        loader.initialize(r"path/to/ipa.ipa")
 
         ... # create mod here
 
@@ -49,7 +49,7 @@ class IpaModLoader:
 
     def initialize(
         self,
-        ipa_path: "tbcml.Path",
+        ipa_path: "tbcml.PathStr",
         force_extract: bool = False,
         print_errors: bool = True,
         custom_ipa_folder: Optional["tbcml.Path"] = None,
@@ -59,7 +59,7 @@ class IpaModLoader:
         Must be called before doing anything really.
 
         Args:
-            ipa_path (tbcml.Path): Path to an ipa file. Note that you should probably change the custom_ipa_folder if using a non-original tbc ipa
+            ipa_path (tbcml.PathStr): Path to an ipa file. Note that you should probably change the custom_ipa_folder if using a non-original tbc ipa
             force_extract (bool, optional): Whether to always extract the ipa, even if it has already been extracted before.
             print_errors (bool, optional): Whether to show errors if they occur. Defaults to True.
             custom_ipa_folder (Optional[tbcml.Path], optional): If you want to specify where the ipa is downloaded / extracted to. Defaults to None which means leave as default (Documents/tbcml/ipas).
