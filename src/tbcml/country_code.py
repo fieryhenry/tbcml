@@ -1,4 +1,5 @@
 """Country code enum."""
+
 import enum
 from typing import Literal, Union
 import tbcml
@@ -105,6 +106,21 @@ class CountryCode(enum.Enum):
             str: The 2 letter lowercase country code.
         """
         return f"CountryCode.{self.name}"
+
+    @staticmethod
+    def from_package_name(package_name: str) -> "CountryCode":
+        """Gets the country code from the package name.
+
+        Args:
+            package_name (str): The package name.
+
+        Returns:
+            CountryCode: The country code.
+        """
+        for country_code in CountryCode:
+            if package_name.endswith(country_code.get_code()):
+                return country_code
+        return CountryCode.JP
 
 
 CC = Union[Literal["en"], Literal["jp"], Literal["kr"], Literal["tw"], CountryCode]
