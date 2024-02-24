@@ -24,7 +24,6 @@ dependencies = [
     "cryptography",
     "Pillow",
     "pycryptodomex",
-    "PyYAML",
     "requests",
     "ffmpeg-python",
     "marshmallow-dataclass",
