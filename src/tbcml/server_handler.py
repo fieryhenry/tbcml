@@ -162,10 +162,10 @@ class ServerFileHandler:
             stream: requests.Response = req.get_stream()
             total = int(stream.headers.get("content-length", 0))
             downloaded = 0
-            content = b""
+            content_ls: list[bytes] = []
             for chunk in stream.iter_content(chunk_size=1024):
                 if chunk:
-                    content += chunk
+                    content_ls.append(chunk)
                     downloaded += len(chunk)
                     bytes_readable = tbcml.RequestHandler.sizeof_fmt(downloaded)
                     total_readable = tbcml.RequestHandler.sizeof_fmt(total)
@@ -176,6 +176,7 @@ class ServerFileHandler:
                     )
             print()
             print()
+            content = b"".join(content_ls)
         else:
             stream = req.get()
             content = stream.content
