@@ -74,6 +74,9 @@ class ModLoader:
         custom_apk_folder: Optional["tbcml.Path"] = None,
         lang: Optional["tbcml.LanguageStr"] = None,
         apk_path: Optional["tbcml.Path"] = None,
+        download_progress: Optional[
+            Callable[[float, int, int, bool], None]
+        ] = Apk.progress,
     ):
         """Initializes the mod loader, loads apk + game packs.
         Must be called before doing anything really.
@@ -87,6 +90,7 @@ class ModLoader:
             custom_apk_folder (Optional[tbcml.Path], optional): If you want to specify where the apk is downloaded / extracted to. Defaults to None which means leave as default (Documents/tbcml/APKs).
             lang (Optional["fr", "it", "de", "es", "th"], optional): If you are using an en apk, change what language should be used. Defaults to None which is the country code
             apk_path (Optional[tbcml.Path], optional): Path to an apk file if you already have a downloaded apk file. Note that you should probably change the custom_apk_folder if using a non-original tbc apk
+            download_progress (Optional[Callable[[float, int, int, bool], None]], optional): Function to call to show download progress. Defaults to Apk.progress which is a default progress function
         """
         if isinstance(lang, str):
             lang = tbcml.Language(lang)
@@ -100,6 +104,7 @@ class ModLoader:
             custom_apk_folder=custom_apk_folder,
             lang=lang,
             apk_path=apk_path,
+            download_progress=download_progress,
         )
 
     def __get_apk(
