@@ -32,7 +32,7 @@ class ServerFileHandler:
         self.lang = lang
         self.tsv_paths = self.apk.get_download_tsvs(lang=lang)
         if lang is not None:
-            self.en_tsv_paths = self.apk.get_download_tsvs(lang=None)
+            self.tsv_paths_all = self.apk.get_all_download_tsvs()
         self.game_versions = self.find_game_versions()
         self.tsvs: dict[int, "tbcml.CSV"] = {}
         self.file_map = self.create_file_map()
@@ -398,11 +398,13 @@ class ServerFileHandler:
         ):
             return data[: len(self.tsv_paths)]
 
-        en_length = len(self.en_tsv_paths)
-        length = len(self.tsv_paths)
-        index = self.lang.get_index()
-        data = data[en_length + length * index : en_length + length * (index + 1)]
-        return data
+        index = self.lang.get_index() + 1
+        count = 0
+        for i, tsvs in enumerate(self.tsv_paths_all):
+            if i == index:
+                break
+            count += len(tsvs)
+        return data[count : count + len(self.tsv_paths)]
 
 
 class CloudFront:

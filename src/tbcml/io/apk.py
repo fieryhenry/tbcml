@@ -1459,6 +1459,14 @@ class Apk:
     def get_asset(self, asset_name: str) -> "tbcml.Path":
         return self.extracted_path.add("assets").add(asset_name)
 
+    def get_all_download_tsvs(self) -> list[list["tbcml.Path"]]:
+        langs = tbcml.Language.get_all()
+        langs = [None] + langs
+        files: list[list["tbcml.Path"]] = []
+        for lang in langs:
+            files.append(self.get_download_tsvs(lang))
+        return files
+
     def get_download_tsvs(
         self, lang: Optional["tbcml.Language"] = None
     ) -> list["tbcml.Path"]:
