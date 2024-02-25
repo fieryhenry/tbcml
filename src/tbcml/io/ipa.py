@@ -259,6 +259,14 @@ class Ipa:
         sfh = tbcml.ServerFileHandler(self, lang=lang)
         sfh.extract_all(display=display, force=force)
 
+    def get_all_download_tsvs(self) -> list[list["tbcml.Path"]]:
+        langs = tbcml.Language.get_all()
+        langs = [None] + langs
+        files: list[list["tbcml.Path"]] = []
+        for lang in langs:
+            files.append(self.get_download_tsvs(lang))
+        return files
+
     def get_download_tsvs(
         self, lang: Optional["tbcml.Language"] = None
     ) -> list["tbcml.Path"]:
