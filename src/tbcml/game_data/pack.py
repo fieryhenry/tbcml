@@ -762,7 +762,9 @@ class GamePacks:
 
     @staticmethod
     def from_pkg(
-        apk: "tbcml.PKG", lang: Optional["tbcml.Language"] = None
+        apk: "tbcml.PKG",
+        lang: Optional["tbcml.Language"] = None,
+        all_langs: bool = False,
     ) -> "GamePacks":
         """Create a GamePacks object from a package.
 
@@ -772,7 +774,7 @@ class GamePacks:
         Returns:
             GamePacks: The GamePacks object.
         """
-        return apk.get_game_packs(lang)
+        return apk.get_game_packs(lang, all_langs)
 
     def extract(
         self,
