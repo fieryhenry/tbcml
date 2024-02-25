@@ -60,7 +60,11 @@ considered donating to my kofi:
 
 To install on android see [Install on Android](#install-on-android)
 
+- Install [python](https://www.python.org/downloads/) (3.9 or later)
+
 #### From source (recommended)
+
+- Install [git](https://git-scm.com/downloads)
 
 ```bash
 git clone https://github.com/fieryhenry/tbcml.git
