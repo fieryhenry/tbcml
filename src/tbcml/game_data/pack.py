@@ -598,7 +598,7 @@ class GamePacks:
             if file is None:
                 continue
             file_lang = PackFile.get_lang(file.pack_name)
-            if file_lang is not None and len(found_files) > 0:
+            if file_lang is not None:
                 if self.lang != file_lang:
                     continue
             found_files.append(file)
