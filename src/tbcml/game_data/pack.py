@@ -224,6 +224,21 @@ class PackFile:
         return "Server" in pack_name
 
     @staticmethod
+    def get_gv(pack_name: str) -> Optional[int]:
+        parts = pack_name.split("_")
+        if len(parts) == 1 and not PackFile.is_server_pack(pack_name):
+            return (ord(parts[0][0].upper()) - 65) * 100
+        if len(parts) < 3:
+            return None
+        gv_part = parts[1]
+        sub_gv = parts[2]
+        if not gv_part.isdigit():
+            return None
+        if sub_gv.isdigit():
+            return int(gv_part) * 100 + int(sub_gv)
+        return int(gv_part) * 100
+
+    @staticmethod
     def is_image_data_local_pack(pack_name: str) -> bool:
         """Check if a pack is ImageDataLocal. This pack is not encrypted for some reason.
 
@@ -583,7 +598,7 @@ class GamePacks:
             if file is None:
                 continue
             file_lang = PackFile.get_lang(file.pack_name)
-            if file_lang is not None:
+            if file_lang is not None and len(found_files) > 0:
                 if self.lang != file_lang:
                     continue
             found_files.append(file)
@@ -596,41 +611,38 @@ class GamePacks:
         elif len(found_files) == 1:
             self.cache[file_name] = found_files[0]
             return found_files[0]
-        elif len(found_files) == 2:
-            if not PackFile.is_server_pack(found_files[0].pack_name):
-                self.cache[file_name] = found_files[0]
-                return found_files[0]
-            elif not PackFile.is_server_pack(found_files[1].pack_name):
-                self.cache[file_name] = found_files[1]
-                return found_files[1]
-            elif (
-                self.lang is not None
-                and PackFile.get_lang(found_files[0].pack_name) == self.lang
-            ):
-                return found_files[0]
-            elif (
-                self.lang is not None
-                and PackFile.get_lang(found_files[1].pack_name) == self.lang
-            ):
-                return found_files[1]
-            elif len(found_files[0].dec_data) > len(found_files[1].dec_data):
-                self.cache[file_name] = found_files[0]
-                return found_files[0]
-            elif len(found_files[0].dec_data) < len(found_files[1].dec_data):
-                self.cache[file_name] = found_files[1]
-                return found_files[1]
-            else:
-                self.cache[file_name] = found_files[0]
-                return found_files[0]
         else:
-            if self.lang is not None:
-                for file in found_files:
-                    if PackFile.get_lang(file.pack_name) == self.lang:
-                        return file
-            if show_error:
-                print(f"Found multiple files for {file_name}")
+            lang_packs: list[GameFile] = []
+            for file in found_files:
+                if PackFile.get_lang(file.pack_name) == self.lang:
+                    lang_packs.append(file)
+
+            if not lang_packs:
+                return found_files[0]
+
+            gv_packs: dict[int, GameFile] = {}
+            for file in lang_packs:
+                gv = PackFile.get_gv(file.pack_name)
+                if gv is None:
+                    continue
+                gv_packs[gv] = file
+
+            gv_packs_sorted = sorted(gv_packs.items(), key=lambda item: item[0])
+
+            if len(lang_packs) == 1:
+                self.cache[file_name] = lang_packs[0]
+                return lang_packs[0]
             else:
-                return None
+                for file in lang_packs:
+                    if not PackFile.is_server_pack(file.pack_name):
+                        self.cache[file_name] = file
+                        return file
+                if not gv_packs_sorted:
+                    self.cache[file_name] = lang_packs[0]
+                    return lang_packs[0]
+
+                self.cache[file_name] = gv_packs_sorted[-1][1]
+                return gv_packs_sorted[-1][1]
 
     def to_packs_lists(
         self,
