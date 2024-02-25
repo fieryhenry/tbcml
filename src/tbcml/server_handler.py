@@ -4,7 +4,7 @@ import base64
 import datetime
 import json
 import time
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import requests
 from cryptography.hazmat.backends import default_backend
@@ -132,6 +132,7 @@ class ServerFileHandler:
     def download(
         self,
         index: int,
+        display: bool = False,
     ) -> "tbcml.Zip":
         """Downloads game files from the server for a given game version
 
@@ -157,12 +158,28 @@ class ServerFileHandler:
             "user-agent": "Dalvik/2.1.0 (Linux; U; Android 9; Pixel 2 Build/PQ3A.190801.002)",
         }
         req = tbcml.RequestHandler(url, headers=headers)
-        resp = req.get()
-        data = resp.content
-        try:
-            zipf = tbcml.Zip(tbcml.Data(data))
-        except Exception as exc:
-            raise ValueError("Invalid zip data") from exc
+        if display:
+            stream: requests.Response = req.get_stream()
+            total = int(stream.headers.get("content-length", 0))
+            downloaded = 0
+            content = b""
+            for chunk in stream.iter_content(chunk_size=1024):
+                if chunk:
+                    content += chunk
+                    downloaded += len(chunk)
+                    bytes_readable = tbcml.RequestHandler.sizeof_fmt(downloaded)
+                    total_readable = tbcml.RequestHandler.sizeof_fmt(total)
+
+                    print(
+                        f"Downloaded {bytes_readable}/{total_readable} bytes",
+                        end="      \r",
+                    )
+            print()
+            print()
+        else:
+            stream = req.get()
+            content = stream.content
+        zipf = tbcml.Zip(tbcml.Data(content))
         return zipf
 
     @staticmethod
@@ -184,26 +201,61 @@ class ServerFileHandler:
         return tbcml.Path.get_documents_folder().add("server_latest.json")
 
     @staticmethod
-    def get_server_metadata() -> dict[str, int]:
+    def get_server_metadata() -> dict[str, Any]:
         path = ServerFileHandler.get_server_metadata_path()
         if not path.exists():
             path.write(tbcml.Data("{}"))
         data = path.read()
         return tbcml.JsonFile(data).get_json()
 
-    def get_latest_local_server_version(self) -> Optional[int]:
-        return self.get_server_metadata().get(self.apk.country_code.get_code())
+    def get_latest_local_server_versions(self) -> Optional[list[int]]:
+        v: Optional[Union[list[int], dict[str, list[int]]]] = (
+            self.get_server_metadata().get(self.apk.country_code.get_code())
+        )
+        if v is None:
+            return None
+        lang_str = self.get_lang_str()
+        if lang_str is not None:
+            if not isinstance(v, dict):
+                return None
+            return v.get(lang_str)
+        if not isinstance(v, list):
+            return None
+        return v
 
-    def set_latest_local_server_version(self, version: int):
+    def get_lang_str(self) -> Optional[str]:
+        if self.apk.country_code == tbcml.CountryCode.EN:
+            lang = "en" if self.lang is None else self.lang.value
+            return lang
+        return None
+
+    def set_latest_local_server_versions(self, versions: list[int]):
         dt = self.get_server_metadata()
-        dt[self.apk.country_code.get_code()] = version
+        lang_str = self.get_lang_str()
+        val = dt.get(self.apk.country_code.get_code())
+        if lang_str is not None:
+            if val is None or isinstance(val, int):
+                val = {}
+            val[lang_str] = versions
+        else:
+            val = versions
+        dt[self.apk.country_code.get_code()] = val
         self.set_server_metadata(dt)
 
+    def add_latest_local_server_version(self, version: int):
+        versions = self.get_latest_local_server_versions()
+        if versions is None:
+            versions = []
+        if version in versions:
+            return
+        versions.append(version)
+        self.set_latest_local_server_versions(versions)
+
     def reset_latest_local_server_version(self):
-        self.set_latest_local_server_version(0)
+        self.set_latest_local_server_versions([])
 
     @staticmethod
-    def set_server_metadata(data: dict[str, int]):
+    def set_server_metadata(data: dict[str, Any]):
         path = ServerFileHandler.get_server_metadata_path()
         tbcml.JsonFile.from_object(data).to_data().to_file(path)
 
@@ -264,32 +316,28 @@ class ServerFileHandler:
             force (bool, optional): Whether to force extraction even if the files already exist. Defaults to False.
             display (bool, optional): Whether to display text with the current download progress. Defualts to False.
         """
-        version = self.get_latest_local_server_version()
-        if version is not None and not force:
-            start_point = version
-        else:
-            start_point = 0
+        versions = self.get_latest_local_server_versions()
+        if versions is None:
+            versions = []
         to_extract: list[int] = []
-        max_version = start_point
-        for i in range(start_point, len(self.tsv_paths)):
+        for i in range(len(self.tsv_paths)):
+            if not force and i in versions:
+                continue
             if self.needs_extracting(i, force):
                 to_extract.append(i)
             else:
-                max_version = max(i, max_version)
+                self.add_latest_local_server_version(i)
 
         for i, index in enumerate(to_extract):
             if display:
                 print(
                     f"Downloading server zip file {i+1}/{len(to_extract)} (id {index})"
                 )
-            self.extract(index)
-            max_version = max(max_version, index)
+            self.extract(index, display)
+            self.add_latest_local_server_version(index)
 
-        if max_version > start_point:
-            self.set_latest_local_server_version(max_version)
-
-    def extract(self, index: int):
-        zipf = self.download(index)
+    def extract(self, index: int, display: bool = False):
+        zipf = self.download(index, display)
         path = tbcml.Apk.get_server_path_static(
             self.apk.country_code, self.apk.apk_folder
         )
