@@ -765,7 +765,7 @@ class GamePacks:
         for pack_file, list_file in apk.get_packs_lists():
             pack_name = list_file.get_file_name_without_extension()
             pack_lang = PackFile.get_lang(pack_name)
-            if pack_lang != lang:
+            if pack_lang is not None and pack_lang != lang:
                 continue
             list_data = list_file.read()
             pack = PackFile.from_pack_file(
