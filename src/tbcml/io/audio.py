@@ -58,3 +58,8 @@ class AudioFile:
         id_str = str(self.id).zfill(3)
         ext = self.get_sound_format()
         return f"snd{id_str}.{ext}"
+
+    def get_ipa_file_name(self) -> str:
+        id_str = str(self.id).zfill(3)
+        ext = self.get_sound_format()
+        return f"{id_str}.{ext}"

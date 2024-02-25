@@ -350,7 +350,7 @@ class Ipa:
         self,
         audio_file: "tbcml.AudioFile",
     ):
-        filename = audio_file.get_apk_file_name()
+        filename = audio_file.get_ipa_file_name()
         audio_file.caf_to_little_endian().data.to_file(self.get_asset(filename))
 
     def load_mods(
