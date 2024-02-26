@@ -77,6 +77,7 @@ class ModLoader:
         download_progress: Optional[
             Callable[[float, int, int, bool], None]
         ] = Apk.progress,
+        skip_signature_check: bool = False,
     ):
         """Initializes the mod loader, loads apk + game packs.
         Must be called before doing anything really.
@@ -91,6 +92,7 @@ class ModLoader:
             lang (Optional["fr", "it", "de", "es", "th"], optional): If you are using an en apk, change what language should be used. Defaults to None which is the country code
             apk_path (Optional[tbcml.Path], optional): Path to an apk file if you already have a downloaded apk file. Note that you should probably change the custom_apk_folder if using a non-original tbc apk
             download_progress (Optional[Callable[[float, int, int, bool], None]], optional): Function to call to show download progress. Defaults to Apk.progress which is a default progress function
+            skip_signature_check (bool, optional): Whether to skip checking the apk signature. If disabled, this will throw an error if the downloaded apk is not original. Defaults to False
         """
         if isinstance(lang, str):
             lang = tbcml.Language(lang)
@@ -105,6 +107,7 @@ class ModLoader:
             lang=lang,
             apk_path=apk_path,
             download_progress=download_progress,
+            skip_signature_check=skip_signature_check,
         )
 
     def __get_apk(
@@ -120,6 +123,7 @@ class ModLoader:
             Callable[[float, int, int, bool], None]
         ] = Apk.progress,
         apk_path: Optional["tbcml.PathStr"] = None,
+        skip_signature_check: bool = False,
     ):
         if custom_apk_folder is not None:
             custom_apk_folder = tbcml.Path(custom_apk_folder)
@@ -132,6 +136,7 @@ class ModLoader:
                 gv_overwrite=self.game_version,
                 apk_folder=custom_apk_folder,
                 allowed_script_mods=allowed_script_mods,
+                skip_signature_check=skip_signature_check,
             )
         else:
             self.apk = tbcml.Apk(
@@ -140,7 +145,9 @@ class ModLoader:
                 allowed_script_mods=allowed_script_mods,
                 apk_folder=custom_apk_folder,
             )
-            if not self.apk.download(download_progress):
+            if not self.apk.download(
+                download_progress, skip_signature_check=skip_signature_check
+            ):
                 if print_errors:
                     print("Failed to download apk.")
                 return

@@ -196,8 +196,9 @@ class Apk:
         print(message)
         return False
 
-    def check_display_apk_signer_error(self) -> bool:
-        if self.check_apksigner_installed():
+    @staticmethod
+    def check_display_apk_signer_error() -> bool:
+        if Apk.check_apksigner_installed():
             return True
         message = "Apksigner or android sdk is not installed. Please install it and add it to your PATH."
         print(message)
@@ -713,11 +714,31 @@ class Apk:
         self,
         progress: Optional[Callable[[float, int, int, bool], None]] = progress,
         force: bool = False,
+        skip_signature_check: bool = False,
     ) -> bool:
+        if not self.check_apksigner_installed():
+            skip_signature_check = True
+
+        sig_failed = False
         if self.download_v1(progress, force):
-            return True
+            if skip_signature_check:
+                return True
+            if self.is_original(self.apk_path):
+                return True
+            sig_failed = True
+
         if self.download_v2(progress, force):
-            return True
+            if skip_signature_check:
+                return True
+            if self.is_original(self.apk_path):
+                return True
+            sig_failed = True
+
+        if sig_failed and not skip_signature_check:
+            raise ValueError(
+                "APK signature check failed. The downloaded APK is not original. If you are sure that the APK is original, set skip_signature_check to True."
+            )
+
         return False
 
     def download_v1(
@@ -1015,13 +1036,49 @@ class Apk:
         return cc, gv
 
     @staticmethod
+    def get_sha256_cert_hash(path: "tbcml.Path") -> Optional[str]:
+        cmd = f"apksigner verify --print-certs '{path}'"
+        result = tbcml.Command(cmd).run()
+        if not result.success:
+            return None
+        output = result.result
+        for line in output.splitlines():
+            type, hash = line.split(":", 1)
+            type = type.split(" ")[-2].strip().upper()
+            hash = hash.strip().lower()
+            if type != "SHA-256":
+                continue
+            return hash
+        return None
+
+    @staticmethod
+    def is_original(
+        apk_path: Optional["tbcml.Path"] = None, hash: Optional[str] = None
+    ) -> bool:
+        if hash is None and apk_path is not None:
+            hash = Apk.get_sha256_cert_hash(apk_path)
+            if hash is None:
+                return False
+        return (
+            hash == "baf876d554213331c6fe5f6bbf9ae9af2f95c20e82b14bc232b0ac3a77680cb1"
+        )
+
+    @staticmethod
     def from_apk_path(
         apk_path: "tbcml.Path",
         cc_overwrite: Optional["tbcml.CountryCode"] = None,
         gv_overwrite: Optional["tbcml.GameVersion"] = None,
         apk_folder: Optional["tbcml.Path"] = None,
         allowed_script_mods: bool = True,
+        skip_signature_check: bool = False,
     ) -> "Apk":
+        if not Apk.check_apksigner_installed():
+            skip_signature_check = True
+        if apk_folder is None and not skip_signature_check:
+            if not Apk.is_original(apk_path):
+                raise ValueError(
+                    "apk_folder must be specified for modded APKs to prevent accidental overwriting of original APKs. If you are sure you want to overwrite the original APK, set skip_signature_check to True."
+                )
         cc, gv = Apk.get_package_name_version_from_apk(apk_path)
 
         if cc is None:
