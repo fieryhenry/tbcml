@@ -432,10 +432,12 @@ class Ipa:
         return True
 
     def set_app_name(self, app_name: str) -> bool:
-        self.set_plist_key("CFBundleDisplayName", app_name)
+        self.set_plist_key("CFBundleDisplayName", app_name.strip(" ")) #strip spaces due to Altstore/Sidestore issue
         return True
 
     def sign(self) -> bool:  # TODO: impliment signing
+        #Comment: ipa does not require signing, user must sign the INSTALLATION PROCESS with certificates(enterprise, free apple dev acc, apple dev account)
+        #So we dont have to presign the ipa.
         return True
         pass
 
