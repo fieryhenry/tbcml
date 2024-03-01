@@ -134,7 +134,11 @@ function getPackageName() {
 }
 
 function getPackageVersion() {
-    return Java.use("android.content.pm.PackageInfo").$new(Java.use("android.app.ActivityThread").currentApplication().getPackageManager().getPackageInfo(getPackageName(), 0)).versionName.value;
+    let context = Java.use("android.app.ActivityThread").currentApplication().getApplicationContext();
+    let packageManager = context.getPackageManager();
+    let packageInfo = packageManager.getPackageInfo(context.getPackageName(), 0);
+    return packageInfo.versionCode.value;
+}
 }
 
 
