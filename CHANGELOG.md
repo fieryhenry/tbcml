@@ -7,6 +7,7 @@ Feature list is not complete, but here are some of the changes:
 ### Added
 
 - ModLoader class to reduce boilerplate code when creating mods
+- Basic support for iOS ipa files
 - Support for different languages when using an en apk (e.g fr, es, it, de, th)
 - Way to compile the mod to raw game files. This is useful to reduce the time it
   takes to apply the mod to the game and is useful when debugging mods
