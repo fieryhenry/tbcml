@@ -17,6 +17,7 @@ class SoundSetting(tbcml.Modification):
         self._csv__bgm = BoolCSVField(col_index=0)
         self._csv__loop = BoolCSVField(col_index=1)
         self._csv__priority = IntCSVField(col_index=2)
+        SoundSetting.Schema()
 
     def read_csv(self, csv: "tbcml.CSV") -> bool:
         csv.index = self.sound_id + 1
