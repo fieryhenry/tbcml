@@ -230,6 +230,7 @@ __all__ = [
     "CountryCode",
     "CC",
     "GV",
+    "PKG",
     "GameVersion",
     "AdbHandler",
     "BulkAdbHandler",
