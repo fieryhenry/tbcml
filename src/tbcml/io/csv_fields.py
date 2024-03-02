@@ -272,9 +272,8 @@ class IntListCSVField(CSVField[list[int]]):
             return
 
         if self.length is None:
-            if csv.index >= len(csv.lines):
-                length = 0
-            else:
+            length = len(self.value or [])
+            if length == 0:
                 length = len(csv.lines[csv.index])
         else:
             length = self.length
