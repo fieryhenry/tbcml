@@ -12,6 +12,7 @@ class ModificationType(enum.Enum):
     LOCALIZABLE = "localizable"
     MAP = "map"
     SOUND_SETTING = "sound_setting"
+    CHARA_GROUP = "chara_group"
 
     @staticmethod
     def from_str_value(string: str) -> Optional["ModificationType"]:
@@ -33,6 +34,8 @@ class ModificationType(enum.Enum):
             return tbcml.Map
         if self == ModificationType.SOUND_SETTING:
             return tbcml.SoundSetting
+        if self == ModificationType.CHARA_GROUP:
+            return tbcml.CharaGroup
         raise NotImplementedError()
 
 

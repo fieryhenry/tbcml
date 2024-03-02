@@ -43,6 +43,7 @@ from .game_data.map.map import Map, MapType
 
 from .game_data.bcu import BCUZip
 from .game_data.misc.sound_setting import SoundSetting
+from .game_data.battle.chara_group import CharaGroup
 
 from .anim.model import (
     Model,
@@ -173,6 +174,7 @@ __all__ = [
     "BCUZip",
     "Ipa",
     "SoundSetting",
+    "CharaGroup",
     "Model",
     "UnitAnim",
     "Texture",
