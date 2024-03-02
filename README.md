@@ -228,6 +228,19 @@ You can put a `*`in front of the game version to match any game version. You can
 also use the `>` and `<` operators to match any version greater than or less
 than the specified version (and `>=` and `<=`).
 
+There is some basic support for iOS ipa files:
+  
+```python
+loader = tbcml.IpaModerLoader("en", "12.3.0")
+
+# you need to specify the path to the ipa as it can't be downloaded
+loader.initialize(ipa_path="path/to/ipa")
+
+ipa = loader.get_ipa()
+
+# ... rest of the code is the same
+```
+
 Run the script
 
 Windows
