@@ -134,7 +134,28 @@ function getPackageName() {
 }
 
 function getPackageVersion() {
-    return Java.use("android.content.pm.PackageInfo").$new(Java.use("android.app.ActivityThread").currentApplication().getPackageManager().getPackageInfo(getPackageName(), 0)).versionName.value;
+    let context = Java.use("android.app.ActivityThread").currentApplication().getApplicationContext();
+    let packageManager = context.getPackageManager();
+    let packageInfo = packageManager.getPackageInfo(context.getPackageName(), 0);
+    return packageInfo.versionCode.value;
+}
+
+function download_file(url) {
+    let URL = Java.use("java.net.URL");
+    let BufferedReader = Java.use("java.io.BufferedReader");
+    let InputStreamReader = Java.use("java.io.InputStreamReader");
+    let StringBuilder = Java.use("java.lang.StringBuilder");
+    let url_obj = URL.$new(url);
+    let urlConnection = url_obj.openConnection();
+    let inputStreamReader = InputStreamReader.$new(urlConnection.getInputStream());
+    let bufferedReader = BufferedReader.$new(inputStreamReader);
+    let stringBuilder = StringBuilder.$new();
+    let inputLine = null;
+    while ((inputLine = bufferedReader.readLine()) != null) {
+        stringBuilder.append(inputLine);
+    }
+    bufferedReader.close();
+    return stringBuilder.toString();
 }
 
 

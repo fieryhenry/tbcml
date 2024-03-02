@@ -73,7 +73,7 @@ class ModLoader:
         allowed_script_mods: bool = True,
         custom_apk_folder: Optional["tbcml.Path"] = None,
         lang: Optional["tbcml.LanguageStr"] = None,
-        apk_path: Optional["tbcml.Path"] = None,
+        apk_path: Optional["tbcml.PathStr"] = None,
         download_progress: Optional[
             Callable[[float, int, int, bool], None]
         ] = Apk.progress,
