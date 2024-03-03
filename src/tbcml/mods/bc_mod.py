@@ -517,6 +517,8 @@ class Mod:
 
     def apply_ipa_files(self, ipa: "tbcml.Ipa"):
         for file, data in self.apk_files.items():
+            if file.to_str_forwards().startswith("assets/"):
+                file = tbcml.Path(file.to_str()[len("assets/") :])
             path = ipa.get_asset(file)
             path.parent().generate_dirs()
             path.write(data)
