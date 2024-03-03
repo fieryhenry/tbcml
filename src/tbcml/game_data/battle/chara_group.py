@@ -47,7 +47,6 @@ class CharaGroup(tbcml.Modification):
         if index is None:
             index = len(csv.lines)
         csv.index = index
-        csv.set_line([], index)
         tbcml.Modification.apply_csv_fields(self, csv, remove_others=False)
 
     @staticmethod
