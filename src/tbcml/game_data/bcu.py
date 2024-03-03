@@ -599,6 +599,40 @@ class BCUEnemy:
         return stats
 
 
+class BCUCharaGroup:
+    def __init__(self, group_data: dict[str, Any], bcu_cat_id_map: dict[int, int]):
+        self.group_data = group_data
+        self.cat_id_map = bcu_cat_id_map
+
+    def write_to_chara_group(self, chara_group: "tbcml.CharaGroup"):
+        val = self.group_data.get("val", {})
+        name = val.get("name")
+        type = val.get("type")
+        set = val.get("set")
+        cat_ids: Optional[list[int]] = None
+        if set is not None:
+            cat_ids = []
+            for cat in set:
+                pack = cat.get("pack", "000000")
+                id = cat.get("id")
+                if id is None:
+                    continue
+                id = int(id)
+                if pack == "000000": # game cat
+                    cat_id = id
+                else: # bcu cat
+                    cat_id = self.cat_id_map.get(id)
+                if cat_id is None:
+                    continue
+                cat_ids.append(cat_id)
+        if name is not None:
+            chara_group.text_id = name
+        if type is not None:
+            chara_group.group_type = int(type)
+        if cat_ids is not None:
+            chara_group.cat_ids = cat_ids
+
+
 class BCUFile:
     def __init__(
         self,
@@ -795,6 +829,16 @@ class BCUZip:
                 )
                 return audio_file, sound_setting
 
+        return None
+
+    def get_bcu_chara_group(self, bcu_id: int, game_id: int, chara_map: dict[int, int]):
+        groups = self.pack_json.get("groups", {}).get("data", [])
+        for group in groups:
+            id = group.get("val", {}).get("id", {}).get("id")
+            if id != game_id:
+                continue
+            group_obj = BCUCharaGroup(group, chara_map)
+            return group_obj
         return None
 
     def get_files_by_dir(self, dir: "tbcml.Path") -> dict[str, BCUFile]:

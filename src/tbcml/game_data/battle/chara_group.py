@@ -22,6 +22,28 @@ class CharaGroup(tbcml.Modification):
         self._csv__group_type = IntCSVField(col_index=2)
         self._csv__cat_ids = IntListCSVField(col_index=3)
 
+    def import_from_bcu(
+        self,
+        bcu_zip: "tbcml.BCUZip",
+        bcu_id: int,
+        cat_id_map: dict[int, int],
+    ) -> bool:
+        """Import a character group from a bcuzip file
+
+        Args:
+            bcu_zip (tbcml.BCUZip): The bcuzip
+            bcu_id (int): The id of the character group specified in bcu
+            cat_id_map (dict[int, int]): A mapping of which bcu ids map to which cats. E.g {0: 10, 1: 22}, will map bcu cat id 0 to game cat id 10 and bcu cat id 1 to game cat id 22.
+
+        Returns:
+            bool: If the import was successful
+        """
+        bcu_chara_group = bcu_zip.get_bcu_chara_group(bcu_id, self.group_id, cat_id_map)
+        if bcu_chara_group is None:
+            return False
+        bcu_chara_group.write_to_chara_group(self)
+        return True
+
     @staticmethod
     def find_index(csv: "tbcml.CSV", index: int):
         for i in range(1, len(csv.lines)):
