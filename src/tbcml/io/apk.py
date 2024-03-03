@@ -751,6 +751,9 @@ class Apk:
         force: bool = False,
         skip_signature_check: bool = False,
     ) -> bool:
+        if self.apk_path.exists() and not force:
+            return True
+
         if not self.check_apksigner_installed():
             skip_signature_check = True
 
