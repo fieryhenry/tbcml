@@ -453,10 +453,6 @@ class Map(tbcml.Modification):
     map_name_img: Optional["tbcml.BCImage"] = None
     map_stage_data_info: Optional[MapStageDataInfo] = None
     map_option_info: Optional[MapOptionInfo] = None
-    modification_type: tbcml.ModificationType = tbcml.ModificationType.MAP
-
-    def __post_init__(self):
-        Map.Schema()
 
     def get_map_option_info(self) -> "MapOptionInfo":
         if self.map_option_info is None:

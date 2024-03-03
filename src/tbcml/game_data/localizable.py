@@ -29,11 +29,9 @@ class LocalizableItem:
 @dataclass
 class Localizable(tbcml.Modification):
     strings: Optional[dict[str, LocalizableItem]] = None
-    modification_type: tbcml.ModificationType = tbcml.ModificationType.LOCALIZABLE
 
     def __post_init__(self):
         self.modified = False
-        Localizable.Schema()
 
     @staticmethod
     def get_csv(

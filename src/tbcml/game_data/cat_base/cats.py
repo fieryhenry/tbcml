@@ -1241,12 +1241,8 @@ class Cat(tbcml.Modification):
     forms: Optional[dict["tbcml.CatFormType", CatForm]] = None
     unitbuy: Optional[UnitBuy] = None
     nyanko_picture_book: Optional[NyankoPictureBook] = None
-    modification_type: tbcml.ModificationType = tbcml.ModificationType.CAT
     evolve_text: Optional[CatEvolveText] = None
     talents: Optional[CatTalents] = None
-
-    def __post_init__(self):
-        Cat.Schema()
 
     def get_form_create(self, form: Union[int, "tbcml.CatFormType"]):
         if isinstance(form, int):

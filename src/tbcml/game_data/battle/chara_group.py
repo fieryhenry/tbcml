@@ -15,14 +15,12 @@ class CharaGroup(tbcml.Modification):
     text_id: Optional[str] = None
     group_type: Optional[int] = None
     cat_ids: Optional[list[int]] = None
-    modification_type: tbcml.ModificationType = tbcml.ModificationType.CHARA_GROUP
 
     def __post_init__(self):
         self._csv__group_id = IntCSVField(col_index=0)
         self._csv__text_id = StringCSVField(col_index=1)
         self._csv__group_type = IntCSVField(col_index=2)
         self._csv__cat_ids = IntListCSVField(col_index=3)
-        CharaGroup.Schema()
 
     @staticmethod
     def find_index(csv: "tbcml.CSV", index: int):

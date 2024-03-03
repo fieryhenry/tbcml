@@ -57,15 +57,11 @@ class ItemShop(tbcml.Modification):
     items: Optional[dict[int, "ShopItem"]] = None
     texture: Optional["tbcml.Texture"] = None
     total_items: Optional[int] = None
-    modification_type: tbcml.ModificationType = tbcml.ModificationType.SHOP
 
     def get_texture(self) -> "tbcml.Texture":
         if self.texture is None:
             self.texture = tbcml.Texture()
         return self.texture
-
-    def __post_init__(self):
-        ItemShop.Schema()
 
     def get_item(self, id: int) -> Optional[ShopItem]:
         if self.items is None:

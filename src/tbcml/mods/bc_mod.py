@@ -1,11 +1,13 @@
 import dataclasses
+from marshmallow_dataclass import class_schema
 import enum
-from typing import Any, Optional, Sequence, TypeVar, Union
+from typing import Any, Optional, Sequence, Union
+
 import tbcml
 import json
 
 
-class ModificationType(enum.Enum):
+class ModificationType(enum.StrEnum):
     CAT = "cat"
     ENEMY = "enemy"
     SHOP = "shop"
@@ -20,6 +22,24 @@ class ModificationType(enum.Enum):
             if type.value == string:
                 return type
         return None
+
+    @staticmethod
+    def from_cls(ty: Any) -> "ModificationType":
+        if isinstance(ty, tbcml.Cat):
+            return ModificationType.CAT
+        if isinstance(ty, tbcml.Enemy):
+            return ModificationType.ENEMY
+        if isinstance(ty, tbcml.ItemShop):
+            return ModificationType.SHOP
+        if isinstance(ty, tbcml.Localizable):
+            return ModificationType.LOCALIZABLE
+        if isinstance(ty, tbcml.Map):
+            return ModificationType.MAP
+        if isinstance(ty, tbcml.SoundSetting):
+            return ModificationType.SOUND_SETTING
+        if isinstance(ty, tbcml.CharaGroup):
+            return ModificationType.CHARA_GROUP
+        raise NotImplementedError()
 
     def get_cls(self) -> type:
         if self == ModificationType.CAT:
@@ -51,24 +71,21 @@ class ModPath(enum.Enum):
     COMPILATION_TARGETS = "compiled_game_files"
 
 
-T = TypeVar("T")
-
-
 class Modification:
-    Schema: Any
-
-    def __init__(self, modification_type: ModificationType):
-        self.modification_type = modification_type
-
     def to_json(self) -> str:
         self.pre_to_json()
         return self.Schema().dumps(self)  # type: ignore
 
-    @staticmethod
-    def from_json(obj: Any, data: str) -> Any:
-        cls = obj.Schema().loads(data)
-        cls.post_from_json()
-        return cls
+    def from_json(self, data: str, modification_type: ModificationType) -> Any:
+        base_cls = modification_type.get_cls()
+        schema = class_schema(clazz=base_cls)
+        cls = schema().loads(data)  # type: ignore
+        cls.post_from_json()  # type: ignore
+        return cls  # type: ignore
+
+    @property
+    def modification_type(self) -> ModificationType:
+        return ModificationType.from_cls(self)
 
     def apply(self, game_data: "tbcml.GamePacks"): ...
 
@@ -536,14 +553,12 @@ class Mod:
     @staticmethod
     def modification_from_json(data: tuple[str, str]):
         mod_type, modification_dt = data
-        cls = None
 
         type = ModificationType.from_str_value(mod_type)
         if type is None:
             raise ValueError("Invalid Modification")
 
-        cls = type.get_cls()
-        return Modification.from_json(cls, modification_dt)
+        return Modification().from_json(modification_dt, type)
 
     def get_custom_html(self) -> str:
         if self.custom_html is not None:

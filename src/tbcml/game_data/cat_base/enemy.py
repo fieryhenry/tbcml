@@ -249,7 +249,6 @@ class EnemyStats:
 @dataclass
 class Enemy(tbcml.Modification):
     enemy_id: int = field(metadata={"required": True})
-    modification_type: tbcml.ModificationType = tbcml.ModificationType.ENEMY
 
     name: Optional[str] = None
     description: Optional[list[str]] = None
@@ -260,8 +259,6 @@ class Enemy(tbcml.Modification):
     def __post_init__(self):
         self._csv__name = StringCSVField(col_index=0)
         self._csv__description = StrListCSVField(col_index=0, length=5)
-
-        Enemy.Schema()
 
     def set_enemy_id(self, id: int):
         self.enemy_id = id
