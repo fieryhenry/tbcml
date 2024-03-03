@@ -600,7 +600,7 @@ class Apk:
 
         versions_obj: list[tbcml.GameVersion] = []
 
-        for v in versions:
+        for v in versions_ls:
             versions_obj.append(tbcml.GameVersion(v))
 
         return versions_obj
