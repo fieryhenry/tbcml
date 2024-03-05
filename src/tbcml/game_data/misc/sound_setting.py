@@ -9,7 +9,7 @@ from tbcml.io.csv_fields import IntCSVField, BoolCSVField
 class SoundSetting(tbcml.Modification):
     sound_id: int
     bgm: Optional[bool] = None
-    loop: Optional[int] = None
+    loop: Optional[bool] = None
     priority: Optional[int] = None
 
     def __post_init__(self):
