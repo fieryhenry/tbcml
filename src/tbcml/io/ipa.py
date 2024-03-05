@@ -352,7 +352,7 @@ class Ipa:
 
     def add_mods_files(self, mods: list["tbcml.Mod"]):
         for mod in mods:
-            mod.apply_to_ipa(self)
+            mod.apply_to_pkg(self)
 
     def add_audio(
         self,
@@ -432,14 +432,15 @@ class Ipa:
         return True
 
     def set_app_name(self, app_name: str) -> bool:
-        self.set_plist_key("CFBundleDisplayName", app_name.strip(" ")) #strip spaces due to Altstore/Sidestore issue
+        self.set_plist_key(
+            "CFBundleDisplayName", app_name.strip(" ")
+        )  # strip spaces due to Altstore/Sidestore issue
         return True
 
     def sign(self) -> bool:  # TODO: impliment signing
-        #Comment: ipa does not require signing, user must sign the INSTALLATION PROCESS with certificates(enterprise, free apple dev acc, apple dev account)
-        #So we dont have to presign the ipa.
+        # Comment: ipa does not require signing, user must sign the INSTALLATION PROCESS with certificates(enterprise, free apple dev acc, apple dev account)
+        # So we dont have to presign the ipa.
         return True
-        pass
 
     def load_packs_into_game(
         self,
