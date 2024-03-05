@@ -110,6 +110,25 @@ from .country_code import CountryCode, CC
 from .game_version import GameVersion, GV
 
 PKG = Union["Apk", "Ipa"]
+"""Type alias for a package type, can be a tbcml.Apk or tbcml.Ipa"""
+
+File = Union[
+    Path,
+    str,
+    Data,
+    bytes,
+]
+"""Type alias for a file type, can be a tbcml.Path, str, tbcml.Data, or bytes"""
+
+
+def load(f: File) -> Data:
+    if isinstance(f, Data):
+        return f
+    elif isinstance(f, bytes):
+        return Data(f)
+    else:
+        return Path(f).read()
+
 
 from . import (
     anim,
@@ -125,6 +144,8 @@ from . import (
 )
 
 __all__ = [
+    "File",
+    "load",
     "ModificationType",
     "CSVField",
     "IntCSVField",
