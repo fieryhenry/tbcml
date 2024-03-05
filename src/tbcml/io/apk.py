@@ -1680,7 +1680,7 @@ class Apk:
 
     def add_mods_files(self, mods: list["tbcml.Mod"]):
         for mod in mods:
-            mod.apply_to_apk(self)
+            mod.apply_to_pkg(self)
 
     def add_smali_mods(self, mods: list["tbcml.Mod"]):
         if not self.is_allowed_script_mods():
