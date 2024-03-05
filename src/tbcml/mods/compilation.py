@@ -7,7 +7,6 @@ class CompilationTarget:
         self,
         target_country_codes: str,
         target_game_versions: str,
-        files: Optional[dict[str, "tbcml.Data"]] = None,
         target_langs: Optional[str] = None,
     ):
         """Initialize compilation target
@@ -15,16 +14,14 @@ class CompilationTarget:
         Args:
             target_country_codes (str): country codes this targets e.g `*` `en,jp,kr` `en` `!en,!kr`
             target_game_versions (str): game version this targets e.g `*` `12.3.0,13.0` `>13` `<=8.4`
-            files (dict[str, tbcml.Data]): dictionary of file names and contents
             target_langs (str): en langs this targets e.g `*` `fr,en,th,de` `de` `!it,!es`
         """
         self.target_country_codes = target_country_codes
         self.target_country_codes = self.target_country_codes.replace("ja", "jp")
         self.target_game_versions = target_game_versions
-        if files is None:
-            files = {}
-        self.files = files
         self.target_langs = target_langs
+
+        self.files: dict[str, "tbcml.Data"] = {}
 
     def set_file(self, name: str, data: "tbcml.Data"):
         self.files[name] = data
@@ -82,12 +79,14 @@ class CompilationTarget:
 
             files[name] = file
 
-        return CompilationTarget(
+        target = CompilationTarget(
             target_country_codes,
             target_game_versions,
-            files,
             target_langs,
         )
+        target.files = files
+
+        return target
 
     def check_string(self, targets: str, string: str):
         string = string.lower()
