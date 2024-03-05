@@ -327,3 +327,4 @@ class Path:
 
 
 PathStr = typing.Union[Path, str]
+"""Type alias for a tbcml.Path or a str."""
