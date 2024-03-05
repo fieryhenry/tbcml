@@ -194,6 +194,41 @@ class Mod:
             description="My first mod"
         )
 
+        mod.add_modification(tbcml.Cat(...))
+
+        mod.save("mod.zip")
+        ```
+
+    Methods:
+        `add_modification(...)`: Add a modification to the mod.
+        `add_script(...)`: Add a frida script to the mod.
+        `add_smali(...)`: Add some smali code to the mod.
+        `add_pkg_file(...)`: Add a file to be placed in the apk/ipa when applying the mod.
+        `add_audio_file(...)`: Add an audio file to the mod.
+        `add_compilation_target(...)`: Add a compilation target to the mod.
+        `add_lib_patch(...)`: Add a lib patch to the mod.
+        `to_zip(...)`: Convert the mod to a zip file.
+        `to_file(...)`: Save the mod to a file.
+        `load(...)`: Load a mod from a file.
+        `save(...)`: Save the mod to a file.
+        `compile(...)`: Compile the mod to raw game files.
+        `get_custom_html(...)`: Get the custom html for the mod.
+        `apply_to_game_data(...)`: Apply the mod to the game data.
+        `apply_to_pkg(...)`: Apply the mod to a package (apk/ipa).
+
+    Fields:
+        `name`: The name of the mod
+        `authors`: The authors of the mod
+        `description`: The description of the mod
+        `custom_html`: The custom html for the mod. This will be visible in the transfer menu mod list. If you do not provide a custom html, tbcml will create a basic page for you.
+        `modifications`: The modifications to apply to the game data.
+        `scripts`: The frida scripts to apply to the game. Is not supported for ipa files atm.
+        `game_files`: The game files to apply to the game data.
+        `pkg_files`: The files to place in the apk/ipa when applying the mod.
+        `audio_files`: The audio files to add to the mod.
+        `smali`: The smali code to add to the mod. Is not supported for ipa files.
+        `patches`: The lib patches to add to the mod. Is not supported for ipa files atm.
+        `compilation_targets`: The compilation targets of the mod, which specify the game versions, country codes and languages that the compiled game files should be applied to (if they exist).
     """
 
     def __init__(
