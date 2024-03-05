@@ -65,7 +65,7 @@ class ModPath(enum.Enum):
     METADATA = "metadata.json"
     SMALI = "smali"
     GAME_FILES = "game_files"
-    APK_FILES = "apk_files"
+    PKG_FILES = "pkg_files"
     AUDIO_FILES = "audio_files"
     LIB_PATCHES = "lib_patches"
     COMPILATION_TARGETS = "compiled_game_files"
@@ -184,6 +184,18 @@ class Modification:
 
 
 class Mod:
+    """Mod class to represent a mod
+
+    Example usage:
+        ```python
+        mod = Mod(
+            name="My Mod",
+            authors="fieryhenry",
+            description="My first mod"
+        )
+
+    """
+
     def __init__(
         self,
         name: str = "",
@@ -200,369 +212,415 @@ class Mod:
             custom_html (Optional[str], optional): The HTML to load when the user clicks this mod in the transfer menu mod list. Defaults to None which means that tbcml will create a basic page for you.
         """
         self.name = name
+        """str: The name of the mod"""
         if isinstance(authors, str):
             authors = [authors]
         self.authors = authors
+        """list[str]: The authors of the mod"""
+
         self.description = description
+        """str: The description of the mod"""
+
         self.custom_html = custom_html
+        """Optional[str]: The custom html for the mod. This will be visible in
+        the transfer menu mod list. If you do not provide a custom html, tbcml
+        will create a basic page for you."""
 
         self.modifications: list[Modification] = []
+        """list[Modification]: The modifications to apply to the game data.
+
+        See tbcml.Modification for more information on modifications."""
+
         self.scripts: list[tbcml.FridaScript] = []
+        """list[tbcml.FridaScript]: The frida scripts to apply to the game. Is
+        not supported for ipa files atm.
+
+        See tbcml.FridaScript for more information on frida scripts."""
 
         self.game_files: dict[str, tbcml.Data] = {}
-        self.apk_files: dict[tbcml.Path, tbcml.Data] = {}
+        """dict[str, tbcml.Data]: The game files to apply to the game data. str
+        is the file name, tbcml.Data is the file data."""
+
+        self.pkg_files: dict[tbcml.Path, tbcml.Data] = {}
+        """dict[tbcml.Path, tbcml.Data]: The files to place in the apk/ipa when
+        applying the mod. tbcml.Path is the location in the apk/ipa to place
+        the file, tbcml.Data is the actual file / data to place in that
+        location."""
         self.audio_files: dict[int, tbcml.AudioFile] = {}
+        """dict[int, tbcml.AudioFile]: The audio files to add to the mod. int
+        is the id that the game uses to reference the audio file,
+        tbcml.AudioFile is the audio file / data to add.
+        
+        See tbcml.AudioFile for more information on audio files."""
 
         self.smali: tbcml.SmaliSet = tbcml.SmaliSet.create_empty()
+        """tbcml.SmaliSet: The smali code to add to the mod. Is not supported
+        for ipa files. Smali code is used to modify the java game code.
+        
+        See tbcml.SmaliSet for more information on smali code."""
         self.patches: tbcml.LibPatches = tbcml.LibPatches.create_empty()
+        """tbcml.LibPatches: The lib patches to add to the mod. Is not
+        supported for ipa files atm. Lib patches are used to modify
+        small parts of the game code, e.g replacing a string in the game code.
+        
+        See tbcml.LibPatches for more information on lib patches."""
 
         self.compilation_targets: list[tbcml.CompilationTarget] = []
+        """list[tbcml.CompilationTarget]: The compilation targets of the
+        mod, which specify the game versions, country codes and languages that
+        the compiled game files should be applied to (if they exist).
+
+        See tbcml.CompilationTarget for more information on compilation
+        targets."""
 
     def add_compilation_target(self, target: "tbcml.CompilationTarget"):
+        """Add a compilation target to the mod.
+
+        See tbcml.CompilationTarget for more information on compilation targets.
+
+        A compilation target specifies the game versions, country codes and
+        languages that the compiled game files should be applied to (if they
+        exist).
+
+
+        Args:
+            target (tbcml.CompilationTarget): The compilation target to add
+
+        Example Usage:
+            ```python
+            mod = Mod(...)
+
+            target = tbcml.CompilationTarget(target_country_codes="!jp", target_game_versions="*")
+            mod.add_compilation_target(target)
+            ```
+
+        """
         self.compilation_targets.append(target)
 
-    def add_apk_file(
+    def add_pkg_file(
         self,
-        apk_path: "tbcml.PathStr",
-        file_data: Optional["tbcml.Data"] = None,
-        local_path: Optional["tbcml.PathStr"] = None,
+        pkg_path: "tbcml.PathStr",
+        local_f: "tbcml.File",
     ):
-        data = None
-        if local_path is not None:
-            data = tbcml.Path(local_path).read()
-        if file_data is not None:
-            data = file_data
-        if data is None:
-            raise ValueError("Either local_path or data must be specified!")
-        path = tbcml.Path(apk_path)
-        self.apk_files[path] = data
+        """Add a file to be placed in the apk/ipa when applying the mod.
 
-    def add_audio_file_data(
-        self,
-        id: int,
-        data: "tbcml.Data",
-        is_bgm: bool,
-        sound_setting: Optional["tbcml.SoundSetting"] = None,
-    ):
-        audio_file = tbcml.AudioFile(id, is_bgm, data)
-        self.add_audio_file(audio_file, sound_setting)
+        When loading into an ipa file, the `assets/` prefix is removed from the
+        path.
+
+        If you want to place a file in the assets folder, you should include
+        the `assets/` prefix in the pkg_path otherwise it will be placed in the
+        wrong folder when loaded into an apk.
+
+        Args:
+            pkg_path (tbcml.PathStr): The location in the apk/ipa to place the file, e.g `assets/user_info_en.html`
+            local_f (tbcml.File): The actual file / data to place in that location.
+
+        Example Usage:
+            ```python
+            mod = Mod(...)
+            local_path = tbcml.Path("modded_user_info.html")
+            mod.add_pkg_file("assets/user_info_en.html", local_path)
+            ```
+        """
+        data = tbcml.load(local_f)
+        path = tbcml.Path(pkg_path)
+        self.pkg_files[path] = data
 
     def add_audio_file(
         self,
-        audio_file: "tbcml.AudioFile",
-        sound_setting: Optional["tbcml.SoundSetting"],
-    ):
-        if sound_setting is None:
-            sound_setting = tbcml.SoundSetting(audio_file.id, bgm=audio_file.is_bgm)
-
-        self.add_modification(sound_setting)
-
-        self.audio_files[audio_file.id] = audio_file
-
-    def add_audio_file_path(
-        self,
-        id: int,
-        path: "tbcml.PathStr",
+        game_id: int,
+        f: "tbcml.File",
         is_bgm: bool,
-        sound_setting: Optional["tbcml.SoundSetting"] = None,
+        loop: bool,
+        priority: int = -1,
     ):
-        path = tbcml.Path(path)
-        self.add_audio_file_data(id, path.read(), is_bgm, sound_setting)
+        """Add an audio file to the mod.
 
-    def metadata_to_json(self) -> str:
-        data = {
-            "name": self.name,
-            "authors": self.authors,
-            "description": self.description,
-            "custom_html": self.custom_html,
-        }
-        return json.dumps(data)
+        Note that this does create a modification for the sound setting, so you do not need to add a sound setting modification yourself.
 
-    @staticmethod
-    def metadata_from_json(data: str) -> "Mod":
-        obj = json.loads(data)
-        name = obj.get("name", "")
-        authors = obj.get("authors", "")
-        description = obj.get("description", "")
-        custom_html = obj.get("custom_html", None)
-        return Mod(
-            name=name,
-            authors=authors,
-            description=description,
-            custom_html=custom_html,
+        Args:
+            game_id (int): The id that the game uses to reference the audio file. E.g used when getting stage music.
+            f (tbcml.File): The audio file / data to add.
+            is_bgm (bool): Whether the audio file is a background music or not (sound effect).
+            loop (bool): Whether the audio file should loop. Most background music should loop.
+            priority (int, optional): The priority of the audio file. Defaults to -1 which is used for most background music.
+
+        Example Usage:
+            ```python
+            mod = Mod(...)
+            local_path = tbcml.Path("bgm.ogg")
+            mod.add_audio_file(7, local_path, True, True, -1)
+            ```
+
+        """
+        data = tbcml.load(f)
+        audio_file = tbcml.AudioFile(game_id, is_bgm, data)
+        sound_setting = tbcml.SoundSetting(
+            game_id, bgm=is_bgm, loop=loop, priority=priority
         )
+        self.__add_audio_file(audio_file, sound_setting)
 
     def to_zip(self) -> "tbcml.Data":
+        """Convert the mod to a zip file.
+
+        Returns:
+            tbcml.Data: The data of the zip file.
+
+        Example Usage:
+            ```python
+            ...
+            data = mod.to_zip()
+            ...
+            ```
+        """
         zipfile = tbcml.Zip()
-        metadata_json = self.metadata_to_json()
+        metadata_json = self.__metadata_to_json()
         metadata_file_name = tbcml.Path(ModPath.METADATA.value)
         zipfile.add_file(metadata_file_name, tbcml.Data(metadata_json))
 
-        self.add_modifications_to_zip(zipfile)
-        self.add_scripts_to_zip(zipfile)
-        self.add_game_files_to_zip(zipfile)
-        self.add_apk_files_to_zip(zipfile)
-        self.add_audio_files_to_zip(zipfile)
-        self.add_compilation_targets_to_zip(zipfile)
+        self.__add_modifications_to_zip(zipfile)
+        self.__add_scripts_to_zip(zipfile)
+        self.__add_game_files_to_zip(zipfile)
+        self.__add_pkg_files_to_zip(zipfile)
+        self.__add_audio_files_to_zip(zipfile)
+        self.__add_compilation_targets_to_zip(zipfile)
 
         self.smali.add_to_zip(zipfile)
         self.patches.add_to_zip(zipfile)
 
         return zipfile.to_data()
 
-    def add_compilation_targets_to_zip(self, zipfile: "tbcml.Zip"):
-        for i, target in enumerate(self.compilation_targets):
-            target.add_to_zip(i, zipfile)
-
-    def add_apk_files_to_zip(self, zipfile: "tbcml.Zip"):
-        for name, data in self.apk_files.items():
-            path = tbcml.Path(ModPath.APK_FILES.value).add(name)
-            zipfile.add_file(path, data)
-
-    def add_audio_files_to_zip(self, zipfile: "tbcml.Zip"):
-        for id, audio in self.audio_files.items():
-            ext = audio.get_sound_format()
-            path = tbcml.Path(ModPath.AUDIO_FILES.value).add(
-                f"{str(id).zfill(3)}.{ext}"
-            )
-            zipfile.add_file(path, audio.data)
-
-    def add_game_files_to_zip(self, zipfile: "tbcml.Zip"):
-        for name, data in self.game_files.items():
-            path = tbcml.Path(ModPath.GAME_FILES.value).add(name)
-            zipfile.add_file(path, data)
-
-    def add_scripts_to_zip(self, zipfile: "tbcml.Zip"):
-        for i, script in enumerate(self.scripts):
-            script.add_to_zip(i, zipfile)
-
-    def add_modifications_to_zip(self, zipfile: "tbcml.Zip"):
-        for i, modification in enumerate(self.modifications):
-            filepath = (
-                tbcml.Path(ModPath.MODIFICATIONS.value)
-                .add(modification.modification_type.value)
-                .add(f"{i}.json")
-            )
-            json_data = modification.to_json()
-            zipfile.add_file(filepath, tbcml.Data(json_data))
-
     @staticmethod
-    def from_file(path: "tbcml.PathStr"):
-        return Mod.from_zip(tbcml.Path(path).read())
+    def load(f: "tbcml.File") -> "Mod":
+        """Load a mod from a file.
 
-    @staticmethod
-    def from_zip(data: "tbcml.Data") -> "Mod":
+        Args:
+            f (tbcml.File): The file to load the mod from.
+
+        Returns:
+            Mod: The loaded mod.
+
+        Example Usage:
+            ```python
+            file = tbcml.Path("mod.zip")
+            mod = Mod.load(file)
+            print(mod.name)
+            ...
+            ```
+        """
+        data = tbcml.load(f)
+
         zipfile = tbcml.Zip(data)
         metadata_file_name = tbcml.Path(ModPath.METADATA.value)
         metadata_json = zipfile.get_file(metadata_file_name)
         if metadata_json is None:
             return Mod()
-        mod = Mod.metadata_from_json(metadata_json.to_str())
+        mod = Mod.__metadata_from_json(metadata_json.to_str())
 
-        Mod.modifications_from_zip(zipfile, mod)
-        Mod.scripts_from_zip(zipfile, mod)
-        Mod.game_files_from_zip(zipfile, mod)
-        Mod.apk_files_from_zip(zipfile, mod)
-        Mod.audio_files_from_zip(zipfile, mod)
-        Mod.compilation_targets_from_zip(zipfile, mod)
+        Mod.__modifications_from_zip(zipfile, mod)
+        Mod.__scripts_from_zip(zipfile, mod)
+        Mod.__game_files_from_zip(zipfile, mod)
+        Mod.__pkg_files_from_zip(zipfile, mod)
+        Mod.__audio_files_from_zip(zipfile, mod)
+        Mod.__compilation_targets_from_zip(zipfile, mod)
+
+        Mod.__patches_from_zip(zipfile, mod)
 
         mod.smali = tbcml.SmaliSet.from_zip(zipfile)
-        mod.patches = tbcml.LibPatches.from_zip(zipfile)
 
         return mod
 
-    @staticmethod
-    def compilation_targets_from_zip(zipfile: "tbcml.Zip", mod: "Mod"):
-        for i in range(
-            len(Mod.get_files_in_mod_path(zipfile, ModPath.COMPILATION_TARGETS))
-        ):
-            target = tbcml.CompilationTarget.from_zip(i, zipfile)
-            if target is None:
-                continue
-            mod.add_compilation_target(target)
-
-    @staticmethod
-    def get_files_in_mod_path(zipfile: "tbcml.Zip", path_type: ModPath):
-        return zipfile.get_paths_in_folder(tbcml.Path(path_type.value))
-
-    @staticmethod
-    def apk_files_from_zip(zipfile: "tbcml.Zip", mod: "Mod"):
-        for path in Mod.get_files_in_mod_path(zipfile, ModPath.APK_FILES):
-            data = zipfile.get_file(path)
-            if data is not None:
-                key = path.remove_prefix(ModPath.APK_FILES.value)
-                mod.apk_files[key] = data
-
-    @staticmethod
-    def audio_files_from_zip(zipfile: "tbcml.Zip", mod: "Mod"):
-        for path in Mod.get_files_in_mod_path(zipfile, ModPath.AUDIO_FILES):
-            data = zipfile.get_file(path)
-            if data is not None:
-                key = path.basename()
-                if not key.isdigit():
-                    continue
-                key = int(key)
-                is_bgm = tbcml.AudioFile.get_is_bgm(path.get_extension())
-                audio_file = tbcml.AudioFile(key, is_bgm, data)
-                mod.audio_files[key] = audio_file
-
-    @staticmethod
-    def game_files_from_zip(zipfile: "tbcml.Zip", mod: "Mod"):
-        for path in Mod.get_files_in_mod_path(zipfile, ModPath.GAME_FILES):
-            data = zipfile.get_file(path)
-            if data is not None:
-                mod.game_files[path.basename()] = data
-
-    @staticmethod
-    def scripts_from_zip(zipfile: "tbcml.Zip", mod: "Mod"):
-        for path in Mod.get_files_in_mod_path(zipfile, ModPath.SCRIPTS):
-            script = tbcml.FridaScript.from_json(path.read().to_str())
-            mod.add_script(script)
-
-    @staticmethod
-    def modifications_from_zip(zipfile: "tbcml.Zip", mod: "Mod"):
-        for path in Mod.get_files_in_mod_path(zipfile, ModPath.MODIFICATIONS):
-            if not path.get_extension() == "json":
-                continue
-            modification_type = path.parent().basename()
-            dt = zipfile.get_file(path)
-            if dt is None:
-                continue
-            modifiction = Mod.modification_from_json((modification_type, dt.to_str()))
-            mod.add_modification(modifiction)
-
     def save(self, path: "tbcml.PathStr"):
+        """Save the mod to a file.
+
+        Does the same thing as `to_file`.
+
+        Args:
+            path (tbcml.PathStr): The path to save the mod to.
+
+        Example Usage:
+            ```python
+            mod = Mod(...)
+            mod.save("mod.zip")
+            ```
+
+        """
         path = tbcml.Path(path)
         self.to_zip().to_file(path)
 
+    def to_file(self, path: "tbcml.PathStr"):
+        """Save the mod to a file.
+
+        Does the same thing as `save`.
+
+        Args:
+            path (tbcml.PathStr): The path to save the mod to.
+
+        Example Usage:
+            ```python
+            mod = Mod(...)
+            mod.save("mod.zip")
+            ```
+        """
+        self.save(path)
+
     def add_modification(self, modification: "Modification"):
+        """Add a modification to the mod.
+
+        See tbcml.ModificationType for the different types of modifications
+        that are currently supported.
+
+        See each modification types respective class for more information on
+        specific modifications.
+
+        Args:
+            modification (Modification): The modification to add.
+
+        Raises:
+            ValueError: If the modification does not inherit from `Modification` (Invalid modification)
+
+        Example Usage:
+            ```python
+            class CustomCat(tbcml.Cat): # Cat inherits from Modification
+                ...
+
+            mod = Mod(...)
+            mod.add_modification(CustomCat(...))
+            ```
+        """
         if not isinstance(modification, Modification):  # type: ignore
             raise ValueError("modification does not inherit Modification!")
         self.modifications.append(modification)
 
     def add_script(self, script: "tbcml.FridaScript"):
+        """Add a frida script to the mod.
+
+        See tbcml.FridaScript for more information on frida scripts.
+
+        Is not supported for ipa files atm.
+
+        Args:
+            script (tbcml.FridaScript): The frida script to add.
+
+        Example Usage:
+            ```python
+            mod = Mod(...)
+            script_content = "log('Hello World')"
+            script = tbcml.FridaScript(name="Hello World", content=script_content, architectures="all", description="Logs Hello World")
+            mod.add_script(script)
+            ```
+        """
         self.scripts.append(script)
 
-    def add_smali(self, smali: "tbcml.Smali"):
-        self.smali.add(smali)
+    def add_lib_patch(self, lib_patch: "tbcml.LibPatch"):
+        """Add a lib patch to the mod.
 
-    def add_smali_set(self, smali_set: "tbcml.SmaliSet"):
-        for smali in smali_set.get_list():
-            self.add_smali(smali)
+        See tbcml.LibPatch for more information on lib patches.
 
-    def get_scripts_str(self, apk: "tbcml.Apk") -> tuple[dict[str, str], bool]:
-        scripts_dict: dict[str, str] = {}
-        inject_smali = False
-        for script in self.scripts:
-            scripts_str, inj = script.get_scripts_str(apk, self.name, self.authors)
-            if inj:
-                inject_smali = True
-            for arc, string in scripts_str.items():
-                if arc not in scripts_dict:
-                    scripts_dict[arc] = ""
-                scripts_dict[arc] += string + "\n"
-        return scripts_dict, inject_smali
+        Is not supported for ipa files atm.
 
-    def apply_modifications(self, game_packs: "tbcml.GamePacks"):
-        for modification in self.modifications:
-            modification.apply(game_packs)
+        Args:
+            lib_patch (tbcml.LibPatch): The lib patch to add.
 
-    def compile_modifications(
+        Example Usage:
+            ```python
+            mod = Mod(...)
+            patch = tbcml.StringReplacePatch(orig="Hello", new="World")
+            lib_patch = tbcml.LibPatch(name="Hello World", architectures="all", patches=[patch])
+            mod.add_lib_patch(lib_patch)
+            ```
+        """
+        self.patches.add_patch(lib_patch)
+
+    def add_smali(self, smali: Union["tbcml.Smali", "tbcml.SmaliSet"]):
+        """Add some smali code to the mod.
+
+        Is not supported for ipa files.
+
+        See tbcml.Smali and tbcml.SmaliSet for more information on smali code.
+
+        Args:
+            smali (tbcml.Smali | tbcml.SmaliSet): The smali code to add.
+
+        Example Usage:
+            ```python
+            mod = Mod(...)
+            smali = tbcml.Smali(class_code="...", class_name="com.example.MyClass", function_sig_to_call="...")
+            mod.add_smali(smali)
+            ```
+        """
+        smalis: list["tbcml.Smali"] = []
+        if isinstance(smali, tbcml.Smali):
+            smalis.append(smali)
+        else:
+            smalis = smali.get_list()
+
+        for sml in smalis:
+            self.smali.add(sml)
+
+    def compile(
         self,
         game_packs: "tbcml.GamePacks",
         existing_target: Optional["tbcml.CompilationTarget"] = None,
         clear_modifications: bool = True,
         add_target: bool = True,
-    ):
-        game_packs.clear_log()
-        game_packs.set_log_enabled(True)
+    ) -> "tbcml.CompilationTarget":
+        """Compile the mod to raw game files.
 
-        self.apply_modifications(game_packs)
+        See tbcml.CompilationTarget for more information on compilation targets.
 
-        if existing_target is None:
-            existing_target = tbcml.CompilationTarget(
-                game_packs.country_code.get_code(), game_packs.gv.to_string(), {}
-            )
+        Args:
+            game_packs (tbcml.GamePacks): The game packs used to compile the mod.
+            existing_target (Optional[tbcml.CompilationTarget], optional): The existing target to compile to. Defaults to None, which means a new target will be created with country code and game version from the game_packs.
+            clear_modifications (bool, optional): Whether to remove the modifications after compiling. Defaults to True. (Recommended to keep this as True to prevent the same modifications being applied multiple times)
+            add_target (bool, optional): Whether to add the compilation target to the mod. Defaults to True.
 
-        for file, data in game_packs.get_log().items():
-            existing_target.set_file(file, data)
+        Returns:
+            tbcml.CompilationTarget: The compilation target that was compiled to.
 
-        game_packs.set_log_enabled(False)
-        game_packs.clear_log()
-
-        if clear_modifications:
-            self.modifications = []
-
-        if add_target:
-            self.add_compilation_target(existing_target)
-
-        return existing_target
-
-    def apply_game_files(self, game_packs: "tbcml.GamePacks"):
-        for file, data in self.game_files.items():
-            game_packs.set_file(file, data)
-
-    def apply_compilations(self, game_packs: "tbcml.GamePacks"):
-        for target in self.compilation_targets:
-            if not target.check_game_data(game_packs):
-                continue
-            for file, data in target.files.items():
-                game_packs.set_file(file, data)
-
-    def apply_apk_files(self, apk: "tbcml.Apk"):
-        for file, data in self.apk_files.items():
-            path = apk.extracted_path.add(file)
-            path.parent().generate_dirs()
-            path.write(data)
-
-    def apply_ipa_files(self, ipa: "tbcml.Ipa"):
-        for file, data in self.apk_files.items():
-            if file.to_str_forwards().startswith("assets/"):
-                file = tbcml.Path(file.to_str()[len("assets/") :])
-            path = ipa.get_asset(file)
-            path.parent().generate_dirs()
-            path.write(data)
-
-    def apply_audio_files(self, pkg: "tbcml.PKG"):
-        for audio in self.audio_files.values():
-            pkg.add_audio(audio)
+        Example Usage:
+            ```python
+            mod = Mod(...)
+            target = mod.compile(game_packs)
+            mod.save("mod.zip")
+            ```
+        """
+        target = self.__compile_modifications(
+            game_packs, existing_target, clear_modifications, add_target
+        )
+        return target
 
     def apply_to_game_data(self, game_packs: "tbcml.GamePacks"):
-        self.apply_game_files(game_packs)
-        self.apply_compilations(game_packs)
-        self.apply_modifications(game_packs)
+        """Apply the mod to the game data. This should not really be called yourself, as it is called when applying the mods to a package.
 
-    def apply_to_apk(self, apk: "tbcml.Apk"):
-        self.apply_apk_files(apk)
-        self.apply_audio_files(apk)
+        Args:
+            game_packs (tbcml.GamePacks): The game packs to apply the mod to.
+        """
+        self.__apply_game_files(game_packs)
+        self.__apply_compilations(game_packs)
+        self.__apply_modifications(game_packs)
 
-    def apply_to_ipa(self, ipa: "tbcml.Ipa"):
-        self.apply_ipa_files(ipa)
-        self.apply_audio_files(ipa)
+    def apply_to_pkg(self, pkg: "tbcml.PKG"):
+        """Apply the mod to a package (apk/ipa). This does not apply any game data modifications.
+        This should not really be called yourself, as it is called when applying the mods to a package.
 
-    def modifications_to_json(self) -> list[tuple[str, str]]:
-        data: list[tuple[str, str]] = []
-        for modification in self.modifications:
-            data.append((modification.modification_type.value, modification.to_json()))
-        return data
-
-    @staticmethod
-    def modifications_from_json(data: list[tuple[str, str]]):
-        modifications: list[Modification] = []
-        for dt in data:
-            modifications.append(Mod.modification_from_json(dt))
-
-    @staticmethod
-    def modification_from_json(data: tuple[str, str]):
-        mod_type, modification_dt = data
-
-        type = ModificationType.from_str_value(mod_type)
-        if type is None:
-            raise ValueError("Invalid Modification")
-
-        return Modification().from_json(modification_dt, type)
+        Args:
+            pkg (tbcml.PKG): The package to apply the mod to.
+        """
+        if isinstance(pkg, tbcml.Apk):
+            self.__apply_apk_files(pkg)
+        else:
+            self.__apply_ipa_files(pkg)
+        self.__apply_audio_files(pkg)
 
     def get_custom_html(self) -> str:
+        """Get the custom html for the mod. This will be visible in the transfer menu mod list.
+
+        This will be automatically generated if you do not provide a custom html when creating the mod.
+
+        Returns:
+            str: The custom html for the mod.
+        """
         if self.custom_html is not None:
             return self.custom_html
         base_mod = (
@@ -591,3 +649,230 @@ class Mod:
         base_mod = base_mod.replace("{{SCRIPTS}}", script_str)
 
         return base_mod
+
+    def get_scripts_str(self, apk: "tbcml.Apk") -> tuple[dict[str, str], bool]:
+        scripts_dict: dict[str, str] = {}
+        inject_smali = False
+        for script in self.scripts:
+            scripts_str, inj = script.get_scripts_str(apk, self.name, self.authors)
+            if inj:
+                inject_smali = True
+            for arc, string in scripts_str.items():
+                if arc not in scripts_dict:
+                    scripts_dict[arc] = ""
+                scripts_dict[arc] += string + "\n"
+        return scripts_dict, inject_smali
+
+    def __add_audio_file(
+        self,
+        audio_file: "tbcml.AudioFile",
+        sound_setting: Optional["tbcml.SoundSetting"],
+    ):
+        if sound_setting is None:
+            sound_setting = tbcml.SoundSetting(audio_file.id, bgm=audio_file.is_bgm)
+
+        self.add_modification(sound_setting)
+
+        self.audio_files[audio_file.id] = audio_file
+
+    def __metadata_to_json(self) -> str:
+        data = {
+            "name": self.name,
+            "authors": self.authors,
+            "description": self.description,
+            "custom_html": self.custom_html,
+        }
+        return json.dumps(data)
+
+    @staticmethod
+    def __metadata_from_json(data: str) -> "Mod":
+        obj = json.loads(data)
+        name = obj.get("name", "")
+        authors = obj.get("authors", "")
+        description = obj.get("description", "")
+        custom_html = obj.get("custom_html", None)
+        return Mod(
+            name=name,
+            authors=authors,
+            description=description,
+            custom_html=custom_html,
+        )
+
+    def __add_compilation_targets_to_zip(self, zipfile: "tbcml.Zip"):
+        for i, target in enumerate(self.compilation_targets):
+            target.add_to_zip(i, zipfile)
+
+    def __add_pkg_files_to_zip(self, zipfile: "tbcml.Zip"):
+        for name, data in self.pkg_files.items():
+            path = tbcml.Path(ModPath.PKG_FILES.value).add(name)
+            zipfile.add_file(path, data)
+
+    def __add_audio_files_to_zip(self, zipfile: "tbcml.Zip"):
+        for id, audio in self.audio_files.items():
+            ext = audio.get_sound_format()
+            path = tbcml.Path(ModPath.AUDIO_FILES.value).add(
+                f"{str(id).zfill(3)}.{ext}"
+            )
+            zipfile.add_file(path, audio.data)
+
+    def __add_game_files_to_zip(self, zipfile: "tbcml.Zip"):
+        for name, data in self.game_files.items():
+            path = tbcml.Path(ModPath.GAME_FILES.value).add(name)
+            zipfile.add_file(path, data)
+
+    def __add_scripts_to_zip(self, zipfile: "tbcml.Zip"):
+        for i, script in enumerate(self.scripts):
+            script.add_to_zip(i, zipfile)
+
+    def __add_modifications_to_zip(self, zipfile: "tbcml.Zip"):
+        for i, modification in enumerate(self.modifications):
+            filepath = (
+                tbcml.Path(ModPath.MODIFICATIONS.value)
+                .add(modification.modification_type.value)
+                .add(f"{i}.json")
+            )
+            json_data = modification.to_json()
+            zipfile.add_file(filepath, tbcml.Data(json_data))
+
+    @staticmethod
+    def __compilation_targets_from_zip(zipfile: "tbcml.Zip", mod: "Mod"):
+        for i in range(
+            len(Mod.__get_files_in_mod_path(zipfile, ModPath.COMPILATION_TARGETS))
+        ):
+            target = tbcml.CompilationTarget.from_zip(i, zipfile)
+            if target is None:
+                continue
+            mod.add_compilation_target(target)
+
+    @staticmethod
+    def __get_files_in_mod_path(zipfile: "tbcml.Zip", path_type: ModPath):
+        return zipfile.get_paths_in_folder(tbcml.Path(path_type.value))
+
+    @staticmethod
+    def __patches_from_zip(zipfile: "tbcml.Zip", mod: "Mod"):
+        lib_patches: list[tbcml.LibPatch] = []
+        for path in tbcml.Mod.__get_files_in_mod_path(
+            zipfile, tbcml.ModPath.LIB_PATCHES
+        ):
+            lib_patches.append(tbcml.LibPatch.from_zip(zipfile, path))
+        mod.patches = tbcml.LibPatches(lib_patches)
+
+    @staticmethod
+    def __pkg_files_from_zip(zipfile: "tbcml.Zip", mod: "Mod"):
+        for path in Mod.__get_files_in_mod_path(zipfile, ModPath.PKG_FILES):
+            data = zipfile.get_file(path)
+            if data is not None:
+                key = path.remove_prefix(ModPath.PKG_FILES.value)
+                mod.pkg_files[key] = data
+
+    @staticmethod
+    def __audio_files_from_zip(zipfile: "tbcml.Zip", mod: "Mod"):
+        for path in Mod.__get_files_in_mod_path(zipfile, ModPath.AUDIO_FILES):
+            data = zipfile.get_file(path)
+            if data is not None:
+                key = path.basename()
+                if not key.isdigit():
+                    continue
+                key = int(key)
+                is_bgm = tbcml.AudioFile.get_is_bgm(path.get_extension())
+                audio_file = tbcml.AudioFile(key, is_bgm, data)
+                mod.audio_files[key] = audio_file
+
+    @staticmethod
+    def __game_files_from_zip(zipfile: "tbcml.Zip", mod: "Mod"):
+        for path in Mod.__get_files_in_mod_path(zipfile, ModPath.GAME_FILES):
+            data = zipfile.get_file(path)
+            if data is not None:
+                mod.game_files[path.basename()] = data
+
+    @staticmethod
+    def __scripts_from_zip(zipfile: "tbcml.Zip", mod: "Mod"):
+        for path in Mod.__get_files_in_mod_path(zipfile, ModPath.SCRIPTS):
+            script = tbcml.FridaScript.from_json(path.read().to_str())
+            mod.add_script(script)
+
+    @staticmethod
+    def __modifications_from_zip(zipfile: "tbcml.Zip", mod: "Mod"):
+        for path in Mod.__get_files_in_mod_path(zipfile, ModPath.MODIFICATIONS):
+            if not path.get_extension() == "json":
+                continue
+            modification_type = path.parent().basename()
+            dt = zipfile.get_file(path)
+            if dt is None:
+                continue
+            modifiction = Mod.__modification_from_json((modification_type, dt.to_str()))
+            mod.add_modification(modifiction)
+
+    def __apply_modifications(self, game_packs: "tbcml.GamePacks"):
+        for modification in self.modifications:
+            modification.apply(game_packs)
+
+    def __compile_modifications(
+        self,
+        game_packs: "tbcml.GamePacks",
+        existing_target: Optional["tbcml.CompilationTarget"] = None,
+        clear_modifications: bool = True,
+        add_target: bool = True,
+    ):
+        game_packs.clear_log()
+        game_packs.set_log_enabled(True)
+
+        self.__apply_modifications(game_packs)
+
+        if existing_target is None:
+            existing_target = tbcml.CompilationTarget(
+                game_packs.country_code.get_code(), game_packs.gv.to_string()
+            )
+
+        for file, data in game_packs.get_log().items():
+            existing_target.set_file(file, data)
+
+        game_packs.set_log_enabled(False)
+        game_packs.clear_log()
+
+        if clear_modifications:
+            self.modifications = []
+
+        if add_target:
+            self.add_compilation_target(existing_target)
+
+        return existing_target
+
+    def __apply_game_files(self, game_packs: "tbcml.GamePacks"):
+        for file, data in self.game_files.items():
+            game_packs.set_file(file, data)
+
+    def __apply_compilations(self, game_packs: "tbcml.GamePacks"):
+        for target in self.compilation_targets:
+            if not target.check_game_data(game_packs):
+                continue
+            for file, data in target.files.items():
+                game_packs.set_file(file, data)
+
+    def __apply_apk_files(self, apk: "tbcml.Apk"):
+        for file, data in self.pkg_files.items():
+            path = apk.extracted_path.add(file)
+            path.parent().generate_dirs()
+            path.write(data)
+
+    def __apply_ipa_files(self, ipa: "tbcml.Ipa"):
+        for file, data in self.pkg_files.items():
+            if file.to_str_forwards().startswith("assets/"):
+                file = tbcml.Path(file.to_str()[len("assets/") :])
+            path = ipa.get_asset(file)
+            path.parent().generate_dirs()
+            path.write(data)
+
+    def __apply_audio_files(self, pkg: "tbcml.PKG"):
+        for audio in self.audio_files.values():
+            pkg.add_audio(audio)
+
+    @staticmethod
+    def __modification_from_json(data: tuple[str, str]):
+        mod_type, modification_dt = data
+
+        type = ModificationType.from_str_value(mod_type)
+        if type is None:
+            raise ValueError("Invalid Modification")
+
+        return Modification().from_json(modification_dt, type)
