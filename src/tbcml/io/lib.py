@@ -256,21 +256,6 @@ class LibPatches:
         for i, lib_patch in enumerate(self.lib_patches):
             lib_patch.add_to_zip(zip, i)
 
-    @staticmethod
-    def from_zip(zip: "tbcml.Zip") -> "LibPatches":
-        """Gets the lib patches from a zip file.
-
-        Args:
-            zip (tbcml.Zip): The zip file to get the lib patches from
-
-        Returns:
-            LibPatches: The lib patches
-        """
-        lib_patches: list[LibPatch] = []
-        for path in tbcml.Mod.get_files_in_mod_path(zip, tbcml.ModPath.LIB_PATCHES):
-            lib_patches.append(LibPatch.from_zip(zip, path))
-        return LibPatches(lib_patches)
-
     def import_patches(self, other: "LibPatches"):
         for lib_patch in other.lib_patches:
             self.add_patch(lib_patch)
