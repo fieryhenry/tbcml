@@ -12,8 +12,8 @@ mod = tbcml.Mod(
 local_path = (
     tbcml.Path(__file__).parent().add("modded_user_info.html")
 )  # modded_user_info.html is in the same folder
-mod.add_pkg_file(
-    pkg_path="assets/user_info_en.html",
+mod.add_pkg_asset(
+    asset_path="user_info_en.html",
     local_f=local_path,
 )
 

@@ -25,8 +25,8 @@ if smali_set is None:
     raise ValueError("Failed to convert java code to smali code")
 
 mod.add_smali(smali_set)
-mod.add_pkg_file(
-    "assets/data.zip",
+mod.add_pkg_asset(
+    "data.zip",
     local_f=tbcml.Path.get_asset_file_path(
         "data.zip"
     ),  # DataLoad loads data.zip into game folder on startup
