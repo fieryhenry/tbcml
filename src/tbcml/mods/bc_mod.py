@@ -7,7 +7,7 @@ import tbcml
 import json
 
 
-class ModificationType(enum.StrEnum):
+class ModificationType(enum.Enum):
     CAT = "cat"
     ENEMY = "enemy"
     SHOP = "shop"
@@ -74,7 +74,10 @@ class ModPath(enum.Enum):
 class Modification:
     def to_json(self) -> str:
         self.pre_to_json()
-        return self.Schema().dumps(self)  # type: ignore
+        modification_type = ModificationType.from_cls(self)
+        base_cls = modification_type.get_cls()
+        schema = class_schema(clazz=base_cls)
+        return schema().dumps(self)  # type: ignore
 
     def from_json(self, data: str, modification_type: ModificationType) -> Any:
         base_cls = modification_type.get_cls()
