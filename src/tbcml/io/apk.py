@@ -1518,7 +1518,7 @@ class Apk:
                 return i
             i += 1
 
-    def get_asset(self, asset_name: str) -> "tbcml.Path":
+    def get_asset(self, asset_name: "tbcml.PathStr") -> "tbcml.Path":
         return self.extracted_path.add("assets").add(asset_name)
 
     def get_all_download_tsvs(self) -> list[list["tbcml.Path"]]:
