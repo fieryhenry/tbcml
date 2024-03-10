@@ -322,9 +322,9 @@ class Ipa:
     def remove_asset(self, asset_path: "tbcml.Path"):
         self.get_asset(asset_path).remove()
 
-    def add_assets(self, asset_folder: "tbcml.Path", apk_path: "tbcml.Path"):
+    def add_assets(self, asset_folder: "tbcml.Path", ipa_path: "tbcml.Path"):
         for asset in asset_folder.get_files():
-            self.add_asset(asset, asset.replace(asset_folder.path, apk_path.path))
+            self.add_asset(asset, asset.replace(asset_folder.path, ipa_path.path))
 
     def add_modded_html(self, mods: list["tbcml.Mod"]):
         transfer_screen_path = tbcml.Path.get_asset_file_path(
@@ -465,3 +465,53 @@ class Ipa:
         if path == self.final_ipa_path:
             return
         self.final_ipa_path.copy(path)
+
+    @staticmethod
+    def get_all_ipas_cc(
+        cc: "tbcml.CountryCode", ipa_folder: Optional["tbcml.Path"] = None
+    ) -> list["Ipa"]:
+        """
+        Get all IPAs for a country code
+
+        Args:
+            cc (country_code.CountryCode): Country code
+
+        Returns:
+            list[IPA]: List of IPAs
+        """
+        ipas = Ipa.get_all_downloaded(ipa_folder)
+        ipas_cc: list[Ipa] = []
+        for ipa in ipas:
+            if ipa.country_code == cc:
+                ipas_cc.append(ipa)
+        return ipas_cc
+
+    @staticmethod
+    def get_all_downloaded(all_ipa_dir: Optional["tbcml.Path"] = None) -> list["Ipa"]:
+        """
+        Get all downloaded IPAs
+
+        Returns:
+            list[Ipa]: List of IPAs
+        """
+        if all_ipa_dir is None:
+            all_ipa_dir = Ipa.get_default_ipa_folder()
+        ipas: list[Ipa] = []
+        for ipa_folder in all_ipa_dir.get_dirs():
+            name = ipa_folder.get_file_name()
+            country_code_str = name[-2:]
+            if country_code_str not in tbcml.CountryCode.get_all_str():
+                continue
+            cc = tbcml.CountryCode.from_code(country_code_str)
+            game_version_str = name[:-2]
+            gv = tbcml.GameVersion.from_string_latest(game_version_str, cc)
+            ipa = Ipa(gv, cc)
+            if ipa.is_downloaded():
+                ipas.append(ipa)
+
+        ipas.sort(key=lambda ipa: ipa.game_version.game_version, reverse=True)
+
+        return ipas
+
+    def is_downloaded(self) -> bool:
+        return self.ipa_path.exists()
