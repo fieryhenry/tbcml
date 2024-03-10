@@ -591,6 +591,7 @@ class Apk:
 
         Args:
             cc (country_code.CountryCode): Country code
+            apk_folder (Optional[tbcml.Path], optional): APK folder, defaults to default APK folder
 
         Returns:
             list[APK]: List of APKs
