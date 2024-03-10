@@ -158,7 +158,7 @@ class Path:
     def __repr__(self) -> str:
         return self.path
 
-    def remove_tree(self, ignoreErrors: bool = False) -> "Path":
+    def remove_tree(self, ignoreErrors: bool = True) -> "Path":
         if self.exists():
             shutil.rmtree(self.path, ignore_errors=ignoreErrors)
         return self
