@@ -1032,7 +1032,7 @@ class Apk:
             apk.delete()
 
     def get_display_string(self) -> str:
-        return f"{self.game_version.format()} <dark_green>({self.country_code})</>"
+        return f"{self.game_version.format()} ({self.country_code})"
 
     def download_server_files(
         self,
