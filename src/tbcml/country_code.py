@@ -91,6 +91,14 @@ class CountryCode(enum.Enum):
         """
         return [country_code.get_code() for country_code in CountryCode.get_all()]
 
+    def index(self) -> int:
+        """Gets the index of the country code.
+
+        Returns:
+            int: The index of the country code.
+        """
+        return CountryCode.get_all().index(self)
+
     def __str__(self) -> str:
         """Gets the 2 letter lowercase country code.
 
