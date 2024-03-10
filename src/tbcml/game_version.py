@@ -1,4 +1,5 @@
 """A module containing the GameVersion class."""
+
 from typing import Any, Optional, Union
 
 import tbcml
@@ -30,6 +31,14 @@ class GameVersion:
         split_gv = str(self.game_version).zfill(6)
         split_gv = [str(int(split_gv[i : i + 2])) for i in range(0, len(split_gv), 2)]
         return ".".join(split_gv)
+
+    def to_string_zfill(self) -> str:
+        """Converts the game version to a string with leading zeros.
+
+        Returns:
+            str: Game version as a string with leading zeros. e.g 12.01.02
+        """
+        return self.format()
 
     def get_parts_zfill(self) -> list[str]:
         """Gets the parts of the game version as a list of strings with leading zeros.
