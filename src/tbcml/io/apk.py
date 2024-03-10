@@ -15,13 +15,23 @@ class Apk:
         country_code: "tbcml.CC",
         apk_folder: Optional["tbcml.PathStr"] = None,
         allowed_script_mods: bool = True,
+        is_modded: bool = False,
+        use_pkg_name_for_folder: bool = False,
+        pkg_name: Optional[str] = None,
     ):
+        self.is_modded = is_modded
         self.game_version = tbcml.GameVersion.from_gv(game_version)
         self.country_code = tbcml.CountryCode.from_cc(country_code)
-        self.package_name = self.get_package_name()
+
+        self.__app_name: Optional[str] = None
+        self.__package_name: Optional[str] = pkg_name
+
+        self.use_pkg_name_for_folder = use_pkg_name_for_folder
 
         if apk_folder is None:
             self.apk_folder = Apk.get_default_apk_folder().get_absolute_path()
+            if is_modded:
+                self.apk_folder = self.apk_folder.add("modded")
         else:
             self.apk_folder = tbcml.Path(apk_folder).get_absolute_path()
 
@@ -85,12 +95,20 @@ class Apk:
 
     def init_paths(self):
         self.apk_folder.generate_dirs()
-        self.output_path = self.apk_folder.add(
-            f"{self.game_version}{self.country_code.get_code()}"
-        )
+        folder_name = f"{self.game_version}{self.country_code.get_code()}"
+        if self.use_pkg_name_for_folder:
+            pkg_name = self.get_package_name()
+            if pkg_name is not None:
+                folder_name += f"-{pkg_name}"
 
-        self.final_apk_path = self.output_path.add(f"{self.package_name}-modded.apk")
-        self.apk_path = self.output_path.add(f"{self.package_name}-original.apk")
+        self.output_path = self.apk_folder.add(folder_name).generate_dirs()
+
+        self.final_apk_path = self.output_path.add(
+            f"{self.get_default_package_name()}-modded.apk"
+        )
+        self.apk_path = self.output_path.add(
+            f"{self.get_default_package_name()}-original.apk"
+        )
 
         self.extracted_path = self.output_path.add("extracted").generate_dirs()
         self.decrypted_path = self.output_path.add("decrypted").generate_dirs()
@@ -155,25 +173,27 @@ class Apk:
             self.extracted_path.remove_tree().generate_dirs()
             self.original_extracted_path.copy(self.extracted_path)
             return
-        for original_file in self.original_extracted_path.get_files_recursive():
-            extracted_file = self.get_extracted_path(original_file)
-            if not extracted_file.parent().exists():
-                extracted_file.parent().generate_dirs()
-            if not extracted_file.exists():
-                original_file.copy(extracted_file)
-                continue
-            if not filecmp.cmp(extracted_file.path, original_file.path):
-                original_file.copy(extracted_file)
 
-        for extracted_file in self.extracted_path.get_files_recursive():
-            original_file = self.get_original_extracted_path(extracted_file)
-            if not original_file.exists():
-                extracted_file.remove()
+        self.copy_extracted_sub_dir("")
 
-        for extracted_dir in self.extracted_path.get_dirs_recursive():
-            orignal_dir = self.get_original_extracted_path(extracted_dir)
-            if not orignal_dir.exists():
-                extracted_dir.remove()
+    def copy_extracted_sub_dir(self, sub_dir: str):
+        original_sub_dir = self.original_extracted_path.add(sub_dir)
+        extracted_sub_dir = self.extracted_path.add(sub_dir)
+        if not original_sub_dir.exists() and extracted_sub_dir.exists():
+            extracted_sub_dir.remove_tree()
+            return
+        if not original_sub_dir.exists():
+            return
+
+        diff = filecmp.dircmp(original_sub_dir.path, extracted_sub_dir.path)
+        for file in diff.left_only:
+            original_sub_dir.add(file).copy(extracted_sub_dir.add(file))
+        for file in diff.right_only:
+            extracted_sub_dir.add(file).remove()
+        for file in diff.diff_files:
+            original_sub_dir.add(file).copy(extracted_sub_dir.add(file))
+        for sub_dir in diff.subdirs:
+            self.copy_extracted_sub_dir(sub_dir)
 
     @staticmethod
     def run_apktool(command: str) -> "tbcml.CommandResult":
@@ -294,11 +314,10 @@ class Apk:
         with tbcml.TempFolder(
             path=temp_path
         ) as path:  # extract to temp folder so if user cancels mid-extraction nothing bad happens
-            res = self.run_apktool(
-                f"d -f -s {decode_resources_str} {self.apk_path} -o {path}"
-            )
+            cmd = f"d -f -s {decode_resources_str} '{self.apk_path}' -o '{path}'"
+            res = self.run_apktool(cmd)
             if res.exit_code != 0:
-                print(f"Failed to extract APK: {res.result}")
+                print(f"Failed to extract APK: {res.result}. Command: {cmd}")
                 return False
             self.original_extracted_path.remove().generate_dirs()
             path.copy(self.original_extracted_path)
@@ -318,7 +337,7 @@ class Apk:
 
         with tbcml.TempFolder(path=temp_path) as temp_folder:
             res = self.run_apktool(
-                f"d -f {decode_resources_str} {self.apk_path} -o {temp_folder}"
+                f"d -f {decode_resources_str} '{self.apk_path}' -o '{temp_folder}'"
             )
             if res.exit_code != 0:
                 print(f"Failed to extract APK: {res.result}")
@@ -362,7 +381,7 @@ class Apk:
     def pack_apktool(self):
         if not self.check_display_apktool_error():
             return False
-        res = self.run_apktool(f"b {self.extracted_path} -o {self.final_apk_path}")
+        res = self.run_apktool(f"b '{self.extracted_path}' -o '{self.final_apk_path}'")
         if res.exit_code != 0:
             print(f"Failed to pack APK: {res.result}")
             return False
@@ -479,6 +498,7 @@ class Apk:
         packs: "tbcml.GamePacks",
         copy_path: Optional["tbcml.Path"] = None,
         use_apktool: Optional[bool] = None,
+        save_in_modded_apks: bool = False,
     ) -> bool:
         self.add_packs_lists(packs)
         tbcml.LibFiles(self).patch()
@@ -489,7 +509,19 @@ class Apk:
             return False
         if copy_path is not None:
             self.copy_final_apk(copy_path)
+        if save_in_modded_apks:
+            self.save_in_modded_apks()
         return True
+
+    def save_in_modded_apks(self):
+        new_apk = Apk(
+            self.game_version,
+            self.country_code,
+            is_modded=True,
+            use_pkg_name_for_folder=True,
+            pkg_name=self.get_package_name(),
+        )
+        self.final_apk_path.copy(new_apk.apk_path)
 
     def copy_final_apk(self, path: "tbcml.Path"):
         if path == self.get_final_apk_path():
@@ -503,7 +535,7 @@ class Apk:
     def get_default_apk_folder() -> "tbcml.Path":
         return tbcml.Path.get_documents_folder().add("APKs").generate_dirs()
 
-    def get_package_name(self) -> str:
+    def get_default_package_name(self) -> str:
         return f"jp.co.ponos.battlecats{self.country_code.get_patching_code()}"
 
     @staticmethod
@@ -517,15 +549,32 @@ class Apk:
         if all_apk_dir is None:
             all_apk_dir = Apk.get_default_apk_folder()
         apks: list[Apk] = []
-        for apk_folder in all_apk_dir.get_dirs():
-            name = apk_folder.get_file_name()
+        all_apk_folders = all_apk_dir.get_dirs()
+        all_apk_folders.extend(all_apk_dir.add("modded").generate_dirs().get_dirs())
+        for apk_folder in all_apk_folders:
+            is_modded = False
+            pkg_name = None
+            if apk_folder.parent().basename() == "modded":
+                is_modded = True
+            if "-" in apk_folder.basename():
+                pkg_name = apk_folder.basename().split("-")[-1]
+
+            use_pkg_name_for_folder = bool(pkg_name)
+
+            name = apk_folder.get_file_name().split("-")[0]
             country_code_str = name[-2:]
             if country_code_str not in tbcml.CountryCode.get_all_str():
                 continue
             cc = tbcml.CountryCode.from_code(country_code_str)
             game_version_str = name[:-2]
             gv = tbcml.GameVersion.from_string_latest(game_version_str, cc)
-            apk = Apk(gv, cc)
+            apk = Apk(
+                gv,
+                cc,
+                is_modded=is_modded,
+                use_pkg_name_for_folder=use_pkg_name_for_folder,
+                pkg_name=pkg_name,
+            )
             if apk.is_downloaded():
                 apks.append(apk)
 
@@ -1049,6 +1098,8 @@ class Apk:
     ) -> "tbcml.Path":
         if apk_folder is None:
             apk_folder = Apk.get_default_apk_folder()
+        if apk_folder.parent().basename() == "modded":
+            apk_folder = apk_folder.parent()
         return apk_folder.parent().add(f"{cc.get_code()}_server")
 
     def get_server_path(self):
@@ -1112,13 +1163,12 @@ class Apk:
         allowed_script_mods: bool = True,
         skip_signature_check: bool = False,
     ) -> "Apk":
+        is_modded = False
+
         if not Apk.check_apksigner_installed():
             skip_signature_check = True
-        if apk_folder is None and not skip_signature_check:
-            if not Apk.is_original(apk_path):
-                raise ValueError(
-                    "apk_folder must be specified for modded APKs to prevent accidental overwriting of original APKs. If you are sure you want to overwrite the original APK, set skip_signature_check to True."
-                )
+            is_modded = False
+
         cc, gv = Apk.get_package_name_version_from_apk(apk_path)
 
         if cc is None:
@@ -1129,8 +1179,15 @@ class Apk:
         if gv is None or cc is None:
             raise ValueError("Failed to get cc or gv from apk.")
 
+        if not skip_signature_check:
+            is_modded = not Apk.is_original(apk_path)
+
         apk = Apk(
-            gv, cc, apk_folder=apk_folder, allowed_script_mods=allowed_script_mods
+            gv,
+            cc,
+            apk_folder=apk_folder,
+            allowed_script_mods=allowed_script_mods,
+            is_modded=is_modded,
         )
         apk_path.copy(apk.apk_path)
         apk.original_extracted_path.remove_tree().generate_dirs()
@@ -1602,7 +1659,31 @@ class Apk:
         return True
 
     def set_app_name(self, name: str) -> bool:
-        return self.edit_xml_string("app_name", name)
+        success = self.edit_xml_string("app_name", name)
+        if success:
+            self.__app_name = name
+        return success
+
+    def get_app_name(self) -> Optional[str]:
+        if self.__app_name is not None:
+            return self.__app_name
+        app_name = self.get_xml_string("app_name")
+        if app_name is None:
+            return None
+        self.__app_name = app_name
+
+    def is_extracted(self) -> bool:
+        return self.extracted_path.has_files()
+
+    def get_xml_string(self, name: str) -> Optional[str]:
+        strings_xml = self.load_xml("strings")
+        if strings_xml is None:
+            return None
+        strings = strings_xml.get_elements("string")
+        for string in strings:
+            if string.get("name") == name:
+                return string.text
+        return None
 
     def replace_str_manifest(self, old: str, new: str):
         manifest = self.get_manifest_path()
@@ -1637,12 +1718,25 @@ class Apk:
             provider.set(attribute, package_name + "." + end)
 
         self.set_manifest(manifest)
-        self.package_name = package_name
 
         if current_package is not None:
             self.replace_str_manifest(current_package, package_name)
 
+        self.__package_name = package_name
+
         return True
+
+    def get_package_name(self) -> Optional[str]:
+        if self.__package_name is not None:
+            return self.__package_name
+        manifest = self.parse_manifest()
+        if manifest is None:
+            return None
+        name = manifest.get_attribute("manifest", "package")
+        if name is None:
+            return None
+        self.__package_name = name
+        return name
 
     def copy_to_android_download_folder(self):
         download_path = tbcml.Path.get_root().add(
@@ -1699,6 +1793,7 @@ class Apk:
         iv: Optional[str] = None,
         add_modded_html: bool = True,
         use_apktool: Optional[bool] = None,
+        save_in_modded_apks: bool = False,
     ) -> bool:
         if game_packs is None:
             game_packs = tbcml.GamePacks.from_pkg(self, lang=lang)
@@ -1723,6 +1818,8 @@ class Apk:
 
         self.add_mods_files(mods)
 
-        if not self.load_packs_into_game(game_packs, use_apktool=use_apktool):
+        if not self.load_packs_into_game(
+            game_packs, use_apktool=use_apktool, save_in_modded_apks=save_in_modded_apks
+        ):
             return False
         return True

@@ -194,6 +194,7 @@ class ModLoader:
         add_modded_html: bool = True,
         use_apktool: Optional[bool] = None,
         raise_error: bool = True,
+        save_in_modded_apks: bool = False,
     ):
         """Applies a mod / mods to the apk to create a modded apk.
 
@@ -205,6 +206,7 @@ class ModLoader:
             add_modded_html (bool, optional): Whether to modify the transfer screen to display your current mods. Defaults to True.
             use_apktool (Optional[bool], optional): Whether to use apktool to pack the apk, if False resources will not be encoded. If None, it will autodetect the value based on what you did when you extracted the apk
             raise_error (bool): Whether to raise an error if applying mods fails. Defaults to True
+            save_in_modded_apks (bool): Whether to save the modded apk to a separate folder. Defaults to False
 
         Raises:
             ModLoaderUninitializedException: If the apk has not been initialized (didn't call initialize())
@@ -223,6 +225,7 @@ class ModLoader:
             iv=custom_enc_iv,
             add_modded_html=add_modded_html,
             use_apktool=use_apktool,
+            save_in_modded_apks=save_in_modded_apks,
         ):
             if raise_error:
                 raise ValueError("Failed to load mods.")
@@ -254,7 +257,7 @@ class ModLoader:
         Raises:
             Exception: If no devices are connected
         """
-        self.adb_handler = tbcml.BulkAdbHandler(self.get_apk().package_name)
+        self.adb_handler = tbcml.BulkAdbHandler(self.get_apk().get_package_name())
         if device_id is not None:
             self.adb_handler.add_device(device_id)
         else:
@@ -333,5 +336,7 @@ class ModLoader:
         return self.get_adb_handler().run_adb_handler_function(
             tbcml.AdbHandler.push_files_to_folder,
             apk.get_server_path().get_files(),
-            tbcml.AdbHandler.get_battlecats_path(apk.package_name).add("files"),
+            tbcml.AdbHandler.get_battlecats_path(
+                apk.get_package_name() or apk.get_default_package_name()
+            ).add("files"),
         )

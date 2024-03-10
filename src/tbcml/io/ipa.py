@@ -10,14 +10,24 @@ class Ipa:
         game_version: "tbcml.GV",
         country_code: "tbcml.CC",
         ipa_folder: Optional["tbcml.PathStr"] = None,
+        is_modded: bool = False,
+        use_pkg_name_for_folder: bool = False,
+        pkg_name: Optional[str] = None,
         # allowed_script_mods: bool = True, # TODO: impliment scripting
     ):
         self.game_version = tbcml.GameVersion.from_gv(game_version)
         self.country_code = tbcml.CountryCode.from_cc(country_code)
-        self.package_name = self.get_package_name()
+        self.is_modded = is_modded
+
+        self.__app_name: Optional[str] = None
+        self.__package_name: Optional[str] = pkg_name
+
+        self.use_pkg_name_for_folder = use_pkg_name_for_folder
 
         if ipa_folder is None:
             self.ipa_folder = Ipa.get_default_ipa_folder().get_absolute_path()
+            if self.is_modded:
+                self.ipa_folder = self.ipa_folder.add("modded")
         else:
             self.ipa_folder = tbcml.Path(ipa_folder).get_absolute_path()
 
@@ -31,12 +41,20 @@ class Ipa:
 
     def init_paths(self):
         self.ipa_folder.generate_dirs()
-        self.output_path = self.ipa_folder.add(
-            f"{self.game_version}{self.country_code.get_code()}"
-        )
+        folder_name = f"{self.game_version}{self.country_code.get_code()}"
+        if self.use_pkg_name_for_folder:
+            pkg_name = self.get_package_name()
+            if pkg_name is not None:
+                folder_name += f"-{pkg_name}"
 
-        self.final_ipa_path = self.output_path.add(f"{self.package_name}-modded.ipa")
-        self.ipa_path = self.output_path.add(f"{self.package_name}-original.ipa")
+        self.output_path = self.ipa_folder.add(folder_name)
+
+        self.final_ipa_path = self.output_path.add(
+            f"{self.get_default_package_name()}-modded.ipa"
+        )
+        self.ipa_path = self.output_path.add(
+            f"{self.get_default_package_name()}-original.ipa"
+        )
 
         self.extracted_path = self.output_path.add("extracted").generate_dirs()
         self.decrypted_path = self.output_path.add("decrypted").generate_dirs()
@@ -49,7 +67,7 @@ class Ipa:
 
         self.temp_path = self.output_path.add("temp").remove_tree().generate_dirs()
 
-    def get_package_name(self) -> str:
+    def get_default_package_name(self) -> str:
         return f"jp.co.ponos.battlecats{self.country_code.get_patching_code()}"
 
     @staticmethod
@@ -94,9 +112,6 @@ class Ipa:
         path = self.get_asset("Info.plist")
         plist = plistlib.dumps(data, fmt=plistlib.FMT_BINARY)
         path.write(tbcml.Data(plist))
-
-    def get_plist_val(self, key: str) -> Optional[Any]:
-        return self.get_plist().get(key)
 
     @staticmethod
     def from_ipa_path(
@@ -369,6 +384,7 @@ class Ipa:
         key: Optional[str] = None,
         iv: Optional[str] = None,
         add_modded_html: bool = True,
+        save_in_modded_ipas: bool = False,
     ) -> bool:
         if game_packs is None:
             game_packs = tbcml.GamePacks.from_pkg(self, lang=lang)
@@ -385,7 +401,9 @@ class Ipa:
 
         self.add_mods_files(mods)
 
-        if not self.load_packs_into_game(game_packs):
+        if not self.load_packs_into_game(
+            game_packs, save_in_modded_ipas=save_in_modded_ipas
+        ):
             return False
         return True
 
@@ -426,16 +444,35 @@ class Ipa:
         self.set_plist(plist)
         return True
 
+    def get_plist_val(self, key: str) -> Optional[Any]:
+        return self.get_plist().get(key)
+
     def set_package_name(self, package_name: str) -> bool:
         self.set_plist_key("CFBundleIdentifier", package_name)
-        self.package_name = package_name
+        self.__package_name = package_name
         return True
+
+    def get_package_name(self) -> Optional[str]:
+        if self.__package_name is not None:
+            return self.__package_name
+        name = self.get_plist_val("CFBundleIdentifier")
+        if name is None:
+            return None
+        self.__package_name = name
+        return name
 
     def set_app_name(self, app_name: str) -> bool:
         self.set_plist_key(
             "CFBundleDisplayName", app_name.strip(" ")
         )  # strip spaces due to Altstore/Sidestore issue
+        self.__app_name = app_name
         return True
+
+    def get_app_name(self) -> Optional[str]:
+        if self.__app_name is not None:
+            return self.__app_name
+        name = self.get_plist_val("CFBundleDisplayName")
+        self.__app_name = name
 
     def sign(self) -> bool:  # TODO: impliment signing
         # Comment: ipa does not require signing, user must sign the INSTALLATION PROCESS with certificates(enterprise, free apple dev acc, apple dev account)
@@ -446,6 +483,7 @@ class Ipa:
         self,
         packs: "tbcml.GamePacks",
         copy_path: Optional["tbcml.Path"] = None,
+        save_in_modded_ipas: bool = False,
     ) -> bool:
         self.add_packs_lists(packs)
         tbcml.LibFiles(self).patch()
@@ -456,7 +494,19 @@ class Ipa:
             return False
         if copy_path is not None:
             self.copy_final_ipa(copy_path)
+        if save_in_modded_ipas:
+            self.save_in_modded_ipas()
         return True
+
+    def save_in_modded_ipas(self):
+        new_ipa = Ipa(
+            self.game_version,
+            self.country_code,
+            is_modded=True,
+            use_pkg_name_for_folder=True,
+            pkg_name=self.get_package_name(),
+        )
+        self.final_ipa_path.copy(new_ipa.ipa_path)
 
     def get_lib_paths(self) -> dict[str, "tbcml.Path"]:
         return {"arm64-v8a": self.get_bc_lib_path()}
@@ -497,7 +547,12 @@ class Ipa:
         if all_ipa_dir is None:
             all_ipa_dir = Ipa.get_default_ipa_folder()
         ipas: list[Ipa] = []
-        for ipa_folder in all_ipa_dir.get_dirs():
+        all_ipa_dirs = all_ipa_dir.get_dirs()
+        all_ipa_dirs.extend(all_ipa_dir.add("modded").generate_dirs().get_dirs())
+        for ipa_folder in all_ipa_dirs:
+            is_modded = False
+            if ipa_folder.parent().basename() == "modded":
+                is_modded = True
             name = ipa_folder.get_file_name()
             country_code_str = name[-2:]
             if country_code_str not in tbcml.CountryCode.get_all_str():
@@ -505,7 +560,7 @@ class Ipa:
             cc = tbcml.CountryCode.from_code(country_code_str)
             game_version_str = name[:-2]
             gv = tbcml.GameVersion.from_string_latest(game_version_str, cc)
-            ipa = Ipa(gv, cc)
+            ipa = Ipa(gv, cc, is_modded=is_modded)
             if ipa.is_downloaded():
                 ipas.append(ipa)
 

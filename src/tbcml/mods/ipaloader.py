@@ -137,6 +137,7 @@ class IpaModLoader:
         open_path: bool = False,
         add_modded_html: bool = True,
         raise_error: bool = True,
+        save_in_modded_ipas: bool = False,
     ):
         """Applies a mod / mods to the ipa to create a modded ipa.
 
@@ -147,6 +148,7 @@ class IpaModLoader:
             open_path (bool, optional): Whether to open the folder containing the final ipa after everything has been loaded. Defaults to False.
             add_modded_html (bool, optional): Whether to modify the transfer screen to display your current mods. Defaults to True.
             raise_error (bool): Whether to raise an error if applying mods fails. Defaults to True
+            save_in_modded_ipas (bool, optional): Whether to save the modded ipa in the modded ipas folder. Defaults to False.
 
         Raises:
             ModLoaderUninitializedException: If the ipa has not been initialized (didn't call initialize())
@@ -164,6 +166,7 @@ class IpaModLoader:
             key=custom_enc_key,
             iv=custom_enc_iv,
             add_modded_html=add_modded_html,
+            save_in_modded_ipas=save_in_modded_ipas,
         ):
             if raise_error:
                 raise ValueError("Failed to load mods.")
