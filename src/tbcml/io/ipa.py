@@ -140,6 +140,9 @@ class Ipa:
         if self.original_extracted_path.has_files() and not force:
             self.copy_extracted()
             return True
+        if not self.ipa_path.exists():
+            print("Ipa file does not exist!")
+            return False
 
         return self.extract_zip()
 

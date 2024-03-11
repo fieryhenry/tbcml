@@ -283,6 +283,10 @@ class Apk:
                 self.copy_extracted()
                 return True
 
+        if not self.apk_path.exists():
+            print("APK file does not exist")
+            return False
+
         if use_apktool:
             return self.extract_apktool(decode_resources)
         else:
