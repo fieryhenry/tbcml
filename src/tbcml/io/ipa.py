@@ -57,7 +57,6 @@ class Ipa:
         )
 
         self.extracted_path = self.output_path.add("extracted").generate_dirs()
-        self.decrypted_path = self.output_path.add("decrypted").generate_dirs()
         self.modified_packs_path = (
             self.output_path.add("modified_packs").remove_tree().generate_dirs()
         )
