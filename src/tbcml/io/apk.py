@@ -316,7 +316,7 @@ class Apk:
             cmd = f"d -f -s {decode_resources_str} '{self.apk_path}' -o '{path}'"
             res = self.run_apktool(cmd)
             if res.exit_code != 0:
-                print(f"Failed to extract APK: {res.result}. Command: {cmd}")
+                print(f"Failed to extract APK: {res.result}. Command: apktool {cmd}")
                 return False
             self.original_extracted_path.remove().generate_dirs()
             path.copy(self.original_extracted_path)
