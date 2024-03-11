@@ -111,7 +111,6 @@ class Apk:
         )
 
         self.extracted_path = self.output_path.add("extracted").generate_dirs()
-        self.decrypted_path = self.output_path.add("decrypted").generate_dirs()
         self.modified_packs_path = (
             self.output_path.add("modified_packs").remove_tree().generate_dirs()
         )
@@ -121,13 +120,9 @@ class Apk:
 
         self.temp_path = self.output_path.add("temp").remove_tree().generate_dirs()
 
-        self.smali_original_path = self.output_path.add(
-            "smali-original"
-        ).generate_dirs()
+        self.smali_original_path = self.output_path.add("smali-original")
 
-        self.smali_non_original_path = (
-            self.output_path.add("smali-new").remove_tree().generate_dirs()
-        )
+        self.smali_non_original_path = self.output_path.add("smali-new").remove_tree()
 
         self.lib_gadgets_folder = self.get_defualt_libgadgets_folder()
 

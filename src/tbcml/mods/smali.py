@@ -403,7 +403,7 @@ class SmaliHandler:
         Returns:
             tbcml.Path: The path to the dex2jar classes.jar file
         """
-        return self.apk.smali_original_path.add("d2j-classes.jar")
+        return self.apk.smali_original_path.generate_dirs().add("d2j-classes.jar")
 
     def get_dex2jar_classes_jar_path_new(self) -> "tbcml.Path":
         """Gets the path to the dex2jar classes.jar file
@@ -411,11 +411,13 @@ class SmaliHandler:
         Returns:
             tbcml.Path: The path to the dex2jar classes.jar file
         """
-        return self.apk.smali_non_original_path.add("d2j-classes.jar")
+        return self.apk.smali_non_original_path.generate_dirs().add("d2j-classes.jar")
 
     def copy_original_smali(self):
         """Copies the original smali files to the smali_non_original folder"""
-        self.apk.smali_original_path.copy(self.apk.smali_non_original_path)
+        self.apk.smali_original_path.generate_dirs().copy(
+            self.apk.smali_non_original_path.generate_dirs()
+        )
 
     def get_dex2jar_classes_path_original(self) -> "tbcml.Path":
         """Gets the path to the dex2jar classes directory
