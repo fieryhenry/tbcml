@@ -440,7 +440,8 @@ class Ipa:
         tbcml.Zip.compress_directory(self.extracted_path, self.final_ipa_path)
         return True
 
-    def set_plist_key(self, key: str, val: str):
+    def set_plist_key(self, key: str, val: Any):
+        #Changed val parameter type to Any so that it could handle boolean
         plist = self.get_plist()
         plist[key] = val
         self.set_plist(plist)
@@ -448,6 +449,14 @@ class Ipa:
 
     def get_plist_val(self, key: str) -> Optional[Any]:
         return self.get_plist().get(key)
+
+    def enable_access_internalfile(self) -> bool:
+        #Enables Internal File Sharing to User(File App, iTunes)
+        #So user can access directly to savedata, eventdata, metadata and modify it.
+        #Maybe we can make adb similar thing with iTunes API for bcsfe ?_? (pymobiledevice3 is useful ithink)
+        self.set_plist_key("UIFileSharingEnabled", True)
+        self.set_plist_key("LSSupportsOpeningDocumentsInPlace", True)
+        return True
 
     def set_package_name(self, package_name: str) -> bool:
         self.set_plist_key("CFBundleIdentifier", package_name)
