@@ -453,7 +453,7 @@ class Ipa:
     def enable_access_internalfile(self) -> bool:
         #Enables Internal File Sharing to User(File App, iTunes)
         #So user can access directly to savedata, eventdata, metadata and modify it.
-        #Maybe we can make adb similar thing with iTunes API for bcsfe ?_?
+        #Maybe we can make adb similar thing with iTunes API for bcsfe ?_? (pymobiledevice3 is useful ithink)
         self.set_plist_key("UIFileSharingEnabled", True)
         self.set_plist_key("LSSupportsOpeningDocumentsInPlace", True)
         return True
