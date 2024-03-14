@@ -25,7 +25,7 @@ class Ipa:
         self.use_pkg_name_for_folder = use_pkg_name_for_folder
 
         if ipa_folder is None:
-            self.ipa_folder = Ipa.get_default_ipa_folder().get_absolute_path()
+            self.ipa_folder = Ipa.get_default_pkg_folder().get_absolute_path()
             if self.is_modded:
                 self.ipa_folder = self.ipa_folder.add("modded")
         else:
@@ -66,11 +66,18 @@ class Ipa:
 
         self.temp_path = self.output_path.add("temp").remove_tree().generate_dirs()
 
+    def delete(self, in_thread: bool = False):
+        self.output_path.remove(in_thread=in_thread)
+
+    @staticmethod
+    def clean_up(ipa_folder: Optional["tbcml.Path"] = None):
+        Ipa.get_all_downloaded(ipa_folder, cleanup=True)
+
     def get_default_package_name(self) -> str:
         return f"jp.co.ponos.battlecats{self.country_code.get_patching_code()}"
 
     @staticmethod
-    def get_default_ipa_folder() -> "tbcml.Path":
+    def get_default_pkg_folder() -> "tbcml.Path":
         return tbcml.Path.get_documents_folder().add("IPAs").generate_dirs()
 
     @staticmethod
@@ -441,7 +448,6 @@ class Ipa:
         return True
 
     def set_plist_key(self, key: str, val: Any):
-        #Changed val parameter type to Any so that it could handle boolean
         plist = self.get_plist()
         plist[key] = val
         self.set_plist(plist)
@@ -451,9 +457,8 @@ class Ipa:
         return self.get_plist().get(key)
 
     def enable_access_internalfile(self) -> bool:
-        #Enables Internal File Sharing to User(File App, iTunes)
-        #So user can access directly to savedata, eventdata, metadata and modify it.
-        #Maybe we can make adb similar thing with iTunes API for bcsfe ?_? (pymobiledevice3 is useful ithink)
+        # Enables Internal File Sharing to User(File App, iTunes)
+        # So user can access directly to savedata, eventdata, metadata and modify it.
         self.set_plist_key("UIFileSharingEnabled", True)
         self.set_plist_key("LSSupportsOpeningDocumentsInPlace", True)
         return True
@@ -548,7 +553,9 @@ class Ipa:
         return ipas_cc
 
     @staticmethod
-    def get_all_downloaded(all_ipa_dir: Optional["tbcml.Path"] = None) -> list["Ipa"]:
+    def get_all_downloaded(
+        all_ipa_dir: Optional["tbcml.Path"] = None, cleanup: bool = False
+    ) -> list["Ipa"]:
         """
         Get all downloaded IPAs
 
@@ -556,17 +563,21 @@ class Ipa:
             list[Ipa]: List of IPAs
         """
         if all_ipa_dir is None:
-            all_ipa_dir = Ipa.get_default_ipa_folder()
+            all_ipa_dir = Ipa.get_default_pkg_folder()
         ipas: list[Ipa] = []
         all_ipa_dirs = all_ipa_dir.get_dirs()
         all_ipa_dirs.extend(all_ipa_dir.add("modded").generate_dirs().get_dirs())
         for ipa_folder in all_ipa_dirs:
+            if ipa_folder.basename() == "modded":
+                continue
             is_modded = False
             if ipa_folder.parent().basename() == "modded":
                 is_modded = True
             name = ipa_folder.get_file_name()
             country_code_str = name[-2:]
             if country_code_str not in tbcml.CountryCode.get_all_str():
+                if cleanup:
+                    ipa_folder.remove(in_thread=True)
                 continue
             cc = tbcml.CountryCode.from_code(country_code_str)
             game_version_str = name[:-2]
@@ -574,6 +585,9 @@ class Ipa:
             ipa = Ipa(gv, cc, is_modded=is_modded)
             if ipa.is_downloaded():
                 ipas.append(ipa)
+            else:
+                if cleanup:
+                    ipa.delete(in_thread=True)
 
         ipas.sort(key=lambda ipa: ipa.game_version.game_version, reverse=True)
 

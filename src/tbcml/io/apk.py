@@ -29,7 +29,7 @@ class Apk:
         self.use_pkg_name_for_folder = use_pkg_name_for_folder
 
         if apk_folder is None:
-            self.apk_folder = Apk.get_default_apk_folder().get_absolute_path()
+            self.apk_folder = Apk.get_default_pkg_folder().get_absolute_path()
             if is_modded:
                 self.apk_folder = self.apk_folder.add("modded")
         else:
@@ -531,14 +531,16 @@ class Apk:
         return self.final_apk_path
 
     @staticmethod
-    def get_default_apk_folder() -> "tbcml.Path":
+    def get_default_pkg_folder() -> "tbcml.Path":
         return tbcml.Path.get_documents_folder().add("APKs").generate_dirs()
 
     def get_default_package_name(self) -> str:
         return f"jp.co.ponos.battlecats{self.country_code.get_patching_code()}"
 
     @staticmethod
-    def get_all_downloaded(all_apk_dir: Optional["tbcml.Path"] = None) -> list["Apk"]:
+    def get_all_downloaded(
+        all_apk_dir: Optional["tbcml.Path"] = None, cleanup: bool = False
+    ) -> list["Apk"]:
         """
         Get all downloaded APKs
 
@@ -546,13 +548,15 @@ class Apk:
             list[APK]: List of APKs
         """
         if all_apk_dir is None:
-            all_apk_dir = Apk.get_default_apk_folder()
+            all_apk_dir = Apk.get_default_pkg_folder()
         apks: list[Apk] = []
         all_apk_folders = all_apk_dir.get_dirs()
         all_apk_folders.extend(all_apk_dir.add("modded").generate_dirs().get_dirs())
         for apk_folder in all_apk_folders:
             is_modded = False
             pkg_name = None
+            if apk_folder.basename() == "modded":
+                continue
             if apk_folder.parent().basename() == "modded":
                 is_modded = True
             if "-" in apk_folder.basename():
@@ -563,6 +567,8 @@ class Apk:
             name = apk_folder.get_file_name().split("-")[0]
             country_code_str = name[-2:]
             if country_code_str not in tbcml.CountryCode.get_all_str():
+                if cleanup:
+                    apk_folder.remove(in_thread=True)
                 continue
             cc = tbcml.CountryCode.from_code(country_code_str)
             game_version_str = name[:-2]
@@ -576,6 +582,9 @@ class Apk:
             )
             if apk.is_downloaded():
                 apks.append(apk)
+            else:
+                if cleanup:
+                    apk_folder.remove(in_thread=True)
 
         apks.sort(key=lambda apk: apk.game_version.game_version, reverse=True)
 
@@ -1070,15 +1079,12 @@ class Apk:
     def is_downloaded(self) -> bool:
         return self.apk_path.exists()
 
-    def delete(self):
-        self.output_path.remove_tree()
+    def delete(self, in_thread: bool = False):
+        self.output_path.remove(in_thread=in_thread)
 
     @staticmethod
     def clean_up(apk_folder: Optional["tbcml.Path"] = None):
-        for apk in Apk.get_all_downloaded(apk_folder):
-            if apk.is_downloaded():
-                continue
-            apk.delete()
+        Apk.get_all_downloaded(apk_folder, cleanup=True)
 
     def get_display_string(self) -> str:
         return f"{self.game_version.format()} ({self.country_code})"
@@ -1097,7 +1103,7 @@ class Apk:
         cc: "tbcml.CountryCode", apk_folder: Optional["tbcml.Path"] = None
     ) -> "tbcml.Path":
         if apk_folder is None:
-            apk_folder = Apk.get_default_apk_folder()
+            apk_folder = Apk.get_default_pkg_folder()
         if apk_folder.parent().basename() == "modded":
             apk_folder = apk_folder.parent()
         return apk_folder.parent().add(f"{cc.get_code()}_server")
