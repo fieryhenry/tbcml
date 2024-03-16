@@ -1135,7 +1135,7 @@ class Apk:
         return cc, gv
 
     @staticmethod
-    def get_sha256_cert_hash(path: "tbcml.Path") -> Optional[str]:
+    def get_sha256_cert_hash(path: "tbcml.PathStr") -> Optional[str]:
         cmd = f"apksigner verify --print-certs '{path}'"
         result = tbcml.Command(cmd).run()
         if not result.success:
@@ -1150,9 +1150,12 @@ class Apk:
             return hash
         return None
 
+    def get_sha256_cert_hash_cls(self) -> Optional[str]:
+        return Apk.get_sha256_cert_hash(self.apk_path)
+
     @staticmethod
     def is_original(
-        apk_path: Optional["tbcml.Path"] = None, hash: Optional[str] = None
+        apk_path: Optional["tbcml.PathStr"] = None, hash: Optional[str] = None
     ) -> bool:
         if hash is None and apk_path is not None:
             hash = Apk.get_sha256_cert_hash(apk_path)
@@ -1161,6 +1164,9 @@ class Apk:
         return (
             hash == "baf876d554213331c6fe5f6bbf9ae9af2f95c20e82b14bc232b0ac3a77680cb1"
         )
+
+    def is_original_cls(self) -> bool:
+        return Apk.is_original(self.apk_path)
 
     @staticmethod
     def from_apk_path(
