@@ -107,6 +107,13 @@ class Texture:
     rects: list[Rect] = field(default_factory=lambda: [])
     imgcut_name: str = ""
 
+    def set_img(self, img: "tbcml.BCImage"):
+        self.image = img
+
+    def load_img(self, path: "tbcml.File"):
+        data = tbcml.load(path)
+        self.image = tbcml.BCImage.from_data(data)
+
     def save_b64(self):
         if self.image is not None:
             self.image.save_b64()
@@ -292,7 +299,6 @@ class ModelPartAnimValues:
         self.real_scale_y = 1.0
         self.real_alpha = 1.0
         self.real_rotation = 0.0
-
 
 
 @dataclass
