@@ -790,6 +790,8 @@ class Apk:
             return False
 
         stream = tbcml.RequestHandler(url).get_stream()
+        if stream.status_code == 404:
+            return False
         _total_length = int(stream.headers.get("content-length"))  # type: ignore
 
         dl = 0
