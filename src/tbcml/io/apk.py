@@ -182,13 +182,17 @@ class Apk:
 
         diff = filecmp.dircmp(original_sub_dir.path, extracted_sub_dir.path)
         for file in diff.left_only:
+            file = tbcml.Path(sub_dir).add(file)
             original_sub_dir.add(file).copy(extracted_sub_dir.add(file))
         for file in diff.right_only:
+            file = tbcml.Path(sub_dir).add(file)
             extracted_sub_dir.add(file).remove()
         for file in diff.diff_files:
+            file = tbcml.Path(sub_dir).add(file)
             original_sub_dir.add(file).copy(extracted_sub_dir.add(file))
-        for sub_dir in diff.subdirs:
-            self.copy_extracted_sub_dir(sub_dir)
+        for dir in diff.subdirs:
+            dir = tbcml.Path(sub_dir).add(dir)
+            self.copy_extracted_sub_dir(dir.path)
 
     @staticmethod
     def run_apktool(command: str) -> "tbcml.CommandResult":

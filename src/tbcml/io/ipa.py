@@ -183,25 +183,32 @@ class Ipa:
             self.extracted_path.remove_tree().generate_dirs()
             self.original_extracted_path.copy(self.extracted_path)
             return
-        for original_file in self.original_extracted_path.get_files_recursive():
-            extracted_file = self.get_extracted_path(original_file)
-            if not extracted_file.parent().exists():
-                extracted_file.parent().generate_dirs()
-            if not extracted_file.exists():
-                original_file.copy(extracted_file)
-                continue
-            if not filecmp.cmp(extracted_file.path, original_file.path):
-                original_file.copy(extracted_file)
 
-        for extracted_file in self.extracted_path.get_files_recursive():
-            original_file = self.get_original_extracted_path(extracted_file)
-            if not original_file.exists():
-                extracted_file.remove()
+        self.copy_extracted_sub_dir("")
 
-        for extracted_dir in self.extracted_path.get_dirs_recursive():
-            orignal_dir = self.get_original_extracted_path(extracted_dir)
-            if not orignal_dir.exists():
-                extracted_dir.remove()
+    def copy_extracted_sub_dir(self, sub_dir: str):
+        original_sub_dir = self.original_extracted_path.add(sub_dir)
+        extracted_sub_dir = self.extracted_path.add(sub_dir)
+        # print(original_sub_dir.path, extracted_sub_dir.path)
+        if not original_sub_dir.exists() and extracted_sub_dir.exists():
+            extracted_sub_dir.remove_tree()
+            return
+        if not original_sub_dir.exists():
+            return
+
+        diff = filecmp.dircmp(original_sub_dir.path, extracted_sub_dir.path)
+        for file in diff.left_only:
+            file = tbcml.Path(sub_dir).add(file)
+            original_sub_dir.add(file).copy(extracted_sub_dir.add(file))
+        for file in diff.right_only:
+            file = tbcml.Path(sub_dir).add(file)
+            extracted_sub_dir.add(file).remove()
+        for file in diff.diff_files:
+            file = tbcml.Path(sub_dir).add(file)
+            original_sub_dir.add(file).copy(extracted_sub_dir.add(file))
+        for dir in diff.subdirs:
+            dir = tbcml.Path(sub_dir).add(dir)
+            self.copy_extracted_sub_dir(dir.path)
 
     def get_assets_path(self) -> "tbcml.Path":
         payload_path = self.extracted_path.add("Payload")
