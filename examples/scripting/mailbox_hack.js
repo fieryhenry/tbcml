@@ -97,6 +97,16 @@ function get_lib_folder() {
     return nativeLibraryDir
 }
 
+function get_presents_wrapper() {
+    try {
+        return get_presents()
+    }
+    catch (error) {
+        logError(error.toString())
+        return []
+    }
+}
+
 function get_presents() {
     let data = null
     if (is_file == true || is_file.toLowerCase() == "true") {
@@ -139,7 +149,7 @@ Java.perform(function () {
     MyActivity["newResponse"].implementation = function (handle, response_code, url, headers, data, flag) {
         if (url.toString().includes("https://nyanko-items.ponosgames.com/v4/presents/count?")) {
             let payload = {
-                "count": get_presents().length
+                "count": get_presents_wrapper().length
             }
             let response = get_modified_response(url, payload)
             headers = response[0]
@@ -149,7 +159,7 @@ Java.perform(function () {
         }
         else if (url.toString().includes("https://nyanko-items.ponosgames.com/v4/presents?")) {
             let payload = {
-                "presents": get_presents()
+                "presents": get_presents_wrapper()
             }
             let response = get_modified_response(url, payload)
             headers = response[0]
