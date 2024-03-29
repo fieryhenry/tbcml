@@ -381,7 +381,9 @@ class Apk:
             print(
                 "WARNING: The resources for the apk seem to be decoded, this will cause issues as they will not be encoded atm."
             )
-        tbcml.Zip.compress_directory(self.extracted_path, self.final_apk_path)
+        tbcml.Zip.compress_directory(
+            self.extracted_path, self.final_apk_path, extensions_to_store=["so"]
+        )
         return True
 
     def pack_apktool(self):
@@ -1805,6 +1807,20 @@ class Apk:
         for mod in mods:
             self.apply_mod_smali(mod)
 
+    def prevent_so_compression(self):
+        if not self.did_use_apktool():
+            return
+
+        apktoolyml = self.extracted_path.add("apktool.yml")
+        yamlo = tbcml.Yaml.from_file(apktoolyml)
+        yaml = yamlo.yaml
+        do_not_compress = yaml.get("doNotCompress", [])
+        if "so" not in do_not_compress:
+            do_not_compress.append("so")
+        yaml["doNotCompress"] = do_not_compress
+
+        yamlo.to_file(apktoolyml)
+
     def load_mods(
         self,
         mods: list["tbcml.Mod"],
@@ -1828,6 +1844,8 @@ class Apk:
 
         self.add_script_mods(mods)
         self.add_patch_mods(mods)
+
+        self.prevent_so_compression()
 
         game_packs.apply_mods(mods)
 

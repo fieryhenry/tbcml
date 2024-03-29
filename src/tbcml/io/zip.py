@@ -25,12 +25,19 @@ class Zip:
         directory_path: "tbcml.Path",
         output_path: "tbcml.Path",
         compression: int = zipfile.ZIP_DEFLATED,
+        extensions_to_store: Optional[list[str]] = None,
     ):
         with zipfile.ZipFile(output_path.to_str_forwards(), "w", compression) as zipf:
             for file in directory_path.get_files_recursive():
+                cmp = compression
+                if extensions_to_store is not None:
+                    if file.get_extension() in extensions_to_store:
+                        cmp = zipfile.ZIP_STORED
+
                 zipf.write(
                     file.to_str_forwards(),
                     file.replace(directory_path.to_str(), "").to_str_forwards(),
+                    compress_type=cmp,
                 )
 
     @staticmethod
