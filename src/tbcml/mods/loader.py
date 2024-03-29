@@ -267,7 +267,11 @@ class ModLoader:
         Raises:
             Exception: If no devices are connected
         """
-        self.adb_handler = tbcml.BulkAdbHandler(self.get_apk().get_package_name())
+
+        self.adb_handler = tbcml.BulkAdbHandler(
+            self.get_apk().get_package_name()
+            or self.get_apk().get_default_package_name()
+        )
         if device_id is not None:
             self.adb_handler.add_device(device_id)
         else:
