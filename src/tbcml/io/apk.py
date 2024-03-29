@@ -1719,6 +1719,9 @@ class Apk:
 
         current_package = manifest.get_attribute("manifest", "package")
 
+        if current_package is not None:
+            self.replace_str_manifest(current_package, package_name)
+
         manifest.set_attribute("manifest", "package", package_name)
 
         if not self.edit_xml_string("package_name", package_name):
@@ -1739,9 +1742,6 @@ class Apk:
             provider.set(attribute, package_name + "." + end)
 
         self.set_manifest(manifest)
-
-        if current_package is not None:
-            self.replace_str_manifest(current_package, package_name)
 
         self.__package_name = package_name
 
