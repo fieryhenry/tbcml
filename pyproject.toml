@@ -27,6 +27,7 @@ dependencies = [
     "requests",
     "ffmpeg-python",
     "marshmallow-dataclass",
+    "pyyaml",
 ]
 dynamic = ["version"]
 keywords = ["battle cats", "modding", "mod"]

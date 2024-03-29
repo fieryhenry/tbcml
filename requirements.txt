@@ -6,3 +6,4 @@ marshmallow_dataclass==8.6.0
 Pillow==10.2.0
 pycryptodomex==3.20.0
 Requests==2.31.0
+PyYAML==6.0.1

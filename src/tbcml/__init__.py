@@ -76,6 +76,7 @@ from .io.csv_fields import (
     StrTupleCSVField,
 )
 from .io.apk import Apk
+from .io.yamlfile import Yaml
 from .io.path import Path, PathStr
 from .io.data import Data, PaddedInt
 from .io.command import Command, CommandResult
@@ -230,6 +231,7 @@ __all__ = [
     "FileSize",
     "XML",
     "AudioFile",
+    "Yaml",
     "BCImage",
     "run_in_threads",
     "run_in_thread",
