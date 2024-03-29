@@ -54,3 +54,9 @@ class Language(enum.Enum):
             return 4
 
         raise ValueError("Invalid Language")
+
+    @staticmethod
+    def from_langstr(lang: LanguageStr) -> "Language":
+        if isinstance(lang, Language):
+            return lang
+        return Language(lang)
