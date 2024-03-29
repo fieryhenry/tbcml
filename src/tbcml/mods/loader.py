@@ -66,6 +66,7 @@ class ModLoader:
 
     def initialize(
         self,
+        *,
         decode_resources: bool = True,
         use_apktool: bool = True,
         force_extract: bool = False,
@@ -78,6 +79,7 @@ class ModLoader:
             Callable[[float, int, int, bool], None]
         ] = Apk.progress,
         skip_signature_check: bool = False,
+        download_server_files: bool = True,
     ):
         """Initializes the mod loader, loads apk + game packs.
         Must be called before doing anything really.
@@ -93,6 +95,7 @@ class ModLoader:
             apk_path (Optional[tbcml.Path], optional): Path to an apk file if you already have a downloaded apk file. Note that you should probably change the custom_apk_folder if using a non-original tbc apk
             download_progress (Optional[Callable[[float, int, int, bool], None]], optional): Function to call to show download progress. Defaults to Apk.progress which is a default progress function
             skip_signature_check (bool, optional): Whether to skip checking the apk signature. If disabled, this will throw an error if the downloaded apk is not original. Defaults to False
+            download_server_files (bool, optional): Whether to download the server files (what the game downloads on first open). Defaults to True
         """
         if isinstance(lang, str):
             lang = tbcml.Language(lang)
@@ -108,10 +111,12 @@ class ModLoader:
             apk_path=apk_path,
             download_progress=download_progress,
             skip_signature_check=skip_signature_check,
+            download_server_files=download_server_files,
         )
 
     def __get_apk(
         self,
+        *,
         decode_resources: bool = True,
         use_apktool: bool = True,
         force_extract: bool = False,
@@ -124,6 +129,7 @@ class ModLoader:
         ] = Apk.progress,
         apk_path: Optional["tbcml.PathStr"] = None,
         skip_signature_check: bool = False,
+        download_server_files: bool = True,
     ):
         if custom_apk_folder is not None:
             custom_apk_folder = tbcml.Path(custom_apk_folder)
@@ -151,6 +157,7 @@ class ModLoader:
                 if print_errors:
                     print("Failed to download apk.")
                 return
+
         if not self.apk.extract(
             decode_resources=decode_resources,
             use_apktool=use_apktool,
@@ -160,7 +167,10 @@ class ModLoader:
                 print("Failed to extract apk.")
             return
         try:
-            self.apk.download_server_files(lang=lang, display=bool(download_progress))
+            if download_server_files:
+                self.apk.download_server_files(
+                    lang=lang, display=bool(download_progress)
+                )
         except tbcml.GameVersionSearchError:
             # old versions (<7.0) aren't supported for downloading game files atm + some really old versions don't have any
             if print_errors:
