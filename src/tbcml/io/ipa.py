@@ -189,7 +189,6 @@ class Ipa:
     def copy_extracted_sub_dir(self, sub_dir: str):
         original_sub_dir = self.original_extracted_path.add(sub_dir)
         extracted_sub_dir = self.extracted_path.add(sub_dir)
-        # print(original_sub_dir.path, extracted_sub_dir.path)
         if not original_sub_dir.exists() and extracted_sub_dir.exists():
             extracted_sub_dir.remove_tree()
             return
@@ -198,17 +197,17 @@ class Ipa:
 
         diff = filecmp.dircmp(original_sub_dir.path, extracted_sub_dir.path)
         for file in diff.left_only:
-            file = tbcml.Path(sub_dir).add(file)
+            file = tbcml.Path(file)
             original_sub_dir.add(file).copy(extracted_sub_dir.add(file))
         for file in diff.right_only:
-            file = tbcml.Path(sub_dir).add(file)
+            file = tbcml.Path(file)
             extracted_sub_dir.add(file).remove()
         for file in diff.diff_files:
-            file = tbcml.Path(sub_dir).add(file)
+            file = tbcml.Path(file)
             original_sub_dir.add(file).copy(extracted_sub_dir.add(file))
         for dir in diff.subdirs:
-            dir = tbcml.Path(sub_dir).add(dir)
-            self.copy_extracted_sub_dir(dir.path)
+            file = tbcml.Path(sub_dir).add(dir)
+            self.copy_extracted_sub_dir(file.path)
 
     def get_assets_path(self) -> "tbcml.Path":
         payload_path = self.extracted_path.add("Payload")
@@ -257,7 +256,10 @@ class Ipa:
         return files
 
     def get_game_packs(
-        self, lang: Optional["tbcml.Language"] = None, all_langs: bool = False
+        self,
+        lang: Optional["tbcml.Language"] = None,
+        all_langs: bool = False,
+        pack_names: Optional[list[str]] = None,
     ) -> "tbcml.GamePacks":
         packs: dict[str, tbcml.PackFile] = {}
 
@@ -265,6 +267,8 @@ class Ipa:
             pack_name = list_file.get_file_name_without_extension()
             pack_lang = tbcml.PackFile.get_lang(pack_name)
             if pack_lang is not None and pack_lang != lang and not all_langs:
+                continue
+            if pack_names is not None and pack_name not in pack_names:
                 continue
             list_data = list_file.read()
             pack = tbcml.PackFile.from_pack_file(
