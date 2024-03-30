@@ -107,9 +107,9 @@ class AdbHandler:
             result2 = self.run_shell(
                 f"su -c 'cp /sdcard/{device_path.basename()} {orignal_device_path.to_str_forwards()} && chmod o+rw {orignal_device_path.to_str_forwards()}'"
             )
+            result3 = self.run_shell(f"rm /sdcard/{device_path.basename()}")
             if result2.exit_code != 0:
                 return result2
-            result3 = self.run_shell(f"su -c 'rm /sdcard/{device_path.basename()}'")
             if result3.exit_code != 0:
                 return result3
 
