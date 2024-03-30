@@ -1386,6 +1386,7 @@ class Apk:
         self.add_libgadget_config(used_arcs)
         self.add_libgadget_scripts(scripts)
         self.add_libgadget_sos(used_arcs, inject_native_lib, inject_smali)
+        self.set_extract_native_libs(True)
 
     def add_patches(self, patches: "tbcml.LibPatches"):
         for patch in patches.lib_patches:
@@ -1579,6 +1580,13 @@ class Apk:
                 continue
             audio_files[int(id_str)] = file
 
+        server_files = self.get_all_server_audio()
+        for id, file in server_files.items():
+            audio_files[id] = file
+        return audio_files
+
+    def get_all_server_audio(self):
+        audio_files: dict[int, "tbcml.Path"] = {}
         for file in self.get_server_path().get_files():
             if not file.get_extension() == "caf" and not file.get_extension() == "ogg":
                 continue
@@ -1647,6 +1655,18 @@ class Apk:
             manifest.set_attribute(path, "android:allowBackup", "true")
         else:
             manifest.set_attribute(path, "android:allowBackup", "false")
+        self.set_manifest(manifest)
+
+    def set_extract_native_libs(self, extract: bool):
+        manifest = self.parse_manifest()
+        if manifest is None:
+            return
+        path = "application"
+        if extract:
+            manifest.set_attribute(path, "android:extractNativeLibs", "true")
+        else:
+            manifest.set_attribute(path, "android:extractNativeLibs", "false")
+
         self.set_manifest(manifest)
 
     def set_debuggable(self, debuggable: bool):
@@ -1726,9 +1746,6 @@ class Apk:
 
         manifest.set_attribute("manifest", "package", package_name)
 
-        if not self.edit_xml_string("package_name", package_name):
-            return False
-
         path = "application/provider"
         for provider in manifest.get_elements(path):
             attribute = manifest.get_attribute_name("android:authorities")
@@ -1746,6 +1763,9 @@ class Apk:
         self.set_manifest(manifest)
 
         self.__package_name = package_name
+
+        if not self.edit_xml_string("package_name", package_name):
+            return False
 
         return True
 
