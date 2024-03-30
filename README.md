@@ -268,6 +268,7 @@ may need to uninstall the previous version first.
   ```bash
   termux-setup-storage
   termux-change-repo
+  pkg upgrade
   ```
 
   When prompted for a mirror, any of them should work (pick recommended
