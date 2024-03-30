@@ -347,9 +347,19 @@ class ModLoader:
             list[list[tbcml.CommandResult]]: List of command results for each device and file.
         """
         apk = self.get_apk()
+        game_packs = self.get_game_packs()
+        paths: list["tbcml.Path"] = []
+        for pack_name, pack in game_packs.packs.items():
+            if pack.is_server_pack(pack_name):
+                paths.append(apk.get_server_path().add(pack_name + ".pack"))
+                paths.append(apk.get_server_path().add(pack_name + ".list"))
+
+        for file in apk.get_all_server_audio().values():
+            paths.append(file)
+
         return self.get_adb_handler().run_adb_handler_function(
             tbcml.AdbHandler.push_files_to_folder,
-            apk.get_server_path().get_files(),
+            paths,
             tbcml.AdbHandler.get_battlecats_path(
                 apk.get_package_name() or apk.get_default_package_name()
             ).add("files"),
