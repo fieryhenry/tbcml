@@ -1498,8 +1498,11 @@ class Apk:
         return self.extracted_path.add("AndroidManifest.xml")
 
     def parse_manifest(self) -> Optional["tbcml.XML"]:
+        return self.parse_xml(self.get_manifest_path())
+
+    def parse_xml(self, path: "tbcml.Path") -> Optional["tbcml.XML"]:
         try:
-            return tbcml.XML(self.get_manifest_path().read())
+            return tbcml.XML(path.read())
         except Exception:
             return None
 
@@ -1680,14 +1683,17 @@ class Apk:
             manifest.set_attribute(path, "android:debuggable", "false")
         self.set_manifest(manifest)
 
+    def get_values_xml_path(self, name: str):
+        return self.extracted_path.add("res").add("values").add(f"{name}.xml")
+
     def load_xml(self, name: str) -> Optional["tbcml.XML"]:
-        strings_xml = self.extracted_path.add("res").add("values").add(f"{name}.xml")
+        strings_xml = self.get_values_xml_path(name)
         if not strings_xml.exists():
             return None
         return tbcml.XML(strings_xml.read())
 
     def save_xml(self, name: str, xml: "tbcml.XML"):
-        xml.to_file(self.extracted_path.add("res").add("values").add(f"{name}.xml"))
+        xml.to_file(self.get_values_xml_path(name))
 
     def edit_xml_string(self, name: str, value: str) -> bool:
         strings_xml = self.load_xml("strings")

@@ -6,10 +6,14 @@ import tbcml
 class XML:
     ET = ET
 
-    def __init__(self, data: "tbcml.Data"):
-        self.data = data
+    def __init__(
+        self, data: Optional["tbcml.Data"] = None, root: Optional[ET.Element] = None
+    ):
         ET.register_namespace("android", "http://schemas.android.com/apk/res/android")
-        self.root = ET.fromstring(self.data.to_str())
+        if data is not None:
+            self.root = ET.fromstring(data.to_str())
+        if root is not None:
+            self.root = root
 
     def get_element(self, path: str) -> Optional[ET.Element]:
         path = path.replace("manifest", "").strip()
@@ -28,12 +32,16 @@ class XML:
             raise ValueError("Element not found")
         element.text = value
 
-    def save(self):
-        self.data = tbcml.Data(ET.tostring(self.root).decode("utf-8"))
+    def to_data(self) -> "tbcml.Data":
+        string = ET.tostring(
+            self.root,
+            xml_declaration=True,
+            encoding="utf-8",
+        ).decode("utf-8")
+        return tbcml.Data(string)
 
     def to_file(self, path: "tbcml.Path"):
-        self.save()
-        path.write(self.data)
+        path.write(self.to_data())
 
     def get_attribute_name(self, attribute: str) -> str:
         return attribute.replace(
