@@ -80,6 +80,13 @@ class Ipa:
     def get_default_pkg_folder() -> "tbcml.Path":
         return tbcml.Path.get_documents_folder().add("IPAs").generate_dirs()
 
+    @property
+    def pkg_path(self) -> "tbcml.Path":
+        return self.ipa_path
+
+    def is_apk(self) -> bool:
+        return False
+
     @staticmethod
     def get_app_folder_from_zip(zip: "tbcml.Zip"):
         payload_path = tbcml.Path("Payload")
@@ -126,6 +133,8 @@ class Ipa:
         gv_overwrite: Optional["tbcml.GameVersion"] = None,
         ipa_folder: Optional["tbcml.Path"] = None,
     ):
+        if not ipa_path.exists():
+            raise ValueError(f"IPA path {ipa_path} does not exist.")
         pkg_name, gv = Ipa.get_package_name_version_from_ipa(ipa_path)
         if pkg_name is not None:
             cc = tbcml.CountryCode.from_package_name(pkg_name)

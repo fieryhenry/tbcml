@@ -49,6 +49,9 @@ class Apk:
     def replace_lib_string(self, original: str, new: str, pad: str = "\x00") -> str:
         return tbcml.LibFiles(self).replace_str(original, new, pad)
 
+    def is_apk(self) -> bool:
+        return True
+
     @staticmethod
     def from_format_string(
         format_string: str,
@@ -95,6 +98,10 @@ class Apk:
                 packs[pack_name] = pack
 
         return tbcml.GamePacks(packs, self.country_code, self.game_version, lang=lang)
+
+    @property
+    def pkg_path(self) -> "tbcml.Path":
+        return self.apk_path
 
     def init_paths(self):
         self.apk_folder.generate_dirs()
@@ -1187,6 +1194,9 @@ class Apk:
         skip_signature_check: bool = False,
     ) -> "Apk":
         is_modded = False
+
+        if not apk_path.exists():
+            raise ValueError(f"APK path {apk_path} does not exist.")
 
         if not Apk.check_apksigner_installed():
             skip_signature_check = True
