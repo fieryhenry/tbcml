@@ -1720,6 +1720,7 @@ class Apk:
         if app_name is None:
             return None
         self.__app_name = app_name
+        return app_name
 
     def is_extracted(self) -> bool:
         return self.extracted_path.has_files()

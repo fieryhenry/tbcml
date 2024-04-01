@@ -500,6 +500,7 @@ class Ipa:
             return self.__app_name
         name = self.get_plist_val("CFBundleDisplayName")
         self.__app_name = name
+        return name
 
     def sign(self) -> bool:  # TODO: impliment signing
         # Comment: ipa does not require signing, user must sign the INSTALLATION PROCESS with certificates(enterprise, free apple dev acc, apple dev account)
