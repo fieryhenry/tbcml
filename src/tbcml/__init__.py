@@ -1,6 +1,6 @@
 __version__ = "2.0.0"
 
-from typing import Union
+from typing import Union, Optional
 from .mods.bc_mod import (
     Mod,
     Modification,
@@ -111,6 +111,21 @@ from .country_code import CountryCode, CC
 from .game_version import GameVersion, GV
 
 PKG = Union["Apk", "Ipa"]
+
+
+def to_pkg(path: "PathStr") -> Optional[PKG]:
+    path = Path(path)
+    extension = path.get_extension()
+    try:
+        if extension == "apk":
+            return Apk.from_apk_path(path)
+        elif extension == "ipa":
+            return Ipa.from_ipa_path(path)
+    except Exception:
+        pass
+    return None
+
+
 """Type alias for a package type, can be a tbcml.Apk or tbcml.Ipa"""
 
 File = Union[
@@ -270,4 +285,5 @@ __all__ = [
     "server_handler",
     "game_version",
     "country_code",
+    "to_pkg",
 ]
