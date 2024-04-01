@@ -329,6 +329,13 @@ class Path:
     def remove_prefix(self, prefix: str) -> "Path":
         return Path(self.path.removeprefix(prefix))
 
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, str):
+            return self.path == other
+        if not isinstance(other, Path):
+            return False
+        return self.path == other.path
+
 
 PathStr = typing.Union[Path, str]
 """Type alias for a tbcml.Path or a str."""
