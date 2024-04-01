@@ -1578,7 +1578,7 @@ class Cat(tbcml.Modification):
         cat_guide_text: Optional[list[str]] = None,
     ):
         if form is not None:
-            self.set_form(form, CatFormType.FOURTH)
+            self.set_form(form, CatFormType.THIRD)
             form.cat_guide_text = cat_guide_text
         unitbuy = self.get_unitbuy()
         unitbuy.set_evolve_items_tf(evolve_items)
