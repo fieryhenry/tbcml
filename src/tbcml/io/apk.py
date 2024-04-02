@@ -18,6 +18,7 @@ class Apk:
         is_modded: bool = False,
         use_pkg_name_for_folder: bool = False,
         pkg_name: Optional[str] = None,
+        create_dirs: bool = True,
     ):
         self.is_modded = is_modded
         self.game_version = tbcml.GameVersion.from_gv(game_version)
@@ -37,7 +38,7 @@ class Apk:
 
         self.smali_handler: Optional[tbcml.SmaliHandler] = None
 
-        self.init_paths()
+        self.init_paths(create_dirs)
 
         self.key = None
         self.iv = None
@@ -103,15 +104,14 @@ class Apk:
     def pkg_path(self) -> "tbcml.Path":
         return self.apk_path
 
-    def init_paths(self):
-        self.apk_folder.generate_dirs()
+    def init_paths(self, create_dirs: bool = True):
         folder_name = f"{self.game_version}{self.country_code.get_code()}"
         if self.use_pkg_name_for_folder:
             pkg_name = self.get_package_name()
             if pkg_name is not None:
                 folder_name += f"-{pkg_name}"
 
-        self.output_path = self.apk_folder.add(folder_name).generate_dirs()
+        self.output_path = self.apk_folder.add(folder_name)
 
         self.final_apk_path = self.output_path.add(
             f"{self.get_default_package_name()}-modded.apk"
@@ -120,21 +120,30 @@ class Apk:
             f"{self.get_default_package_name()}-original.apk"
         )
 
-        self.extracted_path = self.output_path.add("extracted").generate_dirs()
+        self.extracted_path = self.output_path.add("extracted")
         self.modified_packs_path = (
-            self.output_path.add("modified_packs").remove_tree().generate_dirs()
+            self.output_path.add("modified_packs").remove_tree()
         )
         self.original_extracted_path = self.output_path.add(
             "original_extracted"
-        ).generate_dirs()
+        )
 
-        self.temp_path = self.output_path.add("temp").remove_tree().generate_dirs()
+        self.temp_path = self.output_path.add("temp").remove_tree()
 
         self.smali_original_path = self.output_path.add("smali-original")
 
         self.smali_non_original_path = self.output_path.add("smali-new").remove_tree()
 
         self.lib_gadgets_folder = self.get_defualt_libgadgets_folder()
+
+        if create_dirs:
+            self.apk_folder.generate_dirs()
+            self.output_path.generate_dirs()
+            self.extracted_path.generate_dirs()
+            self.modified_packs_path.generate_dirs()
+            self.original_extracted_path.generate_dirs()
+            self.temp_path.generate_dirs()
+            
 
     @staticmethod
     def get_defualt_libgadgets_folder() -> "tbcml.Path":

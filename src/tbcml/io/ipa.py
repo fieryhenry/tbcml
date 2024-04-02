@@ -13,6 +13,7 @@ class Ipa:
         is_modded: bool = False,
         use_pkg_name_for_folder: bool = False,
         pkg_name: Optional[str] = None,
+        create_dirs: bool = True,
         # allowed_script_mods: bool = True, # TODO: impliment scripting
     ):
         self.game_version = tbcml.GameVersion.from_gv(game_version)
@@ -31,7 +32,7 @@ class Ipa:
         else:
             self.ipa_folder = tbcml.Path(ipa_folder).get_absolute_path()
 
-        self.init_paths()
+        self.init_paths(create_dirs)
 
         self.key = None
         self.iv = None
@@ -39,8 +40,7 @@ class Ipa:
         self.lib: Optional[dict[str, tbcml.Lib]] = None
         # self.allowed_script_mods = allowed_script_mods
 
-    def init_paths(self):
-        self.ipa_folder.generate_dirs()
+    def init_paths(self, create_dirs: bool = True):
         folder_name = f"{self.game_version}{self.country_code.get_code()}"
         if self.use_pkg_name_for_folder:
             pkg_name = self.get_package_name()
@@ -56,15 +56,18 @@ class Ipa:
             f"{self.get_default_package_name()}-original.ipa"
         )
 
-        self.extracted_path = self.output_path.add("extracted").generate_dirs()
-        self.modified_packs_path = (
-            self.output_path.add("modified_packs").remove_tree().generate_dirs()
-        )
-        self.original_extracted_path = self.output_path.add(
-            "original_extracted"
-        ).generate_dirs()
+        self.extracted_path = self.output_path.add("extracted")
+        self.modified_packs_path = self.output_path.add("modified_packs").remove_tree()
+        self.original_extracted_path = self.output_path.add("original_extracted")
 
-        self.temp_path = self.output_path.add("temp").remove_tree().generate_dirs()
+        self.temp_path = self.output_path.add("temp").remove_tree()
+
+        if create_dirs:
+            self.ipa_folder.generate_dirs()
+            self.extracted_path.generate_dirs()
+            self.modified_packs_path.generate_dirs()
+            self.original_extracted_path.generate_dirs()
+            self.temp_path.generate_dirs()
 
     def delete(self, in_thread: bool = False):
         self.output_path.remove(in_thread=in_thread)
