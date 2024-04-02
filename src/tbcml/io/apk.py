@@ -817,7 +817,9 @@ class Apk:
             dl += len(d)
             buffer.append(d)
             if progress is not None:
-                progress(dl / _total_length, dl, _total_length, True)
+                res = progress(dl / _total_length, dl, _total_length, True)
+                if res is not None and not res:
+                    return False
 
         apk = tbcml.Data(b"".join(buffer))
         apk.to_file(self.apk_path)
@@ -825,7 +827,9 @@ class Apk:
 
     def download(
         self,
-        progress: Optional[Callable[[float, int, int, bool], None]] = progress,
+        progress: Optional[
+            Callable[[float, int, int, bool], Optional[bool]]
+        ] = progress,
         force: bool = False,
         skip_signature_check: bool = False,
     ) -> bool:
@@ -911,7 +915,9 @@ class Apk:
             dl += len(d)
             buffer.append(d)
             if progress is not None:
-                progress(dl / _total_length, dl, _total_length, True)
+                res = progress(dl / _total_length, dl, _total_length, True)
+                if res is not None and not res:
+                    return False
 
         apk = tbcml.Data(b"".join(buffer))
         apk.to_file(self.apk_path)
@@ -967,7 +973,9 @@ class Apk:
             dl += len(d)
             buffer.append(d)
             if progress is not None:
-                progress(dl / _total_length, dl, _total_length, True)
+                res = progress(dl / _total_length, dl, _total_length, True)
+                if res is not None and not res:
+                    return False
 
         apk = tbcml.Data(b"".join(buffer))
         apk.to_file(self.apk_path)
