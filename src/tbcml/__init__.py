@@ -111,6 +111,7 @@ from .country_code import CountryCode, CC
 from .game_version import GameVersion, GV
 
 PKG = Union["Apk", "Ipa"]
+LOADER = Union["ModLoader", "IpaModLoader"]
 
 
 def to_pkg(path: "PathStr") -> Optional[PKG]:
@@ -271,6 +272,7 @@ __all__ = [
     "CC",
     "GV",
     "PKG",
+    "LOADER",
     "GameVersion",
     "AdbHandler",
     "BulkAdbHandler",
