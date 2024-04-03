@@ -364,7 +364,7 @@ class Mod:
         self,
         asset_path: "tbcml.PathStr",
         local_f: "tbcml.File",
-    ):
+    ):  # TODO: Separate function for encrypted assets
         """Add a file to be placed in the apk/ipa asset folder when applying
         the mod.
 
@@ -892,7 +892,7 @@ class Mod:
             data = zipfile.get_file(path)
             if data is not None:
                 key = path.remove_prefix(ModPath.PKG_ASSETS.value).to_str_forwards()
-                mod.apk_files[key] = data
+                mod.pkg_assets[key] = data
 
     @staticmethod
     def __apk_files_from_zip(zipfile: "tbcml.Zip", mod: "Mod"):
@@ -908,7 +908,7 @@ class Mod:
             data = zipfile.get_file(path)
             if data is not None:
                 key = path.remove_prefix(ModPath.IPA_FILES.value).to_str_forwards()
-                mod.apk_files[key] = data
+                mod.ipa_files[key] = data
 
     @staticmethod
     def __audio_files_from_zip(zipfile: "tbcml.Zip", mod: "Mod"):
