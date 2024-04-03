@@ -28,16 +28,44 @@ class GameFile:
         self.__dec_data: Optional["tbcml.Data"] = dec_data
         self.original_dec_data: Optional["tbcml.Data"] = None
 
+    @staticmethod
+    def decrypt_apk_file(enc_data: "tbcml.Data") -> "tbcml.Data":
+        game_file = GameFile(
+            enc_data,
+            "file",
+            "pack",
+            tbcml.CountryCode.EN,
+            tbcml.GameVersion.from_string("12.3.0"),
+        )
+        return game_file.decrypt_data(force_server=True)
+
+    @staticmethod
+    def encrypt_apk_file(dec_data: "tbcml.Data") -> "tbcml.Data":
+        game_file = GameFile(
+            None,
+            "file",
+            "pack",
+            tbcml.CountryCode.EN,
+            tbcml.GameVersion.from_string("12.3.0"),
+            dec_data=dec_data,
+        )
+        return game_file.encrypt(force_server=True)
+
     @property
     def dec_data(self):
         return self.decrypt_data()
 
-    def decrypt_data(self):
+    def decrypt_data(self, force_server: bool = False) -> "tbcml.Data":
         if self.__dec_data is not None:
             return self.__dec_data
 
         cipher = PackFile.get_cipher(
-            self.cc, self.pack_name, self.gv, key=self.key, iv=self.iv
+            self.cc,
+            self.pack_name,
+            self.gv,
+            key=self.key,
+            iv=self.iv,
+            force_server=force_server,
         )
         if self.enc_data is None:
             raise ValueError("No enc_data or dec_data specified")
