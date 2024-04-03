@@ -383,7 +383,7 @@ class Mod:
             ```
         """
         data = tbcml.load(local_f)
-        path = tbcml.Path(asset_path).to_str_forwards()
+        path = tbcml.Path(asset_path).strip_leading_slash().to_str_forwards()
         self.pkg_assets[path] = data
 
     def add_apk_file(
@@ -408,7 +408,7 @@ class Mod:
             ```
         """
         data = tbcml.load(local_f)
-        path = tbcml.Path(apk_path).to_str_forwards()
+        path = tbcml.Path(apk_path).strip_leading_slash().to_str_forwards()
         self.apk_files[path] = data
 
     def add_ipa_file(
@@ -433,8 +433,18 @@ class Mod:
             ```
         """
         data = tbcml.load(local_f)
-        path = tbcml.Path(ipa_path).to_str_forwards()
+        path = tbcml.Path(ipa_path).strip_leading_slash().to_str_forwards()
         self.ipa_files[path] = data
+
+    def get_asset(self, asset_name: "tbcml.PathStr", is_apk: bool):
+        path = tbcml.Path(asset_name).strip_leading_slash().to_str_forwards()
+        if is_apk:
+            pkg_file = self.apk_files.get("assets/" + path)
+            if pkg_file is not None:
+                return pkg_file
+        else:
+            pkg_file = self.ipa_files.get(path)
+        return self.pkg_assets.get(path)
 
     def add_audio_file(
         self,
@@ -891,7 +901,11 @@ class Mod:
         for path in Mod.__get_files_in_mod_path(zipfile, ModPath.PKG_ASSETS):
             data = zipfile.get_file(path)
             if data is not None:
-                key = path.remove_prefix(ModPath.PKG_ASSETS.value).to_str_forwards()
+                key = (
+                    path.remove_prefix(ModPath.PKG_ASSETS.value)
+                    .strip_leading_slash()
+                    .to_str_forwards()
+                )
                 mod.pkg_assets[key] = data
 
     @staticmethod
@@ -899,7 +913,11 @@ class Mod:
         for path in Mod.__get_files_in_mod_path(zipfile, ModPath.APK_FILES):
             data = zipfile.get_file(path)
             if data is not None:
-                key = path.remove_prefix(ModPath.APK_FILES.value).to_str_forwards()
+                key = (
+                    path.remove_prefix(ModPath.APK_FILES.value)
+                    .strip_leading_slash()
+                    .to_str_forwards()
+                )
                 mod.apk_files[key] = data
 
     @staticmethod
@@ -907,7 +925,11 @@ class Mod:
         for path in Mod.__get_files_in_mod_path(zipfile, ModPath.IPA_FILES):
             data = zipfile.get_file(path)
             if data is not None:
-                key = path.remove_prefix(ModPath.IPA_FILES.value).to_str_forwards()
+                key = (
+                    path.remove_prefix(ModPath.IPA_FILES.value)
+                    .strip_leading_slash()
+                    .to_str_forwards()
+                )
                 mod.ipa_files[key] = data
 
     @staticmethod
@@ -996,18 +1018,21 @@ class Mod:
 
     def __apply_apk_files(self, apk: "tbcml.Apk"):
         for file, data in self.apk_files.items():
+            file = tbcml.Path(file).strip_leading_slash()
             path = apk.extracted_path.add(file)
             path.parent().generate_dirs()
             path.write(data)
 
     def __apply_ipa_files(self, ipa: "tbcml.Ipa"):
         for file, data in self.ipa_files.items():
+            file = tbcml.Path(file).strip_leading_slash()
             path = ipa.get_asset(file)
             path.parent().generate_dirs()
             path.write(data)
 
     def __apply_pkg_assets(self, pkg: "tbcml.PKG"):
         for file, data in self.pkg_assets.items():
+            file = tbcml.Path(file).strip_leading_slash()
             path = pkg.get_asset(file)
             path.parent().generate_dirs()
             path.write(data)
