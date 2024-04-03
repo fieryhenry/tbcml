@@ -1634,6 +1634,15 @@ class Apk:
     def get_asset(self, asset_name: "tbcml.PathStr") -> "tbcml.Path":
         return self.extracted_path.add("assets").add(asset_name)
 
+    def get_asset_mods(
+        self, asset_name: "tbcml.PathStr", mods: list["tbcml.Mod"]
+    ) -> "tbcml.Data":
+        for mod in mods:
+            asset = mod.get_asset(asset_name, self.is_apk())
+            if asset is not None:
+                return asset
+        return self.get_asset(asset_name).read()
+
     def get_all_download_tsvs(self) -> list[list["tbcml.Path"]]:
         langs = tbcml.Language.get_all()
         langs = [None] + langs
