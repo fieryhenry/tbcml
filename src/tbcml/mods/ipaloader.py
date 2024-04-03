@@ -47,6 +47,20 @@ class IpaModLoader:
         self.game_packs: Optional[tbcml.GamePacks] = None
         self.ipa: Optional[tbcml.Ipa] = None
 
+    @staticmethod
+    def from_ipa(
+        ipa: "tbcml.Ipa",
+    ):
+        """Creates a ModLoader from an already existing Ipa object
+
+        Args:
+            ipa (tbcml.Ipa): Ipa object to create the ModLoader from
+
+        Returns:
+            IpaModLoader: ModLoader object
+        """
+        return IpaModLoader(ipa.country_code, ipa.game_version)
+
     def initialize(
         self,
         ipa_path: "tbcml.PathStr",
@@ -188,3 +202,14 @@ class IpaModLoader:
                 "ipa not initialized. Call initialize() first."
             )
         return self.ipa
+
+    def get_pkg(self) -> "tbcml.PKG":
+        """Gets the pkg from a ModLoader instance. Will never be None
+
+        Raises:
+            ModLoaderUninitializedException: If the ipa has not been initialized (didn't call initialize())
+
+        Returns:
+            tbcml.pkg: pkg
+        """
+        return self.get_ipa()

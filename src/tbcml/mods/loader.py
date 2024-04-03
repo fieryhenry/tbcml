@@ -64,6 +64,18 @@ class ModLoader:
         self.apk: Optional[tbcml.Apk] = None
         self.adb_handler: Optional[tbcml.BulkAdbHandler] = None
 
+    @staticmethod
+    def from_apk(apk: "tbcml.Apk"):
+        """Create a ModLoader from an existing Apk instance
+
+        Args:
+            apk (tbcml.Apk): Apk instance
+
+        Returns:
+            ModLoader: ModLoader instance
+        """
+        return ModLoader(apk.country_code, apk.game_version)
+
     def initialize(
         self,
         *,
@@ -257,6 +269,17 @@ class ModLoader:
                 "APK not initialized. Call initialize() first."
             )
         return self.apk
+
+    def get_pkg(self) -> "tbcml.PKG":
+        """Gets the apk from a ModLoader instance. Will never be None
+
+        Raises:
+            ModLoaderUninitializedException: If the apk has not been initialized (didn't call initialize())
+
+        Returns:
+            tbcml.PKG: Apk
+        """
+        return self.get_apk()
 
     def initialize_adb(self, device_id: Optional[str] = None):
         """Initialize adb handler. Must be called before doing anything with adb
