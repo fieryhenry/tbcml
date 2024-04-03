@@ -119,6 +119,9 @@ class Path:
     def exists(self) -> bool:
         return os.path.exists(self.path)
 
+    def is_file(self) -> bool:
+        return os.path.isfile(self.path)
+
     def __make_dirs(self) -> "Path":
         os.makedirs(self.path)
         return self
