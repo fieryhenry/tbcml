@@ -288,23 +288,23 @@ class Mod:
         """dict[str, tbcml.Data]: The game files to apply to the game data. str
         is the file name, tbcml.Data is the file data."""
 
-        self.pkg_assets: dict[tbcml.Path, tbcml.Data] = {}
-        """dict[tbcml.Path, tbcml.Data]: The files to place in the assets of
-        the apk/ipa when applying the mod. tbcml.Path is the location in the
+        self.pkg_assets: dict[str, tbcml.Data] = {}
+        """dict[str, tbcml.Data]: The files to place in the assets of
+        the apk/ipa when applying the mod. str is the location in the
         asset to place the file, tbcml.Data is the actual file / data to place
         in that location. If you want to modify specifically ipa or apk files
         use apk_files and ipa_files instead."""
 
-        self.apk_files: dict[tbcml.Path, tbcml.Data] = {}
-        """dict[tbcml.Path, tbcml.Data]: The files to place in the apk when
-        applying the mod. tbcml.Path is the location in the apk to place
+        self.apk_files: dict[str, tbcml.Data] = {}
+        """dict[str, tbcml.Data]: The files to place in the apk when
+        applying the mod. str is the location in the apk to place
         the file, tbcml.Data is the actual file / data to place in that
         location. If you are modifying assets, these should be placed in
         pkg_assets instead."""
 
-        self.ipa_files: dict[tbcml.Path, tbcml.Data] = {}
-        """dict[tbcml.Path, tbcml.Data]: The files to place in the ipa when
-        applying the mod. tbcml.Path is the location in the ipa to place
+        self.ipa_files: dict[str, tbcml.Data] = {}
+        """dict[str, tbcml.Data]: The files to place in the ipa when
+        applying the mod. str is the location in the ipa to place
         the file, tbcml.Data is the actual file / data to place in that
         location. If you are modifying assets, these should be placed in
         pkg_assets instead."""
@@ -383,7 +383,7 @@ class Mod:
             ```
         """
         data = tbcml.load(local_f)
-        path = tbcml.Path(asset_path)
+        path = tbcml.Path(asset_path).to_str_forwards()
         self.pkg_assets[path] = data
 
     def add_apk_file(
@@ -408,7 +408,7 @@ class Mod:
             ```
         """
         data = tbcml.load(local_f)
-        path = tbcml.Path(apk_path)
+        path = tbcml.Path(apk_path).to_str_forwards()
         self.apk_files[path] = data
 
     def add_ipa_file(
@@ -433,7 +433,7 @@ class Mod:
             ```
         """
         data = tbcml.load(local_f)
-        path = tbcml.Path(ipa_path)
+        path = tbcml.Path(ipa_path).to_str_forwards()
         self.ipa_files[path] = data
 
     def add_audio_file(
@@ -891,7 +891,7 @@ class Mod:
         for path in Mod.__get_files_in_mod_path(zipfile, ModPath.PKG_ASSETS):
             data = zipfile.get_file(path)
             if data is not None:
-                key = path.remove_prefix(ModPath.PKG_ASSETS.value)
+                key = path.remove_prefix(ModPath.PKG_ASSETS.value).to_str_forwards()
                 mod.apk_files[key] = data
 
     @staticmethod
@@ -899,7 +899,7 @@ class Mod:
         for path in Mod.__get_files_in_mod_path(zipfile, ModPath.APK_FILES):
             data = zipfile.get_file(path)
             if data is not None:
-                key = path.remove_prefix(ModPath.APK_FILES.value)
+                key = path.remove_prefix(ModPath.APK_FILES.value).to_str_forwards()
                 mod.apk_files[key] = data
 
     @staticmethod
@@ -907,7 +907,7 @@ class Mod:
         for path in Mod.__get_files_in_mod_path(zipfile, ModPath.IPA_FILES):
             data = zipfile.get_file(path)
             if data is not None:
-                key = path.remove_prefix(ModPath.IPA_FILES.value)
+                key = path.remove_prefix(ModPath.IPA_FILES.value).to_str_forwards()
                 mod.apk_files[key] = data
 
     @staticmethod
