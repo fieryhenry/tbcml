@@ -121,12 +121,8 @@ class Apk:
         )
 
         self.extracted_path = self.output_path.add("extracted")
-        self.modified_packs_path = (
-            self.output_path.add("modified_packs").remove_tree()
-        )
-        self.original_extracted_path = self.output_path.add(
-            "original_extracted"
-        )
+        self.modified_packs_path = self.output_path.add("modified_packs").remove_tree()
+        self.original_extracted_path = self.output_path.add("original_extracted")
 
         self.temp_path = self.output_path.add("temp").remove_tree()
 
@@ -143,7 +139,6 @@ class Apk:
             self.modified_packs_path.generate_dirs()
             self.original_extracted_path.generate_dirs()
             self.temp_path.generate_dirs()
-            
 
     @staticmethod
     def get_defualt_libgadgets_folder() -> "tbcml.Path":
