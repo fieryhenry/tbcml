@@ -74,6 +74,7 @@ class ModPath(enum.Enum):
     COMPILATION_TARGETS = "compiled_game_files"
 
     PKG_ASSETS = "pkg_assets"
+    ENC_PKG_ASSETS = "encrypted_pkg_assets"
     APK_FILES = "apk_files"
     IPA_FILES = "ipa_files"
 
@@ -295,6 +296,12 @@ class Mod:
         in that location. If you want to modify specifically ipa or apk files
         use apk_files and ipa_files instead."""
 
+        self.encrypted_pkg_assets: dict[str, tbcml.Data] = {}
+        """dict[str, tbcml.Data]: The encrypted files to place in the assets of
+        the apk/ipa when applying the mod. str is the location in the asset to
+        place the file, tbcml.Data is the un-encrypted file / data that will be
+        encrypted and then placed location."""
+
         self.apk_files: dict[str, tbcml.Data] = {}
         """dict[str, tbcml.Data]: The files to place in the apk when
         applying the mod. str is the location in the apk to place
@@ -360,11 +367,33 @@ class Mod:
         """
         self.compilation_targets.append(target)
 
+    def add_encrypted_pkg_asset(
+        self,
+        asset_path: "tbcml.PathStr",
+        local_f: "tbcml.File",
+    ):
+        """Add an encrypted file to be placed in the apk/ipa asset folder when applying the mod.
+
+        Args:
+            asset_path (tbcml.PathStr): The location in the apk/ipa to place the asset
+            local_f (tbcml.File): The actual decrypted file / data to encrypt and place in that location.
+
+        Example Usage:
+            ```python
+            mod = Mod(...)
+            local_path = tbcml.Path("new_ponos_logo.png")
+            mod.add_encrypted_pkg_asset("logo.png", local_path)
+            ```
+        """
+        data = tbcml.load(local_f)
+        path = tbcml.Path(asset_path).strip_leading_slash().to_str_forwards()
+        self.encrypted_pkg_assets[path] = data
+
     def add_pkg_asset(
         self,
         asset_path: "tbcml.PathStr",
         local_f: "tbcml.File",
-    ):  # TODO: Separate function for encrypted assets
+    ):
         """Add a file to be placed in the apk/ipa asset folder when applying
         the mod.
 
@@ -436,7 +465,26 @@ class Mod:
         path = tbcml.Path(ipa_path).strip_leading_slash().to_str_forwards()
         self.ipa_files[path] = data
 
-    def get_asset(self, asset_name: "tbcml.PathStr", is_apk: bool):
+    def get_asset(
+        self, asset_name: "tbcml.PathStr", is_apk: bool
+    ) -> Optional["tbcml.Data"]:
+        """Get an asset from the mod.
+
+        Args:
+            asset_name (tbcml.PathStr): The path of the asset to get.
+            is_apk (bool): Whether the asset is an apk asset or not.
+
+        Returns:
+            Optional[tbcml.Data]: The asset data if it exists, otherwise None.
+
+        Example Usage:
+            ```python
+            mod = Mod(...)
+            asset = mod.get_asset("cool_asset.png", True)
+            if asset is not None:
+                print("Asset exists!")
+            ```
+        """
         path = tbcml.Path(asset_name).strip_leading_slash().to_str_forwards()
         if is_apk:
             pkg_file = self.apk_files.get("assets/" + path)
@@ -444,7 +492,10 @@ class Mod:
                 return pkg_file
         else:
             pkg_file = self.ipa_files.get(path)
-        return self.pkg_assets.get(path)
+        pkg_asset = self.pkg_assets.get(path)
+        if pkg_asset is not None:
+            return pkg_asset
+        return self.encrypted_pkg_assets.get(path)
 
     def add_audio_file(
         self,
@@ -503,6 +554,7 @@ class Mod:
         self.__add_game_files_to_zip(zipfile)
 
         self.__add_pkg_assets_to_zip(zipfile)
+        self.__add_enc_pkg_assets_to_zip(zipfile)
         self.__add_apk_files_to_zip(zipfile)
         self.__add_ipa_files_to_zip(zipfile)
 
@@ -546,6 +598,7 @@ class Mod:
         Mod.__game_files_from_zip(zipfile, mod)
 
         Mod.__pkg_assets_from_zip(zipfile, mod)
+        Mod.__enc_pkg_assets_from_zip(zipfile, mod)
         Mod.__apk_files_from_zip(zipfile, mod)
         Mod.__ipa_files_from_zip(zipfile, mod)
 
@@ -737,6 +790,7 @@ class Mod:
         """
         self.__apply_audio_files(pkg)
         self.__apply_pkg_assets(pkg)
+        self.__apply_enc_pkg_assets(pkg)
         if isinstance(pkg, tbcml.Apk):
             self.__apply_apk_files(pkg)
         else:
@@ -836,6 +890,11 @@ class Mod:
             path = tbcml.Path(ModPath.PKG_ASSETS.value).add(name)
             zipfile.add_file(path, data)
 
+    def __add_enc_pkg_assets_to_zip(self, zipfile: "tbcml.Zip"):
+        for name, data in self.encrypted_pkg_assets.items():
+            path = tbcml.Path(ModPath.ENC_PKG_ASSETS.value).add(name)
+            zipfile.add_file(path, data)
+
     def __add_apk_files_to_zip(self, zipfile: "tbcml.Zip"):
         for name, data in self.apk_files.items():
             path = tbcml.Path(ModPath.APK_FILES.value).add(name)
@@ -907,6 +966,18 @@ class Mod:
                     .to_str_forwards()
                 )
                 mod.pkg_assets[key] = data
+
+    @staticmethod
+    def __enc_pkg_assets_from_zip(zipfile: "tbcml.Zip", mod: "Mod"):
+        for path in Mod.__get_files_in_mod_path(zipfile, ModPath.ENC_PKG_ASSETS):
+            data = zipfile.get_file(path)
+            if data is not None:
+                key = (
+                    path.remove_prefix(ModPath.ENC_PKG_ASSETS.value)
+                    .strip_leading_slash()
+                    .to_str_forwards()
+                )
+                mod.encrypted_pkg_assets[key] = data
 
     @staticmethod
     def __apk_files_from_zip(zipfile: "tbcml.Zip", mod: "Mod"):
@@ -1036,6 +1107,14 @@ class Mod:
             path = pkg.get_asset(file)
             path.parent().generate_dirs()
             path.write(data)
+
+    def __apply_enc_pkg_assets(self, pkg: "tbcml.PKG"):
+        for file, data in self.encrypted_pkg_assets.items():
+            file = tbcml.Path(file).strip_leading_slash()
+            path = pkg.get_asset(file)
+            path.parent().generate_dirs()
+            enc_data = tbcml.GameFile.encrypt_apk_file(data)
+            path.write(enc_data)
 
     def __apply_audio_files(self, pkg: "tbcml.PKG"):
         for audio in self.audio_files.values():
