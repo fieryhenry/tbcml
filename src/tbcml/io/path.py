@@ -339,6 +339,9 @@ class Path:
             return False
         return self.path == other.path
 
+    def __hash__(self) -> int:
+        return hash(self.path)
+
 
 PathStr = typing.Union[Path, str]
 """Type alias for a tbcml.Path or a str."""
