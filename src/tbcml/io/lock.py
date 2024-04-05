@@ -18,7 +18,7 @@ class LockFile:
     def __exit__(self, exc_type: Exception, exc_value: Exception, traceback: Exception):
         if self._lock:
             self._lock.close()
-        self.path.remove()
+            self.path.remove()
 
     def is_locked(self) -> bool:
         return self.path.exists()
