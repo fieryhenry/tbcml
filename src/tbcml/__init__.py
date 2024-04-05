@@ -76,6 +76,7 @@ from .io.csv_fields import (
     StrTupleCSVField,
 )
 from .io.apk import Apk
+from .io.lock import LockFile
 from .io.yamlfile import Yaml
 from .io.path import Path, PathStr
 from .io.data import Data, PaddedInt
@@ -203,6 +204,7 @@ __all__ = [
     "Stage",
     "StageEnemyData",
     "StageInfo",
+    "LockFile",
     "StageOptionInfo",
     "StageCSV",
     "MapStageDataStage",
