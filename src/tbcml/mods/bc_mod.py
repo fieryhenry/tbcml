@@ -531,6 +531,27 @@ class Mod:
         )
         self.__add_audio_file(audio_file, sound_setting)
 
+    def add_game_file(
+        self,
+        game_name: str,
+        f: "tbcml.File",
+    ):
+        """Add a game file to the mod.
+
+        Args:
+            game_name (str): The name of the game file to add.
+            f (tbcml.File): The actual file / data to place in that location.
+
+        Example Usage:
+            ```python
+            mod = Mod(...)
+            local_path = tbcml.Path("new_localizable.tsv")
+            mod.add_game_file("localizable.tsv", local_path)
+            ```
+        """
+        data = tbcml.load(f)
+        self.game_files[game_name] = data
+
     def to_zip(self) -> "tbcml.Data":
         """Convert the mod to a zip file.
 
