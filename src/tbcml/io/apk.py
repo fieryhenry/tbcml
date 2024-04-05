@@ -820,7 +820,9 @@ class Apk:
 
     def download_v2(
         self,
-        progress: Optional[Callable[[float, int, int, bool], None]] = progress,
+        progress: Optional[
+            Callable[[float, int, int, bool], Optional[bool]]
+        ] = progress,
         force: bool = False,
         apk_list_url: str = "https://raw.githubusercontent.com/fieryhenry/BCData/master/apk_list.json",
     ) -> bool:
@@ -894,7 +896,9 @@ class Apk:
 
     def download_v1(
         self,
-        progress: Optional[Callable[[float, int, int, bool], None]] = progress,
+        progress: Optional[
+            Callable[[float, int, int, bool], Optional[bool]]
+        ] = progress,
         force: bool = False,
     ) -> bool:
         if self.apk_path.exists() and not force:
@@ -912,7 +916,10 @@ class Apk:
         return False
 
     def download_v1_all(
-        self, progress: Optional[Callable[[float, int, int, bool], None]] = progress
+        self,
+        progress: Optional[
+            Callable[[float, int, int, bool], Optional[bool]]
+        ] = progress,
     ) -> bool:
         url = self.get_download_url()
         scraper = cloudscraper.create_scraper()  # type: ignore
@@ -957,7 +964,9 @@ class Apk:
     def download_apk_en(
         self,
         is_en: bool = True,
-        progress: Optional[Callable[[float, int, int, bool], None]] = progress,
+        progress: Optional[
+            Callable[[float, int, int, bool], Optional[bool]]
+        ] = progress,
     ) -> bool:
         urls = Apk.get_en_apk_urls("the-battle-cats" if is_en else "the-battle-cats-jp")
         if not urls:
