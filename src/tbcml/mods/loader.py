@@ -302,24 +302,24 @@ class ModLoader:
             if not success:
                 raise Exception("No devices connected.")
 
-    def install_adb(
-        self, run_game: bool = False
-    ) -> tuple[list["tbcml.CommandResult"], Optional[list["tbcml.CommandResult"]]]:
+    def install_adb(self, run_game: bool = False) -> list[list["tbcml.CommandResult"]]:
         """Install the apk to connected devices
 
         Args:
             run_game: (bool). Whether to run the game after installing. Defaults to False.
 
         Returns:
-            tuple[list["tbcml.CommandResult"], list["tbcml.CommandResult"]]: Results of the commands, first element is list of install results, second element (if present) is list of run game results
+            list[list[tbcml.CommandResult]]: List of command results for each device.
+            If run_game is True, it will also return the results of running the game:
+            `[install_results, run_game_results]`
         """
         results = self.get_adb_handler().run_adb_handler_function(
             tbcml.AdbHandler.install_apk, self.get_apk().get_final_apk_path()
         )
 
         if run_game:
-            return (results, self.run_game_adb())
-        return (results, None)
+            return [results, self.run_game_adb()]
+        return [results]
 
     def copy_to_android_download_folder(self):
         """Copies the final apk to the /sdard/Download directory for easier installation"""
