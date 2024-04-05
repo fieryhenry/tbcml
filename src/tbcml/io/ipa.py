@@ -145,6 +145,7 @@ class Ipa:
         cc_overwrite: Optional["tbcml.CountryCode"] = None,
         gv_overwrite: Optional["tbcml.GameVersion"] = None,
         ipa_folder: Optional["tbcml.Path"] = None,
+        check_lock: bool = True,
     ):
         if not ipa_path.exists():
             raise ValueError(f"IPA path {ipa_path} does not exist.")
@@ -161,9 +162,12 @@ class Ipa:
             raise ValueError("Failed to get cc or gv from ipa.")
 
         ipa = Ipa(gv, cc, ipa_folder=ipa_folder)
-        ipa_path.copy(ipa.ipa_path)
-        ipa.original_extracted_path.remove_tree().generate_dirs()
-        return ipa
+        with tbcml.LockFile(ipa.get_lock_path()) as lock:
+            if check_lock and lock is None:
+                raise ValueError("IPA is locked.")
+            ipa_path.copy(ipa.ipa_path)
+            ipa.original_extracted_path.remove_tree().generate_dirs()
+            return ipa
 
     def extract(self, force: bool = False, check_lock: bool = True):
         with tbcml.LockFile(self.get_lock_path()) as lock:

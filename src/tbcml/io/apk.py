@@ -1240,6 +1240,7 @@ class Apk:
         apk_folder: Optional["tbcml.Path"] = None,
         allowed_script_mods: bool = True,
         skip_signature_check: bool = False,
+        check_lock: bool = True,
     ) -> "Apk":
         is_modded = False
 
@@ -1270,9 +1271,12 @@ class Apk:
             allowed_script_mods=allowed_script_mods,
             is_modded=is_modded,
         )
-        apk_path.copy(apk.apk_path)
-        apk.original_extracted_path.remove_tree().generate_dirs()
-        return apk
+        with tbcml.LockFile(apk.get_lock_path()) as lock:
+            if lock is None and check_lock:
+                raise ValueError("Failed to get lock.")
+            apk_path.copy(apk.apk_path)
+            apk.original_extracted_path.remove_tree().generate_dirs()
+            return apk
 
     def get_architectures(self) -> list[str]:
         architectures: list[str] = []
