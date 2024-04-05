@@ -121,16 +121,21 @@ class Apk:
         )
 
         self.extracted_path = self.output_path.add("extracted")
-        self.modified_packs_path = self.output_path.add("modified_packs").remove_tree()
+        self.modified_packs_path = self.output_path.add("modified_packs")
         self.original_extracted_path = self.output_path.add("original_extracted")
 
-        self.temp_path = self.output_path.add("temp").remove_tree()
+        self.temp_path = self.output_path.add("temp")
 
         self.smali_original_path = self.output_path.add("smali-original")
 
-        self.smali_non_original_path = self.output_path.add("smali-new").remove_tree()
+        self.smali_non_original_path = self.output_path.add("smali-new")
 
         self.lib_gadgets_folder = self.get_defualt_libgadgets_folder()
+
+        if not self.is_locked():
+            self.temp_path.remove_tree()
+            self.modified_packs_path.remove_tree()
+            self.smali_non_original_path.remove_tree()
 
         if create_dirs:
             self.apk_folder.generate_dirs()
@@ -139,6 +144,12 @@ class Apk:
             self.modified_packs_path.generate_dirs()
             self.original_extracted_path.generate_dirs()
             self.temp_path.generate_dirs()
+
+    def get_lock_path(self) -> "tbcml.Path":
+        return self.output_path.add("lock")
+
+    def is_locked(self) -> bool:
+        return self.get_lock_path().exists()
 
     @staticmethod
     def get_defualt_libgadgets_folder() -> "tbcml.Path":
@@ -292,23 +303,27 @@ class Apk:
         decode_resources: bool = True,
         force: bool = False,
         use_apktool: bool = True,
+        check_lock: bool = True,
     ):
-        if self.original_extracted_path.has_files() and not force:
-            if (
-                self.has_decoded_resources() == decode_resources
-                and use_apktool == self.did_use_apktool()
-            ):
-                self.copy_extracted()
-                return True
+        with tbcml.LockFile(self.get_lock_path()) as lck:
+            if lck is None and check_lock:
+                return False
+            if self.original_extracted_path.has_files() and not force:
+                if (
+                    self.has_decoded_resources() == decode_resources
+                    and use_apktool == self.did_use_apktool()
+                ):
+                    self.copy_extracted()
+                    return True
 
-        if not self.apk_path.exists():
-            print("APK file does not exist")
-            return False
+            if not self.apk_path.exists():
+                print("APK file does not exist")
+                return False
 
-        if use_apktool:
-            return self.extract_apktool(decode_resources)
-        else:
-            return self.extract_zip()  # TODO: decode resources without apktool
+            if use_apktool:
+                return self.extract_apktool(decode_resources)
+            else:
+                return self.extract_zip()  # TODO: decode resources without apktool
 
     def extract_zip(self):
         if not self.apk_path.exists():
@@ -344,48 +359,56 @@ class Apk:
     def extract_smali(
         self,
         decode_resources: bool = True,
+        check_lock: bool = True,
     ):
-        if not self.check_display_apktool_error():
-            return
+        with tbcml.LockFile(self.get_lock_path()) as lck:
+            if lck is None and check_lock:
+                return False
 
-        decode_resources_str = "-r" if not decode_resources else ""
-
-        temp_path = self.temp_path.add("smali_extraction")
-
-        with tbcml.TempFolder(path=temp_path) as temp_folder:
-            res = self.run_apktool(
-                f"d -f {decode_resources_str} '{self.apk_path}' -o '{temp_folder}'"
-            )
-            if res.exit_code != 0:
-                print(f"Failed to extract APK: {res.result}")
+            if not self.check_display_apktool_error():
                 return
-            folders = temp_folder.glob("smali*")
-            for folder in folders:
-                new_folder = self.extracted_path.add(folder.basename())
-                folder.copy(new_folder)
-            apktool_yml = temp_folder.add("apktool.yml")
-            apktool_yml.copy(self.extracted_path)
 
-            dex_files = self.extracted_path.glob("*.dex")
-            for dex_file in dex_files:
-                dex_file.remove()
+            decode_resources_str = "-r" if not decode_resources else ""
 
-    def pack(self, use_apktool: Optional[bool] = None):
-        if use_apktool is None:
-            use_apktool = self.did_use_apktool()
-        else:
-            if self.did_use_apktool() != use_apktool:
-                if self.did_use_apktool():
-                    print(
-                        "WARNING: apktool was used when extracting, but you have specified to not use it to pack the apk"
-                    )
-                else:
-                    print(
-                        "WARNING: apktool was not used when extracting, but you have specified to use it to pack the apk"
-                    )
-        if use_apktool:
-            return self.pack_apktool()
-        return self.pack_zip()
+            temp_path = self.temp_path.add("smali_extraction")
+
+            with tbcml.TempFolder(path=temp_path) as temp_folder:
+                res = self.run_apktool(
+                    f"d -f {decode_resources_str} '{self.apk_path}' -o '{temp_folder}'"
+                )
+                if res.exit_code != 0:
+                    print(f"Failed to extract APK: {res.result}")
+                    return
+                folders = temp_folder.glob("smali*")
+                for folder in folders:
+                    new_folder = self.extracted_path.add(folder.basename())
+                    folder.copy(new_folder)
+                apktool_yml = temp_folder.add("apktool.yml")
+                apktool_yml.copy(self.extracted_path)
+
+                dex_files = self.extracted_path.glob("*.dex")
+                for dex_file in dex_files:
+                    dex_file.remove()
+
+    def pack(self, use_apktool: Optional[bool] = None, check_lock: bool = True):
+        with tbcml.LockFile(self.get_lock_path()) as lck:
+            if lck is None and check_lock:
+                return False
+            if use_apktool is None:
+                use_apktool = self.did_use_apktool()
+            else:
+                if self.did_use_apktool() != use_apktool:
+                    if self.did_use_apktool():
+                        print(
+                            "WARNING: apktool was used when extracting, but you have specified to not use it to pack the apk"
+                        )
+                    else:
+                        print(
+                            "WARNING: apktool was not used when extracting, but you have specified to use it to pack the apk"
+                        )
+            if use_apktool:
+                return self.pack_apktool()
+            return self.pack_zip()
 
     def pack_zip(self):
         if self.has_decoded_resources():
@@ -411,42 +434,46 @@ class Apk:
         use_jarsigner: bool = False,
         zip_align: bool = True,
         password: str = "TBCML_CUSTOM_APK",
+        check_lock: bool = True,
     ):
-        if zip_align:
-            self.zip_align()
-        if use_jarsigner:
-            if not self.check_display_jarsigner_error():
+        with tbcml.LockFile(self.get_lock_path()) as lck:
+            if lck is None and check_lock:
                 return False
-        else:
-            if not self.check_display_apk_signer_error():
+            if zip_align:
+                self.zip_align()
+            if use_jarsigner:
+                if not self.check_display_jarsigner_error():
+                    return False
+            else:
+                if not self.check_display_apk_signer_error():
+                    return False
+            if not self.check_display_keytool_error():
                 return False
-        if not self.check_display_keytool_error():
-            return False
-        key_store_name = "tbcml.keystore"
-        key_store_path = tbcml.Path.get_documents_folder().add(key_store_name)
-        if not key_store_path.exists():
-            cmd = tbcml.Command(
-                f'keytool -genkey -v -keystore {key_store_path} -alias tbcml -keyalg RSA -keysize 2048 -validity 10000 -storepass {password} -keypass {password} -dname "CN=, OU=, O=, L=, S=, C="',
-            )
-            res = cmd.run()
-            if res.exit_code != 0:
-                print(f"Failed to generate keystore: {res.result}")
-                return False
+            key_store_name = "tbcml.keystore"
+            key_store_path = tbcml.Path.get_documents_folder().add(key_store_name)
+            if not key_store_path.exists():
+                cmd = tbcml.Command(
+                    f'keytool -genkey -v -keystore {key_store_path} -alias tbcml -keyalg RSA -keysize 2048 -validity 10000 -storepass {password} -keypass {password} -dname "CN=, OU=, O=, L=, S=, C="',
+                )
+                res = cmd.run()
+                if res.exit_code != 0:
+                    print(f"Failed to generate keystore: {res.result}")
+                    return False
 
-        if use_jarsigner:
-            cmd = tbcml.Command(
-                f"jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore {key_store_path} {self.final_apk_path} tbcml",
-            )
-            res = cmd.run(password)
-        else:
-            cmd = tbcml.Command(
-                f"apksigner sign --ks {key_store_path} --ks-key-alias tbcml --ks-pass pass:{password} --key-pass pass:{password} {self.final_apk_path}"
-            )
-            res = cmd.run()
-        if res.exit_code != 0:
-            print(f"Failed to sign APK: {res.result}")
-            return False
-        return True
+            if use_jarsigner:
+                cmd = tbcml.Command(
+                    f"jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore {key_store_path} {self.final_apk_path} tbcml",
+                )
+                res = cmd.run(password)
+            else:
+                cmd = tbcml.Command(
+                    f"apksigner sign --ks {key_store_path} --ks-key-alias tbcml --ks-pass pass:{password} --key-pass pass:{password} {self.final_apk_path}"
+                )
+                res = cmd.run()
+            if res.exit_code != 0:
+                print(f"Failed to sign APK: {res.result}")
+                return False
+            return True
 
     def get_lib_paths(self) -> dict[str, "tbcml.Path"]:
         paths: dict[str, "tbcml.Path"] = {}

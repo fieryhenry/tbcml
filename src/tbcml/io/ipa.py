@@ -57,10 +57,14 @@ class Ipa:
         )
 
         self.extracted_path = self.output_path.add("extracted")
-        self.modified_packs_path = self.output_path.add("modified_packs").remove_tree()
+        self.modified_packs_path = self.output_path.add("modified_packs")
         self.original_extracted_path = self.output_path.add("original_extracted")
 
-        self.temp_path = self.output_path.add("temp").remove_tree()
+        self.temp_path = self.output_path.add("temp")
+
+        if not self.is_locked():
+            self.temp_path.remove_tree()
+            self.modified_packs_path.remove_tree()
 
         if create_dirs:
             self.ipa_folder.generate_dirs()
@@ -68,6 +72,12 @@ class Ipa:
             self.modified_packs_path.generate_dirs()
             self.original_extracted_path.generate_dirs()
             self.temp_path.generate_dirs()
+
+    def get_lock_path(self) -> "tbcml.Path":
+        return self.output_path.add("lock")
+
+    def is_locked(self) -> bool:
+        return self.get_lock_path().exists()
 
     def delete(self, in_thread: bool = False):
         self.output_path.remove(in_thread=in_thread)
@@ -155,15 +165,18 @@ class Ipa:
         ipa.original_extracted_path.remove_tree().generate_dirs()
         return ipa
 
-    def extract(self, force: bool = False):
-        if self.original_extracted_path.has_files() and not force:
-            self.copy_extracted()
-            return True
-        if not self.ipa_path.exists():
-            print("Ipa file does not exist!")
-            return False
+    def extract(self, force: bool = False, check_lock: bool = True):
+        with tbcml.LockFile(self.get_lock_path()) as lock:
+            if check_lock and lock is None:
+                return False
+            if self.original_extracted_path.has_files() and not force:
+                self.copy_extracted()
+                return True
+            if not self.ipa_path.exists():
+                print("Ipa file does not exist!")
+                return False
 
-        return self.extract_zip()
+            return self.extract_zip()
 
     def extract_zip(self):
         if not self.ipa_path.exists():
@@ -475,9 +488,12 @@ class Ipa:
             else:
                 file.copy(self.get_pack_location().add(file.basename()))
 
-    def pack(self) -> bool:
-        tbcml.Zip.compress_directory(self.extracted_path, self.final_ipa_path)
-        return True
+    def pack(self, check_lock: bool = True) -> bool:
+        with tbcml.LockFile(self.get_lock_path()) as lock:
+            if check_lock and lock is None:
+                return False
+            tbcml.Zip.compress_directory(self.extracted_path, self.final_ipa_path)
+            return True
 
     def set_plist_key(self, key: str, val: Any):
         plist = self.get_plist()
