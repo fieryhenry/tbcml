@@ -253,12 +253,15 @@ class Ipa:
 
     def get_asset_mods(
         self, asset_name: "tbcml.PathStr", mods: list["tbcml.Mod"]
-    ) -> "tbcml.Data":
+    ) -> tuple[Optional["tbcml.Data"], bool]:
         for mod in mods:
-            asset = mod.get_asset(asset_name, self.is_apk())
+            asset, from_enc = mod.get_asset(asset_name, self.is_apk())
             if asset is not None:
-                return asset
-        return self.get_asset(asset_name).read()
+                return asset, from_enc
+        path = self.get_asset(asset_name)
+        if path.exists():
+            return path.read(), False
+        return None, False
 
     def get_pack_location(self) -> "tbcml.Path":
         return self.get_assets_path()
