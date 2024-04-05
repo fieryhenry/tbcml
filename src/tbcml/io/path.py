@@ -205,6 +205,7 @@ class Path:
     def copy_tree(self, target: "Path"):
         if target.exists():
             target.remove_tree()
+        target.parent().generate_dirs()
         if self.exists():
             shutil.copytree(self.path, target.path)
 
