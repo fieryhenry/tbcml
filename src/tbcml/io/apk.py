@@ -124,8 +124,6 @@ class Apk:
         self.modified_packs_path = self.output_path.add("modified_packs")
         self.original_extracted_path = self.output_path.add("original_extracted")
 
-        self.temp_path = self.output_path.add("temp")
-
         self.smali_original_path = self.output_path.add("smali-original")
 
         self.smali_non_original_path = self.output_path.add("smali-new")
@@ -133,7 +131,6 @@ class Apk:
         self.lib_gadgets_folder = self.get_defualt_libgadgets_folder()
 
         if not self.is_locked():
-            self.temp_path.remove_tree()
             self.modified_packs_path.remove_tree()
             self.smali_non_original_path.remove_tree()
 
@@ -143,7 +140,6 @@ class Apk:
             self.extracted_path.generate_dirs()
             self.modified_packs_path.generate_dirs()
             self.original_extracted_path.generate_dirs()
-            self.temp_path.generate_dirs()
 
     def get_lock_path(self) -> "tbcml.Path":
         return self.output_path.add("lock")
@@ -328,8 +324,7 @@ class Apk:
     def extract_zip(self):
         if not self.apk_path.exists():
             return False
-        temp_path = self.temp_path.add("extraction")
-        with tbcml.TempFolder(path=temp_path) as path:
+        with tbcml.TempFolder() as path:
             zip_file = tbcml.Zip(self.apk_path.read())
             zip_file.extract(path)
             self.original_extracted_path.remove().generate_dirs()
@@ -342,10 +337,9 @@ class Apk:
         if not self.check_display_apktool_error():
             return False
         decode_resources_str = "-r" if not decode_resources else ""
-        temp_path = self.temp_path.add("extraction")
-        with tbcml.TempFolder(
-            path=temp_path
-        ) as path:  # extract to temp folder so if user cancels mid-extraction nothing bad happens
+        with (
+            tbcml.TempFolder() as path
+        ):  # extract to temp folder so if user cancels mid-extraction nothing bad happens
             cmd = f"d -f -s {decode_resources_str} '{self.apk_path}' -o '{path}'"
             res = self.run_apktool(cmd)
             if res.exit_code != 0:
@@ -370,9 +364,7 @@ class Apk:
 
             decode_resources_str = "-r" if not decode_resources else ""
 
-            temp_path = self.temp_path.add("smali_extraction")
-
-            with tbcml.TempFolder(path=temp_path) as temp_folder:
+            with tbcml.TempFolder() as temp_folder:
                 res = self.run_apktool(
                     f"d -f {decode_resources_str} '{self.apk_path}' -o '{temp_folder}'"
                 )
@@ -1381,17 +1373,13 @@ class Apk:
 
     def add_libgadget_config(self, used_arcs: list[str]):
         config = self.create_libgadget_config()
-        with tbcml.TempFile(
-            path=self.temp_path.add("libfrida-gadget.config")
-        ) as temp_file:
+        with tbcml.TempFile(name="libfrida-gadget.config") as temp_file:
             config.to_data().to_file(temp_file)
             for architecture in used_arcs:
                 self.add_to_lib_folder(architecture, temp_file)
 
     def add_libgadget_scripts(self, scripts: dict[str, str]):
-        with tbcml.TempFile(
-            path=self.temp_path.add("libbc_script.js.so")
-        ) as script_path:
+        with tbcml.TempFile(name="libbc_script.js.so") as script_path:
             for architecture, script_str in scripts.items():
                 tbcml.Data(script_str).to_file(script_path)
                 self.add_to_lib_folder(architecture, script_path)
@@ -1591,7 +1579,7 @@ class Apk:
     def add_assets_from_pack(self, pack: "tbcml.PackFile"):
         if pack.is_server_pack(pack.pack_name):
             return
-        with tbcml.TempFolder(path=self.temp_path.add("assets")) as temp_dir:
+        with tbcml.TempFolder() as temp_dir:
             dir = pack.extract(temp_dir, encrypt=True)
             self.add_assets(dir)
         pack.clear_files()

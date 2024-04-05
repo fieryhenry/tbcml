@@ -60,10 +60,7 @@ class Ipa:
         self.modified_packs_path = self.output_path.add("modified_packs")
         self.original_extracted_path = self.output_path.add("original_extracted")
 
-        self.temp_path = self.output_path.add("temp")
-
         if not self.is_locked():
-            self.temp_path.remove_tree()
             self.modified_packs_path.remove_tree()
 
         if create_dirs:
@@ -71,7 +68,6 @@ class Ipa:
             self.extracted_path.generate_dirs()
             self.modified_packs_path.generate_dirs()
             self.original_extracted_path.generate_dirs()
-            self.temp_path.generate_dirs()
 
     def get_lock_path(self) -> "tbcml.Path":
         return self.output_path.add("lock")
@@ -185,8 +181,7 @@ class Ipa:
     def extract_zip(self):
         if not self.ipa_path.exists():
             return False
-        temp_path = self.temp_path.add("extraction")
-        with tbcml.TempFolder(path=temp_path) as path:
+        with tbcml.TempFolder() as path:
             zip_file = tbcml.Zip(self.ipa_path.read())
             zip_file.extract(path)
             self.original_extracted_path.remove().generate_dirs()

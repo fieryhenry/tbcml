@@ -21,6 +21,7 @@ class TempFile:
             path = (
                 tbcml.Path.get_documents_folder()
                 .add("temp")
+                .add(str(uuid.uuid4()))
                 .add(f"{name}{extension}")
                 .get_absolute_path()
             )
@@ -48,6 +49,7 @@ class TempFolder:
             path = (
                 tbcml.Path.get_documents_folder()
                 .add("temp")
+                .add(str(uuid.uuid4()))
                 .add(name)
                 .get_absolute_path()
             )

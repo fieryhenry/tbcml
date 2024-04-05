@@ -539,16 +539,6 @@ class SmaliHandler:
         zip_file = tbcml.Zip.from_file(self.get_dex2jar_classes_jar_path_original())
         zip_file.extract(self.get_dex2jar_classes_path_original())
 
-    def get_output_classes_path(self) -> "tbcml.Path":
-        """Gets the path to the output classes directory
-
-        Returns:
-            tbcml.Path: The path to the output classes directory
-        """
-        path = self.apk.temp_path.add("output-classes")
-        path.generate_dirs()
-        return path
-
     def jar_to_dex(self, jar_path: "tbcml.Path"):
         """Converts a jar file to dex files
 
@@ -566,13 +556,14 @@ class SmaliHandler:
         Args:
             path (tbcml.Path): The path to the dot class files
         """
-        command = tbcml.Command(
-            f"d8 output '{self.get_output_classes_path()}' '{self.get_dex2jar_classes_path_new()}'"
-        )
-        res = command.run()
-        if res.exit_code != 0:
-            print(res.result)
-            raise RuntimeError("d8 failed")
+        with tbcml.TempFolder() as temp_folder:
+            command = tbcml.Command(
+                f"d8 output '{temp_folder}' '{self.get_dex2jar_classes_path_new()}'"
+            )
+            res = command.run()
+            if res.exit_code != 0:
+                print(res.result)
+                raise RuntimeError("d8 failed")
 
-        for dex_file in self.get_output_classes_path().recursive_glob("*.dex"):
-            dex_file.copy(self.apk.extracted_path)
+            for dex_file in temp_folder.recursive_glob("*.dex"):
+                dex_file.copy(self.apk.extracted_path)
