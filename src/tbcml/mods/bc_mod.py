@@ -467,7 +467,7 @@ class Mod:
 
     def get_asset(
         self, asset_name: "tbcml.PathStr", is_apk: bool
-    ) -> Optional["tbcml.Data"]:
+    ) -> tuple[Optional["tbcml.Data"], bool]:
         """Get an asset from the mod.
 
         Args:
@@ -475,7 +475,7 @@ class Mod:
             is_apk (bool): Whether the asset is an apk asset or not.
 
         Returns:
-            Optional[tbcml.Data]: The asset data if it exists, otherwise None.
+            tuple[Optional[tbcml.Data], bool]: The data of the asset if it exists, and whether the asset is from an encrypted asset or not.
 
         Example Usage:
             ```python
@@ -489,13 +489,13 @@ class Mod:
         if is_apk:
             pkg_file = self.apk_files.get("assets/" + path)
             if pkg_file is not None:
-                return pkg_file
+                return pkg_file, False
         else:
             pkg_file = self.ipa_files.get(path)
         pkg_asset = self.pkg_assets.get(path)
         if pkg_asset is not None:
-            return pkg_asset
-        return self.encrypted_pkg_assets.get(path)
+            return pkg_asset, False
+        return self.encrypted_pkg_assets.get(path), True
 
     def add_audio_file(
         self,
