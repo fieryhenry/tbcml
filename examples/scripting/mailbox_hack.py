@@ -52,7 +52,7 @@ script = FridaScript(
 mod = Mod(
     name="Mailbox Hack",
     authors=["fieryhenry", "jamesiotio", "NekoB0x"],
-    description="A mod that disables signature verification and replaces mailbox server responses with custom ones.",
+    short_description="A mod that disables signature verification and replaces mailbox server responses with custom ones.",
 )
 
 mod.add_script(script)

@@ -142,7 +142,7 @@ apk = loader.get_apk()
 mod = tbcml.Mod(
     name="Test Mod",
     authors="fieryhenry",  # can be a list of authors e.g ["person 1", "person 2"]
-    description="Test Description",
+    short_description="Test Description",
 )
 
 cat = BasicCustomCat()

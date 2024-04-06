@@ -203,7 +203,7 @@ class Mod:
         mod = Mod(
             name="My Mod",
             authors="fieryhenry",
-            description="My first mod"
+            short_description="My first mod"
         )
 
         mod.add_modification(tbcml.Cat(...))
@@ -233,7 +233,8 @@ class Mod:
     Fields:
         `name`: The name of the mod
         `authors`: The authors of the mod
-        `description`: The description of the mod
+        `short_description`: The short description of the mod. Should be relatively short.
+        `long_description`: The description of the mod. Can be a longer string.
         `custom_html`: The custom html for the mod. This will be visible in the transfer menu mod list. If you do not provide a custom html, tbcml will create a basic page for you.
         `modifications`: The modifications to apply to the game data.
         `scripts`: The frida scripts to apply to the game. Is not supported for ipa files atm.
@@ -249,7 +250,8 @@ class Mod:
         self,
         name: str = "",
         authors: Union[str, list[str]] = "",
-        description: str = "",
+        short_description: str = "",
+        long_description: str = "",
         custom_html: Optional[str] = None,
         mod_id: Optional[str] = None,
     ):
@@ -258,7 +260,8 @@ class Mod:
         Args:
             name (str, optional): The name of the mod, should be relatively short. Defaults to "".
             authors (Union[str, list[str]], optional): The authors of the mod, can either be a single string e.g `"fieryhenry"`, but can be a list of names e.g `["fieryhenry", "enderelijas"]`. Defaults to "".
-            description (str, optional): Description of the mod, can be a longer string. Defaults to "".
+            short_description (str, optional): Short Description of the mod, should be relatively short. Defaults to "".
+            long_description (str, optional): Long Description of the mod, can be a longer string. Defaults to "".
             custom_html (Optional[str], optional): The HTML to load when the user clicks this mod in the transfer menu mod list. Defaults to None which means that tbcml will create a basic page for you.
             mod_id (Optional[str], optional): The unique id of the mod. Defaults to None.
         """
@@ -269,8 +272,13 @@ class Mod:
         self.authors = authors
         """list[str]: The authors of the mod"""
 
-        self.description = description
-        """str: The description of the mod"""
+        self.short_description = short_description
+        """str: The short description of the mod.
+        Should be relatively short."""
+
+        self.long_description = long_description
+        """str: The description of the mod.
+        Can be a longer string."""
 
         self.custom_html = custom_html
         """Optional[str]: The custom html for the mod. This will be visible in
@@ -844,7 +852,8 @@ class Mod:
 
         base_mod = base_mod.replace("{{MOD_NAME}}", self.name)
         base_mod = base_mod.replace("{{MOD_AUTHORS}}", ", ".join(self.authors))
-        base_mod = base_mod.replace("{{MOD_DESCRIPTION}}", self.description)
+        base_mod = base_mod.replace("{{MOD_SHORT_DESCRIPTION}}", self.short_description)
+        base_mod = base_mod.replace("{{MOD_LONG_DESCRIPTION}}", self.long_description)
 
         modifications_str = ""
 
@@ -892,7 +901,8 @@ class Mod:
         data = {
             "name": self.name,
             "authors": self.authors,
-            "description": self.description,
+            "short_description": self.short_description,
+            "long_description": self.long_description,
             "custom_html": self.custom_html,
             "id": self.id,
         }
@@ -903,13 +913,15 @@ class Mod:
         obj = json.loads(data)
         name = obj.get("name", "")
         authors = obj.get("authors", "")
-        description = obj.get("description", "")
+        short_description = obj.get("short_description", "")
+        long_description = obj.get("long_description", "")
         custom_html = obj.get("custom_html", None)
         id = obj.get("id", None)
         return Mod(
             name=name,
             authors=authors,
-            description=description,
+            short_description=short_description,
+            long_description=long_description,
             custom_html=custom_html,
             mod_id=id,
         )

@@ -14,7 +14,7 @@ loader.initialize()
 mod = Mod(
     name="Private Server Setup",
     authors="fieryhenry",
-    description="A mod that disables signature verification and replaces the nyanko-items url with a custom one",
+    short_description="A mod that disables signature verification and replaces the nyanko-items url with a custom one",
 )
 
 script_64 = """

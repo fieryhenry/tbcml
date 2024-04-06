@@ -6,7 +6,7 @@ loader.initialize()
 mod = tbcml.Mod(
     "Smali Code Injection",
     authors="fieryhenry",
-    description="Injects DataLoad.smali into onCreate, loads 99999 cf save file",
+    short_description="Injects DataLoad.smali into onCreate, loads 99999 cf save file",
 )
 
 apk = loader.get_apk()

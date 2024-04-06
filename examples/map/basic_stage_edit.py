@@ -29,7 +29,7 @@ loader.initialize()
 mod = tbcml.Mod(
     "Custom Map",
     authors="fieryhenry",
-    description="Modifies korea to have 10k base health",
+    short_description="Modifies korea to have 10k base health",
 )
 
 mod.add_modification(CustomMap(loader.get_game_packs()))
