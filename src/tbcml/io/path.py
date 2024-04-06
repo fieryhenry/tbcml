@@ -89,8 +89,7 @@ class Path:
         return self.path.replace("\\", "/")
 
     @staticmethod
-    def get_documents_folder() -> "Path":
-        app_name = "tbcml"
+    def get_documents_folder(app_name: str = "tbcml") -> "Path":
         os_name = os.name
         if os_name == "nt":
             path = Path.join(os.environ["USERPROFILE"], "Documents", app_name)
