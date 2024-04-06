@@ -1,10 +1,11 @@
 import dataclasses
-from marshmallow_dataclass import class_schema
 import enum
+import json
+import uuid
 from typing import Any, Optional, Sequence, Union
 
 import tbcml
-import json
+from marshmallow_dataclass import class_schema
 
 
 class ModificationType(enum.Enum):
@@ -250,6 +251,7 @@ class Mod:
         authors: Union[str, list[str]] = "",
         description: str = "",
         custom_html: Optional[str] = None,
+        mod_id: Optional[str] = None,
     ):
         """Initialize a mod
 
@@ -258,6 +260,7 @@ class Mod:
             authors (Union[str, list[str]], optional): The authors of the mod, can either be a single string e.g `"fieryhenry"`, but can be a list of names e.g `["fieryhenry", "enderelijas"]`. Defaults to "".
             description (str, optional): Description of the mod, can be a longer string. Defaults to "".
             custom_html (Optional[str], optional): The HTML to load when the user clicks this mod in the transfer menu mod list. Defaults to None which means that tbcml will create a basic page for you.
+            mod_id (Optional[str], optional): The unique id of the mod. Defaults to None.
         """
         self.name = name
         """str: The name of the mod"""
@@ -273,6 +276,12 @@ class Mod:
         """Optional[str]: The custom html for the mod. This will be visible in
         the transfer menu mod list. If you do not provide a custom html, tbcml
         will create a basic page for you."""
+
+        if mod_id is None:
+            mod_id = str(uuid.uuid4())
+
+        self.id = mod_id
+        """str: The unique id of the mod"""
 
         self.modifications: list[Modification] = []
         """list[Modification]: The modifications to apply to the game data.
@@ -885,6 +894,7 @@ class Mod:
             "authors": self.authors,
             "description": self.description,
             "custom_html": self.custom_html,
+            "id": self.id,
         }
         return json.dumps(data)
 
@@ -895,11 +905,13 @@ class Mod:
         authors = obj.get("authors", "")
         description = obj.get("description", "")
         custom_html = obj.get("custom_html", None)
+        id = obj.get("id", None)
         return Mod(
             name=name,
             authors=authors,
             description=description,
             custom_html=custom_html,
+            mod_id=id,
         )
 
     def __add_compilation_targets_to_zip(self, zipfile: "tbcml.Zip"):
