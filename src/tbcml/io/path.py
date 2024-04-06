@@ -60,11 +60,16 @@ class Path:
         return Path(self.path.lstrip(os.sep))
 
     def open(self):
-        self.generate_dirs()
+        if not self.exists():
+            self.generate_dirs()
         if os.name == "nt":
             os.startfile(self.path)
         elif os.name == "posix":
-            cmd = f"dbus-send --session --dest=org.freedesktop.FileManager1 --type=method_call --print-reply /org/freedesktop/FileManager1 org.freedesktop.FileManager1.ShowItems array:string:'file://{self.path}' string:''"
+            path_str = self.to_str_forwards()
+            if self.is_directory():
+                path_str += "/"
+
+            cmd = f'dbus-send --session --dest=org.freedesktop.FileManager1 --type=method_call /org/freedesktop/FileManager1 org.freedesktop.FileManager1.ShowItems array:string:"file://{path_str}" string:""'
             tbcml.Command(cmd).run_in_thread()
         elif os.name == "mac":
             tbcml.Command(f"open {self.path}").run()
