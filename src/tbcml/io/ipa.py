@@ -1,5 +1,5 @@
 import filecmp
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 import plistlib
 import tbcml
 
@@ -441,7 +441,19 @@ class Ipa:
         iv: Optional[str] = None,
         add_modded_html: bool = True,
         save_in_modded_ipas: bool = False,
+        progress_callback: Optional[
+            Callable[["tbcml.PKGProgressSignal"], Optional[bool]]
+        ] = None,
     ) -> bool:
+        if progress_callback is None:
+            progress_callback = lambda x: None
+
+        if progress_callback(tbcml.PKGProgressSignal.START) is False:
+            return False
+
+        if progress_callback(tbcml.PKGProgressSignal.LOAD_GAME_PACKS) is False:
+            return False
+
         if game_packs is None:
             game_packs = tbcml.GamePacks.from_pkg(self, lang=lang)
 
@@ -450,15 +462,24 @@ class Ipa:
         if iv is not None:
             self.set_iv(iv)
 
+        if progress_callback(tbcml.PKGProgressSignal.APPLY_MODS) is False:
+            return False
         game_packs.apply_mods(mods)
 
         if add_modded_html:
+            progress_callback(tbcml.PKGProgressSignal.ADD_MODDED_HTML)
             self.add_modded_html(mods)
 
+        if progress_callback(tbcml.PKGProgressSignal.ADD_MODDED_FILES) is False:
+            return False
         self.add_mods_files(mods)
 
+        if progress_callback(tbcml.PKGProgressSignal.LOAD_PACKS_INTO_GAME) is False:
+            return False
         if not self.load_packs_into_game(
-            game_packs, save_in_modded_ipas=save_in_modded_ipas
+            game_packs,
+            save_in_modded_ipas=save_in_modded_ipas,
+            progress_callback=progress_callback,
         ):
             return False
         return True
@@ -551,18 +572,45 @@ class Ipa:
         packs: "tbcml.GamePacks",
         copy_path: Optional["tbcml.Path"] = None,
         save_in_modded_ipas: bool = False,
+        progress_callback: Optional[
+            Callable[["tbcml.PKGProgressSignal"], Optional[bool]]
+        ] = None,
     ) -> bool:
+        if progress_callback is None:
+            progress_callback = lambda x: None
+
+        if progress_callback(tbcml.PKGProgressSignal.ADD_PACKS_LISTS) is False:
+            return False
         self.add_packs_lists(packs)
+
+        if progress_callback(tbcml.PKGProgressSignal.PATCH_LIBS) is False:
+            return False
         tbcml.LibFiles(self).patch()
+
+        if progress_callback(tbcml.PKGProgressSignal.COPY_MODDED_PACKS) is False:
+            return False
         self.copy_modded_packs()
+
+        if progress_callback(tbcml.PKGProgressSignal.PACK) is False:
+            return False
         if not self.pack():
+            return False
+
+        if progress_callback(tbcml.PKGProgressSignal.SIGN) is False:
             return False
         if not self.sign():
             return False
+
+        if progress_callback(tbcml.PKGProgressSignal.FINISH_UP) is False:
+            return False
+
         if copy_path is not None:
             self.copy_final_ipa(copy_path)
         if save_in_modded_ipas:
             self.save_in_modded_ipas()
+        if progress_callback(tbcml.PKGProgressSignal.DONE) is False:
+            return False
+
         return True
 
     def save_in_modded_ipas(self):

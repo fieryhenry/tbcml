@@ -76,6 +76,7 @@ from .io.csv_fields import (
     StrTupleCSVField,
 )
 from .io.apk import Apk
+from .io.apk import PKGProgressSignal
 from .io.lock import LockFile
 from .io.yamlfile import Yaml
 from .io.path import Path, PathStr
@@ -290,4 +291,5 @@ __all__ = [
     "game_version",
     "country_code",
     "to_pkg",
+    "PKGProgressSignal",
 ]

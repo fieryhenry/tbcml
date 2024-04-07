@@ -1,5 +1,5 @@
 import tbcml
-from typing import List, Optional, Union
+from typing import Callable, List, Optional, Union
 
 
 class ModLoaderUninitializedException(Exception):
@@ -152,6 +152,9 @@ class IpaModLoader:
         add_modded_html: bool = True,
         raise_error: bool = True,
         save_in_modded_ipas: bool = False,
+        progress_callback: Optional[
+            Callable[["tbcml.PKGProgressSignal"], Optional[bool]]
+        ] = None,
     ):
         """Applies a mod / mods to the ipa to create a modded ipa.
 
@@ -163,6 +166,7 @@ class IpaModLoader:
             add_modded_html (bool, optional): Whether to modify the transfer screen to display your current mods. Defaults to True.
             raise_error (bool): Whether to raise an error if applying mods fails. Defaults to True
             save_in_modded_ipas (bool, optional): Whether to save the modded ipa in the modded ipas folder. Defaults to False.
+            progress_callback (Optional[Callable[[tbcml.PKGProgressSignal], Optional[bool]]], optional): Callback to get progress of applying mods. If returns False, will stop applying mods. Defaults to None.
 
         Raises:
             ModLoaderUninitializedException: If the ipa has not been initialized (didn't call initialize())
@@ -181,6 +185,7 @@ class IpaModLoader:
             iv=custom_enc_iv,
             add_modded_html=add_modded_html,
             save_in_modded_ipas=save_in_modded_ipas,
+            progress_callback=progress_callback,
         ):
             if raise_error:
                 raise ValueError("Failed to load mods.")

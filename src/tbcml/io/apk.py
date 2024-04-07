@@ -1,3 +1,4 @@
+import enum
 from typing import Any, Callable, Optional, Sequence
 
 import bs4
@@ -6,6 +7,28 @@ import requests
 import filecmp
 
 import tbcml
+
+
+class PKGProgressSignal(enum.Enum):
+    """Progress Signal Enum"""
+
+    START = 0
+    LOAD_GAME_PACKS = 1
+    ADD_SMALI_MODS = 2
+    ADD_SCRIPT_MODS = 3
+    ADD_PATCH_MODS = 4
+    APPLY_MODS = 5
+    SET_MANIFEST_VALUES = 6
+    ADD_MODDED_HTML = 7
+    ADD_MODDED_FILES = 8
+    LOAD_PACKS_INTO_GAME = 9
+    ADD_PACKS_LISTS = 10
+    PATCH_LIBS = 11
+    COPY_MODDED_PACKS = 12
+    PACK = 13
+    SIGN = 14
+    FINISH_UP = 15
+    DONE = 16
 
 
 class Apk:
@@ -537,18 +560,45 @@ class Apk:
         copy_path: Optional["tbcml.Path"] = None,
         use_apktool: Optional[bool] = None,
         save_in_modded_apks: bool = False,
+        progress_callback: Optional[
+            Callable[["tbcml.PKGProgressSignal"], Optional[bool]]
+        ] = None,
     ) -> bool:
+        if progress_callback is None:
+            progress_callback = lambda _: None
+
+        if progress_callback(tbcml.PKGProgressSignal.ADD_PACKS_LISTS) is False:
+            return False
         self.add_packs_lists(packs)
+
+        if progress_callback(tbcml.PKGProgressSignal.PATCH_LIBS) is False:
+            return False
         tbcml.LibFiles(self).patch()
+
+        if progress_callback(tbcml.PKGProgressSignal.COPY_MODDED_PACKS) is False:
+            return False
         self.copy_modded_packs()
+
+        if progress_callback(tbcml.PKGProgressSignal.PACK) is False:
+            return False
         if not self.pack(use_apktool=use_apktool):
+            return False
+
+        if progress_callback(tbcml.PKGProgressSignal.SIGN) is False:
             return False
         if not self.sign():
             return False
+
+        if progress_callback(tbcml.PKGProgressSignal.FINISH_UP) is False:
+            return False
+
         if copy_path is not None:
             self.copy_final_apk(copy_path)
         if save_in_modded_apks:
             self.save_in_modded_apks()
+
+        if progress_callback(tbcml.PKGProgressSignal.DONE) is False:
+            return False
         return True
 
     def save_in_modded_apks(self):
@@ -1920,7 +1970,19 @@ class Apk:
         add_modded_html: bool = True,
         use_apktool: Optional[bool] = None,
         save_in_modded_apks: bool = False,
+        progress_callback: Optional[
+            Callable[["tbcml.PKGProgressSignal"], Optional[bool]]
+        ] = None,
     ) -> bool:
+        if progress_callback is None:
+            progress_callback = lambda x: None
+
+        if progress_callback(tbcml.PKGProgressSignal.START) is False:
+            return False
+
+        if progress_callback(tbcml.PKGProgressSignal.LOAD_GAME_PACKS) is False:
+            return False
+
         if game_packs is None:
             game_packs = tbcml.GamePacks.from_pkg(self, lang=lang)
 
@@ -1929,25 +1991,45 @@ class Apk:
         if iv is not None:
             self.set_iv(iv)
 
+        if progress_callback(tbcml.PKGProgressSignal.ADD_SMALI_MODS) is False:
+            return False
         self.add_smali_mods(mods)
 
+        if progress_callback(tbcml.PKGProgressSignal.ADD_SCRIPT_MODS) is False:
+            return False
         self.add_script_mods(mods)
+
+        if progress_callback(tbcml.PKGProgressSignal.ADD_PATCH_MODS) is False:
+            return False
         self.add_patch_mods(mods)
 
         self.prevent_so_compression()
 
+        if progress_callback(tbcml.PKGProgressSignal.APPLY_MODS) is False:
+            return False
         game_packs.apply_mods(mods)
 
+        if progress_callback(tbcml.PKGProgressSignal.SET_MANIFEST_VALUES) is False:
+            return False
         self.set_allow_backup(True)
         self.set_debuggable(True)
 
         if add_modded_html:
+            if progress_callback(tbcml.PKGProgressSignal.ADD_MODDED_HTML) is False:
+                return False
             self.add_modded_html(mods)
 
+        if progress_callback(tbcml.PKGProgressSignal.ADD_MODDED_FILES) is False:
+            return False
         self.add_mods_files(mods)
 
+        if progress_callback(tbcml.PKGProgressSignal.LOAD_PACKS_INTO_GAME) is False:
+            return False
         if not self.load_packs_into_game(
-            game_packs, use_apktool=use_apktool, save_in_modded_apks=save_in_modded_apks
+            game_packs,
+            use_apktool=use_apktool,
+            save_in_modded_apks=save_in_modded_apks,
+            progress_callback=progress_callback,
         ):
             return False
         return True
