@@ -360,6 +360,33 @@ class Mod:
         See tbcml.CompilationTarget for more information on compilation
         targets."""
 
+    def is_author(self, author: str, ignore_case: bool = False) -> bool:
+        """Check if the mod has an author.
+        Note that this is not a secure way to check for authors, as the authors can be easily changed
+
+        Args:
+            author (str): The author to check for.
+            ignore_case (bool, optional): Whether to ignore the case of the author. Defaults to False.
+
+        Returns:
+            bool: Whether the mod has the author or not.
+
+        Example Usage:
+            ```python
+            mod = Mod(...)
+            if mod.is_author("fieryhenry"):
+                print("fieryhenry is an author of this mod")
+            ```
+        """
+        for auth in self.authors:
+            if ignore_case:
+                if auth.lower() == author.lower():
+                    return True
+            else:
+                if auth == author:
+                    return True
+        return False
+
     def add_compilation_target(self, target: "tbcml.CompilationTarget"):
         """Add a compilation target to the mod.
 
