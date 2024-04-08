@@ -224,11 +224,14 @@ class Mod:
         `add_script(...)`: Add a frida script to the mod.
         `add_smali(...)`: Add some smali code to the mod.
         `add_pkg_asset(...)`: Add a file to be placed in the apk/ipa assets folder when applying the mod
+        `add_encrypted_pkg_asset(...)`: Add an encrypted file to be placed in the apk/ipa assets folder when applying the mod
         `add_apk_file(...)`: Add a file to be placed in the apk when applying the mod.
         `add_ipa_file(...)`: Add a file to be placed in the ipa when applying the mod.
         `add_audio_file(...)`: Add an audio file to the mod.
+        `add_game_file(...)`: Add a game file to the mod.
         `add_compilation_target(...)`: Add a compilation target to the mod.
         `add_lib_patch(...)`: Add a lib patch to the mod.
+        `get_asset(...)`: Get an asset from the mod.
         `to_zip(...)`: Convert the mod to a zip file.
         `to_file(...)`: Save the mod to a file.
         `load(...)`: Load a mod from a file.
@@ -237,6 +240,10 @@ class Mod:
         `get_custom_html(...)`: Get the custom html for the mod.
         `apply_to_game_data(...)`: Apply the mod to the game data.
         `apply_to_pkg(...)`: Apply the mod to a package (apk/ipa).
+        `remove_duplicate_modifications(...)`: Remove duplicate modifications from the mod.
+        `merge_modifications(...)`: Merge modifications together in the mod.
+        `is_author(...)`: Check if the mod has an author. Note that this is not a secure way to check for authors, as the authors can be easily changed
+        `add_pkg_string(...)`: Add a string to be set in the apk/ipa when applying the mod.
 
     Fields:
         `name`: The name of the mod
@@ -244,11 +251,16 @@ class Mod:
         `short_description`: The short description of the mod. Should be relatively short.
         `long_description`: The description of the mod. Can be a longer string.
         `custom_html`: The custom html for the mod. This will be visible in the transfer menu mod list. If you do not provide a custom html, tbcml will create a basic page for you.
+        `id`: The unique id of the mod
         `modifications`: The modifications to apply to the game data.
         `scripts`: The frida scripts to apply to the game. Is not supported for ipa files atm.
         `game_files`: The game files to apply to the game data.
-        `pkg_files`: The files to place in the apk/ipa when applying the mod.
+        `pkg_assets`: The files to place in the assets of the apk/ipa when applying the mod.
+        `encrypted_pkg_assets`: The encrypted files to place in the assets of the apk/ipa when applying the mod.
+        `apk_files`: The files to place in the apk when applying the mod.
+        `ipa_files`: The files to place in the ipa when applying the mod.
         `audio_files`: The audio files to add to the mod.
+        `pkg_strings`: The strings to set in the apk/ipa when applying the mod.
         `smali`: The smali code to add to the mod. Is not supported for ipa files.
         `patches`: The lib patches to add to the mod. Is not supported for ipa files atm.
         `compilation_targets`: The compilation targets of the mod, which specify the game versions, country codes and languages that the compiled game files should be applied to (if they exist).
