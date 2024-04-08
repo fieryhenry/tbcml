@@ -421,9 +421,9 @@ class Ipa:
 
         self.add_asset_data(tbcml.Path("modlist.html"), tbcml.Data(modlist_html))
 
-    def add_mods_files(self, mods: list["tbcml.Mod"]):
+    def add_mods_files(self, mods: list["tbcml.Mod"], lang: Optional[str] = None):
         for mod in mods:
-            mod.apply_to_pkg(self)
+            mod.apply_to_pkg(self, lang)
 
     def add_audio(
         self,
@@ -431,6 +431,29 @@ class Ipa:
     ):
         filename = audio_file.get_ipa_file_name()
         audio_file.caf_to_little_endian().data.to_file(self.get_asset(filename))
+
+    def set_string(self, key: str, value: str, lang: Optional[str]):
+        if lang is None:
+            lang = self.country_code.get_language()
+        localizable_strings_path = self.get_asset(
+            tbcml.Path(f"{lang}.lproj").add("Localizable.strings")
+        )
+        localizable_strings = plistlib.loads(
+            localizable_strings_path.read().to_bytes(), fmt=plistlib.FMT_BINARY
+        )
+        localizable_strings[key] = value
+        localizable_strings_path.write(tbcml.Data(plistlib.dumps(localizable_strings)))
+
+    def get_string(self, key: str, lang: str = "en") -> Optional[str]:
+        localizable_strings_path = self.get_asset(
+            tbcml.Path(f"{lang}.lproj").add("Localizable.strings")
+        )
+        if not localizable_strings_path.exists():
+            return None
+        localizable_strings = plistlib.loads(
+            localizable_strings_path.read().to_bytes(), fmt=plistlib.FMT_BINARY
+        )
+        return localizable_strings.get(key)
 
     def load_mods(
         self,
@@ -474,7 +497,8 @@ class Ipa:
 
         if progress_callback(tbcml.PKGProgressSignal.ADD_MODDED_FILES) is False:
             return False
-        self.add_mods_files(mods)
+        lang_str = None if lang is None else lang.value
+        self.add_mods_files(mods, lang_str)
 
         if do_final_pkg_actions:
             if progress_callback(tbcml.PKGProgressSignal.LOAD_PACKS_INTO_GAME) is False:

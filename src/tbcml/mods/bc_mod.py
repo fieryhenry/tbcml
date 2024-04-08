@@ -75,6 +75,7 @@ class ModPath(enum.Enum):
     COMPILATION_TARGETS = "compiled_game_files"
 
     PKG_ASSETS = "pkg_assets"
+    PKG_STRINGS = "pkg_strings"
     ENC_PKG_ASSETS = "encrypted_pkg_assets"
     APK_FILES = "apk_files"
     IPA_FILES = "ipa_files"
@@ -340,6 +341,12 @@ class Mod:
         
         See tbcml.AudioFile for more information on audio files."""
 
+        self.pkg_strings: dict[str, str] = {}
+        """dict[str, str]: The strings to set in the apk/ipa when applying the mod.
+        In the apk it is used to set the strings in the strings.xml file.
+        In the ipa it is used to set the strings in the Info.plist file.
+        """
+
         self.smali: tbcml.SmaliSet = tbcml.SmaliSet.create_empty()
         """tbcml.SmaliSet: The smali code to add to the mod. Is not supported
         for ipa files. Smali code is used to modify the java game code.
@@ -386,6 +393,21 @@ class Mod:
                 if auth == author:
                     return True
         return False
+
+    def add_pkg_string(self, key: str, value: str):
+        """Add a string to be set in the apk/ipa when applying the mod.
+
+        Args:
+            key (str): The key of the string to set.
+            value (str): The value of the string to set.
+
+        Example Usage:
+            ```python
+            mod = Mod(...)
+            mod.add_pkg_string("app_name", "My Cool App")
+            ```
+        """
+        self.pkg_strings[key] = value
 
     def add_compilation_target(self, target: "tbcml.CompilationTarget"):
         """Add a compilation target to the mod.
@@ -619,6 +641,7 @@ class Mod:
         self.__add_game_files_to_zip(zipfile)
 
         self.__add_pkg_assets_to_zip(zipfile)
+        self.__add_pkg_strings_to_zip(zipfile)
         self.__add_enc_pkg_assets_to_zip(zipfile)
         self.__add_apk_files_to_zip(zipfile)
         self.__add_ipa_files_to_zip(zipfile)
@@ -663,6 +686,7 @@ class Mod:
         Mod.__game_files_from_zip(zipfile, mod)
 
         Mod.__pkg_assets_from_zip(zipfile, mod)
+        Mod.__pkg_strings_from_zip(zipfile, mod)
         Mod.__enc_pkg_assets_from_zip(zipfile, mod)
         Mod.__apk_files_from_zip(zipfile, mod)
         Mod.__ipa_files_from_zip(zipfile, mod)
@@ -846,7 +870,7 @@ class Mod:
         self.__apply_compilations(game_packs)
         self.__apply_modifications(game_packs)
 
-    def apply_to_pkg(self, pkg: "tbcml.PKG"):
+    def apply_to_pkg(self, pkg: "tbcml.PKG", lang: Optional[str] = None):
         """Apply the mod to a package (apk/ipa). This does not apply any game data modifications.
         This should not really be called yourself, as it is called when applying the mods to a package.
 
@@ -855,6 +879,7 @@ class Mod:
         """
         self.__apply_audio_files(pkg)
         self.__apply_pkg_assets(pkg)
+        self.__apply_pkg_strings(pkg, lang)
         self.__apply_enc_pkg_assets(pkg)
         if isinstance(pkg, tbcml.Apk):
             self.__apply_apk_files(pkg)
@@ -962,6 +987,11 @@ class Mod:
             path = tbcml.Path(ModPath.PKG_ASSETS.value).add(name)
             zipfile.add_file(path, data)
 
+    def __add_pkg_strings_to_zip(self, zipfile: "tbcml.Zip"):
+        path = tbcml.Path(ModPath.PKG_STRINGS.value)
+        data = tbcml.JsonFile.from_object(self.pkg_strings).to_data()
+        zipfile.add_file(path, data)
+
     def __add_enc_pkg_assets_to_zip(self, zipfile: "tbcml.Zip"):
         for name, data in self.encrypted_pkg_assets.items():
             path = tbcml.Path(ModPath.ENC_PKG_ASSETS.value).add(name)
@@ -1038,6 +1068,13 @@ class Mod:
                     .to_str_forwards()
                 )
                 mod.pkg_assets[key] = data
+
+    @staticmethod
+    def __pkg_strings_from_zip(zipfile: "tbcml.Zip", mod: "Mod"):
+        path = tbcml.Path(ModPath.PKG_STRINGS.value)
+        data = zipfile.get_file(path)
+        if data is not None:
+            mod.pkg_strings = tbcml.JsonFile(data).get_json()
 
     @staticmethod
     def __enc_pkg_assets_from_zip(zipfile: "tbcml.Zip", mod: "Mod"):
@@ -1179,6 +1216,10 @@ class Mod:
             path = pkg.get_asset(file)
             path.parent().generate_dirs()
             path.write(data)
+
+    def __apply_pkg_strings(self, pkg: "tbcml.PKG", lang: Optional[str] = None):
+        for key, value in self.pkg_strings.items():
+            pkg.set_string(key, value, lang)
 
     def __apply_enc_pkg_assets(self, pkg: "tbcml.PKG"):
         for file, data in self.encrypted_pkg_assets.items():

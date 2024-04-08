@@ -1807,6 +1807,14 @@ class Apk:
     def save_xml(self, name: str, xml: "tbcml.XML"):
         xml.to_file(self.get_values_xml_path(name))
 
+    def set_string(self, name: str, value: str, lang: Optional[str] = None):
+        if self.country_code == tbcml.CountryCode.EN:
+            if lang is None:
+                lang = "en"
+            name = f"{name}_{lang}"
+
+        self.edit_xml_string(name, value)
+
     def edit_xml_string(self, name: str, value: str) -> bool:
         strings_xml = self.load_xml("strings")
         if strings_xml is None:
@@ -1936,9 +1944,9 @@ class Apk:
             "jar",
         ]
 
-    def add_mods_files(self, mods: list["tbcml.Mod"]):
+    def add_mods_files(self, mods: list["tbcml.Mod"], lang: Optional[str] = None):
         for mod in mods:
-            mod.apply_to_pkg(self)
+            mod.apply_to_pkg(self, lang)
 
     def add_smali_mods(self, mods: list["tbcml.Mod"]):
         if not self.is_allowed_script_mods():
@@ -2023,7 +2031,8 @@ class Apk:
 
         if progress_callback(tbcml.PKGProgressSignal.ADD_MODDED_FILES) is False:
             return False
-        self.add_mods_files(mods)
+        lang_str = None if lang is None else lang.value
+        self.add_mods_files(mods, lang_str)
 
         if do_final_pkg_actions:
             if progress_callback(tbcml.PKGProgressSignal.LOAD_PACKS_INTO_GAME) is False:
