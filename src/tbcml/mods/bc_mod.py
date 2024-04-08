@@ -75,7 +75,7 @@ class ModPath(enum.Enum):
     COMPILATION_TARGETS = "compiled_game_files"
 
     PKG_ASSETS = "pkg_assets"
-    PKG_STRINGS = "pkg_strings"
+    PKG_STRINGS = "pkg_strings.json"
     ENC_PKG_ASSETS = "encrypted_pkg_assets"
     APK_FILES = "apk_files"
     IPA_FILES = "ipa_files"
