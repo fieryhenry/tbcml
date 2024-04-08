@@ -96,6 +96,13 @@ class Modification:
         cls.post_from_json()  # type: ignore
         return cls  # type: ignore
 
+    def merge(self, other: Any):
+        if not isinstance(other, Modification):
+            raise ValueError("Cannot merge modification with non modification")
+
+        if self.modification_type != other.modification_type:
+            raise ValueError("Cannot merge modifications of different types")
+
     @property
     def modification_type(self) -> ModificationType:
         return ModificationType.from_cls(self)
@@ -366,6 +373,44 @@ class Mod:
 
         See tbcml.CompilationTarget for more information on compilation
         targets."""
+
+    def remove_duplicate_modifications(self):
+        """Remove duplicate modifications from the mod.
+
+        Example Usage:
+            ```python
+            mod = Mod(...)
+            mod.remove_duplicate_modifications()
+            ```
+        """
+        new_modifications: list[Modification] = []
+        for mod in self.modifications:
+            if mod not in new_modifications:
+                new_modifications.append(mod)
+
+        self.modifications = new_modifications
+
+    def merge_modifications(self):
+        """Merge modifications in the mod.
+
+        Example Usage:
+            ```python
+            mod = Mod(...)
+            mod.merge_modifications()
+            ```
+        """
+        new_modifications: list[Modification] = []
+        for mod in self.modifications:
+            found = False
+            for new_mod in new_modifications:
+                if mod.modification_type == new_mod.modification_type:
+                    new_mod.merge(mod)
+                    found = True
+                    break
+            if not found:
+                new_modifications.append(mod)
+
+        self.modifications = new_modifications
 
     def is_author(self, author: str, ignore_case: bool = False) -> bool:
         """Check if the mod has an author.
@@ -734,7 +779,7 @@ class Mod:
         """
         self.save(path)
 
-    def add_modification(self, modification: "Modification"):
+    def add_modification(self, modification: "Modification", merge: bool = False):
         """Add a modification to the mod.
 
         See tbcml.ModificationType for the different types of modifications
@@ -745,6 +790,7 @@ class Mod:
 
         Args:
             modification (Modification): The modification to add.
+            merge (bool, optional): Whether to merge the modification with other modifications of the same type. Defaults to False.
 
         Raises:
             ValueError: If the modification does not inherit from `Modification` (Invalid modification)
@@ -760,7 +806,10 @@ class Mod:
         """
         if not isinstance(modification, Modification):  # type: ignore
             raise ValueError("modification does not inherit Modification!")
+
         self.modifications.append(modification)
+        if merge:
+            self.merge_modifications()
 
     def add_script(self, script: "tbcml.FridaScript"):
         """Add a frida script to the mod.

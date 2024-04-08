@@ -30,8 +30,12 @@ class LocalizableItem:
 class Localizable(tbcml.Modification):
     strings: Optional[dict[str, LocalizableItem]] = None
 
-    def __post_init__(self):
-        self.modified = False
+    def merge(self, other: "Localizable"):
+        super().merge(other)
+        if other.strings is not None:
+            if self.strings is None:
+                self.strings = {}
+            self.strings.update(other.strings)
 
     @staticmethod
     def get_csv(
@@ -54,7 +58,7 @@ class Localizable(tbcml.Modification):
                 self.strings[string.key] = string
 
     def apply_strings(self, game_data: "tbcml.GamePacks"):
-        if self.strings is None or not self.modified:
+        if self.strings is None:
             return
         name, csv = Localizable.get_csv(game_data)
         if csv is None:
@@ -103,7 +107,6 @@ class Localizable(tbcml.Modification):
             self.strings = {}
 
         self.strings[key] = new_item
-        self.modified = True
 
     def get_string(self, key: str) -> Optional[str]:
         if self.strings is None:
