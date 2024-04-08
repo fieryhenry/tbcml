@@ -220,6 +220,7 @@ class ModLoader:
         progress_callback: Optional[
             Callable[["tbcml.PKGProgressSignal"], Optional[bool]]
         ] = None,
+        do_final_pkg_actions: bool = True,
     ):
         """Applies a mod / mods to the apk to create a modded apk.
 
@@ -233,6 +234,7 @@ class ModLoader:
             raise_error (bool): Whether to raise an error if applying mods fails. Defaults to True
             save_in_modded_apks (bool): Whether to save the modded apk to a separate folder. Defaults to False
             progress_callback (Optional[Callable[[tbcml.PKGProgressSignal], Optional[bool]]], optional): Callback to get progress of applying mods. If returns False, will stop applying mods. Defaults to None.
+            do_final_pkg_actions (bool): Whether to do final actions such as signing and packaging the apk. Defaults to True
 
         Raises:
             ModLoaderUninitializedException: If the apk has not been initialized (didn't call initialize())
@@ -253,6 +255,7 @@ class ModLoader:
             use_apktool=use_apktool,
             save_in_modded_apks=save_in_modded_apks,
             progress_callback=progress_callback,
+            do_final_pkg_actions=do_final_pkg_actions,
         ):
             if raise_error:
                 raise ValueError("Failed to load mods.")

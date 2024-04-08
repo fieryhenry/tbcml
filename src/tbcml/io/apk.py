@@ -1973,6 +1973,7 @@ class Apk:
         progress_callback: Optional[
             Callable[["tbcml.PKGProgressSignal"], Optional[bool]]
         ] = None,
+        do_final_pkg_actions: bool = True,
     ) -> bool:
         if progress_callback is None:
             progress_callback = lambda x: None
@@ -2009,27 +2010,33 @@ class Apk:
             return False
         game_packs.apply_mods(mods)
 
-        if progress_callback(tbcml.PKGProgressSignal.SET_MANIFEST_VALUES) is False:
-            return False
-        self.set_allow_backup(True)
-        self.set_debuggable(True)
-
-        if add_modded_html:
-            if progress_callback(tbcml.PKGProgressSignal.ADD_MODDED_HTML) is False:
+        if do_final_pkg_actions:
+            if progress_callback(tbcml.PKGProgressSignal.SET_MANIFEST_VALUES) is False:
                 return False
-            self.add_modded_html(mods)
+            self.set_allow_backup(True)
+            self.set_debuggable(True)
+
+            if add_modded_html:
+                if progress_callback(tbcml.PKGProgressSignal.ADD_MODDED_HTML) is False:
+                    return False
+                self.add_modded_html(mods)
 
         if progress_callback(tbcml.PKGProgressSignal.ADD_MODDED_FILES) is False:
             return False
         self.add_mods_files(mods)
 
-        if progress_callback(tbcml.PKGProgressSignal.LOAD_PACKS_INTO_GAME) is False:
-            return False
-        if not self.load_packs_into_game(
-            game_packs,
-            use_apktool=use_apktool,
-            save_in_modded_apks=save_in_modded_apks,
-            progress_callback=progress_callback,
-        ):
-            return False
+        if do_final_pkg_actions:
+            if progress_callback(tbcml.PKGProgressSignal.LOAD_PACKS_INTO_GAME) is False:
+                return False
+            if not self.load_packs_into_game(
+                game_packs,
+                use_apktool=use_apktool,
+                save_in_modded_apks=save_in_modded_apks,
+                progress_callback=progress_callback,
+            ):
+                return False
+        else:
+            if progress_callback(tbcml.PKGProgressSignal.DONE) is False:
+                return False
+
         return True

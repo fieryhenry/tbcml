@@ -155,6 +155,7 @@ class IpaModLoader:
         progress_callback: Optional[
             Callable[["tbcml.PKGProgressSignal"], Optional[bool]]
         ] = None,
+        do_final_pkg_actions: bool = True,
     ):
         """Applies a mod / mods to the ipa to create a modded ipa.
 
@@ -167,6 +168,7 @@ class IpaModLoader:
             raise_error (bool): Whether to raise an error if applying mods fails. Defaults to True
             save_in_modded_ipas (bool, optional): Whether to save the modded ipa in the modded ipas folder. Defaults to False.
             progress_callback (Optional[Callable[[tbcml.PKGProgressSignal], Optional[bool]]], optional): Callback to get progress of applying mods. If returns False, will stop applying mods. Defaults to None.
+            do_final_pkg_actions (bool, optional): Whether to do final pkg actions (e.g. pack and sign the pkg). Defaults to True.
 
         Raises:
             ModLoaderUninitializedException: If the ipa has not been initialized (didn't call initialize())
@@ -186,6 +188,7 @@ class IpaModLoader:
             add_modded_html=add_modded_html,
             save_in_modded_ipas=save_in_modded_ipas,
             progress_callback=progress_callback,
+            do_final_pkg_actions=do_final_pkg_actions,
         ):
             if raise_error:
                 raise ValueError("Failed to load mods.")
