@@ -3,7 +3,7 @@ from typing import Optional, Union
 from PIL import Image, ImageDraw
 
 try:
-    from PyQt5.QtGui import QImage, QIcon, QPixmap
+    from PyQt6.QtGui import QImage, QIcon, QPixmap
 except ImportError:
     pass
 
