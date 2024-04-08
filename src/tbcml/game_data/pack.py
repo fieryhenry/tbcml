@@ -833,6 +833,8 @@ class GamePacks:
         for mod in mods:
             mod.apply_to_game_data(self)
 
+        self.init_data()
+
     def copy(self) -> "GamePacks":
         """Deep copy the game packs.
 
