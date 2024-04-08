@@ -130,5 +130,22 @@ class CountryCode(enum.Enum):
                 return country_code
         return CountryCode.JP
 
+    def get_language(self) -> str:
+        """Gets the language code.
+
+        Returns:
+            str: The language code.
+        """
+        if self == CountryCode.EN:
+            return "en"
+        if self == CountryCode.JP:
+            return "ja"
+        if self == CountryCode.KR:
+            return "ko"
+        if self == CountryCode.TW:
+            return "tw"
+
+        return "en"
+
 
 CC = Union[Literal["en"], Literal["jp"], Literal["kr"], Literal["tw"], CountryCode]
