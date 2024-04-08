@@ -186,6 +186,9 @@ class Texture:
 
         return self.image.get_subimage(rect)
 
+    def get_cuts(self) -> list[Optional["tbcml.BCImage"]]:
+        return [self.get_cut(i) for i in range(len(self.rects))]
+
     def get_cut_from_rect(self, rect: "tbcml.Rect") -> Optional["tbcml.BCImage"]:
         if self.image is None:
             return None
