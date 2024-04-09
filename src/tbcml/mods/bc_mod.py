@@ -1219,7 +1219,8 @@ class Mod:
 
     def __apply_modifications(self, game_packs: "tbcml.GamePacks"):
         for modification in self.modifications:
-            modification.apply(game_packs)
+            modification.apply_game_data(game_packs)
+            modification.apply_mod(self)
 
     def __compile_modifications(
         self,
