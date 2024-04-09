@@ -9,11 +9,11 @@ class LoadingScreen(tbcml.Modification):
     loading_text: Optional[str] = None
     loading_texture: Optional["tbcml.Texture"] = None
 
-    def apply_mod(self, mod: "tbcml.Mod"):
+    def apply_pkg(self, pkg: "tbcml.PKG", lang: Optional[str]):
         if self.inquiry_code_text is not None:
-            mod.add_pkg_string("autoSave_txt6", self.inquiry_code_text, True)
+            pkg.set_string("autoSave_txt6", self.inquiry_code_text, True, lang)
         if self.loading_text is not None:
-            mod.add_pkg_string("loading", self.loading_text, True)
+            pkg.set_string("loading", self.loading_text, True, lang)
 
     def apply_game_data(self, game_data: "tbcml.GamePacks"):
         if self.loading_texture is None:

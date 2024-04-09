@@ -113,7 +113,7 @@ class Modification:
 
     def apply_game_data(self, game_data: "tbcml.GamePacks"): ...
 
-    def apply_mod(self, mod: "Mod"): ...
+    def apply_pkg(self, pkg: "tbcml.PKG", lang: Optional[str]): ...
 
     @staticmethod
     def apply_csv_fields(
@@ -948,6 +948,7 @@ class Mod:
         Args:
             pkg (tbcml.PKG): The package to apply the mod to.
         """
+        self.__apply_pkg_modifications(pkg, lang)
         self.__apply_audio_files(pkg)
         self.__apply_pkg_assets(pkg)
         self.__apply_pkg_strings(pkg, lang)
@@ -1224,7 +1225,6 @@ class Mod:
     def __apply_modifications(self, game_packs: "tbcml.GamePacks"):
         for modification in self.modifications:
             modification.apply_game_data(game_packs)
-            modification.apply_mod(self)
 
     def __compile_modifications(
         self,
@@ -1296,14 +1296,15 @@ class Mod:
     def __apply_enc_pkg_assets(self, pkg: "tbcml.PKG"):
         for file, data in self.encrypted_pkg_assets.items():
             file = tbcml.Path(file).strip_leading_slash()
-            path = pkg.get_asset(file)
-            path.parent().generate_dirs()
-            enc_data = tbcml.GameFile.encrypt_apk_file(data)
-            path.write(enc_data)
+            pkg.add_asset_encrypt(file, data)
 
     def __apply_audio_files(self, pkg: "tbcml.PKG"):
         for audio in self.audio_files.values():
             pkg.add_audio(audio)
+
+    def __apply_pkg_modifications(self, pkg: "tbcml.PKG", lang: Optional[str]):
+        for mod in self.modifications:
+            mod.apply_pkg(pkg, lang)
 
     @staticmethod
     def __modification_from_json(data: tuple[str, str]):
