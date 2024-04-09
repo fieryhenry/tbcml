@@ -415,7 +415,9 @@ class Mod:
             ```
         """
         new_modifications: list[Modification] = []
-        for mod in self.modifications:
+        modifs = self.modifications.copy()
+        modifs.reverse()
+        for mod in modifs:
             found = False
             for new_mod in new_modifications:
                 if mod.modification_type == new_mod.modification_type:
