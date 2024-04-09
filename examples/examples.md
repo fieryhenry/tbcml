@@ -52,3 +52,4 @@ loader.apply(mod)
 
 - [Custom Shop Item](itemshop/catfood_item.py)
 - [Custom Startup PONOS Logo](opening/custom_ponos_logo.py)
+- [Custom Startup Loading Screen](opening/loading_screen.py)
