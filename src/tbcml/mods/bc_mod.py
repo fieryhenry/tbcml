@@ -16,6 +16,7 @@ class ModificationType(enum.Enum):
     MAP = "map"
     SOUND_SETTING = "sound_setting"
     CHARA_GROUP = "chara_group"
+    LOADING_SCREEN = "loading_screen"
 
     @staticmethod
     def from_str_value(string: str) -> Optional["ModificationType"]:
@@ -25,39 +26,30 @@ class ModificationType(enum.Enum):
         return None
 
     @staticmethod
+    def get_map() -> dict["ModificationType", type]:
+        return {
+            ModificationType.CAT: tbcml.Cat,
+            ModificationType.ENEMY: tbcml.Enemy,
+            ModificationType.SHOP: tbcml.ItemShop,
+            ModificationType.LOCALIZABLE: tbcml.Localizable,
+            ModificationType.MAP: tbcml.Map,
+            ModificationType.SOUND_SETTING: tbcml.SoundSetting,
+            ModificationType.CHARA_GROUP: tbcml.CharaGroup,
+            ModificationType.LOADING_SCREEN: tbcml.LoadingScreen,
+        }
+
+    @staticmethod
     def from_cls(ty: Any) -> "ModificationType":
-        if isinstance(ty, tbcml.Cat):
-            return ModificationType.CAT
-        if isinstance(ty, tbcml.Enemy):
-            return ModificationType.ENEMY
-        if isinstance(ty, tbcml.ItemShop):
-            return ModificationType.SHOP
-        if isinstance(ty, tbcml.Localizable):
-            return ModificationType.LOCALIZABLE
-        if isinstance(ty, tbcml.Map):
-            return ModificationType.MAP
-        if isinstance(ty, tbcml.SoundSetting):
-            return ModificationType.SOUND_SETTING
-        if isinstance(ty, tbcml.CharaGroup):
-            return ModificationType.CHARA_GROUP
-        raise NotImplementedError()
+        for type, cls in ModificationType.get_map().items():
+            if isinstance(ty, cls):
+                return type
+        raise ValueError("Invalid class")
 
     def get_cls(self) -> type:
-        if self == ModificationType.CAT:
-            return tbcml.Cat
-        if self == ModificationType.ENEMY:
-            return tbcml.Enemy
-        if self == ModificationType.SHOP:
-            return tbcml.ItemShop
-        if self == ModificationType.LOCALIZABLE:
-            return tbcml.Localizable
-        if self == ModificationType.MAP:
-            return tbcml.Map
-        if self == ModificationType.SOUND_SETTING:
-            return tbcml.SoundSetting
-        if self == ModificationType.CHARA_GROUP:
-            return tbcml.CharaGroup
-        raise NotImplementedError()
+        cls = ModificationType.get_map().get(self)
+        if cls is None:
+            raise ValueError("Invalid modification type")
+        return cls
 
 
 class ModPath(enum.Enum):
