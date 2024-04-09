@@ -109,6 +109,7 @@ class Modification:
 
     def apply_game_data(self, game_data: "tbcml.GamePacks"): ...
 
+    def apply_mod(self, mod: "Mod"): ...
 
     @staticmethod
     def apply_csv_fields(
