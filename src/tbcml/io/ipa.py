@@ -247,6 +247,10 @@ class Ipa:
             raise ValueError("No dirs found in ipa!")
         return dirs[0]
 
+    def get_asset_decrypt(self, asset_name: "tbcml.PathStr") -> "tbcml.Data":
+        path = self.get_asset(asset_name)
+        return tbcml.GameFile.decrypt_apk_file(path.read())
+
     def get_asset(self, asset_name: "tbcml.PathStr") -> "tbcml.Path":
         return self.get_assets_path().add(asset_name)
 

@@ -1710,6 +1710,10 @@ class Apk:
                 return i
             i += 1
 
+    def get_asset_decrypt(self, asset_name: "tbcml.PathStr") -> "tbcml.Data":
+        path = self.get_asset(asset_name)
+        return tbcml.GameFile.decrypt_apk_file(path.read())
+
     def get_asset(self, asset_name: "tbcml.PathStr") -> "tbcml.Path":
         return self.extracted_path.add("assets").add(asset_name)
 
