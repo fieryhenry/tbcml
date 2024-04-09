@@ -18,7 +18,6 @@ class BCImage:
 
     def __post_init__(self):
         self.__image: Optional[Image.Image] = None
-        self._qimg: Optional["QImage"] = None
         self.__original_data = tbcml.Data.from_base_64(self.b64)
         self.__original_img: Optional[Image.Image] = None
 
@@ -197,10 +196,7 @@ class BCImage:
         return self
 
     def to_qimage(self) -> "QImage":
-        if self._qimg:
-            return self._qimg
-        self._qimg = QImage.fromData(self.to_data().to_bytes())
-        return self._qimg
+        return QImage.fromData(self.to_data().to_bytes())
 
     def to_qicon(self) -> "QIcon":
         return QIcon(QPixmap.fromImage(self.to_qimage()))
