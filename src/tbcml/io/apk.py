@@ -1619,8 +1619,9 @@ class Apk:
     def add_asset_data(self, asset_path: "tbcml.Path", asset_data: "tbcml.Data"):
         self.extracted_path.add("assets").add(asset_path).write(asset_data)
 
-    def remove_asset(self, asset_path: "tbcml.Path"):
-        self.extracted_path.add("assets").add(asset_path.basename()).remove()
+    def remove_asset(self, asset_path: "tbcml.PathStr"):
+        asset_path = self.get_asset(asset_path)
+        asset_path.remove()
 
     def add_assets(self, asset_folder: "tbcml.Path"):
         for asset in asset_folder.get_files():
