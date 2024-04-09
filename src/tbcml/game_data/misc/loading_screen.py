@@ -38,3 +38,7 @@ class LoadingScreen(tbcml.Modification):
         if self.loading_texture is None:
             return None
         return self.loading_texture.get_cuts()
+
+    def pre_to_json(self) -> None:
+        if self.loading_texture is not None:
+            self.loading_texture.save_b64()
