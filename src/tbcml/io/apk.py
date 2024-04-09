@@ -1807,13 +1807,23 @@ class Apk:
     def save_xml(self, name: str, xml: "tbcml.XML"):
         xml.to_file(self.get_values_xml_path(name))
 
-    def set_string(self, name: str, value: str, lang: Optional[str] = None):
-        if self.country_code == tbcml.CountryCode.EN:
+    def set_string(
+        self, name: str, value: str, include_lang: bool, lang: Optional[str] = None
+    ):
+        if self.country_code == tbcml.CountryCode.EN and include_lang:
             if lang is None:
                 lang = "en"
             name = f"{name}_{lang}"
 
         self.edit_xml_string(name, value)
+
+    def get_string(self, name: str, include_lang: bool, lang: Optional[str] = None):
+        if self.country_code == tbcml.CountryCode.EN and include_lang:
+            if lang is None:
+                lang = "en"
+            name = f"{name}_{lang}"
+
+        return self.get_xml_string(name)
 
     def edit_xml_string(self, name: str, value: str) -> bool:
         strings_xml = self.load_xml("strings")

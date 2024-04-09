@@ -361,10 +361,11 @@ class Mod:
         
         See tbcml.AudioFile for more information on audio files."""
 
-        self.pkg_strings: dict[str, str] = {}
-        """dict[str, str]: The strings to set in the apk/ipa when applying the mod.
+        self.pkg_strings: dict[str, tuple[str, bool]] = {}
+        """dict[str, tuple[str, bool]]: The strings to set in the apk/ipa when applying the mod.
         In the apk it is used to set the strings in the strings.xml file.
-        In the ipa it is used to set the strings in the Info.plist file.
+        In the ipa it is used to set the strings in the Localizable.strings file.
+        It is setup as: dict[key, tuple[value, include_lang]]
         """
 
         self.smali: tbcml.SmaliSet = tbcml.SmaliSet.create_empty()
@@ -452,20 +453,21 @@ class Mod:
                     return True
         return False
 
-    def add_pkg_string(self, key: str, value: str):
+    def add_pkg_string(self, key: str, value: str, include_lang: bool):
         """Add a string to be set in the apk/ipa when applying the mod.
 
         Args:
             key (str): The key of the string to set.
             value (str): The value of the string to set.
+            include_lang (bool): Whether to append the current language after the key
 
         Example Usage:
             ```python
             mod = Mod(...)
-            mod.add_pkg_string("app_name", "My Cool App")
+            mod.add_pkg_string("app_name", "My Cool App", False)
             ```
         """
-        self.pkg_strings[key] = value
+        self.pkg_strings[key] = (value, include_lang)
 
     def add_compilation_target(self, target: "tbcml.CompilationTarget"):
         """Add a compilation target to the mod.
@@ -1280,8 +1282,8 @@ class Mod:
             path.write(data)
 
     def __apply_pkg_strings(self, pkg: "tbcml.PKG", lang: Optional[str] = None):
-        for key, value in self.pkg_strings.items():
-            pkg.set_string(key, value, lang)
+        for key, (value, include_lang) in self.pkg_strings.items():
+            pkg.set_string(key, value, include_lang, lang)
 
     def __apply_enc_pkg_assets(self, pkg: "tbcml.PKG"):
         for file, data in self.encrypted_pkg_assets.items():

@@ -432,8 +432,8 @@ class Ipa:
         filename = audio_file.get_ipa_file_name()
         audio_file.caf_to_little_endian().data.to_file(self.get_asset(filename))
 
-    def set_string(self, key: str, value: str, lang: Optional[str]):
-        if lang is None:
+    def set_string(self, key: str, value: str, include_lang: bool, lang: Optional[str]):
+        if lang is None or include_lang:
             lang = self.country_code.get_language()
         localizable_strings_path = self.get_asset(
             tbcml.Path(f"{lang}.lproj").add("Localizable.strings")
@@ -444,7 +444,14 @@ class Ipa:
         localizable_strings[key] = value
         localizable_strings_path.write(tbcml.Data(plistlib.dumps(localizable_strings)))
 
-    def get_string(self, key: str, lang: str = "en") -> Optional[str]:
+    def get_string(
+        self,
+        key: str,
+        include_lang: bool,
+        lang: Optional[str],
+    ) -> Optional[str]:
+        if lang is None or include_lang:
+            lang = self.country_code.get_language()
         localizable_strings_path = self.get_asset(
             tbcml.Path(f"{lang}.lproj").add("Localizable.strings")
         )
