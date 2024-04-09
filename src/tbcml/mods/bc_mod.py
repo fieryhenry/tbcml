@@ -17,6 +17,7 @@ class ModificationType(enum.Enum):
     SOUND_SETTING = "sound_setting"
     CHARA_GROUP = "chara_group"
     LOADING_SCREEN = "loading_screen"
+    LOGO_SCREEN = "logo_screen"
 
     @staticmethod
     def from_str_value(string: str) -> Optional["ModificationType"]:
@@ -36,6 +37,7 @@ class ModificationType(enum.Enum):
             ModificationType.SOUND_SETTING: tbcml.SoundSetting,
             ModificationType.CHARA_GROUP: tbcml.CharaGroup,
             ModificationType.LOADING_SCREEN: tbcml.LoadingScreen,
+            ModificationType.LOGO_SCREEN: tbcml.LogoScreen,
         }
 
     @staticmethod
