@@ -91,6 +91,16 @@ class Modification:
         return cls  # type: ignore
 
     def merge(self, other: Any):
+        """Merge this modification with another
+
+        Note that the implimentation should prioritize itself over the other modification
+
+        Args:
+            other (Any): The other modification
+
+        Raises:
+            ValueError: If the type of other is not the same as self
+        """
         if not isinstance(other, Modification):
             raise ValueError("Cannot merge modification with non modification")
 

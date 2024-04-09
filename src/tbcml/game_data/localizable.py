@@ -32,10 +32,15 @@ class Localizable(tbcml.Modification):
 
     def merge(self, other: "Localizable"):
         super().merge(other)
-        if other.strings is not None:
-            if self.strings is None:
-                self.strings = {}
-            self.strings.update(other.strings)
+        if other.strings is None:
+            return
+
+        if self.strings is None:
+            self.strings = {}
+
+        new_strings = other.strings.copy()
+        new_strings.update(self.strings)  # prioritize self
+        self.strings = new_strings
 
     @staticmethod
     def get_csv(
