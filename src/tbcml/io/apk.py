@@ -1714,6 +1714,12 @@ class Apk:
         path = self.get_asset(asset_name)
         return tbcml.GameFile.decrypt_apk_file(path.read())
 
+    def add_asset_encrypt(self, asset_name: "tbcml.PathStr", data: "tbcml.Data"):
+        path = self.get_asset(asset_name)
+        path.parent().generate_dirs()
+        data_enc = tbcml.GameFile.encrypt_apk_file(data)
+        data_enc.to_file(path)
+
     def get_asset(self, asset_name: "tbcml.PathStr") -> "tbcml.Path":
         return self.extracted_path.add("assets").add(asset_name)
 
