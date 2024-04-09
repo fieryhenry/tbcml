@@ -283,7 +283,7 @@ class Enemy(tbcml.Modification):
             self.stats = EnemyStats()
         return self.stats
 
-    def apply(self, game_data: "tbcml.GamePacks"):
+    def apply_game_data(self, game_data: "tbcml.GamePacks"):
         self.apply_name(game_data)
         self.apply_description(game_data)
         self.apply_stats(game_data)
@@ -317,7 +317,7 @@ class Enemy(tbcml.Modification):
 
     def apply_anim(self, game_data: "tbcml.GamePacks"):
         if self.anim is not None:
-            self.anim.apply(game_data)
+            self.anim.apply_game_data(game_data)
 
     def read(self, game_data: "tbcml.GamePacks"):
         self.read_name(game_data)

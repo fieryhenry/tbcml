@@ -137,7 +137,7 @@ class ItemShop(tbcml.Modification):
         self.read_data(game_data)
         self.read_texture(game_data)
 
-    def apply(self, game_data: "tbcml.GamePacks"):
+    def apply_game_data(self, game_data: "tbcml.GamePacks"):
         self.apply_data(game_data)
         self.apply_texture(game_data)
 

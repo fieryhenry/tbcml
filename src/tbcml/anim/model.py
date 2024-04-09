@@ -783,7 +783,7 @@ class Model(tbcml.Modification):
             mamodel_csv,
         )
 
-    def apply(self, game_data: "tbcml.GamePacks"):
+    def apply_game_data(self, game_data: "tbcml.GamePacks"):
         texture_csv = tbcml.CSV()
         self.texture.apply_csv(texture_csv, game_data)
         game_data.set_csv(self.texture.imgcut_name, texture_csv)

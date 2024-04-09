@@ -958,7 +958,7 @@ class CatForm:
         if cat_guide_text_csv is not None and cat_id is not None:
             self.apply_cat_guide_text_csv(cat_guide_text_csv, cat_id)
         if self.anim is not None and game_data is not None:
-            self.anim.apply(game_data)
+            self.anim.apply_game_data(game_data)
         if cat_id is not None and game_data is not None:
             self.set_icons(cat_id, game_data)
 
@@ -1289,7 +1289,7 @@ class Cat(tbcml.Modification):
             self.nyanko_picture_book = NyankoPictureBook()
         return self.nyanko_picture_book
 
-    def apply(self, game_data: "tbcml.GamePacks"):
+    def apply_game_data(self, game_data: "tbcml.GamePacks"):
         self.apply_forms(game_data)
 
         name, csv = self.get_unit_buy_csv(game_data)

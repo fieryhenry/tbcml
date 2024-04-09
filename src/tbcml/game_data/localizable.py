@@ -86,7 +86,7 @@ class Localizable(tbcml.Modification):
     def read(self, game_data: "tbcml.GamePacks"):
         self.read_strings(game_data)
 
-    def apply(self, game_data: "tbcml.GamePacks"):
+    def apply_game_data(self, game_data: "tbcml.GamePacks"):
         self.apply_strings(game_data)
 
     def get_custom_html(self) -> str:

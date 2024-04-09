@@ -40,7 +40,7 @@ class SoundSetting(tbcml.Modification):
             return
         self.read_csv(csv)
 
-    def apply(self, game_data: "tbcml.GamePacks"):
+    def apply_game_data(self, game_data: "tbcml.GamePacks"):
         file_name, csv = self.get_csv(game_data)
         if csv is None:
             return

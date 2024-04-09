@@ -749,7 +749,7 @@ class Map(tbcml.Modification):
         self.read_map_texture(game_data)
         self.read_stage_option_csv(game_data)
 
-    def apply(self, game_data: "tbcml.GamePacks"):
+    def apply_game_data(self, game_data: "tbcml.GamePacks"):
         self.apply_stages(game_data)
         self.apply_stage_name_csv(game_data)
         self.apply_map_name_img(game_data)

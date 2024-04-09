@@ -107,7 +107,8 @@ class Modification:
     def modification_type(self) -> ModificationType:
         return ModificationType.from_cls(self)
 
-    def apply(self, game_data: "tbcml.GamePacks"): ...
+    def apply_game_data(self, game_data: "tbcml.GamePacks"): ...
+
 
     @staticmethod
     def apply_csv_fields(
