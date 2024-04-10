@@ -231,5 +231,8 @@ class GameVersion:
 
         return self.game_version < tbcml.GameVersion.from_string("7.0.0")
 
+    def __hash__(self) -> int:
+        return hash(self.game_version)
+
 
 GV = Union[str, GameVersion]
