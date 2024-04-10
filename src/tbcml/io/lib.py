@@ -330,7 +330,7 @@ class Lib:
 
 
 class LibFiles:
-    def __init__(self, apk: "tbcml.PKG"):
+    def __init__(self, apk: "tbcml.Pkg"):
         self.apk = apk
         self.so_files = self.get_so_files()
         self.modified_packs = self.get_modified_packs()
@@ -392,11 +392,11 @@ class LibFiles:
             self.so_files[arc] = so
 
     def replace_hashes_in_smali(self):
-        if isinstance(self.apk, tbcml.Ipa):
+        if not isinstance(self.apk, tbcml.Apk):
             return
         smali_handler = self.apk.get_smali_handler()
         for pack_name, modified_hash in self.modified_packs_hashes.items():
-            if pack_name.endswith("1.pack") and self.apk.is_java():
+            if pack_name.endswith("1.pack") and self.apk.has_seperate_packs_lists():
                 pack_name = pack_name.replace("1.pack", "2.pack")
             original_packs = self.get_original_packs_lists()
             original_Pack = None
@@ -427,7 +427,10 @@ class LibFiles:
         for pack in self.modified_packs:
             pack_base_name = pack.basename()
             original_pack_path = self.get_pack_folder_original().add(pack_base_name)
-            if pack_base_name.endswith("1.pack") and self.apk.is_java():
+            if (
+                pack_base_name.endswith("1.pack")
+                and self.apk.has_seperate_packs_lists()
+            ):
                 original_pack_path = self.get_pack_folder_original().add(
                     pack_base_name.replace("1.pack", "2.pack")
                 )
@@ -461,7 +464,7 @@ class LibFiles:
 
     def write(self):
         for arc, so in self.so_files.items():
-            lib_path = self.apk.get_libnative_path(arc)
+            lib_path = self.apk.get_native_lib_path(arc)
             if lib_path is None:
                 continue
             lib_path.write(so)
@@ -474,10 +477,14 @@ class LibFiles:
                 original_path.write(pack.read())
 
     def patch(self):
-        if self.apk.is_java():
-            self.replace_hashes_in_smali()
+        if isinstance(self.apk, tbcml.Apk):
+            if self.apk.is_java():
+                self.replace_hashes_in_smali()
+            else:
+                self.replace_hashes_in_so()
         else:
             self.replace_hashes_in_so()
+
         self.overwrite_duplicate_packs()
         self.write()
 

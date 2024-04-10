@@ -113,7 +113,7 @@ class Modification:
 
     def apply_game_data(self, game_data: "tbcml.GamePacks"): ...
 
-    def apply_pkg(self, pkg: "tbcml.PKG", lang: Optional[str]): ...
+    def apply_pkg(self, pkg: "tbcml.Pkg", lang: Optional[str]): ...
 
     @staticmethod
     def apply_csv_fields(
@@ -941,12 +941,12 @@ class Mod:
         self.__apply_compilations(game_packs)
         self.__apply_modifications(game_packs)
 
-    def apply_to_pkg(self, pkg: "tbcml.PKG", lang: Optional[str] = None):
+    def apply_to_pkg(self, pkg: "tbcml.Pkg", lang: Optional[str] = None):
         """Apply the mod to a package (apk/ipa). This does not apply any game data modifications.
         This should not really be called yourself, as it is called when applying the mods to a package.
 
         Args:
-            pkg (tbcml.PKG): The package to apply the mod to.
+            pkg (tbcml.Pkg): The package to apply the mod to.
         """
         self.__apply_pkg_modifications(pkg, lang)
         self.__apply_audio_files(pkg)
@@ -955,7 +955,7 @@ class Mod:
         self.__apply_enc_pkg_assets(pkg)
         if isinstance(pkg, tbcml.Apk):
             self.__apply_apk_files(pkg)
-        else:
+        if isinstance(pkg, tbcml.Ipa):
             self.__apply_ipa_files(pkg)
 
     def get_custom_html(self) -> str:
@@ -996,11 +996,11 @@ class Mod:
 
         return base_mod
 
-    def get_scripts_str(self, apk: "tbcml.Apk") -> tuple[dict[str, str], bool]:
+    def get_scripts_str(self, pkg: "tbcml.Pkg") -> tuple[dict[str, str], bool]:
         scripts_dict: dict[str, str] = {}
         inject_smali = False
         for script in self.scripts:
-            scripts_str, inj = script.get_scripts_str(apk, self.name, self.authors)
+            scripts_str, inj = script.get_scripts_str(pkg, self.name, self.authors)
             if inj:
                 inject_smali = True
             for arc, string in scripts_str.items():
@@ -1282,27 +1282,27 @@ class Mod:
             path.parent().generate_dirs()
             path.write(data)
 
-    def __apply_pkg_assets(self, pkg: "tbcml.PKG"):
+    def __apply_pkg_assets(self, pkg: "tbcml.Pkg"):
         for file, data in self.pkg_assets.items():
             file = tbcml.Path(file).strip_leading_slash()
             path = pkg.get_asset(file)
             path.parent().generate_dirs()
             path.write(data)
 
-    def __apply_pkg_strings(self, pkg: "tbcml.PKG", lang: Optional[str] = None):
+    def __apply_pkg_strings(self, pkg: "tbcml.Pkg", lang: Optional[str] = None):
         for key, (value, include_lang) in self.pkg_strings.items():
             pkg.set_string(key, value, include_lang, lang)
 
-    def __apply_enc_pkg_assets(self, pkg: "tbcml.PKG"):
+    def __apply_enc_pkg_assets(self, pkg: "tbcml.Pkg"):
         for file, data in self.encrypted_pkg_assets.items():
             file = tbcml.Path(file).strip_leading_slash()
             pkg.add_asset_encrypt(file, data)
 
-    def __apply_audio_files(self, pkg: "tbcml.PKG"):
+    def __apply_audio_files(self, pkg: "tbcml.Pkg"):
         for audio in self.audio_files.values():
             pkg.add_audio(audio)
 
-    def __apply_pkg_modifications(self, pkg: "tbcml.PKG", lang: Optional[str]):
+    def __apply_pkg_modifications(self, pkg: "tbcml.Pkg", lang: Optional[str]):
         for mod in self.modifications:
             mod.apply_pkg(pkg, lang)
 

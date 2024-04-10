@@ -77,9 +77,9 @@ from .io.csv_fields import (
     StrListCSVField,
     StrTupleCSVField,
 )
-from .io.apk import Apk
-from .io.apk import PKGProgressSignal
-from .io.lock import LockFile
+
+from .io.apk import Apk, PKGProgressSignal
+from .io.pkg import Pkg, PkgType
 from .io.yamlfile import Yaml
 from .io.path import Path, PathStr
 from .io.data import Data, PaddedInt
@@ -114,18 +114,17 @@ from .game_data.pack import GamePacks, PackFile, GameFile
 from .country_code import CountryCode, CC
 from .game_version import GameVersion, GV
 
-PKG = Union["Apk", "Ipa"]
 LOADER = Union["ModLoader", "IpaModLoader"]
 
 
-def to_pkg(path: "PathStr") -> Optional[PKG]:
+def to_pkg(path: "PathStr", overwrite_pkg: bool = True) -> Optional[Pkg]:
     path = Path(path)
     extension = path.get_extension()
     try:
         if extension == "apk":
-            return Apk.from_apk_path(path)
+            return Apk.from_pkg_path(path, overwrite_pkg=overwrite_pkg)
         elif extension == "ipa":
-            return Ipa.from_ipa_path(path)
+            return Ipa.from_pkg_path(path, overwrite_pkg=overwrite_pkg)
     except Exception:
         pass
     return None
@@ -207,7 +206,6 @@ __all__ = [
     "Stage",
     "StageEnemyData",
     "StageInfo",
-    "LockFile",
     "StageOptionInfo",
     "StageCSV",
     "MapStageDataStage",
@@ -276,7 +274,6 @@ __all__ = [
     "CountryCode",
     "CC",
     "GV",
-    "PKG",
     "LOADER",
     "GameVersion",
     "AdbHandler",
@@ -296,4 +293,6 @@ __all__ = [
     "PKGProgressSignal",
     "LoadingScreen",
     "LogoScreen",
+    "Pkg",
+    "PkgType",
 ]

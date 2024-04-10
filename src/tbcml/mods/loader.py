@@ -148,11 +148,11 @@ class ModLoader:
 
         if apk_path is not None:
             apk_path = tbcml.Path(apk_path)
-            self.apk = tbcml.Apk.from_apk_path(
+            self.apk = tbcml.Apk.from_pkg_path(
                 apk_path,
                 cc_overwrite=self.country_code,
                 gv_overwrite=self.game_version,
-                apk_folder=custom_apk_folder,
+                pkg_folder=custom_apk_folder,
                 allowed_script_mods=allowed_script_mods,
                 skip_signature_check=skip_signature_check,
             )
@@ -253,7 +253,7 @@ class ModLoader:
             iv=custom_enc_iv,
             add_modded_html=add_modded_html,
             use_apktool=use_apktool,
-            save_in_modded_apks=save_in_modded_apks,
+            save_in_modded_pkgs=save_in_modded_apks,
             progress_callback=progress_callback,
             do_final_pkg_actions=do_final_pkg_actions,
         ):
@@ -278,7 +278,7 @@ class ModLoader:
             )
         return self.apk
 
-    def get_pkg(self) -> "tbcml.PKG":
+    def get_pkg(self) -> "tbcml.Pkg":
         """Gets the apk from a ModLoader instance. Will never be None
 
         Raises:
@@ -322,7 +322,7 @@ class ModLoader:
             `[install_results, run_game_results]`
         """
         results = self.get_adb_handler().run_adb_handler_function(
-            tbcml.AdbHandler.install_apk, self.get_apk().get_final_apk_path()
+            tbcml.AdbHandler.install_apk, self.get_apk().final_pkg_path
         )
 
         if run_game:

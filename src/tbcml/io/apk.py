@@ -1,12 +1,13 @@
 import enum
-from typing import Any, Callable, Optional, Sequence
+from typing import Any, Callable, Optional
 
 import bs4
 import cloudscraper  # type: ignore
 import requests
-import filecmp
 
 import tbcml
+
+from tbcml.io.pkg import Pkg, PkgType
 
 
 class PKGProgressSignal(enum.Enum):
@@ -31,7 +32,10 @@ class PKGProgressSignal(enum.Enum):
     DONE = 16
 
 
-class Apk:
+class Apk(Pkg):
+    pkg_extension = ".apk"
+    pkg_type = PkgType.APK
+
     def __init__(
         self,
         game_version: "tbcml.GV",
@@ -43,200 +47,28 @@ class Apk:
         pkg_name: Optional[str] = None,
         create_dirs: bool = True,
     ):
-        self.is_modded = is_modded
-        self.game_version = tbcml.GameVersion.from_gv(game_version)
-        self.country_code = tbcml.CountryCode.from_cc(country_code)
-
-        self.__app_name: Optional[str] = None
-        self.__package_name: Optional[str] = pkg_name
-
-        self.use_pkg_name_for_folder = use_pkg_name_for_folder
-
-        if apk_folder is None:
-            self.apk_folder = Apk.get_default_pkg_folder().get_absolute_path()
-            if is_modded:
-                self.apk_folder = self.apk_folder.add("modded")
-        else:
-            self.apk_folder = tbcml.Path(apk_folder).get_absolute_path()
-
+        super().__init__(
+            game_version,
+            country_code,
+            apk_folder,
+            allowed_script_mods,
+            is_modded,
+            use_pkg_name_for_folder,
+            pkg_name,
+            create_dirs,
+        )
         self.smali_handler: Optional[tbcml.SmaliHandler] = None
-
-        self.init_paths(create_dirs)
-
-        self.key = None
-        self.iv = None
-
-        self.libs: Optional[dict[str, tbcml.Lib]] = None
-
-        self.allowed_script_mods = allowed_script_mods
-
-    def replace_lib_string(self, original: str, new: str, pad: str = "\x00") -> str:
-        return tbcml.LibFiles(self).replace_str(original, new, pad)
 
     def is_apk(self) -> bool:
         return True
 
-    @staticmethod
-    def from_format_string(
-        format_string: str,
-        apk_folder: Optional["tbcml.Path"] = None,
-    ) -> "Apk":
-        cc, gv, _ = format_string.split(" ")
-        gv = tbcml.GameVersion.from_string(gv)
-        cc = tbcml.CountryCode.from_code(cc)
-        return Apk(
-            game_version=gv,
-            country_code=cc,
-            apk_folder=apk_folder,
-        )
-
-    def get_id(self) -> str:
-        return f"{self.country_code.get_code()} {self.game_version.to_string()}"
-
-    def get_game_packs(
-        self,
-        lang: Optional["tbcml.Language"] = None,
-        all_langs: bool = False,
-        pack_names: Optional[list[str]] = None,
-    ) -> "tbcml.GamePacks":
-        packs: dict[str, tbcml.PackFile] = {}
-
-        for pack_file, list_file in self.get_packs_lists():
-            pack_name = list_file.get_file_name_without_extension()
-            pack_lang = tbcml.PackFile.get_lang(pack_name)
-            if pack_lang is not None and pack_lang != lang and not all_langs:
-                continue
-            if pack_names is not None and pack_name not in pack_names:
-                continue
-            list_data = list_file.read()
-            pack = tbcml.PackFile.from_pack_file(
-                list_data,
-                pack_file,
-                self.country_code,
-                pack_name,
-                self.game_version,
-                self.key,
-                self.iv,
-            )
-            if pack is not None:
-                packs[pack_name] = pack
-
-        return tbcml.GamePacks(packs, self.country_code, self.game_version, lang=lang)
-
-    @property
-    def pkg_path(self) -> "tbcml.Path":
-        return self.apk_path
-
     def init_paths(self, create_dirs: bool = True):
-        folder_name = f"{self.game_version}{self.country_code.get_code()}"
-        if self.use_pkg_name_for_folder:
-            pkg_name = self.get_package_name()
-            if pkg_name is not None:
-                folder_name += f"-{pkg_name}"
-
-        self.output_path = self.apk_folder.add(folder_name)
-
-        self.final_apk_path = self.output_path.add(
-            f"{self.get_default_package_name()}-modded.apk"
-        )
-        self.apk_path = self.output_path.add(
-            f"{self.get_default_package_name()}-original.apk"
-        )
-
-        self.extracted_path = self.output_path.add("extracted")
-        self.modified_packs_path = self.output_path.add("modified_packs")
-        self.original_extracted_path = self.output_path.add("original_extracted")
-
+        super().init_paths(create_dirs)
         self.smali_original_path = self.output_path.add("smali-original")
 
         self.smali_non_original_path = self.output_path.add("smali-new")
 
-        self.lib_gadgets_folder = self.get_defualt_libgadgets_folder()
-
-        if not self.is_locked():
-            self.modified_packs_path.remove_tree()
-            self.smali_non_original_path.remove_tree()
-
-        if create_dirs:
-            self.apk_folder.generate_dirs()
-            self.output_path.generate_dirs()
-            self.extracted_path.generate_dirs()
-            self.modified_packs_path.generate_dirs()
-            self.original_extracted_path.generate_dirs()
-
-    def get_lock_path(self) -> "tbcml.Path":
-        return self.output_path.add("lock")
-
-    def is_locked(self) -> bool:
-        return self.get_lock_path().exists()
-
-    @staticmethod
-    def get_defualt_libgadgets_folder() -> "tbcml.Path":
-        return tbcml.Path.get_documents_folder().add("LibGadgets").generate_dirs()
-
-    def get_packs_from_dir(self) -> list["tbcml.Path"]:
-        return self.get_pack_location().get_files() + self.get_server_path().get_files()
-
-    def get_packs_lists(self) -> list[tuple["tbcml.Path", "tbcml.Path"]]:
-        files: list[tuple[tbcml.Path, tbcml.Path]] = []
-        for file in self.get_packs_from_dir():
-            if file.get_extension() != "pack":
-                continue
-            list_file = file.change_extension("list")
-            if self.is_java() and "local" in file.basename().lower():
-                list_file = list_file.change_name(
-                    f"{file.get_file_name_without_extension()[:-1]}1.list"
-                )
-            if list_file.exists():
-                files.append((file, list_file))
-        return files
-
-    def get_packs(self) -> list["tbcml.Path"]:
-        packs_list = self.get_packs_lists()
-        return [pack[0] for pack in packs_list]
-
-    def get_original_extracted_path(self, extracted_path: "tbcml.Path") -> "tbcml.Path":
-        return self.original_extracted_path.add(
-            extracted_path.replace(self.extracted_path.path, "").strip_leading_slash()
-        )
-
-    def get_extracted_path(self, original_extracted_path: "tbcml.Path") -> "tbcml.Path":
-        return self.extracted_path.add(
-            original_extracted_path.replace(
-                self.original_extracted_path.path, ""
-            ).strip_leading_slash()
-        )
-
-    def copy_extracted(self, force: bool = False):
-        if force:
-            self.extracted_path.remove_tree().generate_dirs()
-            self.original_extracted_path.copy(self.extracted_path)
-            return
-
-        self.copy_extracted_sub_dir("")
-
-    def copy_extracted_sub_dir(self, sub_dir: str):
-        original_sub_dir = self.original_extracted_path.add(sub_dir)
-        extracted_sub_dir = self.extracted_path.add(sub_dir)
-        if not original_sub_dir.exists() and extracted_sub_dir.exists():
-            extracted_sub_dir.remove_tree()
-            return
-        if not original_sub_dir.exists():
-            return
-
-        diff = filecmp.dircmp(original_sub_dir.path, extracted_sub_dir.path)
-        for file in diff.left_only:
-            file = tbcml.Path(file)
-            original_sub_dir.add(file).copy(extracted_sub_dir.add(file))
-        for file in diff.right_only:
-            file = tbcml.Path(file)
-            extracted_sub_dir.add(file).remove()
-        for file in diff.diff_files:
-            file = tbcml.Path(file)
-            original_sub_dir.add(file).copy(extracted_sub_dir.add(file))
-        for dir in diff.subdirs:
-            file = tbcml.Path(sub_dir).add(dir)
-            self.copy_extracted_sub_dir(file.path)
+        self.smali_non_original_path.remove_tree()
 
     @staticmethod
     def run_apktool(command: str) -> "tbcml.CommandResult":
@@ -319,36 +151,32 @@ class Apk:
 
     def extract(
         self,
-        decode_resources: bool = True,
         force: bool = False,
+        decode_resources: bool = True,
         use_apktool: bool = True,
-        check_lock: bool = True,
-    ):
-        with tbcml.LockFile(self.get_lock_path()) as lck:
-            if lck is None and check_lock:
-                return False
-            if self.original_extracted_path.has_files() and not force:
-                if (
-                    self.has_decoded_resources() == decode_resources
-                    and use_apktool == self.did_use_apktool()
-                ):
-                    self.copy_extracted()
-                    return True
+    ) -> bool:
+        if self.original_extracted_path.generate_dirs().has_files() and not force:
+            if (
+                self.has_decoded_resources() == decode_resources
+                and use_apktool == self.did_use_apktool()
+            ):
+                self.copy_extracted()
+                return True
 
-            if not self.apk_path.exists():
-                print("APK file does not exist")
-                return False
+        if not self.pkg_path.exists():
+            print("APK file does not exist")
+            return False
 
-            if use_apktool:
-                return self.extract_apktool(decode_resources)
-            else:
-                return self.extract_zip()  # TODO: decode resources without apktool
+        if use_apktool:
+            return self.extract_apktool(decode_resources)
+        else:
+            return self.extract_zip()  # TODO: decode resources without apktool
 
     def extract_zip(self):
-        if not self.apk_path.exists():
+        if not self.pkg_path.exists():
             return False
         with tbcml.TempFolder() as path:
-            zip_file = tbcml.Zip(self.apk_path.read())
+            zip_file = tbcml.Zip(self.pkg_path.read())
             zip_file.extract(path)
             self.original_extracted_path.remove().generate_dirs()
             path.copy(self.original_extracted_path)
@@ -363,7 +191,7 @@ class Apk:
         with (
             tbcml.TempFolder() as path
         ):  # extract to temp folder so if user cancels mid-extraction nothing bad happens
-            cmd = f"d -f -s {decode_resources_str} '{self.apk_path}' -o '{path}'"
+            cmd = f"d -f -s {decode_resources_str} '{self.pkg_path}' -o '{path}'"
             res = self.run_apktool(cmd)
             if res.exit_code != 0:
                 print(f"Failed to extract APK: {res.result}. Command: apktool {cmd}")
@@ -376,54 +204,50 @@ class Apk:
     def extract_smali(
         self,
         decode_resources: bool = True,
-        check_lock: bool = True,
     ):
-        with tbcml.LockFile(self.get_lock_path()) as lck:
-            if lck is None and check_lock:
-                return False
 
-            if not self.check_display_apktool_error():
+        if not self.check_display_apktool_error():
+            return
+
+        decode_resources_str = "-r" if not decode_resources else ""
+
+        with tbcml.TempFolder() as temp_folder:
+            res = self.run_apktool(
+                f"d -f {decode_resources_str} '{self.pkg_path}' -o '{temp_folder}'"
+            )
+            if res.exit_code != 0:
+                print(f"Failed to extract APK: {res.result}")
                 return
+            folders = temp_folder.glob("smali*")
+            for folder in folders:
+                new_folder = self.extracted_path.add(folder.basename())
+                folder.copy(new_folder)
+            apktool_yml = temp_folder.add("apktool.yml")
+            apktool_yml.copy(self.extracted_path)
 
-            decode_resources_str = "-r" if not decode_resources else ""
+            dex_files = self.extracted_path.glob("*.dex")
+            for dex_file in dex_files:
+                dex_file.remove()
 
-            with tbcml.TempFolder() as temp_folder:
-                res = self.run_apktool(
-                    f"d -f {decode_resources_str} '{self.apk_path}' -o '{temp_folder}'"
-                )
-                if res.exit_code != 0:
-                    print(f"Failed to extract APK: {res.result}")
-                    return
-                folders = temp_folder.glob("smali*")
-                for folder in folders:
-                    new_folder = self.extracted_path.add(folder.basename())
-                    folder.copy(new_folder)
-                apktool_yml = temp_folder.add("apktool.yml")
-                apktool_yml.copy(self.extracted_path)
-
-                dex_files = self.extracted_path.glob("*.dex")
-                for dex_file in dex_files:
-                    dex_file.remove()
-
-    def pack(self, use_apktool: Optional[bool] = None, check_lock: bool = True):
-        with tbcml.LockFile(self.get_lock_path()) as lck:
-            if lck is None and check_lock:
-                return False
-            if use_apktool is None:
-                use_apktool = self.did_use_apktool()
-            else:
-                if self.did_use_apktool() != use_apktool:
-                    if self.did_use_apktool():
-                        print(
-                            "WARNING: apktool was used when extracting, but you have specified to not use it to pack the apk"
-                        )
-                    else:
-                        print(
-                            "WARNING: apktool was not used when extracting, but you have specified to use it to pack the apk"
-                        )
-            if use_apktool:
-                return self.pack_apktool()
-            return self.pack_zip()
+    def pack(
+        self,
+        use_apktool: Optional[bool] = None,
+    ):
+        if use_apktool is None:
+            use_apktool = self.did_use_apktool()
+        else:
+            if self.did_use_apktool() != use_apktool:
+                if self.did_use_apktool():
+                    print(
+                        "WARNING: apktool was used when extracting, but you have specified to not use it to pack the apk"
+                    )
+                else:
+                    print(
+                        "WARNING: apktool was not used when extracting, but you have specified to use it to pack the apk"
+                    )
+        if use_apktool:
+            return self.pack_apktool()
+        return self.pack_zip()
 
     def pack_zip(self):
         if self.has_decoded_resources():
@@ -431,14 +255,14 @@ class Apk:
                 "WARNING: The resources for the apk seem to be decoded, this will cause issues as they will not be encoded atm."
             )
         tbcml.Zip.compress_directory(
-            self.extracted_path, self.final_apk_path, extensions_to_store=["so"]
+            self.extracted_path, self.final_pkg_path, extensions_to_store=["so"]
         )
         return True
 
     def pack_apktool(self):
         if not self.check_display_apktool_error():
             return False
-        res = self.run_apktool(f"b '{self.extracted_path}' -o '{self.final_apk_path}'")
+        res = self.run_apktool(f"b '{self.extracted_path}' -o '{self.final_pkg_path}'")
         if res.exit_code != 0:
             print(f"Failed to pack APK: {res.result}")
             return False
@@ -449,120 +273,73 @@ class Apk:
         use_jarsigner: bool = False,
         zip_align: bool = True,
         password: str = "TBCML_CUSTOM_APK",
-        check_lock: bool = True,
     ):
-        with tbcml.LockFile(self.get_lock_path()) as lck:
-            if lck is None and check_lock:
+        if zip_align:
+            self.zip_align()
+        if use_jarsigner:
+            if not self.check_display_jarsigner_error():
                 return False
-            if zip_align:
-                self.zip_align()
-            if use_jarsigner:
-                if not self.check_display_jarsigner_error():
-                    return False
-            else:
-                if not self.check_display_apk_signer_error():
-                    return False
-            if not self.check_display_keytool_error():
+        else:
+            if not self.check_display_apk_signer_error():
                 return False
-            key_store_name = "tbcml.keystore"
-            key_store_path = tbcml.Path.get_documents_folder().add(key_store_name)
-            if not key_store_path.exists():
-                cmd = tbcml.Command(
-                    f'keytool -genkey -v -keystore {key_store_path} -alias tbcml -keyalg RSA -keysize 2048 -validity 10000 -storepass {password} -keypass {password} -dname "CN=, OU=, O=, L=, S=, C="',
-                )
-                res = cmd.run()
-                if res.exit_code != 0:
-                    print(f"Failed to generate keystore: {res.result}")
-                    return False
-
-            if use_jarsigner:
-                cmd = tbcml.Command(
-                    f"jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore {key_store_path} {self.final_apk_path} tbcml",
-                )
-                res = cmd.run(password)
-            else:
-                cmd = tbcml.Command(
-                    f"apksigner sign --ks {key_store_path} --ks-key-alias tbcml --ks-pass pass:{password} --key-pass pass:{password} {self.final_apk_path}"
-                )
-                res = cmd.run()
+        if not self.check_display_keytool_error():
+            return False
+        key_store_name = "tbcml.keystore"
+        key_store_path = tbcml.Path.get_documents_folder().add(key_store_name)
+        if not key_store_path.exists():
+            cmd = tbcml.Command(
+                f'keytool -genkey -v -keystore {key_store_path} -alias tbcml -keyalg RSA -keysize 2048 -validity 10000 -storepass {password} -keypass {password} -dname "CN=, OU=, O=, L=, S=, C="',
+            )
+            res = cmd.run()
             if res.exit_code != 0:
-                print(f"Failed to sign APK: {res.result}")
+                print(f"Failed to generate keystore: {res.result}")
                 return False
-            return True
+
+        if use_jarsigner:
+            cmd = tbcml.Command(
+                f"jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore {key_store_path} {self.final_pkg_path} tbcml",
+            )
+            res = cmd.run(password)
+        else:
+            cmd = tbcml.Command(
+                f"apksigner sign --ks {key_store_path} --ks-key-alias tbcml --ks-pass pass:{password} --key-pass pass:{password} {self.final_pkg_path}"
+            )
+            res = cmd.run()
+        if res.exit_code != 0:
+            print(f"Failed to sign APK: {res.result}")
+            return False
+        return True
 
     def get_lib_paths(self) -> dict[str, "tbcml.Path"]:
         paths: dict[str, "tbcml.Path"] = {}
         for dir in self.extracted_path.add("lib").get_dirs():
             arc = dir.basename()
-            path = self.get_libnative_path(arc)
+            path = self.get_native_lib_path(arc)
             paths[arc] = path
         return paths
 
     def zip_align(self):
         if not self.check_display_zipalign_error():
             return
-        apk_path = self.final_apk_path.change_name(
-            self.final_apk_path.get_file_name_without_extension() + "-aligned.apk"
+        apk_path = self.final_pkg_path.change_name(
+            self.final_pkg_path.get_file_name_without_extension() + "-aligned.apk"
         )
-        cmd = tbcml.Command(f"zipalign -f -p 4 {self.final_apk_path} {apk_path}")
+        cmd = tbcml.Command(f"zipalign -f -p 4 {self.final_pkg_path} {apk_path}")
         cmd.run()
-        apk_path.copy(self.final_apk_path)
+        apk_path.copy(self.final_pkg_path)
         cmd.run()
-        apk_path.copy(self.final_apk_path)
+        apk_path.copy(self.final_pkg_path)
         apk_path.remove()
-
-    def set_key(self, key: Optional[str]):
-        self.key = key
-
-    def set_iv(self, iv: Optional[str]):
-        self.iv = iv
-
-    def randomize_key(self):
-        key = tbcml.Random().get_hex_string(32)
-        self.set_key(key)
-        return key
-
-    def randomize_iv(self):
-        iv = tbcml.Random().get_hex_string(32)
-        self.set_iv(iv)
-        return iv
-
-    def add_packs_lists(
-        self,
-        packs: "tbcml.GamePacks",
-    ):
-        files = packs.to_packs_lists(self.key, self.iv)
-        for pack_name, pack_data, list_data in files:
-            self.add_pack_list(pack_name, pack_data, list_data)
-
-    def add_pack_list(
-        self, pack_name: str, pack_data: "tbcml.Data", list_data: "tbcml.Data"
-    ):
-        pack_path = self.modified_packs_path.add(pack_name + ".pack")
-        list_path = self.modified_packs_path.add(pack_name + ".list")
-        pack_data.to_file(pack_path)
-        list_data.to_file(list_path)
-
-    def copy_modded_packs(self):
-        for file in self.modified_packs_path.get_files():
-            if self.is_java() and file.basename().endswith("1.pack"):
-                file.copy(
-                    self.get_pack_location().add(
-                        file.basename().replace("1.pack", "2.pack")
-                    )
-                )
-            else:
-                file.copy(self.get_pack_location().add(file.basename()))
 
     def load_packs_into_game(
         self,
         packs: "tbcml.GamePacks",
         copy_path: Optional["tbcml.Path"] = None,
-        use_apktool: Optional[bool] = None,
-        save_in_modded_apks: bool = False,
+        save_in_modded_pkgs: bool = False,
         progress_callback: Optional[
             Callable[["tbcml.PKGProgressSignal"], Optional[bool]]
         ] = None,
+        use_apktool: Optional[bool] = None,
     ) -> bool:
         if progress_callback is None:
             progress_callback = lambda _: None
@@ -593,42 +370,21 @@ class Apk:
             return False
 
         if copy_path is not None:
-            self.copy_final_apk(copy_path)
-        if save_in_modded_apks:
-            self.save_in_modded_apks()
+            self.copy_final_pkg(copy_path)
+        if save_in_modded_pkgs:
+            self.save_in_modded_pkgs()
 
         if progress_callback(tbcml.PKGProgressSignal.DONE) is False:
             return False
         return True
 
-    def save_in_modded_apks(self):
-        new_apk = Apk(
-            self.game_version,
-            self.country_code,
-            is_modded=True,
-            use_pkg_name_for_folder=True,
-            pkg_name=self.get_package_name(),
-        )
-        self.final_apk_path.copy(new_apk.apk_path)
-
-    def copy_final_apk(self, path: "tbcml.Path"):
-        if path == self.get_final_apk_path():
-            return
-        self.final_apk_path.copy(path)
-
-    def get_final_apk_path(self) -> "tbcml.Path":
-        return self.final_apk_path
-
     @staticmethod
     def get_default_pkg_folder() -> "tbcml.Path":
         return tbcml.Path.get_documents_folder().add("APKs").generate_dirs()
 
-    def get_default_package_name(self) -> str:
-        return f"jp.co.ponos.battlecats{self.country_code.get_patching_code()}"
-
     @staticmethod
     def get_all_downloaded(
-        all_apk_dir: Optional["tbcml.Path"] = None, cleanup: bool = False
+        all_pkg_dir: Optional["tbcml.Path"] = None, cleanup: bool = False
     ) -> list["Apk"]:
         """
         Get all downloaded APKs
@@ -636,88 +392,23 @@ class Apk:
         Returns:
             list[APK]: List of APKs
         """
-        if all_apk_dir is None:
-            all_apk_dir = Apk.get_default_pkg_folder()
-        apks: list[Apk] = []
-        all_apk_folders = all_apk_dir.get_dirs()
-        all_apk_folders.extend(all_apk_dir.add("modded").generate_dirs().get_dirs())
-        for apk_folder in all_apk_folders:
-            is_modded = False
-            pkg_name = None
-            if apk_folder.basename() == "modded":
-                continue
-            if apk_folder.parent().basename() == "modded":
-                is_modded = True
-            if "-" in apk_folder.basename():
-                pkg_name = apk_folder.basename().split("-")[-1]
-
-            use_pkg_name_for_folder = bool(pkg_name)
-
-            name = apk_folder.get_file_name().split("-")[0]
-            country_code_str = name[-2:]
-            if country_code_str not in tbcml.CountryCode.get_all_str():
-                if cleanup:
-                    apk_folder.remove(in_thread=True)
-                continue
-            cc = tbcml.CountryCode.from_code(country_code_str)
-            game_version_str = name[:-2]
-            gv = tbcml.GameVersion.from_string_latest(game_version_str, cc)
-            apk = Apk(
-                gv,
-                cc,
-                is_modded=is_modded,
-                use_pkg_name_for_folder=use_pkg_name_for_folder,
-                pkg_name=pkg_name,
-            )
-            if apk.is_downloaded():
-                apks.append(apk)
-            else:
-                if cleanup:
-                    apk_folder.remove(in_thread=True)
-
-        apks.sort(key=lambda apk: apk.game_version.game_version, reverse=True)
-
-        return apks
+        return tbcml.Pkg.get_all_downloaded_pkgs(all_pkg_dir, cleanup, Apk)
 
     @staticmethod
-    def get_all_apks_cc(
-        cc: "tbcml.CountryCode", apk_folder: Optional["tbcml.Path"] = None
+    def get_all_pkgs_cc(
+        cc: "tbcml.CountryCode", pkg_folder: Optional["tbcml.Path"] = None
     ) -> list["Apk"]:
         """
         Get all APKs for a country code
 
         Args:
             cc (country_code.CountryCode): Country code
-            apk_folder (Optional[tbcml.Path], optional): APK folder, defaults to default APK folder
+            pkg_folder (Optional[tbcml.Path], optional): APK folder, defaults to default APK folder
 
         Returns:
             list[APK]: List of APKs
         """
-        apks = Apk.get_all_downloaded(apk_folder)
-        apks_cc: list[Apk] = []
-        for apk in apks:
-            if apk.country_code == cc:
-                apks_cc.append(apk)
-        return apks_cc
-
-    @staticmethod
-    def get_latest_downloaded_version_cc(
-        cc: "tbcml.CountryCode", apk_folder: Optional["tbcml.Path"] = None
-    ) -> "tbcml.GameVersion":
-        """
-        Get latest downloaded APK version for a country code
-
-        Args:
-            cc (country_code.CountryCode): Country code
-
-        Returns:
-            game_version.GameVersion: Latest APK version
-        """
-        max_version = tbcml.GameVersion(0)
-        for apk in Apk.get_all_apks_cc(cc, apk_folder):
-            if apk.game_version > max_version:
-                max_version = apk.game_version
-        return max_version
+        return tbcml.Pkg.get_all_pkgs_cc_pkgs(cc, pkg_folder, Apk)
 
     @staticmethod
     def get_all_versions_v2(
@@ -823,30 +514,6 @@ class Apk:
             return version_v1
         return version_v2
 
-    def format(self):
-        return f"{self.country_code.name} {self.game_version.format()} APK"
-
-    @staticmethod
-    def progress(
-        progress: float,
-        current: int,
-        total: int,
-        is_file_size: bool = False,
-    ):
-        total_bar_length = 50
-        if is_file_size:
-            current_str = tbcml.FileSize(current).format()
-            total_str = tbcml.FileSize(total).format()
-        else:
-            current_str = str(current)
-            total_str = str(total)
-        bar_length = int(total_bar_length * progress)
-        bar = "#" * bar_length + "-" * (total_bar_length - bar_length)
-        print(
-            f"\r[{bar}] {int(progress * 100)}% ({current_str}/{total_str})    ",
-            end="",
-        )
-
     def get_download_stream(
         self,
         scraper: "cloudscraper.CloudScraper",
@@ -864,11 +531,11 @@ class Apk:
         self,
         progress: Optional[
             Callable[[float, int, int, bool], Optional[bool]]
-        ] = progress,
+        ] = Pkg.progress,
         force: bool = False,
         apk_list_url: str = "https://raw.githubusercontent.com/fieryhenry/BCData/master/apk_list.json",
     ) -> bool:
-        if self.apk_path.exists() and not force:
+        if self.pkg_path.exists() and not force:
             return True
 
         response = tbcml.RequestHandler(apk_list_url).get()
@@ -897,18 +564,18 @@ class Apk:
                     return False
 
         apk = tbcml.Data(b"".join(buffer))
-        apk.to_file(self.apk_path)
+        apk.to_file(self.pkg_path)
         return True
 
     def download(
         self,
         progress: Optional[
             Callable[[float, int, int, bool], Optional[bool]]
-        ] = progress,
+        ] = Pkg.progress,
         force: bool = False,
         skip_signature_check: bool = False,
     ) -> bool:
-        if self.apk_path.exists() and not force:
+        if self.pkg_path.exists() and not force:
             return True
 
         if not self.check_apksigner_installed():
@@ -918,14 +585,14 @@ class Apk:
         if self.download_v1(progress, force):
             if skip_signature_check:
                 return True
-            if self.is_original(self.apk_path):
+            if self.is_original(self.pkg_path):
                 return True
             sig_failed = True
 
         if self.download_v2(progress, force):
             if skip_signature_check:
                 return True
-            if self.is_original(self.apk_path):
+            if self.is_original(self.pkg_path):
                 return True
             sig_failed = True
 
@@ -940,10 +607,10 @@ class Apk:
         self,
         progress: Optional[
             Callable[[float, int, int, bool], Optional[bool]]
-        ] = progress,
+        ] = Pkg.progress,
         force: bool = False,
     ) -> bool:
-        if self.apk_path.exists() and not force:
+        if self.pkg_path.exists() and not force:
             return True
         if self.download_v1_all(progress):
             return True
@@ -961,7 +628,7 @@ class Apk:
         self,
         progress: Optional[
             Callable[[float, int, int, bool], Optional[bool]]
-        ] = progress,
+        ] = Pkg.progress,
     ) -> bool:
         url = self.get_download_url()
         scraper = cloudscraper.create_scraper()  # type: ignore
@@ -1000,7 +667,7 @@ class Apk:
                     return False
 
         apk = tbcml.Data(b"".join(buffer))
-        apk.to_file(self.apk_path)
+        apk.to_file(self.pkg_path)
         return True
 
     def download_apk_en(
@@ -1008,7 +675,7 @@ class Apk:
         is_en: bool = True,
         progress: Optional[
             Callable[[float, int, int, bool], Optional[bool]]
-        ] = progress,
+        ] = Pkg.progress,
     ) -> bool:
         urls = Apk.get_en_apk_urls("the-battle-cats" if is_en else "the-battle-cats-jp")
         if not urls:
@@ -1060,7 +727,7 @@ class Apk:
                     return False
 
         apk = tbcml.Data(b"".join(buffer))
-        apk.to_file(self.apk_path)
+        apk.to_file(self.pkg_path)
         return True
 
     def get_en_apk_url(self, apk_url: str):
@@ -1121,36 +788,6 @@ class Apk:
             urls.append(data["versionURL"])
         return dict(zip(versions, urls))
 
-    def create_key(self, key: str, length_override: Optional[int] = None) -> str:
-        if length_override is None:
-            if self.game_version < tbcml.GameVersion.from_string("8.9.0"):
-                length_override = 8
-            else:
-                length_override = 16
-        key += "tbcml_encryption_key"  # makes it harder to do a hash lookup to find original key string
-        return (
-            tbcml.Hash(tbcml.HashAlgorithm.SHA256)
-            .get_hash(tbcml.Data(key), length_override)
-            .to_hex()
-        )
-
-    def create_iv(
-        self, iv: str, length_override: Optional[int] = None
-    ) -> Optional[str]:
-        if length_override is None:
-            if self.game_version < tbcml.GameVersion.from_string("8.9.0"):
-                return None
-            else:
-                length_override = 16
-        iv += (
-            "tbcml_encryption_iv"  # makes it harder to tell if iv and key are the same
-        )
-        return (
-            tbcml.Hash(tbcml.HashAlgorithm.SHA256)
-            .get_hash(tbcml.Data(iv), length_override)
-            .to_hex()
-        )
-
     def get_download_url(self) -> str:
         return f"https://d.apkpure.net/b/APK/jp.co.ponos.battlecats{self.country_code.get_patching_code()}?versionCode={self.game_version.game_version}0"
 
@@ -1184,40 +821,9 @@ class Apk:
             raise ValueError(f"Country code {cc} not supported")
         return url
 
-    def is_downloaded(self) -> bool:
-        return self.apk_path.exists()
-
-    def delete(self, in_thread: bool = False):
-        self.output_path.remove(in_thread=in_thread)
-
     @staticmethod
     def clean_up(apk_folder: Optional["tbcml.Path"] = None):
-        Apk.get_all_downloaded(apk_folder, cleanup=True)
-
-    def get_display_string(self) -> str:
-        return f"{self.game_version.format()} ({self.country_code})"
-
-    def download_server_files(
-        self,
-        display: bool = False,
-        force: bool = False,
-        lang: Optional["tbcml.Language"] = None,
-    ):
-        sfh = tbcml.ServerFileHandler(self, lang=lang)
-        sfh.extract_all(display=display, force=force)
-
-    @staticmethod
-    def get_server_path_static(
-        cc: "tbcml.CountryCode", apk_folder: Optional["tbcml.Path"] = None
-    ) -> "tbcml.Path":
-        if apk_folder is None:
-            apk_folder = Apk.get_default_pkg_folder()
-        if apk_folder.parent().basename() == "modded":
-            apk_folder = apk_folder.parent()
-        return apk_folder.parent().add(f"{cc.get_code()}_server")
-
-    def get_server_path(self):
-        return Apk.get_server_path_static(self.country_code, self.apk_folder)
+        Apk.get_all_downloaded_pkgs(apk_folder, cleanup=True, clzz=Apk)
 
     @staticmethod
     def get_package_name_version_from_apk(apk_path: "tbcml.Path"):
@@ -1257,7 +863,7 @@ class Apk:
         return None
 
     def get_sha256_cert_hash_cls(self) -> Optional[str]:
-        return Apk.get_sha256_cert_hash(self.apk_path)
+        return Apk.get_sha256_cert_hash(self.pkg_path)
 
     @staticmethod
     def is_original(
@@ -1272,28 +878,28 @@ class Apk:
         )
 
     def is_original_cls(self) -> bool:
-        return Apk.is_original(self.apk_path)
+        return Apk.is_original(self.pkg_path)
 
     @staticmethod
-    def from_apk_path(
-        apk_path: "tbcml.Path",
+    def from_pkg_path(
+        pkg_path: "tbcml.Path",
         cc_overwrite: Optional["tbcml.CountryCode"] = None,
         gv_overwrite: Optional["tbcml.GameVersion"] = None,
-        apk_folder: Optional["tbcml.Path"] = None,
+        pkg_folder: Optional["tbcml.Path"] = None,
         allowed_script_mods: bool = True,
         skip_signature_check: bool = False,
-        check_lock: bool = True,
+        overwrite_pkg: bool = True,
     ) -> "Apk":
         is_modded = False
 
-        if not apk_path.exists():
-            raise ValueError(f"APK path {apk_path} does not exist.")
+        if not pkg_path.exists():
+            raise ValueError(f"APK path {pkg_path} does not exist.")
 
         if not Apk.check_apksigner_installed():
             skip_signature_check = True
             is_modded = False
 
-        cc, gv = Apk.get_package_name_version_from_apk(apk_path)
+        cc, gv = Apk.get_package_name_version_from_apk(pkg_path)
 
         if cc is None:
             cc = cc_overwrite
@@ -1304,21 +910,19 @@ class Apk:
             raise ValueError("Failed to get cc or gv from apk.")
 
         if not skip_signature_check:
-            is_modded = not Apk.is_original(apk_path)
+            is_modded = not Apk.is_original(pkg_path)
 
         apk = Apk(
             gv,
             cc,
-            apk_folder=apk_folder,
+            apk_folder=pkg_folder,
             allowed_script_mods=allowed_script_mods,
             is_modded=is_modded,
         )
-        with tbcml.LockFile(apk.get_lock_path()) as lock:
-            if lock is None and check_lock:
-                raise ValueError("Failed to get lock.")
-            apk_path.copy(apk.apk_path)
+        if overwrite_pkg:
+            pkg_path.copy(apk.pkg_path)
             apk.original_extracted_path.remove_tree().generate_dirs()
-            return apk
+        return apk
 
     def get_architectures(self) -> list[str]:
         architectures: list[str] = []
@@ -1327,31 +931,7 @@ class Apk:
             architectures.append(arc)
         return architectures
 
-    def get_64_bit_arcs(self) -> list[str]:
-        architectures: list[str] = []
-        bit_64 = tbcml.Lib.get_64_bit_arcs()
-        for folder in self.extracted_path.add("lib").get_dirs():
-            arc = folder.basename()
-            if arc in bit_64:
-                architectures.append(arc)
-        return architectures
-
-    def get_32_bit_arcs(self) -> list[str]:
-        architectures: list[str] = []
-        bit_32 = tbcml.Lib.get_32_bit_arcs()
-        for folder in self.extracted_path.add("lib").get_dirs():
-            arc = folder.basename()
-            if arc in bit_32:
-                architectures.append(arc)
-        return architectures
-
-    def __str__(self):
-        return self.get_display_string()
-
-    def __repr__(self):
-        return self.get_display_string()
-
-    def get_libnative_path(self, architecture: str) -> "tbcml.Path":
+    def get_native_lib_path(self, architecture: str) -> "tbcml.Path":
         if not self.is_java():
             return self.get_lib_path(architecture).add("libnative-lib.so")
         return self.get_lib_path(architecture).add("libbattlecats-jni.so")
@@ -1359,45 +939,16 @@ class Apk:
     def is_java(self):
         return self.get_lib_path("x86").add("libbattlecats-jni.so").exists()
 
-    def parse_libnative(self, architecture: str) -> Optional["tbcml.Lib"]:
-        path = self.get_libnative_path(architecture)
-        if not path.exists():
-            return None
-        return tbcml.Lib(architecture, path)
-
     def get_smali_handler(self) -> "tbcml.SmaliHandler":
         if self.smali_handler is None:
             self.smali_handler = tbcml.SmaliHandler(self)
         return self.smali_handler
 
-    def add_library(
-        self,
-        architecture: str,
-        library_path: "tbcml.Path",
-        inject_native_lib: bool = True,
-        inject_smali: bool = False,
-    ):
-        if inject_smali:
-            self.get_smali_handler().inject_load_library(library_path.basename())
-        if inject_native_lib:
-            libnative = self.get_libs().get(architecture)
-            if libnative is None:
-                print(f"Could not find libnative for {architecture}")
-                return
-            libnative.add_library(library_path)
-            libnative.write()
-        self.add_to_lib_folder(architecture, library_path)
+    def inject_smali(self, library_name: str):
+        self.get_smali_handler().inject_load_library(library_name)
 
     def get_lib_path(self, architecture: str) -> "tbcml.Path":
         return self.extracted_path.add("lib").add(architecture)
-
-    def import_libraries(self, lib_folder: "tbcml.Path"):
-        for architecture in self.get_architectures():
-            libs_path = lib_folder.add(architecture)
-            if not libs_path.exists():
-                continue
-            for lib in libs_path.get_files():
-                self.add_library(architecture, lib)
 
     def add_to_lib_folder(self, architecture: str, library_path: "tbcml.Path"):
         lib_folder_path = self.get_lib_path(architecture)
@@ -1410,189 +961,11 @@ class Apk:
         curr_path = lib_folder_path.add(library_path.basename())
         curr_path.rename(new_name, overwrite=True)
 
-    def create_libgadget_config(self):
-        json_data = {
-            "interaction": {
-                "type": "script",
-                "path": "libbc_script.js.so",
-                "on_change": "reload",
-            }
-        }
-        json = tbcml.JsonFile.from_object(json_data)
-        return json
+    def get_libgadget_script_path(self):
+        return tbcml.Path("libbc_script.js.so")
 
-    def add_libgadget_config(self, used_arcs: list[str]):
-        config = self.create_libgadget_config()
-        with tbcml.TempFile(name="libfrida-gadget.config") as temp_file:
-            config.to_data().to_file(temp_file)
-            for architecture in used_arcs:
-                self.add_to_lib_folder(architecture, temp_file)
-
-    def add_libgadget_scripts(self, scripts: dict[str, str]):
-        with tbcml.TempFile(name="libbc_script.js.so") as script_path:
-            for architecture, script_str in scripts.items():
-                tbcml.Data(script_str).to_file(script_path)
-                self.add_to_lib_folder(architecture, script_path)
-
-    @staticmethod
-    def get_libgadgets_path(
-        lib_gadgets_folder: Optional["tbcml.Path"] = None,
-    ) -> "tbcml.Path":
-        if lib_gadgets_folder is None:
-            lib_gadgets_folder = Apk.get_defualt_libgadgets_folder()
-        lib_gadgets_folder.generate_dirs()
-        arcs = ["arm64-v8a", "armeabi-v7a", "x86", "x86_64"]
-        for arc in arcs:
-            lib_gadgets_folder.add(arc).generate_dirs()
-        return lib_gadgets_folder
-
-    @staticmethod
-    def download_libgadgets():
-        tbcml.FridaGadgetHelper().download_gadgets()
-
-    def get_libgadgets(self) -> dict[str, "tbcml.Path"]:
-        folder = Apk.get_libgadgets_path(self.lib_gadgets_folder)
-        Apk.download_libgadgets()
-        arcs = folder.get_dirs()
-        libgadgets: dict[str, "tbcml.Path"] = {}
-        for arc in arcs:
-            so_regex = ".*\\.so"
-            files = arc.get_files(regex=so_regex)
-            if len(files) == 0:
-                continue
-            files[0] = files[0].rename("libfrida-gadget.so")
-            libgadgets[arc.basename()] = files[0]
-        return libgadgets
-
-    def add_libgadget_sos(
-        self,
-        used_arcs: list[str],
-        inject_native_lib: bool = True,
-        inject_smali: bool = False,
-    ):
-        for architecture, libgadget in self.get_libgadgets().items():
-            if architecture not in used_arcs:
-                continue
-            self.add_library(architecture, libgadget, inject_native_lib, inject_smali)
-            inject_smali = False  # only inject smali code once
-
-    def add_frida_scripts(
-        self,
-        scripts: dict[str, str],
-        inject_native_lib: bool = True,
-        inject_smali: bool = False,
-    ):
-        used_arcs = list(scripts.keys())
-        self.add_libgadget_config(used_arcs)
-        self.add_libgadget_scripts(scripts)
-        self.add_libgadget_sos(used_arcs, inject_native_lib, inject_smali)
-        self.set_extract_native_libs(True)
-
-    def add_patches(self, patches: "tbcml.LibPatches"):
-        for patch in patches.lib_patches:
-            self.add_patch(patch)
-
-    def add_patch(self, patch: "tbcml.LibPatch"):
-        arcs = self.get_architectures_subset(patch.architectures)
-
-        for arc in arcs:
-            lib = self.parse_libnative(arc)
-            if lib is None:
-                return
-            lib.apply_patch(patch)
-            lib.write()
-
-    def get_architectures_subset(self, arcs: "tbcml.ARCS") -> Sequence[str]:
-        if arcs == "all":
-            return self.get_architectures()
-        elif arcs == "32":
-            return self.get_32_bit_arcs()
-        elif arcs == "64":
-            return self.get_64_bit_arcs()
-
-        all_arcs = self.get_architectures()
-        return [arc for arc in arcs if arc in all_arcs]
-
-    def is_allowed_script_mods(self) -> bool:
-        return self.allowed_script_mods
-
-    def set_allowed_script_mods(self, allowed: bool):
-        self.allowed_script_mods = allowed
-
-    def add_script_mods(self, bc_mods: list["tbcml.Mod"], add_base_script: bool = True):
-        if not bc_mods:
-            return
-        if not self.is_allowed_script_mods():
-            return
-        scripts: dict[str, str] = {}
-        inject_smali: bool = False
-        for mod in bc_mods:
-            scripts_str, inj = mod.get_scripts_str(self)
-            if inj:
-                inject_smali = True
-            for arc, string in scripts_str.items():
-                if arc not in scripts:
-                    scripts[arc] = ""
-                scripts[arc] += string + "\n"
-
-        if add_base_script:
-            base_script = tbcml.FridaScript.get_base_script()
-            for arc in scripts.keys():
-                scripts[arc] = base_script.replace("// {{SCRIPTS}}", scripts[arc])
-
-        if scripts:
-            self.add_frida_scripts(
-                scripts, inject_smali=inject_smali, inject_native_lib=not inject_smali
-            )
-
-    def add_modded_html(self, mods: list["tbcml.Mod"]):
-        transfer_screen_path = tbcml.Path.get_asset_file_path(
-            tbcml.Path("html").add("kisyuhen_01_top_en.html")  # TODO: different locales
-        )
-        modlist_path = tbcml.Path.get_asset_file_path(
-            tbcml.Path("html").add("modlist.html")
-        )
-
-        self.add_asset(transfer_screen_path)
-
-        mod_str = ""
-        for i, mod in enumerate(mods):
-            html = mod.get_custom_html()
-            mod_path = f"mod_{i}.html"
-            mod_str += (
-                f'<br><a href="{mod_path}" class="Buttonbig">{mod.name}</a><br><br>'
-            )
-            self.add_asset_data(tbcml.Path(mod_path), tbcml.Data(html))
-
-        modlist_html = modlist_path.read().to_str()
-        modlist_html = modlist_html.replace("{{MODS_LIST}}", mod_str)
-
-        self.add_asset_data(tbcml.Path("modlist.html"), tbcml.Data(modlist_html))
-
-    def add_patch_mods(self, bc_mods: list["tbcml.Mod"]):
-        if not bc_mods:
-            return
-        if not self.is_allowed_script_mods():
-            return
-        patches = tbcml.LibPatches.create_empty()
-        for mod in bc_mods:
-            patches.add_patches(mod.patches)
-
-        patches.validate_patches(self.country_code, self.game_version)
-        if not patches.is_empty():
-            self.add_patches(patches)
-
-    def get_libs(self) -> dict[str, "tbcml.Lib"]:
-        if self.libs is not None:
-            return self.libs
-        libs: dict[str, "tbcml.Lib"] = {}
-        for architecture in self.get_architectures():
-            libnative = self.parse_libnative(architecture)
-            if libnative is None:
-                continue
-            libs[architecture] = libnative
-        self.libs = libs
-        return libs
+    def get_libgadget_config_path(self):
+        return tbcml.Path("libfrida-gadget.config.so")
 
     def get_manifest_path(self) -> "tbcml.Path":
         return self.extracted_path.add("AndroidManifest.xml")
@@ -1609,49 +982,6 @@ class Apk:
     def set_manifest(self, manifest: "tbcml.XML"):
         manifest.to_file(self.get_manifest_path())
 
-    def remove_arcs(self, arcs: list[str]):
-        for arc in arcs:
-            self.get_lib_path(arc).remove()
-
-    def add_asset(self, asset_path: "tbcml.Path"):
-        asset_path.copy(self.extracted_path.add("assets").add(asset_path.basename()))
-
-    def add_asset_data(self, asset_path: "tbcml.Path", asset_data: "tbcml.Data"):
-        self.extracted_path.add("assets").add(asset_path).write(asset_data)
-
-    def remove_asset(self, asset_path: "tbcml.PathStr"):
-        asset_path = self.get_asset(asset_path)
-        asset_path.remove()
-
-    def add_assets(self, asset_folder: "tbcml.Path"):
-        for asset in asset_folder.get_files():
-            self.add_asset(asset)
-
-    def add_assets_from_pack(self, pack: "tbcml.PackFile"):
-        if pack.is_server_pack(pack.pack_name):
-            return
-        with tbcml.TempFolder() as temp_dir:
-            dir = pack.extract(temp_dir, encrypt=True)
-            self.add_assets(dir)
-        pack.clear_files()
-        pack.add_file(
-            tbcml.GameFile(
-                tbcml.Data(pack.pack_name),
-                f"empty_file_{pack.pack_name}",
-                pack.pack_name,
-                pack.country_code,
-                pack.gv,
-            )
-        )
-        pack.set_modified(True)
-
-    def add_assets_from_game_packs(self, packs: "tbcml.GamePacks"):
-        for pack in packs.packs.values():
-            self.add_assets_from_pack(pack)
-
-    def add_file(self, file_path: "tbcml.Path"):
-        file_path.copy(self.extracted_path)
-
     def get_pack_location(self) -> "tbcml.Path":
         if self.is_java():
             return self.extracted_path.add("res").add("raw")
@@ -1662,110 +992,14 @@ class Apk:
             return self.original_extracted_path.add("res").add("raw")
         return self.original_extracted_path.add("assets")
 
-    def add_audio(
-        self,
-        audio_file: "tbcml.AudioFile",
-    ):
-        filename = audio_file.get_apk_file_name()
-        audio_file.caf_to_little_endian().data.to_file(
-            self.extracted_path.add("assets").add(filename)
-        )
+    def get_audio_extensions(self) -> list[str]:
+        return ["caf", "ogg"]
 
-    def get_all_audio(self) -> dict[int, "tbcml.Path"]:
-        audio_files: dict[int, "tbcml.Path"] = {}
-        for file in self.extracted_path.get_files():
-            if not file.get_extension() == "caf" and not file.get_extension() == "ogg":
-                continue
-            base_name = file.get_file_name_without_extension()
-            if not base_name.startswith("snd"):
-                continue
-            id_str = base_name.strip("snd")
-            if not id_str.isdigit():
-                continue
-            audio_files[int(id_str)] = file
-
-        server_files = self.get_all_server_audio()
-        for id, file in server_files.items():
-            audio_files[id] = file
-        return audio_files
-
-    def get_all_server_audio(self):
-        audio_files: dict[int, "tbcml.Path"] = {}
-        for file in self.get_server_path().get_files():
-            if not file.get_extension() == "caf" and not file.get_extension() == "ogg":
-                continue
-            id_str = file.get_file_name_without_extension().strip("snd")
-            if not id_str.isdigit():
-                continue
-            audio_files[int(id_str)] = file
-        return audio_files
-
-    def get_free_audio_id(self, all_audio: Optional[dict[int, "tbcml.Path"]] = None):
-        if all_audio is None:
-            all_audio = self.get_all_audio()
-
-        i = 0
-        while True:
-            if i not in all_audio:
-                return i
-            i += 1
-
-    def get_asset_decrypt(self, asset_name: "tbcml.PathStr") -> "tbcml.Data":
-        path = self.get_asset(asset_name)
-        return tbcml.GameFile.decrypt_apk_file(path.read())
-
-    def add_asset_encrypt(self, asset_name: "tbcml.PathStr", data: "tbcml.Data"):
-        path = self.get_asset(asset_name)
-        path.parent().generate_dirs()
-        data_enc = tbcml.GameFile.encrypt_apk_file(data)
-        data_enc.to_file(path)
+    def audio_file_startswith_snd(self) -> bool:
+        return True
 
     def get_asset(self, asset_name: "tbcml.PathStr") -> "tbcml.Path":
         return self.extracted_path.add("assets").add(asset_name)
-
-    def get_asset_mods(
-        self, asset_name: "tbcml.PathStr", mods: list["tbcml.Mod"]
-    ) -> tuple[Optional["tbcml.Data"], bool]:
-        for mod in mods:
-            asset, from_enc = mod.get_asset(asset_name, self.is_apk())
-            if asset is not None:
-                return asset, from_enc
-        path = self.get_asset(asset_name)
-        if path.exists():
-            return path.read(), False
-        return None, False
-
-    def get_all_download_tsvs(self) -> list[list["tbcml.Path"]]:
-        langs = tbcml.Language.get_all()
-        langs = [None] + langs
-        files: list[list["tbcml.Path"]] = []
-        for lang in langs:
-            files.append(self.get_download_tsvs(lang))
-        return files
-
-    def get_download_tsvs(
-        self, lang: Optional["tbcml.Language"] = None
-    ) -> list["tbcml.Path"]:
-        if lang is None:
-            base_name = "download_%s.tsv"
-        else:
-            base_name = f"download{lang.value}_%s.tsv"
-        files: list["tbcml.Path"] = []
-        counter = 0
-        while True:
-            name = base_name % counter
-            file = self.get_asset(name)
-            if not file.exists():
-                if lang is None:
-                    new_name = f"en/{name}"
-                else:
-                    new_name = f"{lang.value}/{name}"
-                file = self.get_asset(new_name)
-                if not file.exists():
-                    break
-            files.append(file)
-            counter += 1
-        return files
 
     def apply_mod_smali(self, mod: "tbcml.Mod"):
         if mod.smali.is_empty():
@@ -1782,6 +1016,15 @@ class Apk:
         else:
             manifest.set_attribute(path, "android:allowBackup", "false")
         self.set_manifest(manifest)
+
+    def add_frida_scripts(
+        self,
+        scripts: dict[str, str],
+        inject_native_lib: bool = True,
+        inject_smali: bool = False,
+    ):
+        super().add_frida_scripts(scripts, inject_native_lib, inject_smali)
+        self.set_extract_native_libs(True)
 
     def set_extract_native_libs(self, extract: bool):
         manifest = self.parse_manifest()
@@ -1826,7 +1069,7 @@ class Apk:
                 lang = "en"
             name = f"{name}_{lang}"
 
-        self.edit_xml_string(name, value)
+        return self.edit_xml_string(name, value)
 
     def get_string(self, name: str, include_lang: bool, lang: Optional[str] = None):
         if self.country_code == tbcml.CountryCode.EN and include_lang:
@@ -1848,24 +1091,6 @@ class Apk:
         self.save_xml("strings", strings_xml)
         return True
 
-    def set_app_name(self, name: str) -> bool:
-        success = self.edit_xml_string("app_name", name)
-        if success:
-            self.__app_name = name
-        return success
-
-    def get_app_name(self) -> Optional[str]:
-        if self.__app_name is not None:
-            return self.__app_name
-        app_name = self.get_xml_string("app_name")
-        if app_name is None:
-            return None
-        self.__app_name = app_name
-        return app_name
-
-    def is_extracted(self) -> bool:
-        return self.extracted_path.has_files()
-
     def get_xml_string(self, name: str) -> Optional[str]:
         strings_xml = self.load_xml("strings")
         if strings_xml is None:
@@ -1882,7 +1107,7 @@ class Apk:
         manifest_str = manifest_str.replace(old, new)
         manifest.write(tbcml.Data(manifest_str))
 
-    def set_package_name(self, package_name: str) -> bool:
+    def apply_pkg_name(self, package_name: str) -> bool:
         manifest = self.parse_manifest()
         if manifest is None:
             return False
@@ -1910,31 +1135,26 @@ class Apk:
 
         self.set_manifest(manifest)
 
-        self.__package_name = package_name
-
         if not self.edit_xml_string("package_name", package_name):
             return False
 
         return True
 
-    def get_package_name(self) -> Optional[str]:
-        if self.__package_name is not None:
-            return self.__package_name
+    def read_pkg_name(self) -> Optional[str]:
         manifest = self.parse_manifest()
         if manifest is None:
             return None
         name = manifest.get_attribute("manifest", "package")
         if name is None:
             return None
-        self.__package_name = name
         return name
 
     def copy_to_android_download_folder(self):
         download_path = tbcml.Path.get_root().add(
-            "sdcard", "Download", self.final_apk_path.basename()
+            "sdcard", "Download", self.final_pkg_path.basename()
         )
         download_path.parent().generate_dirs()
-        self.final_apk_path.copy(download_path)
+        self.final_pkg_path.copy(download_path)
 
     def set_clear_text_traffic(self, clear_text_traffic: bool):
         manifest = self.parse_manifest()
@@ -1947,12 +1167,6 @@ class Apk:
             manifest.set_attribute(path, "android:usesCleartextTraffic", "false")
         self.set_manifest(manifest)
 
-    def get_mod_html_files(self) -> list["tbcml.Path"]:
-        files = self.extracted_path.add("assets").get_files(
-            regex=r"kisyuhen_01_top_..\.html"
-        )
-        return files
-
     def get_risky_extensions(self) -> list[str]:
         """Get extensions that if modified could contain malware.
 
@@ -1964,10 +1178,6 @@ class Apk:
             "dex",
             "jar",
         ]
-
-    def add_mods_files(self, mods: list["tbcml.Mod"], lang: Optional[str] = None):
-        for mod in mods:
-            mod.apply_to_pkg(self, lang)
 
     def add_smali_mods(self, mods: list["tbcml.Mod"]):
         if not self.is_allowed_script_mods():
@@ -1997,12 +1207,12 @@ class Apk:
         key: Optional[str] = None,
         iv: Optional[str] = None,
         add_modded_html: bool = True,
-        use_apktool: Optional[bool] = None,
-        save_in_modded_apks: bool = False,
+        save_in_modded_pkgs: bool = False,
         progress_callback: Optional[
             Callable[["tbcml.PKGProgressSignal"], Optional[bool]]
         ] = None,
         do_final_pkg_actions: bool = True,
+        use_apktool: Optional[bool] = None,
     ) -> bool:
         if progress_callback is None:
             progress_callback = lambda x: None
@@ -2061,7 +1271,7 @@ class Apk:
             if not self.load_packs_into_game(
                 game_packs,
                 use_apktool=use_apktool,
-                save_in_modded_apks=save_in_modded_apks,
+                save_in_modded_pkgs=save_in_modded_pkgs,
                 progress_callback=progress_callback,
             ):
                 return False

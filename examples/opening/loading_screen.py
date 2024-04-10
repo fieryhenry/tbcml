@@ -2,7 +2,7 @@ import tbcml
 
 
 class CustomLoadingScreen(tbcml.LoadingScreen):
-    def __init__(self, game_data: tbcml.GamePacks, pkg: tbcml.PKG):
+    def __init__(self, game_data: tbcml.GamePacks, pkg: tbcml.Pkg):
         super().__init__()
         self.read(game_data, pkg)
 

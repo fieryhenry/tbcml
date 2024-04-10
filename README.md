@@ -159,7 +159,7 @@ apk.set_package_name("jp.co.ponos.battlecats.basicmod")
 # set open_path to True if you want to open the containg folder of the modded apk
 loader.apply(mod, open_path=False)
 
-print(apk.final_apk_path)
+print(apk.final_pkg_path)
 ```
 
 If apktool isn't supported for your achitecture, you can set

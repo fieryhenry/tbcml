@@ -17,7 +17,7 @@ from tbcml.io import (
     thread_helper,
     ipa,
     yamlfile,
-    lock,
+    pkg,
 )
 
 __all__ = [
@@ -40,5 +40,5 @@ __all__ = [
     "thread_helper",
     "ipa",
     "yamlfile",
-    "lock",
+    "pkg",
 ]

@@ -8,7 +8,7 @@ if not is_lief_installed():
     )
     exit(1)
 
-loader = ModLoader("en", "13.1.1")  # change to whatever you want
+loader = ModLoader("en", "13.2.0")  # change to whatever you want
 print("Initializing mod loader")
 loader.initialize()
 
@@ -67,7 +67,7 @@ print("Applying mods to game...")
 
 loader.apply(mod)
 
-print(apk.final_apk_path)
+print(apk.final_pkg_path)
 
 # uncomment the lines below to install the apk and run the game if you have a
 # device connected with adb

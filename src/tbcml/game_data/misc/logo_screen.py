@@ -7,11 +7,11 @@ import tbcml
 class LogoScreen(tbcml.Modification):
     img: Optional["tbcml.BCImage"] = None
 
-    def apply_pkg(self, pkg: "tbcml.PKG", lang: Optional[str]):
+    def apply_pkg(self, pkg: "tbcml.Pkg", lang: Optional[str]):
         if self.img is not None:
             pkg.add_asset_encrypt("logo.png", self.img.to_data())
 
-    def read(self, pkg: "tbcml.PKG"):
+    def read(self, pkg: "tbcml.Pkg"):
         data = pkg.get_asset_decrypt("logo.png")
         self.img = tbcml.BCImage.from_data(data)
 

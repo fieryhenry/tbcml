@@ -116,13 +116,13 @@ class FridaScript:
         return string
 
     def get_scripts_str(
-        self, apk: "tbcml.Apk", mod_name: str, mod_authors: list[str]
+        self, pkg: "tbcml.Pkg", mod_name: str, mod_authors: list[str]
     ) -> tuple[dict[str, str], bool]:
-        is_valid = self.is_valid(apk.country_code, apk.game_version)
+        is_valid = self.is_valid(pkg.country_code, pkg.game_version)
         if not is_valid:
             return {}, self.inject_smali
 
-        arcs = apk.get_architectures_subset(self.architectures)
+        arcs = pkg.get_architectures_subset(self.architectures)
         scripts: dict[str, str] = {}
         for arc in arcs:
             scripts[arc] = self.get_script_str(mod_name, mod_authors)

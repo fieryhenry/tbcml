@@ -22,7 +22,7 @@ class GameVersionSearchError(Exception):
 class ServerFileHandler:
     """Class for handling downloading game files from the game server"""
 
-    def __init__(self, apk: "tbcml.PKG", lang: Optional["tbcml.Language"]):
+    def __init__(self, apk: "tbcml.Pkg", lang: Optional["tbcml.Language"]):
         """Initializes the ServerFileHandler class
 
         Args:
@@ -356,7 +356,7 @@ class ServerFileHandler:
         lib = None
         arc = None
         for ac in arcs:
-            lb = self.apk.get_libnative_path(ac)
+            lb = self.apk.get_native_lib_path(ac)
             if lb is not None and lb.exists():
                 lib = lb
                 arc = ac
@@ -586,7 +586,7 @@ class EventData:
         Returns:
             str: Date in YYYYMMDD format
         """
-        return datetime.datetime.utcnow().strftime("%Y%m%d")
+        return datetime.datetime.now(datetime.UTC).strftime("%Y%m%d")
 
     def get_amz_date(self) -> str:
         """Gets the amz date
@@ -594,7 +594,7 @@ class EventData:
         Returns:
             str: Date in YYYYMMDDTHHMMSSZ format
         """
-        return datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+        return datetime.datetime.now(datetime.UTC).strftime("%Y%m%dT%H%M%SZ")
 
     def get_signing_key(self, amz: str) -> "tbcml.Data":
         """Gets the signing key for the given amz date

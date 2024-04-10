@@ -790,7 +790,7 @@ class GamePacks:
 
     @staticmethod
     def from_pkg(
-        apk: "tbcml.PKG",
+        apk: "tbcml.Pkg",
         lang: Optional["tbcml.Language"] = None,
         all_langs: bool = False,
     ) -> "GamePacks":

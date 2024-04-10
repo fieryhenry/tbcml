@@ -156,7 +156,7 @@ class AdbHandler:
             if not result.success:
                 print(result)
                 return None
-            return tbcml.Apk.from_apk_path(temp_file, cc_overwrite, gv_overwrite)
+            return tbcml.Apk.from_pkg_path(temp_file, cc_overwrite, gv_overwrite)
 
 
 class BulkAdbHandler:

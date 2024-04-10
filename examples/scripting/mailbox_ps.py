@@ -78,4 +78,4 @@ loader.apply(mod)
 # loader.initialize_adb()
 # loader.install_adb(run_game=True)
 
-print(apk.final_apk_path)
+print(apk.final_pkg_path)

@@ -103,7 +103,7 @@ class IpaModLoader:
             custom_ipa_folder = tbcml.Path(custom_ipa_folder)
 
         ipa_path = tbcml.Path(ipa_path)
-        self.ipa = tbcml.Ipa.from_ipa_path(
+        self.ipa = tbcml.Ipa.from_pkg_path(
             ipa_path,
             cc_overwrite=self.country_code,
             gv_overwrite=self.game_version,
@@ -186,7 +186,7 @@ class IpaModLoader:
             key=custom_enc_key,
             iv=custom_enc_iv,
             add_modded_html=add_modded_html,
-            save_in_modded_ipas=save_in_modded_ipas,
+            save_in_modded_pkgs=save_in_modded_ipas,
             progress_callback=progress_callback,
             do_final_pkg_actions=do_final_pkg_actions,
         ):
@@ -211,7 +211,7 @@ class IpaModLoader:
             )
         return self.ipa
 
-    def get_pkg(self) -> "tbcml.PKG":
+    def get_pkg(self) -> "tbcml.Pkg":
         """Gets the pkg from a ModLoader instance. Will never be None
 
         Raises:
