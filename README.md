@@ -148,7 +148,7 @@ mod = tbcml.Mod(
 cat = BasicCustomCat()
 mod.add_modification(cat)
 
-mod.save("test.zip") # save the compiled mod to a zip file (optional)
+mod.save("test.zip") # save the mod to a zip file (optional)
 
 apk.set_app_name("The Battle Cats Basic Mod")
 
