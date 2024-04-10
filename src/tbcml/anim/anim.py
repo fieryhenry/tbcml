@@ -425,7 +425,10 @@ class Anim:
             painter.setCompositionMode(
                 QtGui.QPainter.CompositionMode.CompositionMode_Plus
             )
-        q_img = img.fix_libpng_warning().to_qimage()
+
+        data = img.fix_libpng_warning().to_data()
+        q_img = QtGui.QImage()
+        q_img.loadFromData(data.to_bytes())
         painter.drawImage(
             QtCore.QRectF(-pivot[0], -pivot[1], abs(size[0]), abs(size[1])), q_img
         )

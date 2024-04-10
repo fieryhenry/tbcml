@@ -2,10 +2,6 @@ from typing import Optional, Union
 
 from PIL import Image, ImageDraw
 
-try:
-    from PyQt6.QtGui import QImage, QIcon, QPixmap
-except ImportError:
-    pass
 
 import tbcml
 
@@ -131,8 +127,6 @@ class BCImage:
         self.image.save(tbcml.Path(path).to_str(), format="PNG")
 
     def to_data(self):
-        if self.image.tobytes() == self.__original_img.tobytes() and len(self.b64) > 0:  # type: ignore
-            return self.__original_data
         bytes_io = tbcml.Data().to_bytes_io()
         self.image.save(bytes_io, format="PNG")
         data = tbcml.Data(bytes_io.getvalue())
@@ -195,18 +189,8 @@ class BCImage:
 
         return self
 
-    def to_qimage(self) -> "QImage":
-        return QImage.fromData(self.to_data().to_bytes())
-
-    def to_qicon(self) -> "QIcon":
-        return QIcon(QPixmap.fromImage(self.to_qimage()))
-
-    def force_q_refresh(self):
-        self._qimg = None
-
     def force_refresh(self):
         self.__image = None
-        self.force_q_refresh()
 
     def crop_circle(self):
         if self.width != self.height:
