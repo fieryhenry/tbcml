@@ -234,7 +234,7 @@ There is some basic support for iOS ipa files:
 loader = tbcml.IpaModLoader("en", "12.3.0")
 
 # you need to specify the path to the ipa as it can't be downloaded
-loader.initialize(ipa_path="path/to/ipa")
+loader.initialize(pkg_path="path/to/ipa")
 
 ipa = loader.get_ipa()
 

@@ -43,6 +43,13 @@ class Ipa(Pkg):
         return False
 
     @staticmethod
+    def try_get_pkg_from_path(
+        path: "tbcml.Path",
+        all_pkg_dir: Optional["tbcml.Path"] = None,
+    ) -> Optional["Ipa"]:
+        return Ipa.try_get_pkg_from_path_pkg(path, all_pkg_dir=all_pkg_dir, clzz=Ipa)
+
+    @staticmethod
     def get_app_folder_from_zip(zip: "tbcml.Zip"):
         payload_path = tbcml.Path("Payload")
         paths = zip.get_paths_in_folder(payload_path)
@@ -86,9 +93,10 @@ class Ipa(Pkg):
         ipa_path: "tbcml.Path",
         cc_overwrite: Optional["tbcml.CountryCode"] = None,
         gv_overwrite: Optional["tbcml.GameVersion"] = None,
-        ipa_folder: Optional["tbcml.Path"] = None,
+        pkg_folder: Optional["tbcml.Path"] = None,
+        allowed_script_mods: bool = True,
         overwrite_pkg: bool = True,
-    ):
+    ) -> "Ipa":
         if not ipa_path.exists():
             raise ValueError(f"IPA path {ipa_path} does not exist.")
         pkg_name, gv = Ipa.get_package_name_version_from_ipa(ipa_path)
@@ -103,7 +111,9 @@ class Ipa(Pkg):
         if gv is None or cc is None:
             raise ValueError("Failed to get cc or gv from ipa.")
 
-        ipa = Ipa(gv, cc, ipa_folder=ipa_folder)
+        ipa = Ipa(
+            gv, cc, ipa_folder=pkg_folder, allowed_script_mods=allowed_script_mods
+        )
 
         if overwrite_pkg:
             ipa_path.copy(ipa.pkg_path)

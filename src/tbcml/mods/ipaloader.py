@@ -63,7 +63,7 @@ class IpaModLoader:
 
     def initialize(
         self,
-        ipa_path: "tbcml.PathStr",
+        pkg_path: "tbcml.PathStr",
         force_extract: bool = False,
         print_errors: bool = True,
         custom_ipa_folder: Optional["tbcml.Path"] = None,
@@ -87,7 +87,7 @@ class IpaModLoader:
             print_errors=print_errors,
             custom_ipa_folder=custom_ipa_folder,
             lang=lang,
-            ipa_path=ipa_path,
+            ipa_path=pkg_path,
         )
 
     def __get_ipa(
@@ -103,12 +103,17 @@ class IpaModLoader:
             custom_ipa_folder = tbcml.Path(custom_ipa_folder)
 
         ipa_path = tbcml.Path(ipa_path)
-        self.ipa = tbcml.Ipa.from_pkg_path(
+        ipa = tbcml.to_ipa(
             ipa_path,
             cc_overwrite=self.country_code,
             gv_overwrite=self.game_version,
-            ipa_folder=custom_ipa_folder,
+            pkg_folder=custom_ipa_folder,
         )
+        if ipa is None:
+            if print_errors:
+                print("Failed to load ipa.")
+            return
+        self.ipa = ipa
         if not self.ipa.extract(
             force=force_extract,
         ):

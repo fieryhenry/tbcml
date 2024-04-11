@@ -117,17 +117,85 @@ from .game_version import GameVersion, GV
 LOADER = Union["ModLoader", "IpaModLoader"]
 
 
-def to_pkg(path: "PathStr", overwrite_pkg: bool = True) -> Optional[Pkg]:
+def to_apk(
+    path: "PathStr",
+    cc_overwrite: Optional["CountryCode"] = None,
+    gv_overwrite: Optional["GameVersion"] = None,
+    pkg_folder: Optional["Path"] = None,
+    allowed_script_mods: bool = True,
+    skip_signature_check: bool = False,
+    overwrite_pkg: bool = True,
+) -> Optional["Apk"]:
+    return to_pkg(
+        path,
+        cc_overwrite=cc_overwrite,
+        gv_overwrite=gv_overwrite,
+        pkg_folder=pkg_folder,
+        allowed_script_mods=allowed_script_mods,
+        skip_signature_check=skip_signature_check,
+        overwrite_pkg=overwrite_pkg,
+    )  # type: ignore
+
+
+def to_ipa(
+    path: "PathStr",
+    cc_overwrite: Optional["CountryCode"] = None,
+    gv_overwrite: Optional["GameVersion"] = None,
+    pkg_folder: Optional["Path"] = None,
+    allowed_script_mods: bool = True,
+    skip_signature_check: bool = False,
+    overwrite_pkg: bool = True,
+) -> Optional["Ipa"]:
+    return to_pkg(
+        path,
+        cc_overwrite=cc_overwrite,
+        gv_overwrite=gv_overwrite,
+        pkg_folder=pkg_folder,
+        allowed_script_mods=allowed_script_mods,
+        skip_signature_check=skip_signature_check,
+        overwrite_pkg=overwrite_pkg,
+    )  # type: ignore
+
+
+def to_pkg(
+    path: "PathStr",
+    cc_overwrite: Optional["CountryCode"] = None,
+    gv_overwrite: Optional["GameVersion"] = None,
+    pkg_folder: Optional["Path"] = None,
+    allowed_script_mods: bool = True,
+    skip_signature_check: bool = False,
+    overwrite_pkg: bool = True,
+) -> Optional[Pkg]:
     path = Path(path)
     extension = path.get_extension()
+    pkg = None
     try:
         if extension == "apk":
-            return Apk.from_pkg_path(path, overwrite_pkg=overwrite_pkg)
+            pkg = Apk.try_get_pkg_from_path(path, all_pkg_dir=pkg_folder)
+            if pkg is None:
+                pkg = Apk.from_pkg_path(
+                    path,
+                    cc_overwrite=cc_overwrite,
+                    gv_overwrite=gv_overwrite,
+                    pkg_folder=pkg_folder,
+                    allowed_script_mods=allowed_script_mods,
+                    skip_signature_check=skip_signature_check,
+                    overwrite_pkg=overwrite_pkg,
+                )
         elif extension == "ipa":
-            return Ipa.from_pkg_path(path, overwrite_pkg=overwrite_pkg)
+            pkg = Ipa.try_get_pkg_from_path(path, all_pkg_dir=pkg_folder)
+            if pkg is None:
+                pkg = Ipa.from_pkg_path(
+                    path,
+                    cc_overwrite=cc_overwrite,
+                    gv_overwrite=gv_overwrite,
+                    pkg_folder=pkg_folder,
+                    allowed_script_mods=allowed_script_mods,
+                    overwrite_pkg=overwrite_pkg,
+                )
     except Exception:
         pass
-    return None
+    return pkg
 
 
 """Type alias for a package type, can be a tbcml.Apk or tbcml.Ipa"""

@@ -86,7 +86,7 @@ class ModLoader:
         allowed_script_mods: bool = True,
         custom_apk_folder: Optional["tbcml.Path"] = None,
         lang: Optional["tbcml.LanguageStr"] = None,
-        apk_path: Optional["tbcml.PathStr"] = None,
+        pkg_path: Optional["tbcml.PathStr"] = None,
         download_progress: Optional[
             Callable[[float, int, int, bool], None]
         ] = Apk.progress,
@@ -120,7 +120,7 @@ class ModLoader:
             allowed_script_mods=allowed_script_mods,
             custom_apk_folder=custom_apk_folder,
             lang=lang,
-            apk_path=apk_path,
+            apk_path=pkg_path,
             download_progress=download_progress,
             skip_signature_check=skip_signature_check,
             download_server_files=download_server_files,
@@ -147,8 +147,7 @@ class ModLoader:
             custom_apk_folder = tbcml.Path(custom_apk_folder)
 
         if apk_path is not None:
-            apk_path = tbcml.Path(apk_path)
-            self.apk = tbcml.Apk.from_pkg_path(
+            apk = tbcml.to_apk(
                 apk_path,
                 cc_overwrite=self.country_code,
                 gv_overwrite=self.game_version,
@@ -156,6 +155,11 @@ class ModLoader:
                 allowed_script_mods=allowed_script_mods,
                 skip_signature_check=skip_signature_check,
             )
+            if apk is None:
+                if print_errors:
+                    print("Failed to load apk.")
+                return
+            self.apk = apk
         else:
             self.apk = tbcml.Apk(
                 game_version=self.game_version,

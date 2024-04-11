@@ -1179,6 +1179,13 @@ class Apk(Pkg):
             "jar",
         ]
 
+    @staticmethod
+    def try_get_pkg_from_path(
+        path: "tbcml.Path",
+        all_pkg_dir: Optional["tbcml.Path"] = None,
+    ) -> Optional["Apk"]:
+        return Apk.try_get_pkg_from_path_pkg(path, all_pkg_dir=all_pkg_dir, clzz=Apk)
+
     def add_smali_mods(self, mods: list["tbcml.Mod"]):
         if not self.is_allowed_script_mods():
             return

@@ -233,6 +233,7 @@ class Pkg:
         all_langs: bool = False,
         pack_names: Optional[list[str]] = None,
     ) -> "tbcml.GamePacks":
+
         packs: dict[str, tbcml.PackFile] = {}
 
         for pack_file, list_file in self.get_packs_lists():
@@ -318,6 +319,48 @@ class Pkg:
         if path == self.final_pkg_path:
             return
         self.final_pkg_path.copy(path)
+
+    @staticmethod
+    def try_get_pkg_from_path_pkg(
+        path: "tbcml.Path",
+        all_pkg_dir: Optional["tbcml.Path"] = None,
+        clzz: Optional[type["Pkg"]] = None,
+    ) -> Optional[Any]:
+        if clzz is None:
+            clzz = Pkg
+        if all_pkg_dir is None:
+            all_pkg_dir = clzz.get_default_pkg_folder()
+        if not path.exists():
+            return None
+        path = path.parent()
+
+        is_modded = False
+        pkg_name = None
+        if path.parent().basename() == "modded":
+            is_modded = True
+        if "-" in path.basename():
+            pkg_name = path.basename().split("-")[-1]
+
+        use_pkg_name_for_folder = bool(pkg_name)
+
+        name = path.get_file_name().split("-")[0]
+        country_code_str = name[-2:]
+        if country_code_str not in tbcml.CountryCode.get_all_str():
+            return None
+        cc = tbcml.CountryCode.from_code(country_code_str)
+        game_version_str = name[:-2]
+
+        gv = tbcml.GameVersion.from_string_latest(game_version_str, cc)
+        pkg = clzz(
+            gv,
+            cc,
+            is_modded=is_modded,
+            use_pkg_name_for_folder=use_pkg_name_for_folder,
+            pkg_name=pkg_name,
+        )
+        if pkg.is_downloaded():
+            return pkg
+        return None
 
     @staticmethod
     def get_all_downloaded_pkgs(
