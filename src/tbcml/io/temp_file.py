@@ -1,4 +1,6 @@
-from typing import Any, Optional
+from __future__ import annotations
+
+from typing import Any
 import tbcml
 import uuid
 
@@ -6,9 +8,9 @@ import uuid
 class TempFile:
     def __init__(
         self,
-        name: Optional[str] = None,
-        extension: Optional[str] = None,
-        path: Optional["tbcml.Path"] = None,
+        name: str | None = None,
+        extension: str | None = None,
+        path: tbcml.Path | None = None,
     ):
         if name is None:
             name = str(uuid.uuid4())
@@ -41,12 +43,12 @@ class TempFile:
             self.path_dir.remove(in_thread=True)
 
     @staticmethod
-    def get_temp_path(name: Optional[str] = None, extension: Optional[str] = None):
+    def get_temp_path(name: str | None = None, extension: str | None = None):
         return TempFile(name, extension).path
 
 
 class TempFolder:
-    def __init__(self, name: Optional[str] = None, path: Optional["tbcml.Path"] = None):
+    def __init__(self, name: str | None = None, path: tbcml.Path | None = None):
         if name is None:
             name = str(uuid.uuid4())
         if path is None:
@@ -69,5 +71,5 @@ class TempFolder:
             self.path_dir.remove(in_thread=True)
 
     @staticmethod
-    def get_temp_path(name: Optional[str] = None):
+    def get_temp_path(name: str | None = None):
         return TempFolder(name).path

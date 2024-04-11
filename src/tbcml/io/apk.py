@@ -1,5 +1,6 @@
+from __future__ import annotations
 import enum
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 import bs4
 import cloudscraper  # type: ignore
@@ -38,13 +39,13 @@ class Apk(Pkg):
 
     def __init__(
         self,
-        game_version: "tbcml.GV",
-        country_code: "tbcml.CC",
-        apk_folder: Optional["tbcml.PathStr"] = None,
+        game_version: tbcml.GV,
+        country_code: tbcml.CC,
+        apk_folder: tbcml.PathStr | None = None,
         allowed_script_mods: bool = True,
         is_modded: bool = False,
         use_pkg_name_for_folder: bool = False,
-        pkg_name: Optional[str] = None,
+        pkg_name: str | None = None,
         create_dirs: bool = True,
     ):
         super().__init__(
@@ -57,7 +58,7 @@ class Apk(Pkg):
             pkg_name,
             create_dirs,
         )
-        self.smali_handler: Optional[tbcml.SmaliHandler] = None
+        self.smali_handler: tbcml.SmaliHandler | None = None
 
     def is_apk(self) -> bool:
         return True
@@ -71,7 +72,7 @@ class Apk(Pkg):
         self.smali_non_original_path.remove_tree()
 
     @staticmethod
-    def run_apktool(command: str) -> "tbcml.CommandResult":
+    def run_apktool(command: str) -> tbcml.CommandResult:
         apktool_path = tbcml.Path.get_lib("apktool.jar")
         if not apktool_path.is_valid():
             raise ValueError("Apktool path is not valid")
@@ -233,7 +234,7 @@ class Apk(Pkg):
 
     def pack(
         self,
-        use_apktool: Optional[bool] = None,
+        use_apktool: bool | None = None,
     ):
         if use_apktool is None:
             use_apktool = self.did_use_apktool()
@@ -316,8 +317,8 @@ class Apk(Pkg):
             return False
         return True
 
-    def get_lib_paths(self) -> dict[str, "tbcml.Path"]:
-        paths: dict[str, "tbcml.Path"] = {}
+    def get_lib_paths(self) -> dict[str, tbcml.Path]:
+        paths: dict[str, tbcml.Path] = {}
         for dir in self.extracted_path.add("lib").get_dirs():
             arc = dir.basename()
             path = self.get_native_lib_path(arc)
@@ -339,13 +340,13 @@ class Apk(Pkg):
 
     def load_packs_into_game(
         self,
-        packs: "tbcml.GamePacks",
-        copy_path: Optional["tbcml.Path"] = None,
+        packs: tbcml.GamePacks,
+        copy_path: tbcml.Path | None = None,
         save_in_modded_pkgs: bool = False,
-        progress_callback: Optional[
-            Callable[["tbcml.PKGProgressSignal"], Optional[bool]]
-        ] = None,
-        use_apktool: Optional[bool] = None,
+        progress_callback: (
+            Callable[[tbcml.PKGProgressSignal], bool | None] | None
+        ) = None,
+        use_apktool: bool | None = None,
     ) -> bool:
         if progress_callback is None:
             progress_callback = lambda _: None
@@ -385,12 +386,12 @@ class Apk(Pkg):
         return True
 
     @staticmethod
-    def get_default_pkg_folder() -> "tbcml.Path":
+    def get_default_pkg_folder() -> tbcml.Path:
         return tbcml.Path.get_documents_folder().add("APKs").generate_dirs()
 
     @staticmethod
     def get_all_downloaded(
-        all_pkg_dir: Optional["tbcml.Path"] = None, cleanup: bool = False
+        all_pkg_dir: tbcml.Path | None = None, cleanup: bool = False
     ) -> list["Apk"]:
         """
         Get all downloaded APKs
@@ -398,18 +399,18 @@ class Apk(Pkg):
         Returns:
             list[APK]: List of APKs
         """
-        return tbcml.Pkg.get_all_downloaded_pkgs(all_pkg_dir, cleanup, Apk)
+        return tbcml.Pkg.get_all_downloaded_pkgs(Apk, all_pkg_dir, cleanup)
 
     @staticmethod
     def get_all_pkgs_cc(
-        cc: "tbcml.CountryCode", pkg_folder: Optional["tbcml.Path"] = None
+        cc: tbcml.CountryCode, pkg_folder: tbcml.Path | None = None
     ) -> list["Apk"]:
         """
         Get all APKs for a country code
 
         Args:
             cc (country_code.CountryCode): Country code
-            pkg_folder (Optional[tbcml.Path], optional): APK folder, defaults to default APK folder
+            pkg_folder (tbcml.Path | None, optional): APK folder, defaults to default APK folder
 
         Returns:
             list[APK]: List of APKs
@@ -418,9 +419,9 @@ class Apk(Pkg):
 
     @staticmethod
     def get_all_versions_v2(
-        cc: "tbcml.CountryCode",
+        cc: tbcml.CountryCode,
         apk_list_url: str = "https://raw.githubusercontent.com/fieryhenry/BCData/master/apk_list.json",
-    ) -> list["tbcml.GameVersion"]:
+    ) -> list[tbcml.GameVersion]:
         response = tbcml.RequestHandler(apk_list_url).get()
         json = response.json()
         versions: list[tbcml.GameVersion] = []
@@ -432,7 +433,7 @@ class Apk(Pkg):
         return versions
 
     @staticmethod
-    def get_all_versions(cc: "tbcml.CountryCode"):
+    def get_all_versions(cc: tbcml.CountryCode):
         versions: set[int] = set()
         versions.update([gv.game_version for gv in Apk.get_all_versions_v1(cc)])
         if cc == tbcml.CountryCode.EN or cc == tbcml.CountryCode.JP:
@@ -451,8 +452,8 @@ class Apk(Pkg):
 
     @staticmethod
     def get_all_versions_v1(
-        cc: "tbcml.CountryCode",
-    ) -> list["tbcml.GameVersion"]:
+        cc: tbcml.CountryCode,
+    ) -> list[tbcml.GameVersion]:
         """
         Get all APK versions
 
@@ -482,7 +483,7 @@ class Apk(Pkg):
         return versions
 
     @staticmethod
-    def get_latest_version_v1(cc: "tbcml.CountryCode"):
+    def get_latest_version_v1(cc: tbcml.CountryCode):
         versions = Apk.get_all_versions_v1(cc)
         if cc == tbcml.CountryCode.EN or cc == tbcml.CountryCode.JP:
             new_versions = Apk.get_all_versions_en(cc)
@@ -496,7 +497,7 @@ class Apk(Pkg):
         return versions[0]
 
     @staticmethod
-    def get_latest_version_v2(cc: "tbcml.CountryCode"):
+    def get_latest_version_v2(cc: tbcml.CountryCode):
         versions = Apk.get_all_versions_v2(cc)
         if len(versions) == 0:
             return None
@@ -504,7 +505,7 @@ class Apk(Pkg):
         return versions[0]
 
     @staticmethod
-    def get_latest_version(cc: "tbcml.CountryCode", v2: bool = True, v1: bool = True):
+    def get_latest_version(cc: tbcml.CountryCode, v2: bool = True, v1: bool = True):
         version_v1 = None
         version_v2 = None
         if v1:
@@ -522,9 +523,9 @@ class Apk(Pkg):
 
     def get_download_stream(
         self,
-        scraper: "cloudscraper.CloudScraper",
+        scraper: cloudscraper.CloudScraper,
         url: str,
-    ) -> Optional[requests.Response]:
+    ) -> requests.Response | None:
         try:
             stream = scraper.get(url, stream=True, timeout=10)
         except requests.RequestException:
@@ -535,9 +536,7 @@ class Apk(Pkg):
 
     def download_v2(
         self,
-        progress: Optional[
-            Callable[[float, int, int, bool], Optional[bool]]
-        ] = Pkg.progress,
+        progress: Callable[[float, int, int, bool], bool | None] | None = Pkg.progress,
         force: bool = False,
         apk_list_url: str = "https://raw.githubusercontent.com/fieryhenry/BCData/master/apk_list.json",
     ) -> bool:
@@ -575,9 +574,7 @@ class Apk(Pkg):
 
     def download(
         self,
-        progress: Optional[
-            Callable[[float, int, int, bool], Optional[bool]]
-        ] = Pkg.progress,
+        progress: Callable[[float, int, int, bool], bool | None] | None = Pkg.progress,
         force: bool = False,
         skip_signature_check: bool = False,
     ) -> bool:
@@ -611,9 +608,7 @@ class Apk(Pkg):
 
     def download_v1(
         self,
-        progress: Optional[
-            Callable[[float, int, int, bool], Optional[bool]]
-        ] = Pkg.progress,
+        progress: Callable[[float, int, int, bool], bool | None] | None = Pkg.progress,
         force: bool = False,
     ) -> bool:
         if self.pkg_path.exists() and not force:
@@ -632,9 +627,7 @@ class Apk(Pkg):
 
     def download_v1_all(
         self,
-        progress: Optional[
-            Callable[[float, int, int, bool], Optional[bool]]
-        ] = Pkg.progress,
+        progress: Callable[[float, int, int, bool], bool | None] | None = Pkg.progress,
     ) -> bool:
         url = self.get_download_url()
         scraper = cloudscraper.create_scraper()  # type: ignore
@@ -679,9 +672,7 @@ class Apk(Pkg):
     def download_apk_en(
         self,
         is_en: bool = True,
-        progress: Optional[
-            Callable[[float, int, int, bool], Optional[bool]]
-        ] = Pkg.progress,
+        progress: Callable[[float, int, int, bool], bool | None] | None = Pkg.progress,
     ) -> bool:
         urls = Apk.get_en_apk_urls("the-battle-cats" if is_en else "the-battle-cats-jp")
         if not urls:
@@ -751,7 +742,7 @@ class Apk(Pkg):
         }
 
     @staticmethod
-    def get_en_app_id(package_name: str) -> Optional[str]:
+    def get_en_app_id(package_name: str) -> str | None:
         url = f"https://{package_name}.en.uptodown.com/android/versions"
         try:
             resp = tbcml.RequestHandler(url, Apk.get_uptdown_headers()).get()
@@ -785,7 +776,7 @@ class Apk(Pkg):
         return versions
 
     @staticmethod
-    def get_en_apk_urls(package_name: str) -> Optional[dict[str, Any]]:
+    def get_en_apk_urls(package_name: str) -> dict[str, Any] | None:
         json_data = Apk.get_en_apk_json(package_name)
         versions: list[str] = []
         urls: list[str] = []
@@ -799,8 +790,8 @@ class Apk(Pkg):
 
     @staticmethod
     def get_all_versions_en(
-        cc: "tbcml.CountryCode",
-    ) -> list["tbcml.GameVersion"]:
+        cc: tbcml.CountryCode,
+    ) -> list[tbcml.GameVersion]:
         apk_urls = Apk.get_en_apk_urls(
             "the-battle-cats-jp" if cc == tbcml.CountryCode.JP else "the-battle-cats"
         )
@@ -812,7 +803,7 @@ class Apk(Pkg):
         return versions
 
     @staticmethod
-    def get_apk_version_url(cc: "tbcml.CountryCode") -> str:
+    def get_apk_version_url(cc: tbcml.CountryCode) -> str:
         if cc == tbcml.CountryCode.JP:
             url = "https://apkpure.net/%E3%81%AB%E3%82%83%E3%82%93%E3%81%93%E5%A4%A7%E6%88%A6%E4%BA%89/jp.co.ponos.battlecats/versions"
         elif cc == tbcml.CountryCode.KR:
@@ -828,11 +819,11 @@ class Apk(Pkg):
         return url
 
     @staticmethod
-    def clean_up(apk_folder: Optional["tbcml.Path"] = None):
-        Apk.get_all_downloaded_pkgs(apk_folder, cleanup=True, clzz=Apk)
+    def clean_up(apk_folder: tbcml.Path | None = None):
+        Apk.get_all_downloaded_pkgs(Apk, apk_folder, cleanup=True)
 
     @staticmethod
-    def get_package_name_version_from_apk(apk_path: "tbcml.Path"):
+    def get_package_name_version_from_apk(apk_path: tbcml.Path):
         if not apk_path.is_valid():
             raise ValueError("APK path is not valid")
         cmd = f"aapt dump badging '{apk_path}'"
@@ -855,7 +846,7 @@ class Apk(Pkg):
         return cc, gv
 
     @staticmethod
-    def get_sha256_cert_hash(path: "tbcml.PathStr") -> Optional[str]:
+    def get_sha256_cert_hash(path: tbcml.PathStr) -> str | None:
         path = tbcml.Path(path)
         if not path.is_valid():
             raise ValueError("APK path is not valid")
@@ -873,12 +864,12 @@ class Apk(Pkg):
             return hash
         return None
 
-    def get_sha256_cert_hash_cls(self) -> Optional[str]:
+    def get_sha256_cert_hash_cls(self) -> str | None:
         return Apk.get_sha256_cert_hash(self.pkg_path)
 
     @staticmethod
     def is_original(
-        apk_path: Optional["tbcml.PathStr"] = None, hash: Optional[str] = None
+        apk_path: tbcml.PathStr | None = None, hash: str | None = None
     ) -> bool:
         if hash is None and apk_path is not None:
             hash = Apk.get_sha256_cert_hash(apk_path)
@@ -893,10 +884,10 @@ class Apk(Pkg):
 
     @staticmethod
     def from_pkg_path(
-        pkg_path: "tbcml.Path",
-        cc_overwrite: Optional["tbcml.CountryCode"] = None,
-        gv_overwrite: Optional["tbcml.GameVersion"] = None,
-        pkg_folder: Optional["tbcml.Path"] = None,
+        pkg_path: tbcml.Path,
+        cc_overwrite: tbcml.CountryCode | None = None,
+        gv_overwrite: tbcml.GameVersion | None = None,
+        pkg_folder: tbcml.Path | None = None,
         allowed_script_mods: bool = True,
         skip_signature_check: bool = False,
         overwrite_pkg: bool = True,
@@ -942,7 +933,7 @@ class Apk(Pkg):
             architectures.append(arc)
         return architectures
 
-    def get_native_lib_path(self, architecture: str) -> "tbcml.Path":
+    def get_native_lib_path(self, architecture: str) -> tbcml.Path:
         if not self.is_java():
             return self.get_lib_path(architecture).add("libnative-lib.so")
         return self.get_lib_path(architecture).add("libbattlecats-jni.so")
@@ -950,7 +941,7 @@ class Apk(Pkg):
     def is_java(self):
         return self.get_lib_path("x86").add("libbattlecats-jni.so").exists()
 
-    def get_smali_handler(self) -> "tbcml.SmaliHandler":
+    def get_smali_handler(self) -> tbcml.SmaliHandler:
         if self.smali_handler is None:
             self.smali_handler = tbcml.SmaliHandler(self)
         return self.smali_handler
@@ -958,10 +949,10 @@ class Apk(Pkg):
     def inject_smali(self, library_name: str):
         self.get_smali_handler().inject_load_library(library_name)
 
-    def get_lib_path(self, architecture: str) -> "tbcml.Path":
+    def get_lib_path(self, architecture: str) -> tbcml.Path:
         return self.extracted_path.add("lib").add(architecture)
 
-    def add_to_lib_folder(self, architecture: str, library_path: "tbcml.Path"):
+    def add_to_lib_folder(self, architecture: str, library_path: tbcml.Path):
         lib_folder_path = self.get_lib_path(architecture)
         library_path.copy(lib_folder_path)
         new_name = library_path.basename()
@@ -978,27 +969,27 @@ class Apk(Pkg):
     def get_libgadget_config_path(self):
         return tbcml.Path("libfrida-gadget.config.so")
 
-    def get_manifest_path(self) -> "tbcml.Path":
+    def get_manifest_path(self) -> tbcml.Path:
         return self.extracted_path.add("AndroidManifest.xml")
 
-    def parse_manifest(self) -> Optional["tbcml.XML"]:
+    def parse_manifest(self) -> tbcml.XML | None:
         return self.parse_xml(self.get_manifest_path())
 
-    def parse_xml(self, path: "tbcml.Path") -> Optional["tbcml.XML"]:
+    def parse_xml(self, path: tbcml.Path) -> tbcml.XML | None:
         try:
             return tbcml.XML(path.read())
         except Exception:
             return None
 
-    def set_manifest(self, manifest: "tbcml.XML"):
+    def set_manifest(self, manifest: tbcml.XML):
         manifest.to_file(self.get_manifest_path())
 
-    def get_pack_location(self) -> "tbcml.Path":
+    def get_pack_location(self) -> tbcml.Path:
         if self.is_java():
             return self.extracted_path.add("res").add("raw")
         return self.extracted_path.add("assets")
 
-    def get_original_pack_location(self) -> "tbcml.Path":
+    def get_original_pack_location(self) -> tbcml.Path:
         if self.is_java():
             return self.original_extracted_path.add("res").add("raw")
         return self.original_extracted_path.add("assets")
@@ -1009,10 +1000,10 @@ class Apk(Pkg):
     def audio_file_startswith_snd(self) -> bool:
         return True
 
-    def get_asset(self, asset_name: "tbcml.PathStr") -> "tbcml.Path":
+    def get_asset(self, asset_name: tbcml.PathStr) -> tbcml.Path:
         return self.extracted_path.add("assets").add(asset_name)
 
-    def apply_mod_smali(self, mod: "tbcml.Mod"):
+    def apply_mod_smali(self, mod: tbcml.Mod):
         if mod.smali.is_empty():
             return
         self.get_smali_handler().inject_into_on_create(mod.smali.get_list())
@@ -1063,17 +1054,17 @@ class Apk(Pkg):
     def get_values_xml_path(self, name: str):
         return self.extracted_path.add("res").add("values").add(f"{name}.xml")
 
-    def load_xml(self, name: str) -> Optional["tbcml.XML"]:
+    def load_xml(self, name: str) -> tbcml.XML | None:
         strings_xml = self.get_values_xml_path(name)
         if not strings_xml.exists():
             return None
         return tbcml.XML(strings_xml.read())
 
-    def save_xml(self, name: str, xml: "tbcml.XML"):
+    def save_xml(self, name: str, xml: tbcml.XML):
         xml.to_file(self.get_values_xml_path(name))
 
     def set_string(
-        self, name: str, value: str, include_lang: bool, lang: Optional[str] = None
+        self, name: str, value: str, include_lang: bool, lang: str | None = None
     ):
         if self.country_code == tbcml.CountryCode.EN and include_lang:
             if lang is None:
@@ -1082,7 +1073,7 @@ class Apk(Pkg):
 
         return self.edit_xml_string(name, value)
 
-    def get_string(self, name: str, include_lang: bool, lang: Optional[str] = None):
+    def get_string(self, name: str, include_lang: bool, lang: str | None = None):
         if self.country_code == tbcml.CountryCode.EN and include_lang:
             if lang is None:
                 lang = "en"
@@ -1102,7 +1093,7 @@ class Apk(Pkg):
         self.save_xml("strings", strings_xml)
         return True
 
-    def get_xml_string(self, name: str) -> Optional[str]:
+    def get_xml_string(self, name: str) -> str | None:
         strings_xml = self.load_xml("strings")
         if strings_xml is None:
             return None
@@ -1151,7 +1142,7 @@ class Apk(Pkg):
 
         return True
 
-    def read_pkg_name(self) -> Optional[str]:
+    def read_pkg_name(self) -> str | None:
         manifest = self.parse_manifest()
         if manifest is None:
             return None
@@ -1192,12 +1183,12 @@ class Apk(Pkg):
 
     @staticmethod
     def try_get_pkg_from_path(
-        path: "tbcml.Path",
-        all_pkg_dir: Optional["tbcml.Path"] = None,
-    ) -> Optional["Apk"]:
+        path: tbcml.Path,
+        all_pkg_dir: tbcml.Path | None = None,
+    ) -> Apk | None:
         return Apk.try_get_pkg_from_path_pkg(path, all_pkg_dir=all_pkg_dir, clzz=Apk)
 
-    def add_smali_mods(self, mods: list["tbcml.Mod"]):
+    def add_smali_mods(self, mods: list[tbcml.Mod]):
         if not self.is_allowed_script_mods():
             return
         for mod in mods:
@@ -1219,18 +1210,18 @@ class Apk(Pkg):
 
     def load_mods(
         self,
-        mods: list["tbcml.Mod"],
-        game_packs: Optional["tbcml.GamePacks"] = None,
-        lang: Optional["tbcml.Language"] = None,
-        key: Optional[str] = None,
-        iv: Optional[str] = None,
+        mods: list[tbcml.Mod],
+        game_packs: tbcml.GamePacks | None = None,
+        lang: tbcml.Language | None = None,
+        key: str | None = None,
+        iv: str | None = None,
         add_modded_html: bool = True,
         save_in_modded_pkgs: bool = False,
-        progress_callback: Optional[
-            Callable[["tbcml.PKGProgressSignal"], Optional[bool]]
-        ] = None,
+        progress_callback: (
+            Callable[[tbcml.PKGProgressSignal], bool | None] | None
+        ) = None,
         do_final_pkg_actions: bool = True,
-        use_apktool: Optional[bool] = None,
+        use_apktool: bool | None = None,
     ) -> bool:
         if progress_callback is None:
             progress_callback = lambda x: None

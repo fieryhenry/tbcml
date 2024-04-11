@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import tbcml
-from typing import Callable, List, Optional, Union
+from typing import Callable
 
 
 class ModLoaderUninitializedException(Exception):
@@ -22,8 +24,8 @@ class IpaModLoader:
 
     def __init__(
         self,
-        country_code: "tbcml.CC",
-        game_version: "tbcml.GV",
+        country_code: tbcml.CC,
+        game_version: tbcml.GV,
     ):
         """Initialize ModLoader
 
@@ -44,12 +46,12 @@ class IpaModLoader:
         else:
             self.game_version = game_version
 
-        self.game_packs: Optional[tbcml.GamePacks] = None
-        self.ipa: Optional[tbcml.Ipa] = None
+        self.game_packs: tbcml.GamePacks | None = None
+        self.ipa: tbcml.Ipa | None = None
 
     @staticmethod
     def from_ipa(
-        ipa: "tbcml.Ipa",
+        ipa: tbcml.Ipa,
     ):
         """Creates a ModLoader from an already existing Ipa object
 
@@ -63,11 +65,11 @@ class IpaModLoader:
 
     def initialize(
         self,
-        pkg_path: "tbcml.PathStr",
+        pkg_path: tbcml.PathStr,
         force_extract: bool = False,
         print_errors: bool = True,
-        custom_ipa_folder: Optional["tbcml.Path"] = None,
-        lang: Optional["tbcml.LanguageStr"] = None,
+        custom_ipa_folder: tbcml.Path | None = None,
+        lang: tbcml.LanguageStr | None = None,
     ):
         """Initializes the mod loader, loads ipa + game packs.
         Must be called before doing anything really.
@@ -76,8 +78,8 @@ class IpaModLoader:
             ipa_path (tbcml.PathStr): Path to an ipa file. Note that you should probably change the custom_ipa_folder if using a non-original tbc ipa
             force_extract (bool, optional): Whether to always extract the ipa, even if it has already been extracted before.
             print_errors (bool, optional): Whether to show errors if they occur. Defaults to True.
-            custom_ipa_folder (Optional[tbcml.Path], optional): If you want to specify where the ipa is downloaded / extracted to. Defaults to None which means leave as default (Documents/tbcml/ipas).
-            lang (Optional["fr", "it", "de", "es", "th"], optional): If you are using an en ipa, change what language should be used. Defaults to None which is the country code
+            custom_ipa_folder (tbcml.Path | None, optional): If you want to specify where the ipa is downloaded / extracted to. Defaults to None which means leave as default (Documents/tbcml/ipas).
+            lang ("fr", "it", "de", "es", "th" | None, optional): If you are using an en ipa, change what language should be used. Defaults to None which is the country code
         """
         if isinstance(lang, str):
             lang = tbcml.Language(lang)
@@ -92,11 +94,11 @@ class IpaModLoader:
 
     def __get_ipa(
         self,
-        ipa_path: "tbcml.PathStr",
+        ipa_path: tbcml.PathStr,
         force_extract: bool = False,
-        lang: Optional["tbcml.Language"] = None,
+        lang: tbcml.Language | None = None,
         print_errors: bool = True,
-        custom_ipa_folder: Optional["tbcml.PathStr"] = None,
+        custom_ipa_folder: tbcml.PathStr | None = None,
         display_server_download_progress: bool = False,
     ):
         if custom_ipa_folder is not None:
@@ -133,7 +135,7 @@ class IpaModLoader:
 
         self.game_packs = tbcml.GamePacks.from_pkg(self.ipa, lang=lang)
 
-    def get_game_packs(self) -> "tbcml.GamePacks":
+    def get_game_packs(self) -> tbcml.GamePacks:
         """Gets the game packs from a ModLoader instance, will never be None, unlike .game_packs attribute
 
         Raises:
@@ -150,29 +152,29 @@ class IpaModLoader:
 
     def apply(
         self,
-        mods: Union[List["tbcml.Mod"], "tbcml.Mod"],
-        custom_enc_key: Optional[str] = None,
-        custom_enc_iv: Optional[str] = None,
+        mods: list[tbcml.Mod] | tbcml.Mod,
+        custom_enc_key: str | None = None,
+        custom_enc_iv: str | None = None,
         open_path: bool = False,
         add_modded_html: bool = True,
         raise_error: bool = True,
         save_in_modded_ipas: bool = False,
-        progress_callback: Optional[
-            Callable[["tbcml.PKGProgressSignal"], Optional[bool]]
-        ] = None,
+        progress_callback: (
+            Callable[[tbcml.PKGProgressSignal], bool | None] | None
+        ) = None,
         do_final_pkg_actions: bool = True,
     ):
         """Applies a mod / mods to the ipa to create a modded ipa.
 
         Args:
-            mods (Union[List[tbcml.Mod], tbcml.Mod]): Mod / mods to apply to the loaded ipa
-            custom_enc_key (Optional[str], optional): Custom game pack encryption key. Defaults to None which is default key. Use if you want it to be harder to decrypt your game data. Does not apply to ImageDataLocal + makes applying mods take longer
-            custom_enc_iv (Optional[str], optional): Custom game pack encryption iv, same use case / issues as key as shown above. Defaults to None.
+            mods (ist[tbcml.Mod] | tbcml.Mod): Mod / mods to apply to the loaded ipa
+            custom_enc_key (str | None, optional): Custom game pack encryption key. Defaults to None which is default key. Use if you want it to be harder to decrypt your game data. Does not apply to ImageDataLocal + makes applying mods take longer
+            custom_enc_iv (str | None, optional): Custom game pack encryption iv, same use case / issues as key as shown above. Defaults to None.
             open_path (bool, optional): Whether to open the folder containing the final ipa after everything has been loaded. Defaults to False.
             add_modded_html (bool, optional): Whether to modify the transfer screen to display your current mods. Defaults to True.
             raise_error (bool): Whether to raise an error if applying mods fails. Defaults to True
             save_in_modded_ipas (bool, optional): Whether to save the modded ipa in the modded ipas folder. Defaults to False.
-            progress_callback (Optional[Callable[[tbcml.PKGProgressSignal], Optional[bool]]], optional): Callback to get progress of applying mods. If returns False, will stop applying mods. Defaults to None.
+            progress_callback (Callable[[tbcml.PKGProgressSignal], bool | None] | None, optional): Callback to get progress of applying mods. If returns False, will stop applying mods. Defaults to None.
             do_final_pkg_actions (bool, optional): Whether to do final pkg actions (e.g. pack and sign the pkg). Defaults to True.
 
         Raises:
@@ -201,7 +203,7 @@ class IpaModLoader:
         if open_path:
             self.ipa.output_path.open()
 
-    def get_ipa(self) -> "tbcml.Ipa":
+    def get_ipa(self) -> tbcml.Ipa:
         """Gets the ipa from a ModLoader instance. Will never be None
 
         Raises:
@@ -216,7 +218,7 @@ class IpaModLoader:
             )
         return self.ipa
 
-    def get_pkg(self) -> "tbcml.Pkg":
+    def get_pkg(self) -> tbcml.Pkg:
         """Gets the pkg from a ModLoader instance. Will never be None
 
         Raises:

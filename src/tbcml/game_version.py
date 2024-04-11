@@ -1,6 +1,7 @@
 """A module containing the GameVersion class."""
 
-from typing import Any, Optional, Union
+from __future__ import annotations
+from typing import Any
 
 import tbcml
 
@@ -17,7 +18,7 @@ class GameVersion:
         self.game_version = game_version
 
     @staticmethod
-    def from_gv(gv: "tbcml.GV") -> "GameVersion":
+    def from_gv(gv: tbcml.GV) -> GameVersion:
         if isinstance(gv, str):
             return GameVersion.from_string(gv)
         return gv
@@ -110,7 +111,7 @@ class GameVersion:
     @staticmethod
     def from_string_latest(
         game_version: str,
-        country_code: "tbcml.CountryCode",
+        country_code: tbcml.CountryCode,
     ) -> "GameVersion":
         """Converts a string to a GameVersion object, or gets the latest version if the string is "latest".
 
@@ -130,15 +131,15 @@ class GameVersion:
 
     @staticmethod
     def get_latest_version(
-        country_code: "tbcml.CountryCode",
-    ) -> Optional["GameVersion"]:
+        country_code: tbcml.CountryCode,
+    ) -> GameVersion | None:
         """Gets the latest game version for a country code.
 
         Args:
             country_code (country_code.CountryCode): Country code of the game version.
 
         Returns:
-            Optional[GameVersion]: Latest game version.
+            GameVersion | None: Latest game version.
         """
         return tbcml.Apk.get_latest_version(country_code)
 
@@ -235,4 +236,4 @@ class GameVersion:
         return hash(self.game_version)
 
 
-GV = Union[str, GameVersion]
+GV = str | GameVersion

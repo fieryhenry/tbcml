@@ -1,33 +1,35 @@
+from __future__ import annotations
+
 import json
 from typing import Any
 import tbcml
 
 
 class JsonFile:
-    def __init__(self, data: "tbcml.Data"):
+    def __init__(self, data: tbcml.Data):
         self.json = json.loads(data.data)
 
     @staticmethod
-    def from_path(path: "tbcml.Path") -> "JsonFile":
+    def from_path(path: tbcml.Path) -> JsonFile:
         return JsonFile(path.read())
 
     @staticmethod
-    def from_object(js: Any) -> "JsonFile":
+    def from_object(js: Any) -> JsonFile:
         return JsonFile(tbcml.Data(json.dumps(js)))
 
     @staticmethod
-    def from_data(data: "tbcml.Data") -> "JsonFile":
+    def from_data(data: tbcml.Data) -> JsonFile:
         return JsonFile(data)
 
-    def to_data(self) -> "tbcml.Data":
+    def to_data(self) -> tbcml.Data:
         return tbcml.Data(json.dumps(self.json, indent=4))
 
-    def to_data_request(self) -> "tbcml.Data":
+    def to_data_request(self) -> tbcml.Data:
         return tbcml.Data(json.dumps(self.json)).replace(
             tbcml.Data(" "), tbcml.Data("")
         )
 
-    def save(self, path: "tbcml.Path") -> None:
+    def save(self, path: tbcml.Path) -> None:
         path.write(self.to_data())
 
     def get_json(self) -> Any:

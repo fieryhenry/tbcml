@@ -1,4 +1,5 @@
-from typing import Optional
+from __future__ import annotations
+
 import xml.etree.ElementTree as ET
 import tbcml
 
@@ -6,16 +7,14 @@ import tbcml
 class XML:
     ET = ET
 
-    def __init__(
-        self, data: Optional["tbcml.Data"] = None, root: Optional[ET.Element] = None
-    ):
+    def __init__(self, data: tbcml.Data | None = None, root: ET.Element | None = None):
         ET.register_namespace("android", "http://schemas.android.com/apk/res/android")
         if data is not None:
             self.root = ET.fromstring(data.to_str())
         if root is not None:
             self.root = root
 
-    def get_element(self, path: str) -> Optional[ET.Element]:
+    def get_element(self, path: str) -> ET.Element | None:
         path = path.replace("manifest", "").strip()
         path = path.lstrip("/").strip()
         if not path:
@@ -32,7 +31,7 @@ class XML:
             raise ValueError("Element not found")
         element.text = value
 
-    def to_data(self) -> "tbcml.Data":
+    def to_data(self) -> tbcml.Data:
         string = ET.tostring(
             self.root,
             xml_declaration=True,
@@ -40,7 +39,7 @@ class XML:
         ).decode("utf-8")
         return tbcml.Data(string)
 
-    def to_file(self, path: "tbcml.Path"):
+    def to_file(self, path: tbcml.Path):
         path.write(self.to_data())
 
     def get_attribute_name(self, attribute: str) -> str:
@@ -55,7 +54,7 @@ class XML:
             raise ValueError("Element not found")
         element.set(attribute, value)
 
-    def get_attribute(self, path: str, attribute: str) -> Optional[str]:
+    def get_attribute(self, path: str, attribute: str) -> str | None:
         attribute = self.get_attribute_name(attribute)
         element = self.get_element(path)
         if element is None:

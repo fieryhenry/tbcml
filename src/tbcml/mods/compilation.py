@@ -1,4 +1,6 @@
-from typing import Any, Optional
+from __future__ import annotations
+
+from typing import Any
 import tbcml
 
 
@@ -7,7 +9,7 @@ class CompilationTarget:
         self,
         target_country_codes: str,
         target_game_versions: str,
-        target_langs: Optional[str] = None,
+        target_langs: str | None = None,
     ):
         """Initialize compilation target
 
@@ -21,12 +23,12 @@ class CompilationTarget:
         self.target_game_versions = target_game_versions
         self.target_langs = target_langs
 
-        self.files: dict[str, "tbcml.Data"] = {}
+        self.files: dict[str, tbcml.Data] = {}
 
-    def set_file(self, name: str, data: "tbcml.Data"):
+    def set_file(self, name: str, data: tbcml.Data):
         self.files[name] = data
 
-    def add_to_zip(self, index: int, zipfile: "tbcml.Zip"):
+    def add_to_zip(self, index: int, zipfile: tbcml.Zip):
         target_path = tbcml.Path(tbcml.ModPath.COMPILATION_TARGETS.value).add(
             f"{index}"
         )
@@ -49,7 +51,7 @@ class CompilationTarget:
             zipfile.add_file(path, data)
 
     @staticmethod
-    def from_zip(index: int, zipfile: "tbcml.Zip"):
+    def from_zip(index: int, zipfile: tbcml.Zip):
         target_path = tbcml.Path(tbcml.ModPath.COMPILATION_TARGETS.value).add(
             f"{index}"
         )
@@ -67,7 +69,7 @@ class CompilationTarget:
         if target_country_codes is None or target_game_versions is None:
             return None
 
-        files: dict[str, "tbcml.Data"] = {}
+        files: dict[str, tbcml.Data] = {}
 
         files_path = target_path.add("files")
 
@@ -104,10 +106,10 @@ class CompilationTarget:
 
         return False
 
-    def check_country_code(self, cc: "tbcml.CountryCode"):
+    def check_country_code(self, cc: tbcml.CountryCode):
         return self.check_string(self.target_country_codes, cc.get_code())
 
-    def check_lang(self, lang: Optional["tbcml.Language"], cc: "tbcml.CountryCode"):
+    def check_lang(self, lang: tbcml.Language | None, cc: tbcml.CountryCode):
         if cc != tbcml.CountryCode.EN or self.target_langs is None:
             return True
 
@@ -118,7 +120,7 @@ class CompilationTarget:
 
         return self.check_string(self.target_langs, lang_str)
 
-    def check_game_version(self, gv: "tbcml.GameVersion"):
+    def check_game_version(self, gv: tbcml.GameVersion):
         versions = self.target_game_versions.split(",")
         for version in versions:
             version = version.lower().strip()
@@ -183,7 +185,7 @@ class CompilationTarget:
                 return False
         return False
 
-    def check_game_data(self, game_packs: "tbcml.GamePacks"):
+    def check_game_data(self, game_packs: tbcml.GamePacks):
         return (
             self.check_country_code(game_packs.country_code)
             and self.check_game_version(game_packs.gv)

@@ -1,4 +1,5 @@
-from typing import Optional
+from __future__ import annotations
+
 from marshmallow_dataclass import dataclass
 import tbcml
 
@@ -43,7 +44,7 @@ class FridaScript:
     """The name of the script"""
     content: str
     """The actual script code, see <https://frida.re/docs/javascript-api/> on how to write a script, or look at the examples"""
-    architectures: "tbcml.ARCS"
+    architectures: tbcml.ARCS
     """The architectrues the script should apply to.
     
     Options are: `[x86, x86_64, arm64-v8a, armeabi-v7a, armeabi, mips, mips64], all, 32, 64.`
@@ -63,11 +64,11 @@ class FridaScript:
     This is less reliable than injecting into libnative-lib.so, but may work for old versions.
     Also useful if you want to hook into something as soon as the app loads. Defaults to False
     """
-    valid_ccs: Optional[list["tbcml.CC"]] = None
+    valid_ccs: list[tbcml.CC] | None = None
     """List of country codes (en, jp, kr, tw) the script should apply to.
     If None, the script should apply to all country codes. Defaults to None
     """
-    valid_game_versions: Optional[list["tbcml.GV"]] = None
+    valid_game_versions: list[tbcml.GV] | None = None
     """List of game versions (e.g 12.3.0, 13.0.0) the script should apply to
     If None, the script should apply to all game versions. Defaults to None
     """
@@ -76,20 +77,20 @@ class FridaScript:
         return FridaScript.Schema().dumps(self)  # type: ignore
 
     @staticmethod
-    def from_json(data: str) -> "FridaScript":
+    def from_json(data: str) -> FridaScript:
         return FridaScript.Schema().loads(data)  # type: ignore
 
     @staticmethod
-    def get_path(index: int) -> "tbcml.Path":
+    def get_path(index: int) -> tbcml.Path:
         return tbcml.Path(tbcml.ModPath.SCRIPTS.value).add(f"{index}.json")
 
-    def add_to_zip(self, index: int, zip: "tbcml.Zip"):
+    def add_to_zip(self, index: int, zip: tbcml.Zip):
         path = FridaScript.get_path(index)
         json = self.to_json()
         zip.add_file(path, tbcml.Data(json))
 
     @staticmethod
-    def from_zip(index: int, zip: "tbcml.Zip") -> Optional["FridaScript"]:
+    def from_zip(index: int, zip: tbcml.Zip) -> FridaScript | None:
         path = FridaScript.get_path(index)
         data = zip.get_file(path)
         if data is None:
@@ -116,7 +117,7 @@ class FridaScript:
         return string
 
     def get_scripts_str(
-        self, pkg: "tbcml.Pkg", mod_name: str, mod_authors: list[str]
+        self, pkg: tbcml.Pkg, mod_name: str, mod_authors: list[str]
     ) -> tuple[dict[str, str], bool]:
         is_valid = self.is_valid(pkg.country_code, pkg.game_version)
         if not is_valid:
@@ -135,7 +136,7 @@ class FridaScript:
     def get_custom_html(self) -> str:
         return f'<span class="iro">[{self.name}]</span><br>{self.description}<br><span class="iro">Code:</span><br><pre><code class="language-javascript">{self.content}</code></pre>'
 
-    def is_valid(self, cc: "tbcml.CountryCode", gv: "tbcml.GameVersion") -> bool:
+    def is_valid(self, cc: tbcml.CountryCode, gv: tbcml.GameVersion) -> bool:
         if self.valid_ccs is not None:
             valid_cc_str = [str(valid_cc) for valid_cc in self.valid_ccs]
             if str(cc) not in valid_cc_str:
@@ -202,7 +203,7 @@ class FridaGadgetHelper:
 
         path.write(data)
 
-    def get_path(self, arc: str) -> "tbcml.Path":
+    def get_path(self, arc: str) -> tbcml.Path:
         """Gets the path to a Frida gadget.
 
         Args:

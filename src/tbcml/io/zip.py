@@ -1,4 +1,5 @@
-from typing import Optional
+from __future__ import annotations
+
 import zipfile
 import tbcml
 
@@ -8,7 +9,7 @@ class Zip:
 
     def __init__(
         self,
-        file_data: Optional["tbcml.Data"] = None,
+        file_data: tbcml.Data | None = None,
         compression: int = zipfile.ZIP_DEFLATED,
     ):
         mode = "r"
@@ -22,10 +23,10 @@ class Zip:
 
     @staticmethod
     def compress_directory(
-        directory_path: "tbcml.Path",
-        output_path: "tbcml.Path",
+        directory_path: tbcml.Path,
+        output_path: tbcml.Path,
         compression: int = zipfile.ZIP_DEFLATED,
-        extensions_to_store: Optional[list[str]] = None,
+        extensions_to_store: list[str] | None = None,
     ):
         with zipfile.ZipFile(output_path.to_str_forwards(), "w", compression) as zipf:
             for file in directory_path.get_files_recursive():
@@ -41,15 +42,15 @@ class Zip:
                 )
 
     @staticmethod
-    def from_file(path: "tbcml.Path") -> "Zip":
+    def from_file(path: tbcml.Path) -> Zip:
         return Zip(path.read())
 
-    def add_file(self, file_name: "tbcml.Path", file_data: "tbcml.Data"):
+    def add_file(self, file_name: tbcml.Path, file_data: tbcml.Data):
         self.zip.writestr(file_name.to_str_forwards(), file_data.to_bytes())
 
     def get_file(
-        self, file_name: "tbcml.Path", show_error: bool = False
-    ) -> Optional["tbcml.Data"]:
+        self, file_name: tbcml.Path, show_error: bool = False
+    ) -> tbcml.Data | None:
         try:
             return tbcml.Data(self.zip.read(file_name.to_str_forwards()))
         except KeyError:
@@ -57,7 +58,7 @@ class Zip:
                 print(f"File {file_name} not found in zip")
             return None
 
-    def to_data(self) -> "tbcml.Data":
+    def to_data(self) -> tbcml.Data:
         self.close()
         data = tbcml.Data(self.file_data.getvalue())
         return data
@@ -68,17 +69,17 @@ class Zip:
     def close(self):
         self.zip.close()
 
-    def save(self, path: "tbcml.Path"):
+    def save(self, path: tbcml.Path):
         self.close()
         path.write(self.to_data())
 
-    def extract(self, path: "tbcml.Path"):
+    def extract(self, path: tbcml.Path):
         self.zip.extractall(path.to_str_forwards())
 
-    def get_paths(self) -> list["tbcml.Path"]:
+    def get_paths(self) -> list[tbcml.Path]:
         return [tbcml.Path(name) for name in self.zip.namelist()]
 
-    def get_paths_in_folder(self, folder_name: "tbcml.Path") -> list["tbcml.Path"]:
+    def get_paths_in_folder(self, folder_name: tbcml.Path) -> list[tbcml.Path]:
         return [
             tbcml.Path(name)
             for name in self.zip.namelist()

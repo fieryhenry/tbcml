@@ -1,4 +1,5 @@
-from typing import Optional
+from __future__ import annotations
+
 from dataclasses import field
 import tbcml
 
@@ -14,110 +15,110 @@ from marshmallow_dataclass import dataclass
 
 @dataclass
 class EnemyStats:
-    hp: Optional[int] = None
-    kbs: Optional[int] = None
-    speed: Optional[int] = None
-    attack_1_damage: Optional[int] = None
-    attack_interval: Optional[int] = None
-    attack_range: Optional[int] = None
-    money_drop: Optional[int] = None
-    collision_start: Optional[int] = None
-    collision_width: Optional[int] = None
-    unused: Optional[int] = None
-    red: Optional[bool] = None
-    area_attack: Optional[bool] = None
-    attack_1_foreswing: Optional[int] = None
-    floating: Optional[bool] = None
-    black: Optional[bool] = None
-    metal: Optional[bool] = None
-    traitless: Optional[bool] = None
-    angel: Optional[bool] = None
-    alien: Optional[bool] = None
-    zombie: Optional[bool] = None
-    knockback_prob: Optional[int] = None
-    freeze_prob: Optional[int] = None
-    freeze_duration: Optional[int] = None
-    slow_prob: Optional[int] = None
-    slow_duration: Optional[int] = None
-    crit_prob: Optional[int] = None
-    base_destroyer: Optional[bool] = None
-    wave_prob: Optional[int] = None
-    wave_level: Optional[int] = None
-    weaken_prob: Optional[int] = None
-    weaken_duration: Optional[int] = None
-    weaken_percentage: Optional[int] = None
-    strengthen_hp_start_percentage: Optional[int] = None
-    strengthen_hp_boost_percentage: Optional[int] = None
-    survive_lethal_strike_prob: Optional[int] = None
-    attack_1_ld_start: Optional[int] = None
-    attack_1_ld_range: Optional[int] = None
-    wave_immunity: Optional[bool] = None
-    wave_blocker: Optional[bool] = None
-    knockback_immunity: Optional[bool] = None
-    freeze_immunity: Optional[bool] = None
-    slow_immunity: Optional[bool] = None
-    weaken_immunity: Optional[bool] = None
-    burrow_count: Optional[int] = None
-    burrow_distance: Optional[int] = None
-    revive_count: Optional[int] = None
-    revive_time: Optional[int] = None
-    revive_hp_percentage: Optional[int] = None
-    witch: Optional[bool] = None
-    base: Optional[bool] = None
-    attacks_before_set_attack_state: Optional[int] = None
-    time_before_death: Optional[int] = None
-    attack_state: Optional[int] = None
-    spawn_anim_model_id: Optional[int] = None
-    soul_model_anim_id: Optional[int] = None
-    attack_2_damage: Optional[int] = None
-    attack_3_damage: Optional[int] = None
-    attack_2_foreswing: Optional[int] = None
-    attack_3_foreswing: Optional[int] = None
-    attack_1_use_ability: Optional[bool] = None
-    attack_2_use_ability: Optional[bool] = None
-    attack_3_use_ability: Optional[bool] = None
-    has_entry_maanim: Optional[bool] = None
-    has_death_maanim: Optional[bool] = None
-    barrier_hp: Optional[int] = None
-    warp_prob: Optional[int] = None
-    warp_duration: Optional[int] = None
-    warp_min_range: Optional[int] = None
-    warp_max_range: Optional[int] = None
-    starred_alien: Optional[bool] = None
-    warp_blocker: Optional[bool] = None
-    eva_angel: Optional[bool] = None
-    relic: Optional[bool] = None
-    curse_prob: Optional[int] = None
-    curse_duration: Optional[int] = None
-    savage_blow_prob: Optional[int] = None
-    savage_blow_damage_addition: Optional[int] = None
-    dodge_prob: Optional[int] = None
-    dodge_duration: Optional[int] = None
-    toxic_prob: Optional[int] = None
-    toxic_hp_percentage: Optional[int] = None
-    surge_prob: Optional[int] = None
-    surge_start: Optional[int] = None
-    surge_range: Optional[int] = None
-    surge_level: Optional[int] = None
-    surge_immunity: Optional[bool] = None
-    wave_is_mini: Optional[bool] = None
-    shield_hp: Optional[int] = None
-    sheild_kb_heal_percentage: Optional[int] = None
-    death_surge_prob: Optional[int] = None
-    death_surge_start: Optional[int] = None
-    death_surge_range: Optional[int] = None
-    death_surge_level: Optional[int] = None
-    aku: Optional[bool] = None
-    baron: Optional[bool] = None
-    attack_2_ld_flag: Optional[bool] = None
-    attack_2_ld_start: Optional[int] = None
-    attack_2_ld_range: Optional[int] = None
-    attack_3_ld_flag: Optional[bool] = None
-    attack_3_ld_start: Optional[int] = None
-    attack_3_ld_range: Optional[int] = None
-    behemoth: Optional[bool] = None
-    unkown_102: Optional[int] = None
-    counter_surge: Optional[bool] = None
+    hp: int | None = None
+    kbs: int | None = None
+    speed: int | None = None
+    attack_1_damage: int | None = None
+    attack_interval: int | None = None
+    attack_range: int | None = None
+    money_drop: int | None = None
+    collision_start: int | None = None
+    collision_width: int | None = None
+    unused: int | None = None
+    red: bool | None = None
+    area_attack: bool | None = None
+    attack_1_foreswing: int | None = None
+    floating: bool | None = None
+    black: bool | None = None
+    metal: bool | None = None
+    traitless: bool | None = None
+    angel: bool | None = None
+    alien: bool | None = None
+    zombie: bool | None = None
+    knockback_prob: int | None = None
+    freeze_prob: int | None = None
+    freeze_duration: int | None = None
+    slow_prob: int | None = None
+    slow_duration: int | None = None
+    crit_prob: int | None = None
+    base_destroyer: bool | None = None
+    wave_prob: int | None = None
+    wave_level: int | None = None
+    weaken_prob: int | None = None
+    weaken_duration: int | None = None
+    weaken_percentage: int | None = None
+    strengthen_hp_start_percentage: int | None = None
+    strengthen_hp_boost_percentage: int | None = None
+    survive_lethal_strike_prob: int | None = None
+    attack_1_ld_start: int | None = None
+    attack_1_ld_range: int | None = None
+    wave_immunity: bool | None = None
+    wave_blocker: bool | None = None
+    knockback_immunity: bool | None = None
+    freeze_immunity: bool | None = None
+    slow_immunity: bool | None = None
+    weaken_immunity: bool | None = None
+    burrow_count: int | None = None
+    burrow_distance: int | None = None
+    revive_count: int | None = None
+    revive_time: int | None = None
+    revive_hp_percentage: int | None = None
+    witch: bool | None = None
+    base: bool | None = None
+    attacks_before_set_attack_state: int | None = None
+    time_before_death: int | None = None
+    attack_state: int | None = None
+    spawn_anim_model_id: int | None = None
+    soul_model_anim_id: int | None = None
+    attack_2_damage: int | None = None
+    attack_3_damage: int | None = None
+    attack_2_foreswing: int | None = None
+    attack_3_foreswing: int | None = None
+    attack_1_use_ability: bool | None = None
+    attack_2_use_ability: bool | None = None
+    attack_3_use_ability: bool | None = None
+    has_entry_maanim: bool | None = None
+    has_death_maanim: bool | None = None
+    barrier_hp: int | None = None
+    warp_prob: int | None = None
+    warp_duration: int | None = None
+    warp_min_range: int | None = None
+    warp_max_range: int | None = None
+    starred_alien: bool | None = None
+    warp_blocker: bool | None = None
+    eva_angel: bool | None = None
+    relic: bool | None = None
+    curse_prob: int | None = None
+    curse_duration: int | None = None
+    savage_blow_prob: int | None = None
+    savage_blow_damage_addition: int | None = None
+    dodge_prob: int | None = None
+    dodge_duration: int | None = None
+    toxic_prob: int | None = None
+    toxic_hp_percentage: int | None = None
+    surge_prob: int | None = None
+    surge_start: int | None = None
+    surge_range: int | None = None
+    surge_level: int | None = None
+    surge_immunity: bool | None = None
+    wave_is_mini: bool | None = None
+    shield_hp: int | None = None
+    sheild_kb_heal_percentage: int | None = None
+    death_surge_prob: int | None = None
+    death_surge_start: int | None = None
+    death_surge_range: int | None = None
+    death_surge_level: int | None = None
+    aku: bool | None = None
+    baron: bool | None = None
+    attack_2_ld_flag: bool | None = None
+    attack_2_ld_start: int | None = None
+    attack_2_ld_range: int | None = None
+    attack_3_ld_flag: bool | None = None
+    attack_3_ld_start: int | None = None
+    attack_3_ld_range: int | None = None
+    behemoth: bool | None = None
+    unkown_102: int | None = None
+    counter_surge: bool | None = None
 
     def __post_init__(self):
         self._csv__hp = IntCSVField(col_index=0)
@@ -225,11 +226,11 @@ class EnemyStats:
         self._csv__unkown_102 = IntCSVField(col_index=102)
         self._csv__counter_surge = BoolCSVField(col_index=103)
 
-    def apply_csv(self, enemy_id: int, csv: "tbcml.CSV"):
+    def apply_csv(self, enemy_id: int, csv: tbcml.CSV):
         csv.index = enemy_id + 2
         tbcml.Modification.apply_csv_fields(self, csv, remove_others=False)
 
-    def read_csv(self, enemy_id: int, csv: "tbcml.CSV"):
+    def read_csv(self, enemy_id: int, csv: tbcml.CSV):
         csv.index = enemy_id + 2
         tbcml.Modification.read_csv_fields(self, csv)
 
@@ -250,11 +251,11 @@ class EnemyStats:
 class Enemy(tbcml.Modification):
     enemy_id: int = field(metadata={"required": True})
 
-    name: Optional[str] = None
-    description: Optional[list[str]] = None
-    stats: Optional[EnemyStats] = None
-    anim: Optional["tbcml.Model"] = None
-    icon: Optional["tbcml.BCImage"] = None
+    name: str | None = None
+    description: list[str] | None = None
+    stats: EnemyStats | None = None
+    anim: tbcml.Model | None = None
+    icon: tbcml.BCImage | None = None
 
     def __post_init__(self):
         self._csv__name = StringCSVField(col_index=0)
@@ -268,12 +269,12 @@ class Enemy(tbcml.Modification):
     def get_release_id(self) -> int:
         return self.enemy_id + 2
 
-    def get_anim(self) -> "tbcml.Model":
+    def get_anim(self) -> tbcml.Model:
         if self.anim is None:
             self.anim = tbcml.Model()
         return self.anim
 
-    def get_icon(self) -> "tbcml.BCImage":
+    def get_icon(self) -> tbcml.BCImage:
         if self.icon is None:
             self.icon = tbcml.BCImage.from_size(64, 64)
         return self.icon
@@ -283,14 +284,14 @@ class Enemy(tbcml.Modification):
             self.stats = EnemyStats()
         return self.stats
 
-    def apply_game_data(self, game_data: "tbcml.GamePacks"):
+    def apply_game_data(self, game_data: tbcml.GamePacks):
         self.apply_name(game_data)
         self.apply_description(game_data)
         self.apply_stats(game_data)
         self.apply_icon(game_data)
         self.apply_anim(game_data)
 
-    def apply_name(self, game_data: "tbcml.GamePacks"):
+    def apply_name(self, game_data: tbcml.GamePacks):
         file_name, csv = Enemy.get_name_csv(game_data)
         if csv is not None:
             csv.index = self.enemy_id
@@ -298,7 +299,7 @@ class Enemy(tbcml.Modification):
             self._csv__name.write_to_csv(csv)
             game_data.set_csv(file_name, csv)
 
-    def apply_description(self, game_data: "tbcml.GamePacks"):
+    def apply_description(self, game_data: tbcml.GamePacks):
         file_name, csv = Enemy.get_descripion_csv(game_data)
         if csv is not None:
             csv.index = self.enemy_id
@@ -306,20 +307,20 @@ class Enemy(tbcml.Modification):
             self._csv__description.write_to_csv(csv)
             game_data.set_csv(file_name, csv)
 
-    def apply_stats(self, game_data: "tbcml.GamePacks"):
+    def apply_stats(self, game_data: tbcml.GamePacks):
         file_name, csv = Enemy.get_stats_csv(game_data)
         if csv is not None and self.stats is not None:
             self.stats.apply_csv(self.enemy_id, csv)
             game_data.set_csv(file_name, csv)
 
-    def apply_icon(self, game_data: "tbcml.GamePacks"):
+    def apply_icon(self, game_data: tbcml.GamePacks):
         game_data.set_img(self.get_enemy_icon_name(), self.icon)
 
-    def apply_anim(self, game_data: "tbcml.GamePacks"):
+    def apply_anim(self, game_data: tbcml.GamePacks):
         if self.anim is not None:
             self.anim.apply_game_data(game_data)
 
-    def read(self, game_data: "tbcml.GamePacks"):
+    def read(self, game_data: tbcml.GamePacks):
         self.read_name(game_data)
         self.read_descripion(game_data)
         self.read_stats(game_data)
@@ -327,14 +328,14 @@ class Enemy(tbcml.Modification):
         self.read_icon(game_data)
         self.read_anim(game_data)
 
-    def read_name(self, game_data: "tbcml.GamePacks"):
+    def read_name(self, game_data: tbcml.GamePacks):
         _, csv = Enemy.get_name_csv(game_data)
         if csv is not None:
             csv.index = self.enemy_id
             self._csv__name.read_from_csv(csv)
             self.name = self._csv__name.value
 
-    def read_descripion(self, game_data: "tbcml.GamePacks"):
+    def read_descripion(self, game_data: tbcml.GamePacks):
         _, csv = Enemy.get_descripion_csv(game_data)
         if csv is not None:
             csv.index = self.enemy_id
@@ -342,15 +343,15 @@ class Enemy(tbcml.Modification):
             if self._csv__description.value is not None:
                 self.description = self._csv__description.value
 
-    def read_stats(self, game_data: "tbcml.GamePacks"):
+    def read_stats(self, game_data: tbcml.GamePacks):
         _, csv = Enemy.get_stats_csv(game_data)
         if csv is not None:
             self.get_stats().read_csv(self.enemy_id, csv)
 
-    def read_icon(self, game_data: "tbcml.GamePacks"):
+    def read_icon(self, game_data: tbcml.GamePacks):
         self.icon = game_data.get_img(self.get_enemy_icon_name())
 
-    def read_anim(self, game_data: "tbcml.GamePacks"):
+    def read_anim(self, game_data: tbcml.GamePacks):
         self.anim = tbcml.Model()
         self.anim.read(
             game_data,
@@ -368,15 +369,15 @@ class Enemy(tbcml.Modification):
         return tbcml.PaddedInt(enemy_id, 3).to_str()
 
     @staticmethod
-    def get_name_csv(game_data: "tbcml.GamePacks") -> tuple[str, Optional["tbcml.CSV"]]:
+    def get_name_csv(game_data: tbcml.GamePacks) -> tuple[str, tbcml.CSV | None]:
         file_name_desc = f"Enemyname.tsv"
         name_csv = game_data.get_csv(file_name_desc, delimeter="\t")
         return file_name_desc, name_csv
 
     @staticmethod
     def get_descripion_csv(
-        game_data: "tbcml.GamePacks",
-    ) -> tuple[str, Optional["tbcml.CSV"]]:
+        game_data: tbcml.GamePacks,
+    ) -> tuple[str, tbcml.CSV | None]:
         file_name_desc = f"EnemyPictureBook_{game_data.localizable.get_lang()}.csv"
         desc_csv = game_data.get_csv(
             file_name_desc, country_code=game_data.country_code
@@ -385,8 +386,8 @@ class Enemy(tbcml.Modification):
 
     @staticmethod
     def get_stats_csv(
-        game_data: "tbcml.GamePacks",
-    ) -> tuple[str, Optional["tbcml.CSV"]]:
+        game_data: tbcml.GamePacks,
+    ) -> tuple[str, tbcml.CSV | None]:
         file_name_stat = f"t_unit.csv"
         stat_csv = game_data.get_csv(file_name_stat)
 
@@ -412,7 +413,7 @@ class Enemy(tbcml.Modification):
     def get_mamodel_file_name(self):
         return self.get_sprite_file_name().replace(".png", ".mamodel")
 
-    def get_maanim_file_name(self, anim_type: "tbcml.AnimType"):
+    def get_maanim_file_name(self, anim_type: tbcml.AnimType):
         anim_type_str = tbcml.PaddedInt(anim_type.value, 2).to_str()
         return self.get_sprite_file_name().replace(".png", f"{anim_type_str}.maanim")
 
@@ -425,7 +426,7 @@ class Enemy(tbcml.Modification):
         maanim_paths.append(f"{enemy_id_str}_e_soul.maanim")
         return maanim_paths
 
-    def import_from_bcu(self, bcu_zip: "tbcml.BCUZip", bcu_id: int) -> bool:
+    def import_from_bcu(self, bcu_zip: tbcml.BCUZip, bcu_id: int) -> bool:
         bcu_enemy = bcu_zip.get_bcu_enemy(self.enemy_id, bcu_id)
         if bcu_enemy is None:
             return False

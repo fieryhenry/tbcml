@@ -1,6 +1,6 @@
 """A module for injecting smali code into the APK."""
 
-from typing import Optional
+from __future__ import annotations
 
 import tbcml
 
@@ -12,14 +12,14 @@ class Smali:
         self,
         class_code: str,
         class_name: str,
-        function_sig_to_call: Optional[str],
+        function_sig_to_call: str | None,
     ):
         """Initializes the Smali
 
         Args:
             class_code (str): The actual smali code
             class_name (str): The name of the class
-            function_sig_to_call (Optional[str]): The signature of the function to call in onCreate
+            function_sig_to_call (str | None): The signature of the function to call in onCreate
         """
         self.class_code = class_code
         self.class_name = class_name
@@ -27,8 +27,8 @@ class Smali:
 
     @staticmethod
     def from_file(
-        path: "tbcml.Path", class_name: str, function_sig_to_call: str
-    ) -> "Smali":
+        path: tbcml.Path, class_name: str, function_sig_to_call: str
+    ) -> Smali:
         """Creates a Smali from a smali file.
 
         Args:
@@ -63,7 +63,7 @@ class SmaliSet:
         return len(self.smali_edits) == 0
 
     @staticmethod
-    def create_empty() -> "SmaliSet":
+    def create_empty() -> SmaliSet:
         """Creates an empty SmaliSet.
 
         Returns:
@@ -71,7 +71,7 @@ class SmaliSet:
         """
         return SmaliSet({})
 
-    def add_to_zip(self, zip_file: "tbcml.Zip"):
+    def add_to_zip(self, zip_file: tbcml.Zip):
         """Adds the SmaliSet to a mod zip.
 
         Args:
@@ -89,7 +89,7 @@ class SmaliSet:
             zip_file.add_file(path.change_extension("json"), json_data.to_data())
 
     @staticmethod
-    def from_zip(zip_file: "tbcml.Zip") -> "SmaliSet":
+    def from_zip(zip_file: tbcml.Zip) -> SmaliSet:
         """Creates a SmaliSet from a mod zip.
 
         Args:
@@ -120,7 +120,7 @@ class SmaliSet:
             )
         return SmaliSet(smali_edits)
 
-    def import_smali(self, other: "SmaliSet"):
+    def import_smali(self, other: SmaliSet):
         """Imports the smali from another SmaliSet.
 
         Args:
@@ -149,7 +149,7 @@ class SmaliHandler:
     """Injects smali into an apk.
     https://github.com/ksg97031/frida-gadget"""
 
-    def __init__(self, apk: "tbcml.Apk"):
+    def __init__(self, apk: tbcml.Apk):
         """Initializes the SmaliHandler
 
         Args:
@@ -159,11 +159,11 @@ class SmaliHandler:
         self.apk.extract_smali(decode_resources=self.apk.has_decoded_resources())
         self.main_activity = ["jp", "co", "ponos", "battlecats", "MyActivity.smali"]
 
-    def find_main_activity_smali(self) -> Optional["tbcml.Path"]:
+    def find_main_activity_smali(self) -> tbcml.Path | None:
         """Finds the main activity smali file
 
         Returns:
-            Optional[tbcml.Path]: The path to the main activity smali file
+            tbcml.Path | None: The path to the main activity smali file
         """
         target_smali = None
         for smali_dir in self.apk.extracted_path.glob("smali*/"):
@@ -172,7 +172,7 @@ class SmaliHandler:
                 break
         return target_smali
 
-    def setup_injection(self) -> tuple[list[str], "tbcml.Path"]:
+    def setup_injection(self) -> tuple[list[str], tbcml.Path]:
         """Sets up the injection by finding the main activity smali file and reading it
 
         Raises:
@@ -261,7 +261,7 @@ class SmaliHandler:
         text = "\n".join(text)
         target_smali.write(tbcml.Data(text))
 
-    def get_all_smali_files(self) -> list["tbcml.Path"]:
+    def get_all_smali_files(self) -> list[tbcml.Path]:
         """Gets all smali files in the apk
 
         Returns:
@@ -299,12 +299,12 @@ class SmaliHandler:
 
     @staticmethod
     def java_to_smali(
-        java_code_path: "tbcml.Path",
+        java_code_path: tbcml.Path,
         class_name: str,
         func_sig: str,
         display_errors: bool = True,
-        javac_class_path: Optional["tbcml.Path"] = None,
-    ) -> Optional[SmaliSet]:
+        javac_class_path: tbcml.Path | None = None,
+    ) -> SmaliSet | None:
         """Compiles java code into smali code
 
         Args:
@@ -314,7 +314,7 @@ class SmaliHandler:
             display_errors (bool, optional): Whether to display errors if the compilation fails. Defaults to True.
 
         Returns:
-            Optional[Smali]: The compiled smali code. None if the compilation failed
+            Smali | None: The compiled smali code. None if the compilation failed
         """
         if javac_class_path is not None:
             if not javac_class_path.is_valid():
@@ -407,7 +407,7 @@ class SmaliHandler:
                 smali_objects[class_name_] = smali_object
             return SmaliSet(smali_objects)
 
-    def get_dex2jar_classes_jar_path_original(self) -> "tbcml.Path":
+    def get_dex2jar_classes_jar_path_original(self) -> tbcml.Path:
         """Gets the path to the dex2jar classes.jar file
 
         Returns:
@@ -415,7 +415,7 @@ class SmaliHandler:
         """
         return self.apk.smali_original_path.generate_dirs().add("d2j-classes.jar")
 
-    def get_dex2jar_classes_jar_path_new(self) -> "tbcml.Path":
+    def get_dex2jar_classes_jar_path_new(self) -> tbcml.Path:
         """Gets the path to the dex2jar classes.jar file
 
         Returns:
@@ -429,7 +429,7 @@ class SmaliHandler:
             self.apk.smali_non_original_path.generate_dirs()
         )
 
-    def get_dex2jar_classes_path_original(self) -> "tbcml.Path":
+    def get_dex2jar_classes_path_original(self) -> tbcml.Path:
         """Gets the path to the dex2jar classes directory
 
         Returns:
@@ -439,7 +439,7 @@ class SmaliHandler:
         path.generate_dirs()
         return path
 
-    def get_dex2jar_classes_path_new(self) -> "tbcml.Path":
+    def get_dex2jar_classes_path_new(self) -> tbcml.Path:
         """Gets the path to the dex2jar classes directory
 
         Returns:
@@ -449,7 +449,7 @@ class SmaliHandler:
         path.generate_dirs()
         return path
 
-    def set_dex2jar_script_path(self, dex2jar_script_path: "tbcml.Path"):
+    def set_dex2jar_script_path(self, dex2jar_script_path: tbcml.Path):
         """Sets the path to the dex2jar script
 
         Args:
@@ -478,13 +478,13 @@ class SmaliHandler:
             raise RuntimeError("dex2jar failed")
 
     def java_folder_to_dot_class(
-        self, java_folder: "tbcml.Path", android_sdk_path: "tbcml.Path"
+        self, java_folder: tbcml.Path, android_sdk_path: tbcml.Path
     ):
         for java_file in java_folder.recursive_glob("*.java"):
             self.java_to_dot_class(java_file, android_sdk_path)
 
     def java_to_dot_class(
-        self, java_code_path: "tbcml.Path", android_sdk_path: "tbcml.Path"
+        self, java_code_path: tbcml.Path, android_sdk_path: tbcml.Path
     ):
         """Converts java code to dot class files
 
@@ -559,7 +559,7 @@ class SmaliHandler:
         zip_file = tbcml.Zip.from_file(self.get_dex2jar_classes_jar_path_original())
         zip_file.extract(self.get_dex2jar_classes_path_original())
 
-    def jar_to_dex(self, jar_path: "tbcml.Path"):
+    def jar_to_dex(self, jar_path: tbcml.Path):
         """Converts a jar file to dex files
 
         Args:

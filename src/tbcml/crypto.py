@@ -1,9 +1,11 @@
 """A module for cryptography."""
+
+from __future__ import annotations
+
 import enum
 import hashlib
 import hmac
 import random
-from typing import Optional, Union
 
 from Cryptodome.Cipher import AES, _mode_cbc, _mode_ecb
 
@@ -31,14 +33,14 @@ class Hash:
 
     def get_hash(
         self,
-        data: "tbcml.Data",
-        length: Optional[int] = None,
-    ) -> "tbcml.Data":
+        data: tbcml.Data,
+        length: int | None = None,
+    ) -> tbcml.Data:
         """Gets the hash of the given data.
 
         Args:
             data (tbcml.Data): The data to hash.
-            length (Optional[int], optional): The length of the hash. Defaults to None.
+            length (int | None, optional): The length of the hash. Defaults to None.
 
         Raises:
             ValueError: Invalid hash algorithm.
@@ -66,16 +68,16 @@ class AesCipher:
     def __init__(
         self,
         key: bytes,
-        iv: Optional[bytes] = None,
-        mode: Optional[int] = None,
+        iv: bytes | None = None,
+        mode: int | None = None,
         enable: bool = True,
     ):
         """Initializes a new instance of the AesCipher class.
 
         Args:
             key (bytes): Key to use.
-            iv (Optional[bytes], optional): Initialization vector to use. Defaults to None.
-            mode (Optional[int], optional): Mode to use. Defaults to None.
+            iv (bytes | None, optional): Initialization vector to use. Defaults to None.
+            mode (int | None, optional): Mode to use. Defaults to None.
             enable (bool, optional): Whether to enable encryption. Defaults to True. ImageDataLocal is a pack that is not encrypted.
         """
         self.key = key
@@ -88,18 +90,18 @@ class AesCipher:
         self.mode = mode
         self.enable = enable
 
-    def get_cipher(self) -> Union[_mode_ecb.EcbMode, _mode_cbc.CbcMode]:
+    def get_cipher(self) -> _mode_ecb.EcbMode | _mode_cbc.CbcMode:
         """Gets the cipher.
 
         Returns:
-            Union[_mode_ecb.EcbMode, _mode_cbc.CbcMode]: The cipher.
+            _mode_ecb.EcbMode | _mode_cbc.CbcMode: The cipher.
         """
         if self.iv is None:
             return AES.new(self.key, self.mode)  # type: ignore
         else:
             return AES.new(self.key, self.mode, self.iv)  # type: ignore
 
-    def encrypt(self, data: "tbcml.Data") -> "tbcml.Data":
+    def encrypt(self, data: tbcml.Data) -> tbcml.Data:
         """Encrypts the given data.
 
         Args:
@@ -119,7 +121,7 @@ class AesCipher:
             return 16
         return 8
 
-    def decrypt(self, data: "tbcml.Data") -> "tbcml.Data":
+    def decrypt(self, data: tbcml.Data) -> tbcml.Data:
         """Decrypts the given data.
 
         Args:
@@ -134,7 +136,7 @@ class AesCipher:
         return tbcml.Data(cipher.decrypt(data.get_bytes()))
 
     @staticmethod
-    def get_key_iv_from_cc(cc: "tbcml.CountryCode") -> tuple[str, str]:
+    def get_key_iv_from_cc(cc: tbcml.CountryCode) -> tuple[str, str]:
         """Gets the key and iv from the country code.
 
         Args:
@@ -164,12 +166,12 @@ class AesCipher:
 
     @staticmethod
     def get_cipher_from_pack(
-        cc: "tbcml.CountryCode",
+        cc: tbcml.CountryCode,
         pack_name: str,
-        gv: "tbcml.GameVersion",
+        gv: tbcml.GameVersion,
         force_server: bool = False,
-        key: Optional[str] = None,
-        iv: Optional[str] = None,
+        key: str | None = None,
+        iv: str | None = None,
     ) -> "AesCipher":
         """Gets the cipher from the pack.
 
@@ -178,8 +180,8 @@ class AesCipher:
             pack_name (str): The pack name.
             gv (game_version.GameVersion): The game version.
             force_server (bool, optional): Whether to force the decryption to use the server key. Defaults to False.
-            key (Optional[str], optional): The key to use. Defaults to None.
-            iv (Optional[str], optional): The iv to use. Defaults to None.
+            key (str | None, optional): The key to use. Defaults to None.
+            iv (str | None, optional): The iv to use. Defaults to None.
 
         Raises:
             Exception: Unknown country code.
@@ -210,7 +212,7 @@ class AesCipher:
 class Hmac:
     """A class to do HMAC stuff."""
 
-    def __init__(self, key: "tbcml.Data", algorithm: HashAlgorithm):
+    def __init__(self, key: tbcml.Data, algorithm: HashAlgorithm):
         """Initializes a new instance of the Hmac class.
 
         Args:
@@ -220,7 +222,7 @@ class Hmac:
         self.key = key
         self.algorithm = algorithm
 
-    def get_hmac(self, data: "tbcml.Data") -> "tbcml.Data":
+    def get_hmac(self, data: tbcml.Data) -> tbcml.Data:
         """Gets the HMAC of the given data.
 
         Args:

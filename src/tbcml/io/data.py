@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import base64
 import enum
 from io import BytesIO
 import lzma
 import struct
 import typing
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 import tbcml
 
 
@@ -15,7 +17,7 @@ class PaddingType(enum.Enum):
 
 
 class Data:
-    def __init__(self, data: Union[bytes, str, None, int, bool, "Data"] = None):
+    def __init__(self, data: bytes | str | None | int | bool | Data = None):
         if isinstance(data, str):
             self.data = data.encode("utf-8")
         elif isinstance(data, bytes):
@@ -35,7 +37,7 @@ class Data:
             )
         self.pos = 0
 
-    def decompress_xz(self) -> "Data":
+    def decompress_xz(self) -> Data:
         return Data(lzma.decompress(self.data))
 
     @staticmethod
@@ -45,21 +47,21 @@ class Data:
     def is_empty(self) -> bool:
         return len(self.data) == 0
 
-    def to_file(self, path: "tbcml.PathStr"):
+    def to_file(self, path: tbcml.PathStr):
         path = tbcml.Path(path)
         with open(path.path, "wb") as f:
             f.write(self.data)
 
-    def write(self, data: "Data"):
+    def write(self, data: Data):
         pos = self.pos
         self.data = self.data[:pos] + data.data + self.data[pos + len(data) :]
         self.pos += len(data)
 
-    def copy(self) -> "Data":
+    def copy(self) -> Data:
         return Data(self.data)
 
     @staticmethod
-    def from_file(path: "tbcml.Path") -> "Data":
+    def from_file(path: tbcml.Path) -> Data:
         with open(path.path, "rb") as f:
             return Data(f.read())
 
@@ -75,7 +77,7 @@ class Data:
     def __len__(self) -> int:
         return len(self.data)
 
-    def __add__(self, other: "Data") -> "Data":
+    def __add__(self, other: Data) -> Data:
         return Data(self.data + other.data)
 
     @typing.overload
@@ -83,10 +85,10 @@ class Data:
         pass
 
     @typing.overload
-    def __getitem__(self, key: slice) -> "Data":
+    def __getitem__(self, key: slice) -> Data:
         pass
 
-    def __getitem__(self, key: Union[int, slice]) -> Union[int, "Data"]:
+    def __getitem__(self, key: int | slice) -> int | Data:
         if isinstance(key, int):
             return self.data[key]
         elif isinstance(key, slice):  # type: ignore
@@ -125,11 +127,11 @@ class Data:
             result.append(self.read_int())
         return result
 
-    def pad_pkcs7(self, block_size: int = 16) -> "Data":
+    def pad_pkcs7(self, block_size: int = 16) -> Data:
         pad = block_size - (len(self.data) % block_size)
         return Data(self.data + bytes([pad] * pad))
 
-    def unpad_pkcs7(self) -> "Data":
+    def unpad_pkcs7(self) -> Data:
         try:
             pad = self.data[-1]
         except IndexError as exc:
@@ -140,11 +142,11 @@ class Data:
             raise ValueError("Invalid padding")
         return Data(self.data[:-pad])
 
-    def pad_zeroes(self, block_size: int = 16) -> "Data":
+    def pad_zeroes(self, block_size: int = 16) -> Data:
         pad = block_size - (len(self.data) % block_size)
         return Data(self.data + bytes([0] * pad))
 
-    def unpad_zeroes(self) -> "Data":
+    def unpad_zeroes(self) -> Data:
         try:
             pad = self.data[-1]
         except IndexError as exc:
@@ -155,7 +157,7 @@ class Data:
             raise ValueError("Invalid padding")
         return Data(self.data[:-pad])
 
-    def pad(self, padding_type: "PaddingType", block_size: int = 16) -> "Data":
+    def pad(self, padding_type: PaddingType, block_size: int = 16) -> Data:
         if padding_type == PaddingType.PKCS7:
             return self.pad_pkcs7(block_size)
         elif padding_type == PaddingType.ZERO:
@@ -163,7 +165,7 @@ class Data:
         else:
             raise TypeError("Invalid padding type")
 
-    def split(self, separator: bytes) -> list["Data"]:
+    def split(self, separator: bytes) -> list[Data]:
         data_list: list[Data] = []
         for line in self.data.split(separator):
             data_list.append(Data(line))
@@ -182,28 +184,28 @@ class Data:
         return bool(self.to_int())
 
     @staticmethod
-    def int_list_data_list(int_list: list[int]) -> list["Data"]:
+    def int_list_data_list(int_list: list[int]) -> list[Data]:
         data_list: list[Data] = []
         for integer in int_list:
             data_list.append(Data(str(integer)))
         return data_list
 
     @staticmethod
-    def string_list_data_list(string_list: list[Any]) -> list["Data"]:
+    def string_list_data_list(string_list: list[Any]) -> list[Data]:
         data_list: list[Data] = []
         for string in string_list:
             data_list.append(Data(str(string)))
         return data_list
 
     @staticmethod
-    def data_list_int_list(data_list: list["Data"]) -> list[int]:
+    def data_list_int_list(data_list: list[Data]) -> list[int]:
         int_list: list[int] = []
         for data in data_list:
             int_list.append(data.to_int())
         return int_list
 
     @staticmethod
-    def data_list_string_list(data_list: list["Data"]) -> list[str]:
+    def data_list_string_list(data_list: list[Data]) -> list[str]:
         string_list: list[str] = []
         for data in data_list:
             string_list.append(data.to_str())
@@ -213,7 +215,7 @@ class Data:
         return self.data
 
     @staticmethod
-    def from_many(others: list["Data"], joiner: Optional["Data"] = None) -> "Data":
+    def from_many(others: list[Data], joiner: Data | None = None) -> Data:
         data_lst: list[bytes] = []
         for other in others:
             data_lst.append(other.data)
@@ -223,9 +225,7 @@ class Data:
             return Data(joiner.data.join(data_lst))
 
     @staticmethod
-    def from_int_list(
-        int_list: list[int], endianess: Literal["little", "big"]
-    ) -> "Data":
+    def from_int_list(int_list: list[int], endianess: Literal["little", "big"]) -> Data:
         bytes_data = b""
         for integer in int_list:
             bytes_data += integer.to_bytes(4, endianess)
@@ -235,13 +235,13 @@ class Data:
     def from_int(val: int, endianness: Literal["little", "big"]):
         return Data(val.to_bytes(4, endianness))
 
-    def strip(self) -> "Data":
+    def strip(self) -> Data:
         return Data(self.data.strip())
 
-    def replace(self, old_data: "Data", new_data: "Data") -> "Data":
+    def replace(self, old_data: Data, new_data: Data) -> Data:
         return Data(self.data.replace(old_data.data, new_data.data))
 
-    def set(self, value: Union[bytes, str, None, int, bool]) -> None:
+    def set(self, value: bytes | str | None | int | bool) -> None:
         self.data = Data(value).data
 
     def to_bytes_io(self) -> BytesIO:
@@ -257,13 +257,13 @@ class Data:
         return base64.b64encode(self.data).decode()
 
     @staticmethod
-    def from_base_64(string: str) -> "Data":
+    def from_base_64(string: str) -> Data:
         return Data(base64.b64decode(string))
 
-    def to_csv(self, *args: Any, **kwargs: Any) -> "tbcml.CSV":
+    def to_csv(self, *args: Any, **kwargs: Any) -> tbcml.CSV:
         return tbcml.CSV(self, *args, **kwargs)
 
-    def search(self, search_data: "Data", start: int = 0) -> int:
+    def search(self, search_data: Data, start: int = 0) -> int:
         return self.data.find(search_data.data, start)
 
 

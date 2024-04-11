@@ -1,4 +1,6 @@
-from typing import Any, Callable, Optional
+from __future__ import annotations
+
+from typing import Any, Callable
 import plistlib
 import tbcml
 
@@ -11,13 +13,13 @@ class Ipa(Pkg):
 
     def __init__(
         self,
-        game_version: "tbcml.GV",
-        country_code: "tbcml.CC",
-        ipa_folder: Optional["tbcml.PathStr"] = None,
+        game_version: tbcml.GV,
+        country_code: tbcml.CC,
+        ipa_folder: tbcml.PathStr | None = None,
         allowed_script_mods: bool = True,
         is_modded: bool = False,
         use_pkg_name_for_folder: bool = False,
-        pkg_name: Optional[str] = None,
+        pkg_name: str | None = None,
         create_dirs: bool = True,
     ):
         super().__init__(
@@ -32,11 +34,11 @@ class Ipa(Pkg):
         )
 
     @staticmethod
-    def clean_up(ipa_folder: Optional["tbcml.Path"] = None):
+    def clean_up(ipa_folder: tbcml.Path | None = None):
         Ipa.get_all_downloaded(ipa_folder, cleanup=True)
 
     @staticmethod
-    def get_default_pkg_folder() -> "tbcml.Path":
+    def get_default_pkg_folder() -> tbcml.Path:
         return tbcml.Path.get_documents_folder().add("IPAs").generate_dirs()
 
     def is_apk(self) -> bool:
@@ -44,13 +46,13 @@ class Ipa(Pkg):
 
     @staticmethod
     def try_get_pkg_from_path(
-        path: "tbcml.Path",
-        all_pkg_dir: Optional["tbcml.Path"] = None,
-    ) -> Optional["Ipa"]:
+        path: tbcml.Path,
+        all_pkg_dir: tbcml.Path | None = None,
+    ) -> Ipa | None:
         return Ipa.try_get_pkg_from_path_pkg(path, all_pkg_dir=all_pkg_dir, clzz=Ipa)
 
     @staticmethod
-    def get_app_folder_from_zip(zip: "tbcml.Zip"):
+    def get_app_folder_from_zip(zip: tbcml.Zip):
         payload_path = tbcml.Path("Payload")
         paths = zip.get_paths_in_folder(payload_path)
         if not paths:
@@ -63,7 +65,7 @@ class Ipa(Pkg):
         return None
 
     @staticmethod
-    def get_package_name_version_from_ipa(path: "tbcml.Path"):
+    def get_package_name_version_from_ipa(path: tbcml.Path):
         zipfile = tbcml.Zip(path.read())
         app_folder = Ipa.get_app_folder_from_zip(zipfile)
         if app_folder is None:
@@ -90,10 +92,10 @@ class Ipa(Pkg):
 
     @staticmethod
     def from_pkg_path(
-        ipa_path: "tbcml.Path",
-        cc_overwrite: Optional["tbcml.CountryCode"] = None,
-        gv_overwrite: Optional["tbcml.GameVersion"] = None,
-        pkg_folder: Optional["tbcml.Path"] = None,
+        ipa_path: tbcml.Path,
+        cc_overwrite: tbcml.CountryCode | None = None,
+        gv_overwrite: tbcml.GameVersion | None = None,
+        pkg_folder: tbcml.Path | None = None,
         allowed_script_mods: bool = True,
         overwrite_pkg: bool = True,
     ) -> "Ipa":
@@ -142,27 +144,27 @@ class Ipa(Pkg):
         self.copy_extracted(force=True)
         return True
 
-    def get_assets_folder_path(self) -> "tbcml.Path":
+    def get_assets_folder_path(self) -> tbcml.Path:
         payload_path = self.extracted_path.add("Payload")
         dirs = payload_path.get_dirs()
         if not dirs:
             raise ValueError("No dirs found in ipa!")
         return dirs[0]
 
-    def get_assets_path_orig(self) -> "tbcml.Path":
+    def get_assets_path_orig(self) -> tbcml.Path:
         payload_path = self.original_extracted_path.add("Payload")
         dirs = payload_path.get_dirs()
         if not dirs:
             raise ValueError("No dirs found in ipa!")
         return dirs[0]
 
-    def add_to_lib_folder(self, architecture: str, library_path: "tbcml.Path") -> None:
+    def add_to_lib_folder(self, architecture: str, library_path: tbcml.Path) -> None:
         pass
 
-    def get_libgadget_script_path(self) -> "tbcml.Path":
+    def get_libgadget_script_path(self) -> tbcml.Path:
         return tbcml.Path("bc_script.js")
 
-    def get_libgadget_config_path(self) -> "tbcml.Path":
+    def get_libgadget_config_path(self) -> tbcml.Path:
         return tbcml.Path("frida-gadget.config")
 
     def get_audio_extensions(self) -> list[str]:
@@ -171,10 +173,10 @@ class Ipa(Pkg):
     def audio_file_startswith_snd(self) -> bool:
         return False
 
-    def get_pack_location(self) -> "tbcml.Path":
+    def get_pack_location(self) -> tbcml.Path:
         return self.get_assets_folder_path()
 
-    def get_original_pack_location(self) -> "tbcml.Path":
+    def get_original_pack_location(self) -> tbcml.Path:
         return self.get_assets_path_orig()
 
     def is_java(self) -> bool:
@@ -185,13 +187,13 @@ class Ipa(Pkg):
 
     def inject_smali(self, library_name: str): ...
 
-    def get_native_lib_path(self, architecture: str) -> Optional["tbcml.Path"]:
+    def get_native_lib_path(self, architecture: str) -> tbcml.Path | None:
         if architecture not in self.get_architectures():
             return None
 
         return self.get_bc_lib_path()
 
-    def get_lib_path(self, architecture: str) -> "tbcml.Path":
+    def get_lib_path(self, architecture: str) -> tbcml.Path:
         return self.get_assets_folder_path()
 
     def get_bc_lib_path(self):
@@ -202,7 +204,7 @@ class Ipa(Pkg):
         return self.get_asset(name)
 
     def set_string(
-        self, name: str, value: str, include_lang: bool, lang: Optional[str] = None
+        self, name: str, value: str, include_lang: bool, lang: str | None = None
     ) -> bool:
         if lang is None or include_lang:
             lang = self.country_code.get_language()
@@ -220,8 +222,8 @@ class Ipa(Pkg):
         self,
         name: str,
         include_lang: bool,
-        lang: Optional[str] = None,
-    ) -> Optional[str]:
+        lang: str | None = None,
+    ) -> str | None:
         if lang is None or include_lang:
             lang = self.country_code.get_language()
         localizable_strings_path = self.get_asset(
@@ -236,16 +238,16 @@ class Ipa(Pkg):
 
     def load_mods(
         self,
-        mods: list["tbcml.Mod"],
-        game_packs: Optional["tbcml.GamePacks"] = None,
-        lang: Optional["tbcml.Language"] = None,
-        key: Optional[str] = None,
-        iv: Optional[str] = None,
+        mods: list[tbcml.Mod],
+        game_packs: tbcml.GamePacks | None = None,
+        lang: tbcml.Language | None = None,
+        key: str | None = None,
+        iv: str | None = None,
         add_modded_html: bool = True,
         save_in_modded_pkgs: bool = False,
-        progress_callback: Optional[
-            Callable[["tbcml.PKGProgressSignal"], Optional[bool]]
-        ] = None,
+        progress_callback: (
+            Callable[[tbcml.PKGProgressSignal], bool | None] | None
+        ) = None,
         do_final_pkg_actions: bool = True,
     ) -> bool:
         if progress_callback is None:
@@ -303,7 +305,7 @@ class Ipa(Pkg):
         self.set_plist(plist)
         return True
 
-    def get_plist_val(self, key: str) -> Optional[Any]:
+    def get_plist_val(self, key: str) -> Any | None:
         return self.get_plist().get(key)
 
     def enable_access_internalfile(self) -> bool:
@@ -316,7 +318,7 @@ class Ipa(Pkg):
     def apply_pkg_name(self, package_name: str) -> bool:
         return self.set_plist_key("CFBundleIdentifier", package_name)
 
-    def read_pkg_name(self) -> Optional[str]:
+    def read_pkg_name(self) -> str | None:
         return self.get_plist_val("CFBundleIdentifier")
 
     def apply_app_name(self, name: str) -> bool:
@@ -324,7 +326,7 @@ class Ipa(Pkg):
             "CFBundleDisplayName", name.strip(" ")
         )  # strip spaces due to Altstore/Sidestore issue
 
-    def read_app_name(self) -> Optional[str]:
+    def read_app_name(self) -> str | None:
         return self.get_plist_val("CFBundleDisplayName")
 
     def sign(self) -> bool:  # TODO: impliment signing
@@ -334,12 +336,12 @@ class Ipa(Pkg):
 
     def load_packs_into_game(
         self,
-        packs: "tbcml.GamePacks",
-        copy_path: Optional["tbcml.Path"] = None,
+        packs: tbcml.GamePacks,
+        copy_path: tbcml.Path | None = None,
         save_in_modded_pkgs: bool = False,
-        progress_callback: Optional[
-            Callable[["tbcml.PKGProgressSignal"], Optional[bool]]
-        ] = None,
+        progress_callback: (
+            Callable[[tbcml.PKGProgressSignal], bool | None] | None
+        ) = None,
     ) -> bool:
         if progress_callback is None:
             progress_callback = lambda x: None
@@ -378,16 +380,16 @@ class Ipa(Pkg):
 
         return True
 
-    def get_lib_paths(self) -> dict[str, "tbcml.Path"]:
+    def get_lib_paths(self) -> dict[str, tbcml.Path]:
         return {"arm64-v8a": self.get_bc_lib_path()}
 
-    def get_asset(self, asset_name: "tbcml.PathStr"):
+    def get_asset(self, asset_name: tbcml.PathStr):
         path = tbcml.Path(asset_name)
         return self.get_assets_folder_path().add(path)
 
     @staticmethod
     def get_all_pkgs_cc(
-        cc: "tbcml.CountryCode", pkg_folder: Optional["tbcml.Path"] = None
+        cc: tbcml.CountryCode, pkg_folder: tbcml.Path | None = None
     ) -> list["Ipa"]:
         """
         Get all IPAs for a country code
@@ -402,7 +404,7 @@ class Ipa(Pkg):
 
     @staticmethod
     def get_all_downloaded(
-        all_pkg_dir: Optional["tbcml.Path"] = None, cleanup: bool = False
+        all_pkg_dir: tbcml.Path | None = None, cleanup: bool = False
     ) -> list["Ipa"]:
         """
         Get all downloaded IPAs
@@ -410,4 +412,4 @@ class Ipa(Pkg):
         Returns:
             list[Ipa]: List of IPAs
         """
-        return tbcml.Pkg.get_all_downloaded_pkgs(all_pkg_dir, cleanup, Ipa)
+        return tbcml.Pkg.get_all_downloaded_pkgs(Ipa, all_pkg_dir, cleanup)

@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import copy
 from dataclasses import field
-from typing import Optional
 
 from marshmallow_dataclass import dataclass
 
@@ -10,18 +11,18 @@ from tbcml.io.csv_fields import BoolCSVField, IntCSVField, StringCSVField
 
 @dataclass
 class StageOptionInfo:
-    star_id: Optional[int] = None
-    rarity_restriction_bit_mask: Optional[int] = None
+    star_id: int | None = None
+    rarity_restriction_bit_mask: int | None = None
     """Bits to restrict the rarity allowed. Least significant bit is normal:
     legend,uber,super,rare,special,normal
     e.g
     0b001001 = allow super and normal 
     """
-    deploy_limit: Optional[int] = None
-    slot_formation_limit: Optional[int] = None
-    deploy_cost_limit_lower: Optional[int] = None
-    deploy_cost_limit_upper: Optional[int] = None
-    group_id: Optional[int] = None
+    deploy_limit: int | None = None
+    slot_formation_limit: int | None = None
+    deploy_cost_limit_lower: int | None = None
+    deploy_cost_limit_upper: int | None = None
+    group_id: int | None = None
 
     def __post_init__(self):
         self._csv__star_id = IntCSVField(col_index=1)
@@ -35,9 +36,9 @@ class StageOptionInfo:
     @staticmethod
     def find_indexes(
         map_id: int,
-        map_type: "tbcml.MapType",
-        csv: "tbcml.CSV",
-    ) -> Optional[list[int]]:
+        map_type: tbcml.MapType,
+        csv: tbcml.CSV,
+    ) -> list[int] | None:
         abs_map_id = map_type.get_map_abs_index(map_id)
         if abs_map_id is None:
             return None
@@ -52,7 +53,7 @@ class StageOptionInfo:
 
     def apply_csv(
         self,
-        csv: "tbcml.CSV",
+        csv: tbcml.CSV,
         index: int,
     ):
         csv.index = index
@@ -60,7 +61,7 @@ class StageOptionInfo:
 
     def read_csv(
         self,
-        csv: "tbcml.CSV",
+        csv: tbcml.CSV,
         index: int,
     ):
         csv.index = index
@@ -69,12 +70,12 @@ class StageOptionInfo:
 
 @dataclass
 class NonStoryStageInfo:
-    castle_type: Optional[int] = None
-    no_continues: Optional[bool] = None
-    extra_stage_probability: Optional[int] = None
-    extra_stage_map_id: Optional[int] = None
-    extra_stage_stage_index: Optional[int] = None
-    unknown: Optional[int] = None
+    castle_type: int | None = None
+    no_continues: bool | None = None
+    extra_stage_probability: int | None = None
+    extra_stage_map_id: int | None = None
+    extra_stage_stage_index: int | None = None
+    unknown: int | None = None
 
     def __post_init__(self):
         self._csv__castle_type = IntCSVField(col_index=0, row_index=0)
@@ -84,25 +85,25 @@ class NonStoryStageInfo:
         self._csv__extra_stage_stage_index = IntCSVField(col_index=4, row_index=0)
         self._csv__unknown = IntCSVField(col_index=5, row_index=0)
 
-    def apply_csv(self, csv: "tbcml.CSV"):
+    def apply_csv(self, csv: tbcml.CSV):
         tbcml.Modification.apply_csv_fields(self, csv, remove_others=False)
 
-    def read_csv(self, csv: "tbcml.CSV"):
+    def read_csv(self, csv: tbcml.CSV):
         tbcml.Modification.read_csv_fields(self, csv)
 
 
 @dataclass
 class StageInfo:
-    width: Optional[int] = None
-    base_health: Optional[int] = None
-    min_production_frames: Optional[int] = None
-    max_production_frames: Optional[int] = None
-    background_id: Optional[int] = None
-    max_enemy_count: Optional[int] = None
-    castle_enemy_id: Optional[int] = None
-    trial_mode_duration_mins: Optional[int] = None
-    unknown_1: Optional[int] = None
-    unknown_2: Optional[int] = None
+    width: int | None = None
+    base_health: int | None = None
+    min_production_frames: int | None = None
+    max_production_frames: int | None = None
+    background_id: int | None = None
+    max_enemy_count: int | None = None
+    castle_enemy_id: int | None = None
+    trial_mode_duration_mins: int | None = None
+    unknown_1: int | None = None
+    unknown_2: int | None = None
 
     def __post_init__(self):
         self._csv__width = IntCSVField(col_index=0)
@@ -116,31 +117,31 @@ class StageInfo:
         self._csv__unknown_1 = IntCSVField(col_index=8)
         self._csv__unknown_2 = IntCSVField(col_index=9)
 
-    def apply_csv(self, index: int, csv: "tbcml.CSV"):
+    def apply_csv(self, index: int, csv: tbcml.CSV):
         csv.index = index
         tbcml.Modification.apply_csv_fields(self, csv, remove_others=False)
 
-    def read_csv(self, index: int, csv: "tbcml.CSV"):
+    def read_csv(self, index: int, csv: tbcml.CSV):
         csv.index = index
         tbcml.Modification.read_csv_fields(self, csv)
 
 
 @dataclass
 class StageEnemyData:
-    enemy_id: Optional[int] = None
-    max_enemy_count: Optional[int] = None
-    start_frame: Optional[int] = None
-    min_spawn_interval: Optional[int] = None
-    max_spawn_interval: Optional[int] = None
-    spawn_base_percent: Optional[int] = None
-    min_z: Optional[int] = None
-    max_z: Optional[int] = None
-    boss_flag: Optional[bool] = None
-    magnification: Optional[int] = None
-    trial_score: Optional[int] = None
-    unknown_1: Optional[int] = None
-    unknown_2: Optional[int] = None
-    unknown_3: Optional[int] = None
+    enemy_id: int | None = None
+    max_enemy_count: int | None = None
+    start_frame: int | None = None
+    min_spawn_interval: int | None = None
+    max_spawn_interval: int | None = None
+    spawn_base_percent: int | None = None
+    min_z: int | None = None
+    max_z: int | None = None
+    boss_flag: bool | None = None
+    magnification: int | None = None
+    trial_score: int | None = None
+    unknown_1: int | None = None
+    unknown_2: int | None = None
+    unknown_3: int | None = None
 
     def __post_init__(self):
         self._csv__enemy_id = IntCSVField(col_index=0)
@@ -158,11 +159,11 @@ class StageEnemyData:
         self._csv__unknown_2 = IntCSVField(col_index=12)
         self._csv__unknown_3 = IntCSVField(col_index=13)
 
-    def apply_csv(self, index: int, csv: "tbcml.CSV"):
+    def apply_csv(self, index: int, csv: tbcml.CSV):
         csv.index = index
         tbcml.Modification.apply_csv_fields(self, csv, remove_others=False)
 
-    def read_csv(self, index: int, csv: "tbcml.CSV"):
+    def read_csv(self, index: int, csv: tbcml.CSV):
         csv.index = index
         tbcml.Modification.read_csv_fields(self, csv)
 
@@ -172,9 +173,9 @@ class StageEnemyData:
 
 @dataclass
 class StageCSV:
-    non_story_stage_info: Optional[NonStoryStageInfo] = None
-    stage_info: Optional[StageInfo] = None
-    stage_enemy_data: Optional[list[StageEnemyData]] = None
+    non_story_stage_info: NonStoryStageInfo | None = None
+    stage_info: StageInfo | None = None
+    stage_enemy_data: list[StageEnemyData] | None = None
 
     def get_stage_info(self) -> StageInfo:
         if self.stage_info is None:
@@ -186,7 +187,7 @@ class StageCSV:
             self.stage_enemy_data = []
         return self.stage_enemy_data
 
-    def apply_csv(self, csv: "tbcml.CSV"):
+    def apply_csv(self, csv: tbcml.CSV):
         index = 0
         if len(csv.lines[0]) < 7:
             if self.non_story_stage_info is None:
@@ -205,7 +206,7 @@ class StageCSV:
         for i, sed in enumerate(self.stage_enemy_data or []):
             sed.apply_csv(i + index, csv)
 
-    def read_csv(self, csv: "tbcml.CSV"):
+    def read_csv(self, csv: tbcml.CSV):
         index = 0
         if len(csv.lines[0]) < 7:
             self.non_story_stage_info = NonStoryStageInfo()
@@ -240,13 +241,13 @@ class DropItem:
 
 @dataclass
 class MapStageDataStage:
-    energy: Optional[int] = None
-    xp: Optional[int] = None
-    main_music_id: Optional[int] = None
-    boss_music_hp_percentage: Optional[int] = None
-    boss_music_id: Optional[int] = None
-    drop_items: Optional[list[DropItem]] = None
-    drop_reward_type: Optional[int] = None
+    energy: int | None = None
+    xp: int | None = None
+    main_music_id: int | None = None
+    boss_music_hp_percentage: int | None = None
+    boss_music_id: int | None = None
+    drop_items: list[DropItem] | None = None
+    drop_reward_type: int | None = None
 
     def __post_init__(self):
         self._csv__energy = IntCSVField(col_index=0)
@@ -256,7 +257,7 @@ class MapStageDataStage:
         self._csv__boss_music_id = IntCSVField(col_index=4)
         self._csv__drop_reward_type = IntCSVField(col_index=8)
 
-    def read_csv(self, index: int, csv: "tbcml.CSV", score_reward_stage_id: int):
+    def read_csv(self, index: int, csv: tbcml.CSV, score_reward_stage_id: int):
         csv.index = index
         tbcml.Modification.read_csv_fields(self, csv)
 
@@ -314,7 +315,7 @@ class MapStageDataStage:
     def apply_csv(
         self,
         index: int,
-        csv: "tbcml.CSV",
+        csv: tbcml.CSV,
         score_reward_stage_id: int,
         warn: bool = True,
     ):
@@ -387,25 +388,25 @@ class MapStageDataStage:
 @dataclass
 class Stage:
     stage_csv_data: StageCSV = field(default_factory=StageCSV)
-    map_stage_data_stage: Optional[MapStageDataStage] = None
-    parent_map: Optional["tbcml.Map"] = None
+    map_stage_data_stage: MapStageDataStage | None = None
+    parent_map: tbcml.Map | None = None
 
-    name: Optional[str] = None
-    name_img: Optional["tbcml.BCImage"] = None
-    story_map_name_img: Optional["tbcml.BCImage"] = None
+    name: str | None = None
+    name_img: tbcml.BCImage | None = None
+    story_map_name_img: tbcml.BCImage | None = None
 
-    stage_option_info: Optional[list[StageOptionInfo]] = None
+    stage_option_info: list[StageOptionInfo] | None = None
 
-    width: Optional[int] = None
-    base_health: Optional[int] = None
-    min_production_frames: Optional[int] = None
-    max_production_frames: Optional[int] = None
-    background_id: Optional[int] = None
-    max_enemy_count: Optional[int] = None
-    castle_enemy_id: Optional[int] = None
-    trial_mode_duration_mins: Optional[int] = None
-    unknown_1: Optional[int] = None
-    unknown_2: Optional[int] = None
+    width: int | None = None
+    base_health: int | None = None
+    min_production_frames: int | None = None
+    max_production_frames: int | None = None
+    background_id: int | None = None
+    max_enemy_count: int | None = None
+    castle_enemy_id: int | None = None
+    trial_mode_duration_mins: int | None = None
+    unknown_1: int | None = None
+    unknown_2: int | None = None
 
     class Meta:
         fields = [
@@ -424,7 +425,7 @@ class Stage:
     def read_map_stage_data_csv(
         self,
         index: int,
-        csv: "tbcml.CSV",
+        csv: tbcml.CSV,
         score_reward_stage_id: int,
     ):
         self.map_stage_data_stage = MapStageDataStage()
@@ -433,7 +434,7 @@ class Stage:
     def apply_map_stage_data_csv(
         self,
         index: int,
-        csv: "tbcml.CSV",
+        csv: tbcml.CSV,
         score_reward_stage_id: int,
     ):
         if self.map_stage_data_stage is None:
@@ -458,12 +459,12 @@ class Stage:
         tbcml.Modification.sync(self, original_stage)
         self.update_stage_info_vars()
 
-    def get_in_battle_img(self) -> "tbcml.BCImage":
+    def get_in_battle_img(self) -> tbcml.BCImage:
         if self.name_img is None:
             self.name_img = tbcml.BCImage.from_size(256, 64)
         return self.name_img
 
-    def get_story_map_name_img(self) -> "tbcml.BCImage":
+    def get_story_map_name_img(self) -> tbcml.BCImage:
         if self.story_map_name_img is None:
             self.story_map_name_img = tbcml.BCImage.from_size(224, 45)
         return self.story_map_name_img
@@ -512,23 +513,23 @@ class Stage:
         self.unknown_1 = self.stage_csv_data.stage_info.unknown_1
         self.unknown_2 = self.stage_csv_data.stage_info.unknown_2
 
-    def get_map_type(self) -> Optional["tbcml.MapType"]:
+    def get_map_type(self) -> tbcml.MapType | None:
         if self.parent_map is None:
             return None
         return self.parent_map.map_type
 
-    def get_map_index(self) -> Optional[int]:
+    def get_map_index(self) -> int | None:
         if self.parent_map is None:
             return None
         return self.parent_map.map_index
 
     def get_stage_csv(
         self,
-        game_data: "tbcml.GamePacks",
+        game_data: tbcml.GamePacks,
         stage_index: int,
-        map_type: "tbcml.MapType",
-        map_index: Optional[int],
-    ) -> tuple[Optional[str], Optional["tbcml.CSV"]]:
+        map_type: tbcml.MapType,
+        map_index: int | None,
+    ) -> tuple[str | None, tbcml.CSV | None]:
         file_name = map_type.get_stage_csv_file_name(stage_index, map_index)
         if file_name is None:
             return None, None
@@ -536,10 +537,10 @@ class Stage:
 
     def get_stage_name_img(
         self,
-        game_data: "tbcml.GamePacks",
+        game_data: tbcml.GamePacks,
         stage_index: int,
-        map_type: "tbcml.MapType",
-        map_index: Optional[int],
+        map_type: tbcml.MapType,
+        map_index: int | None,
     ):
         file_name = map_type.get_stage_name_img_file_name(
             map_index, stage_index, game_data.get_lang()
@@ -549,7 +550,7 @@ class Stage:
         return file_name, game_data.get_img(file_name)
 
     @staticmethod
-    def convert_main_story_stage_id(id: int) -> Optional[int]:
+    def convert_main_story_stage_id(id: int) -> int | None:
         if id in [46, 47]:
             return id
         new_id = 45 - id
@@ -559,8 +560,8 @@ class Stage:
 
     def apply_stage_name_csv(
         self,
-        csv: "tbcml.CSV",
-        map_type: "tbcml.MapType",
+        csv: tbcml.CSV,
+        map_type: tbcml.MapType,
         map_index: int,
         stage_index: int,
     ):
@@ -580,10 +581,10 @@ class Stage:
 
     def apply_stage_name_img(
         self,
-        game_data: "tbcml.GamePacks",
+        game_data: tbcml.GamePacks,
         stage_index: int,
-        map_type: "tbcml.MapType",
-        map_index: Optional[int],
+        map_type: tbcml.MapType,
+        map_index: int | None,
     ):
         if self.name_img is None:
             return
@@ -596,8 +597,8 @@ class Stage:
 
     def read_stage_name_csv(
         self,
-        csv: "tbcml.CSV",
-        map_type: "tbcml.MapType",
+        csv: tbcml.CSV,
+        map_type: tbcml.MapType,
         map_index: int,
         stage_index: int,
     ):
@@ -615,10 +616,10 @@ class Stage:
 
     def read_stage_name_img(
         self,
-        game_data: "tbcml.GamePacks",
+        game_data: tbcml.GamePacks,
         stage_index: int,
-        map_type: Optional["tbcml.MapType"] = None,
-        map_index: Optional[int] = None,
+        map_type: tbcml.MapType | None = None,
+        map_index: int | None = None,
     ):
         if map_type is None:
             map_type = self.get_map_type()
@@ -634,10 +635,10 @@ class Stage:
 
     def apply(
         self,
-        game_data: "tbcml.GamePacks",
+        game_data: tbcml.GamePacks,
         stage_index: int,
-        map_type: Optional["tbcml.MapType"] = None,
-        map_index: Optional[int] = None,
+        map_type: tbcml.MapType | None = None,
+        map_index: int | None = None,
     ):
         if map_type is None:
             map_type = self.get_map_type()
@@ -652,10 +653,10 @@ class Stage:
 
     def read(
         self,
-        game_data: "tbcml.GamePacks",
+        game_data: tbcml.GamePacks,
         stage_index: int,
-        map_type: Optional["tbcml.MapType"] = None,
-        map_index: Optional[int] = None,
+        map_type: tbcml.MapType | None = None,
+        map_index: int | None = None,
     ) -> bool:
         if map_type is None:
             map_type = self.get_map_type()
@@ -671,10 +672,10 @@ class Stage:
 
     def apply_stage_csv(
         self,
-        game_data: "tbcml.GamePacks",
+        game_data: tbcml.GamePacks,
         stage_index: int,
-        map_type: "tbcml.MapType",
-        map_index: Optional[int] = None,
+        map_type: tbcml.MapType,
+        map_index: int | None = None,
     ):
         self.apply_stage_info_vars()
         file_name, csv = self.get_stage_csv(game_data, stage_index, map_type, map_index)
@@ -686,10 +687,10 @@ class Stage:
 
     def read_stage_csv(
         self,
-        game_data: "tbcml.GamePacks",
+        game_data: tbcml.GamePacks,
         stage_index: int,
-        map_type: "tbcml.MapType",
-        map_index: Optional[int] = None,
+        map_type: tbcml.MapType,
+        map_index: int | None = None,
     ) -> bool:
         _, csv = self.get_stage_csv(game_data, stage_index, map_type, map_index)
         if csv is None:

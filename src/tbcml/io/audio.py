@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 try:
     import ffmpeg  # type: ignore
 except ImportError:
@@ -11,7 +13,7 @@ import tbcml
 class AudioFile:
     id: int
     is_bgm: bool
-    data: "tbcml.Data"
+    data: tbcml.Data
 
     def get_sound_format(self):
         return AudioFile.get_sound_format_s(self.is_bgm)
@@ -28,7 +30,7 @@ class AudioFile:
             return True
         return False
 
-    def caf_to_little_endian(self) -> "AudioFile":
+    def caf_to_little_endian(self) -> AudioFile:
         """Converts a CAF audio file to little endian. Stuff like audacity saves CAF files as big endian and the game doesn't support that.
 
         Returns:

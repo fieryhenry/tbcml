@@ -1,4 +1,5 @@
-from typing import Optional
+from __future__ import annotations
+
 from marshmallow_dataclass import dataclass
 import tbcml
 
@@ -9,28 +10,28 @@ from tbcml.io.csv_fields import (
 
 @dataclass
 class LocalizableItem:
-    key: Optional[str] = None
-    value: Optional[str] = None
+    key: str | None = None
+    value: str | None = None
 
     def __post_init__(self):
         self._csv__key = StringCSVField(col_index=0)
         self._csv__value = StringCSVField(col_index=1)
 
-    def read_csv(self, index: int, csv: "tbcml.CSV") -> bool:
+    def read_csv(self, index: int, csv: tbcml.CSV) -> bool:
         csv.index = index
         tbcml.Modification.read_csv_fields(self, csv)
         return True
 
-    def apply_csv(self, index: int, csv: "tbcml.CSV"):
+    def apply_csv(self, index: int, csv: tbcml.CSV):
         csv.index = index
         tbcml.Modification.apply_csv_fields(self, csv, remove_others=False)
 
 
 @dataclass
 class Localizable(tbcml.Modification):
-    strings: Optional[dict[str, LocalizableItem]] = None
+    strings: dict[str, LocalizableItem] | None = None
 
-    def merge(self, other: "Localizable"):
+    def merge(self, other: Localizable):
         super().merge(other)
         if other.strings is None:
             return
@@ -44,14 +45,14 @@ class Localizable(tbcml.Modification):
 
     @staticmethod
     def get_csv(
-        game_data: "tbcml.GamePacks",
-    ) -> tuple[str, Optional["tbcml.CSV"]]:
+        game_data: tbcml.GamePacks,
+    ) -> tuple[str, tbcml.CSV | None]:
         file_name = "localizable.tsv"
         csv = game_data.get_csv(file_name, "\t")
 
         return file_name, csv
 
-    def read_strings(self, game_data: "tbcml.GamePacks"):
+    def read_strings(self, game_data: tbcml.GamePacks):
         _, csv = Localizable.get_csv(game_data)
         if csv is None:
             return
@@ -62,7 +63,7 @@ class Localizable(tbcml.Modification):
             if string.key is not None:
                 self.strings[string.key] = string
 
-    def apply_strings(self, game_data: "tbcml.GamePacks"):
+    def apply_strings(self, game_data: tbcml.GamePacks):
         if self.strings is None:
             return
         name, csv = Localizable.get_csv(game_data)
@@ -88,10 +89,10 @@ class Localizable(tbcml.Modification):
 
         game_data.set_csv(name, csv)
 
-    def read(self, game_data: "tbcml.GamePacks"):
+    def read(self, game_data: tbcml.GamePacks):
         self.read_strings(game_data)
 
-    def apply_game_data(self, game_data: "tbcml.GamePacks"):
+    def apply_game_data(self, game_data: tbcml.GamePacks):
         self.apply_strings(game_data)
 
     def get_custom_html(self) -> str:
@@ -113,7 +114,7 @@ class Localizable(tbcml.Modification):
 
         self.strings[key] = new_item
 
-    def get_string(self, key: str) -> Optional[str]:
+    def get_string(self, key: str) -> str | None:
         if self.strings is None:
             return None
 

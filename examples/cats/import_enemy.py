@@ -2,7 +2,7 @@ import tbcml
 
 
 class AssassinBearForm(tbcml.CatForm):
-    def __init__(self, cat_id: int, game_data: "tbcml.GamePacks"):
+    def __init__(self, cat_id: int, game_data: tbcml.GamePacks):
         super().__init__(
             form_type=tbcml.CatFormType.THIRD
         )  # form type can be changed to change what form to replace
@@ -48,7 +48,7 @@ class AssassinBearForm(tbcml.CatForm):
 
 
 class AssassinBear(tbcml.Cat):
-    def __init__(self, game_data: "tbcml.GamePacks"):
+    def __init__(self, game_data: tbcml.GamePacks):
         super().__init__(
             cat_id=0
         )  # cat id can be changed to change what cat to replace

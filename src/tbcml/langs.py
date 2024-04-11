@@ -1,16 +1,9 @@
 """Contains the Languages enum."""
 
-import enum
-from typing import Literal, Union
+from __future__ import annotations
 
-LanguageStr = Union[
-    "Language",
-    Literal["fr"],
-    Literal["it"],
-    Literal["de"],
-    Literal["es"],
-    Literal["th"],
-]
+import enum
+from typing import Literal
 
 
 class Language(enum.Enum):
@@ -23,7 +16,7 @@ class Language(enum.Enum):
     TH = "th"
 
     @staticmethod
-    def get_all() -> list["Language"]:
+    def get_all() -> list[Language]:
         """Gets all languages.
 
         Returns:
@@ -56,7 +49,17 @@ class Language(enum.Enum):
         raise ValueError("Invalid Language")
 
     @staticmethod
-    def from_langstr(lang: LanguageStr) -> "Language":
+    def from_langstr(lang: LanguageStr) -> Language:
         if isinstance(lang, Language):
             return lang
         return Language(lang)
+
+
+LanguageStr = (
+    Language
+    | Literal["fr"]
+    | Literal["it"]
+    | Literal["de"]
+    | Literal["es"]
+    | Literal["th"]
+)

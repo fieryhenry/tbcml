@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 __version__ = "2.0.0"
 
-from typing import Union, Optional
+
 from .mods.bc_mod import (
     Mod,
     Modification,
@@ -114,18 +116,18 @@ from .game_data.pack import GamePacks, PackFile, GameFile
 from .country_code import CountryCode, CC
 from .game_version import GameVersion, GV
 
-LOADER = Union["ModLoader", "IpaModLoader"]
+LOADER = ModLoader | IpaModLoader
 
 
 def to_apk(
-    path: "PathStr",
-    cc_overwrite: Optional["CountryCode"] = None,
-    gv_overwrite: Optional["GameVersion"] = None,
-    pkg_folder: Optional["Path"] = None,
+    path: PathStr,
+    cc_overwrite: CountryCode | None = None,
+    gv_overwrite: GameVersion | None = None,
+    pkg_folder: Path | None = None,
     allowed_script_mods: bool = True,
     skip_signature_check: bool = False,
     overwrite_pkg: bool = True,
-) -> Optional["Apk"]:
+) -> Apk | None:
     return to_pkg(
         path,
         cc_overwrite=cc_overwrite,
@@ -138,14 +140,14 @@ def to_apk(
 
 
 def to_ipa(
-    path: "PathStr",
-    cc_overwrite: Optional["CountryCode"] = None,
-    gv_overwrite: Optional["GameVersion"] = None,
-    pkg_folder: Optional["Path"] = None,
+    path: PathStr,
+    cc_overwrite: CountryCode | None = None,
+    gv_overwrite: GameVersion | None = None,
+    pkg_folder: Path | None = None,
     allowed_script_mods: bool = True,
     skip_signature_check: bool = False,
     overwrite_pkg: bool = True,
-) -> Optional["Ipa"]:
+) -> Ipa | None:
     return to_pkg(
         path,
         cc_overwrite=cc_overwrite,
@@ -158,14 +160,14 @@ def to_ipa(
 
 
 def to_pkg(
-    path: "PathStr",
-    cc_overwrite: Optional["CountryCode"] = None,
-    gv_overwrite: Optional["GameVersion"] = None,
-    pkg_folder: Optional["Path"] = None,
+    path: PathStr,
+    cc_overwrite: CountryCode | None = None,
+    gv_overwrite: GameVersion | None = None,
+    pkg_folder: Path | None = None,
     allowed_script_mods: bool = True,
     skip_signature_check: bool = False,
     overwrite_pkg: bool = True,
-) -> Optional[Pkg]:
+) -> Pkg | None:
     path = Path(path)
     extension = path.get_extension()
     pkg = None
@@ -200,12 +202,8 @@ def to_pkg(
 
 """Type alias for a package type, can be a tbcml.Apk or tbcml.Ipa"""
 
-File = Union[
-    Path,
-    str,
-    Data,
-    bytes,
-]
+File = Path | str | Data | bytes
+
 """Type alias for a file type, can be a tbcml.Path, str, tbcml.Data, or bytes"""
 
 

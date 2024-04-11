@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import tbcml
 
 
@@ -24,5 +26,5 @@ class FileSize:
             return f"{self.file_size / 1024 ** 4:.2f} TB"
 
     @staticmethod
-    def from_file(path: "tbcml.Path") -> "FileSize":
+    def from_file(path: tbcml.Path) -> FileSize:
         return FileSize(path.get_file_size())

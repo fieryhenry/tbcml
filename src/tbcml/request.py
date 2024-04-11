@@ -1,6 +1,6 @@
 """Handles HTTP requests."""
 
-from typing import Optional
+from __future__ import annotations
 
 import requests
 
@@ -21,17 +21,17 @@ class RequestHandler:
     def __init__(
         self,
         url: str,
-        headers: Optional[dict[str, str]] = None,
-        data: Optional["tbcml.Data"] = None,
-        timeout: Optional[int] = None,
+        headers: dict[str, str] | None = None,
+        data: tbcml.Data | None = None,
+        timeout: int | None = None,
     ):
         """Initializes a new instance of the RequestHandler class.
 
         Args:
             url (str): URL to request.
-            headers (Optional[dict[str, str]], optional): Headers to send with the request. Defaults to None.
-            data (Optional[tbcml.Data], optional): Data to send with the request. Defaults to None.
-            timeout (Optional[int], optional): Timeout in seconds. Defaults to None.
+            headers (dict[str, str] | None, optional): Headers to send with the request. Defaults to None.
+            data (tbcml.Data | None, optional): Data to send with the request. Defaults to None.
+            timeout (int | None, optional): Timeout in seconds. Defaults to None.
         """
         if data is None:
             data = tbcml.Data()

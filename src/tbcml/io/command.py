@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import subprocess
 import threading
-from typing import Optional
 import tbcml
 
 
@@ -24,7 +25,7 @@ class Command:
     def __init__(
         self,
         command: str,
-        cwd: Optional["tbcml.Path"] = None,
+        cwd: tbcml.Path | None = None,
     ):
         self.command = command
         self.process = None

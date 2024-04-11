@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 from dataclasses import field
 import enum
-from typing import Optional
 import tbcml
 import copy
 
@@ -36,7 +37,7 @@ class AnimType(enum.Enum):
     KNOCK_BACK = 3
 
     @staticmethod
-    def from_bcu_str(string: str) -> Optional["AnimType"]:
+    def from_bcu_str(string: str) -> AnimType | None:
         string = string.split("_")[1]
         string = string.split(".")[0]
         if string == "walk":
@@ -53,11 +54,11 @@ class AnimType(enum.Enum):
 
 @dataclass
 class Rect:
-    x: Optional[int] = None
-    y: Optional[int] = None
-    w: Optional[int] = None
-    h: Optional[int] = None
-    name: Optional[str] = None
+    x: int | None = None
+    y: int | None = None
+    w: int | None = None
+    h: int | None = None
+    name: str | None = None
 
     def __post_init__(self):
         self._csv__x = IntCSVField(col_index=0)
@@ -66,21 +67,21 @@ class Rect:
         self._csv__h = IntCSVField(col_index=3)
         self._csv__name = StringCSVField(col_index=4)
 
-    def read_csv(self, index: int, csv: "tbcml.CSV"):
+    def read_csv(self, index: int, csv: tbcml.CSV):
         csv.index = index
         tbcml.Modification.read_csv_fields(self, csv)
 
-    def apply_csv(self, index: int, csv: "tbcml.CSV"):
+    def apply_csv(self, index: int, csv: tbcml.CSV):
         csv.index = index
         tbcml.Modification.apply_csv_fields(self, csv)
 
 
 @dataclass
 class TextureMetadata:
-    head_name: Optional[str] = None
-    version_code: Optional[str] = None
-    img_name: Optional[str] = None
-    total_rects: Optional[int] = None
+    head_name: str | None = None
+    version_code: str | None = None
+    img_name: str | None = None
+    total_rects: int | None = None
 
     def __post_init__(self):
         self._csv__head_name = StringCSVField(col_index=0, row_index=0)
@@ -88,10 +89,10 @@ class TextureMetadata:
         self._csv__img_name = StringCSVField(col_index=0, row_index=2)
         self._csv__total_rects = IntCSVField(col_index=0, row_index=3)
 
-    def read_csv(self, csv: "tbcml.CSV"):
+    def read_csv(self, csv: tbcml.CSV):
         tbcml.Modification.read_csv_fields(self, csv)
 
-    def apply_csv(self, csv: "tbcml.CSV"):
+    def apply_csv(self, csv: tbcml.CSV):
         tbcml.Modification.apply_csv_fields(self, csv)
 
     def set_id(self, id: str, form: str):
@@ -101,16 +102,16 @@ class TextureMetadata:
 @dataclass
 class Texture:
     metadata: TextureMetadata = field(default_factory=lambda: TextureMetadata())
-    image: Optional["tbcml.BCImage"] = field(
+    image: tbcml.BCImage | None = field(
         default_factory=lambda: tbcml.BCImage.create_empty()
     )
     rects: list[Rect] = field(default_factory=lambda: [])
     imgcut_name: str = ""
 
-    def set_img(self, img: "tbcml.BCImage"):
+    def set_img(self, img: tbcml.BCImage):
         self.image = img
 
-    def load_img(self, path: "tbcml.File"):
+    def load_img(self, path: tbcml.File):
         data = tbcml.load(path)
         self.image = tbcml.BCImage.from_data(data)
 
@@ -118,7 +119,7 @@ class Texture:
         if self.image is not None:
             self.image.save_b64()
 
-    def read_csv(self, csv: "tbcml.CSV", imgcut_name: Optional[str] = None):
+    def read_csv(self, csv: tbcml.CSV, imgcut_name: str | None = None):
         if imgcut_name is not None:
             self.imgcut_name = imgcut_name
         self.rects = []
@@ -131,9 +132,9 @@ class Texture:
 
     def apply_csv(
         self,
-        csv: "tbcml.CSV",
-        game_data: "tbcml.GamePacks",
-        imgname_save_overwrite: Optional[str] = None,
+        csv: tbcml.CSV,
+        game_data: tbcml.GamePacks,
+        imgname_save_overwrite: str | None = None,
     ):
         self.metadata.total_rects = len(self.rects)
         self.metadata.apply_csv(csv)
@@ -143,13 +144,13 @@ class Texture:
 
         self.apply_img(game_data, imgname_save_overwrite)
 
-    def apply(self, game_data: "tbcml.GamePacks"):
+    def apply(self, game_data: tbcml.GamePacks):
         csv = tbcml.CSV()
         self.apply_csv(csv, game_data)
         game_data.set_csv(self.imgcut_name, csv)
 
     def apply_img(
-        self, game_data: "tbcml.GamePacks", imgname_save_overwrite: Optional[str] = None
+        self, game_data: tbcml.GamePacks, imgname_save_overwrite: str | None = None
     ):
         if imgname_save_overwrite is not None:
             name = imgname_save_overwrite
@@ -159,7 +160,7 @@ class Texture:
             return None
         return game_data.set_img(name, self.image)
 
-    def read_img(self, game_data: "tbcml.GamePacks", img_name: str):
+    def read_img(self, game_data: tbcml.GamePacks, img_name: str):
         self.image = game_data.get_img(img_name)
         self.metadata.img_name = img_name
 
@@ -169,14 +170,14 @@ class Texture:
         self.metadata.set_id(id, form)
         self.imgcut_name = self.metadata.img_name.replace(".png", ".imgcut")
 
-    def get_rect(self, id: int) -> Optional["Rect"]:
+    def get_rect(self, id: int) -> Rect | None:
         try:
             rect = self.rects[id]
         except IndexError:
             return None
         return rect
 
-    def get_cut(self, rect_id: int) -> Optional["tbcml.BCImage"]:
+    def get_cut(self, rect_id: int) -> tbcml.BCImage | None:
         if not self.image:
             return None
 
@@ -186,15 +187,15 @@ class Texture:
 
         return self.image.get_subimage(rect)
 
-    def get_cuts(self) -> list[Optional["tbcml.BCImage"]]:
+    def get_cuts(self) -> list[tbcml.BCImage | None]:
         return [self.get_cut(i) for i in range(len(self.rects))]
 
-    def get_cut_from_rect(self, rect: "tbcml.Rect") -> Optional["tbcml.BCImage"]:
+    def get_cut_from_rect(self, rect: tbcml.Rect) -> tbcml.BCImage | None:
         if self.image is None:
             return None
         return self.image.get_subimage(rect)
 
-    def set_cut(self, rect_id: int, img: "tbcml.BCImage"):
+    def set_cut(self, rect_id: int, img: tbcml.BCImage):
         original_rect = self.get_rect(rect_id)
         if original_rect is None or self.image is None:
             return False
@@ -217,7 +218,7 @@ class Texture:
         # reconstruct imgcut
         x = 0
         y = 0
-        new_rects: list["tbcml.Rect"] = []
+        new_rects: list[tbcml.Rect] = []
         for rect in self.rects:
             new_rect = tbcml.Rect()
             new_rect.x = x
@@ -245,7 +246,7 @@ class Texture:
         return True
 
     def read_from_game_file_names(
-        self, game_data: "tbcml.GamePacks", img_name: str, imgcut_name: str
+        self, game_data: tbcml.GamePacks, img_name: str, imgcut_name: str
     ):
         self.read_img(game_data, img_name)
         csv = game_data.get_csv(imgcut_name)
@@ -257,19 +258,19 @@ class Texture:
 
 @dataclass
 class MamodelMetaData:
-    head_name: Optional[str] = None
-    version_code: Optional[str] = None
-    total_parts: Optional[int] = None
+    head_name: str | None = None
+    version_code: str | None = None
+    total_parts: int | None = None
 
     def __post_init__(self):
         self._csv__head_name = StringCSVField(col_index=0, row_index=0)
         self._csv__version_code = StringCSVField(col_index=0, row_index=1)
         self._csv__total_parts = IntCSVField(col_index=0, row_index=2)
 
-    def read_csv(self, csv: "tbcml.CSV"):
+    def read_csv(self, csv: tbcml.CSV):
         tbcml.Modification.read_csv_fields(self, csv)
 
-    def apply_csv(self, csv: "tbcml.CSV"):
+    def apply_csv(self, csv: tbcml.CSV):
         tbcml.Modification.apply_csv_fields(self, csv)
 
 
@@ -294,9 +295,9 @@ class ModelPartAnimValues:
     v_flip: bool = False
 
     def __post_init__(self):
-        self.parent: Optional["tbcml.ModelPart"] = None
-        self.rect: Optional["tbcml.Rect"] = None
-        self.img: Optional["tbcml.BCImage"] = None
+        self.parent: tbcml.ModelPart | None = None
+        self.rect: tbcml.Rect | None = None
+        self.img: tbcml.BCImage | None = None
 
         self.real_scale_x = 1.0
         self.real_scale_y = 1.0
@@ -307,20 +308,20 @@ class ModelPartAnimValues:
 @dataclass
 class ModelPart:
     part_id: int
-    parent_id: Optional[int] = None
-    unit_id: Optional[int] = None
-    cut_id: Optional[int] = None
-    z_depth: Optional[int] = None
-    x: Optional[int] = None
-    y: Optional[int] = None
-    pivot_x: Optional[int] = None
-    pivot_y: Optional[int] = None
-    scale_x: Optional[int] = None
-    scale_y: Optional[int] = None
-    rotation: Optional[int] = None
-    alpha: Optional[int] = None
-    glow: Optional[int] = None
-    name: Optional[str] = None
+    parent_id: int | None = None
+    unit_id: int | None = None
+    cut_id: int | None = None
+    z_depth: int | None = None
+    x: int | None = None
+    y: int | None = None
+    pivot_x: int | None = None
+    pivot_y: int | None = None
+    scale_x: int | None = None
+    scale_y: int | None = None
+    rotation: int | None = None
+    alpha: int | None = None
+    glow: int | None = None
+    name: str | None = None
 
     def __post_init__(self):
         self._csv__parent_id = IntCSVField(col_index=0)
@@ -340,7 +341,7 @@ class ModelPart:
 
         self.anim = None
 
-    def init_anim(self) -> "ModelPartAnimValues":
+    def init_anim(self) -> ModelPartAnimValues:
         self.anim = ModelPartAnimValues(
             self.part_id,
             -1 if self.parent_id is None else self.parent_id,
@@ -360,11 +361,11 @@ class ModelPart:
         )
         return self.anim
 
-    def read_csv(self, index: int, csv: "tbcml.CSV"):
+    def read_csv(self, index: int, csv: tbcml.CSV):
         csv.index = index
         tbcml.Modification.read_csv_fields(self, csv)
 
-    def apply_csv(self, index: int, csv: "tbcml.CSV"):
+    def apply_csv(self, index: int, csv: tbcml.CSV):
         csv.index = index
         tbcml.Modification.apply_csv_fields(self, csv)
 
@@ -385,33 +386,33 @@ class ModelPart:
 
 @dataclass
 class MamodelUnits:
-    scale_unit: Optional[int] = None
-    angle_unit: Optional[int] = None
-    alpha_unit: Optional[int] = None
+    scale_unit: int | None = None
+    angle_unit: int | None = None
+    alpha_unit: int | None = None
 
     def __post_init__(self):
         self._csv__scale_unit = IntCSVField(col_index=0)
         self._csv__angle_unit = IntCSVField(col_index=1)
         self._csv__alpha_unit = IntCSVField(col_index=2)
 
-    def read_csv(self, index: int, csv: "tbcml.CSV"):
+    def read_csv(self, index: int, csv: tbcml.CSV):
         csv.index = index
         tbcml.Modification.read_csv_fields(self, csv)
 
-    def apply_csv(self, index: int, csv: "tbcml.CSV"):
+    def apply_csv(self, index: int, csv: tbcml.CSV):
         csv.index = index
         tbcml.Modification.apply_csv_fields(self, csv)
 
 
 @dataclass
 class MamodelInts:
-    part_id: Optional[int] = None
-    int_1: Optional[int] = None
-    base_x_size: Optional[int] = None
-    base_y_size: Optional[int] = None
-    int_4: Optional[int] = None
-    int_5: Optional[int] = None
-    comment: Optional[str] = None
+    part_id: int | None = None
+    int_1: int | None = None
+    base_x_size: int | None = None
+    base_y_size: int | None = None
+    int_4: int | None = None
+    int_5: int | None = None
+    comment: str | None = None
 
     def __post_init__(self):
         self._csv__part_id = IntCSVField(col_index=0)
@@ -422,11 +423,11 @@ class MamodelInts:
         self._csv__int_5 = IntCSVField(col_index=5)
         self._csv__comment = StringCSVField(col_index=6)
 
-    def read_csv(self, index: int, csv: "tbcml.CSV"):
+    def read_csv(self, index: int, csv: tbcml.CSV):
         csv.index = index
         tbcml.Modification.read_csv_fields(self, csv)
 
-    def apply_csv(self, index: int, csv: "tbcml.CSV"):
+    def apply_csv(self, index: int, csv: tbcml.CSV):
         csv.index = index
         tbcml.Modification.apply_csv_fields(self, csv)
 
@@ -434,12 +435,12 @@ class MamodelInts:
 @dataclass
 class MamodelIntsInts:
     ints: list[MamodelInts] = field(default_factory=lambda: [])
-    total_ints: Optional[int] = None
+    total_ints: int | None = None
 
     def __post_init__(self):
         self._csv__total_ints = IntCSVField(col_index=0)
 
-    def read_csv(self, index: int, csv: "tbcml.CSV"):
+    def read_csv(self, index: int, csv: tbcml.CSV):
         csv.index = index
         self.ints = []
         tbcml.Modification.read_csv_fields(self, csv)
@@ -449,7 +450,7 @@ class MamodelIntsInts:
             ints.read_csv(ind, csv)
             self.ints.append(ints)
 
-    def apply_csv(self, index: int, csv: "tbcml.CSV"):
+    def apply_csv(self, index: int, csv: tbcml.CSV):
         csv.index = index
         self.total_ints = len(self.ints)
         tbcml.Modification.apply_csv_fields(self, csv)
@@ -464,9 +465,9 @@ class Mamodel:
     parts: list[ModelPart] = field(default_factory=lambda: [])
     units: MamodelUnits = field(default_factory=lambda: MamodelUnits())
     ints: MamodelIntsInts = field(default_factory=lambda: MamodelIntsInts())
-    mamodel_name: Optional[str] = None
+    mamodel_name: str | None = None
 
-    def read_csv(self, csv: "tbcml.CSV"):
+    def read_csv(self, csv: tbcml.CSV):
         self.metadata.read_csv(csv)
         self.parts = []
         for i in range(self.metadata.total_parts or 0):
@@ -477,7 +478,7 @@ class Mamodel:
         self.units.read_csv(len(self.parts) + 3, csv)
         self.ints.read_csv(len(self.parts) + 4, csv)
 
-    def apply_csv(self, csv: "tbcml.CSV"):
+    def apply_csv(self, csv: tbcml.CSV):
         self.metadata.total_parts = len(self.parts)
         self.metadata.apply_csv(csv)
         for i, part in enumerate(self.parts):
@@ -514,10 +515,10 @@ class Mamodel:
 
 @dataclass
 class KeyFrame:
-    frame: Optional[int] = None
-    change_in_value: Optional[int] = None
-    ease_mode: Optional[int] = None
-    ease_power: Optional[int] = None
+    frame: int | None = None
+    change_in_value: int | None = None
+    ease_mode: int | None = None
+    ease_power: int | None = None
 
     def __post_init__(self):
         self._csv__frame = IntCSVField(col_index=0)
@@ -525,43 +526,43 @@ class KeyFrame:
         self._csv__ease_mode = IntCSVField(col_index=2)
         self._csv__ease_power = IntCSVField(col_index=3)
 
-    def read_csv(self, index: int, csv: "tbcml.CSV"):
+    def read_csv(self, index: int, csv: tbcml.CSV):
         csv.index = index
         tbcml.Modification.read_csv_fields(self, csv)
 
-    def apply_csv(self, index: int, csv: "tbcml.CSV"):
+    def apply_csv(self, index: int, csv: tbcml.CSV):
         csv.index = index
         tbcml.Modification.apply_csv_fields(self, csv)
 
 
 @dataclass
 class MaanimMetadata:
-    head_name: Optional[str] = None
-    version_code: Optional[str] = None
-    total_parts: Optional[int] = None
+    head_name: str | None = None
+    version_code: str | None = None
+    total_parts: int | None = None
 
     def __post_init__(self):
         self._csv__head_name = StringCSVField(col_index=0, row_index=0)
         self._csv__version_code = StringCSVField(col_index=0, row_index=1)
         self._csv__total_parts = IntCSVField(col_index=0, row_index=2)
 
-    def read_csv(self, csv: "tbcml.CSV"):
+    def read_csv(self, csv: tbcml.CSV):
         tbcml.Modification.read_csv_fields(self, csv)
 
-    def apply_csv(self, csv: "tbcml.CSV"):
+    def apply_csv(self, csv: tbcml.CSV):
         tbcml.Modification.apply_csv_fields(self, csv)
 
 
 @dataclass
 class KeyFrames:
     keyframes: list[KeyFrame] = field(default_factory=lambda: [])
-    model_id: Optional[int] = None
-    modification_type: Optional[int] = None
-    loop: Optional[int] = None
-    min_value: Optional[int] = None
-    max_value: Optional[int] = None
-    name: Optional[str] = None
-    total_keyframes: Optional[int] = None
+    model_id: int | None = None
+    modification_type: int | None = None
+    loop: int | None = None
+    min_value: int | None = None
+    max_value: int | None = None
+    name: str | None = None
+    total_keyframes: int | None = None
 
     def __post_init__(self):
         self._csv__model_id = IntCSVField(col_index=0)
@@ -572,7 +573,7 @@ class KeyFrames:
         self._csv__name = StringCSVField(col_index=5)
         self._csv__total_keyframes = IntCSVField(col_index=0, row_offset=1)
 
-    def read_csv(self, index: int, csv: "tbcml.CSV") -> int:
+    def read_csv(self, index: int, csv: tbcml.CSV) -> int:
         csv.index = index
         tbcml.Modification.read_csv_fields(self, csv)
         self.keyframes = []
@@ -584,7 +585,7 @@ class KeyFrames:
 
         return index + 2 + len(self.keyframes)
 
-    def apply_csv(self, index: int, csv: "tbcml.CSV") -> int:
+    def apply_csv(self, index: int, csv: tbcml.CSV) -> int:
         csv.index = index
         self.total_keyframes = len(self.keyframes)
         tbcml.Modification.apply_csv_fields(self, csv)
@@ -615,9 +616,9 @@ class KeyFrames:
 class UnitAnim:
     metadata: MaanimMetadata = field(default_factory=lambda: MaanimMetadata())
     parts: list[KeyFrames] = field(default_factory=lambda: [])
-    name: Optional[str] = None
+    name: str | None = None
 
-    def read_csv(self, csv: "tbcml.CSV"):
+    def read_csv(self, csv: tbcml.CSV):
         self.metadata.read_csv(csv)
         index = 3
         self.parts = []
@@ -626,7 +627,7 @@ class UnitAnim:
             index = part.read_csv(index, csv)
             self.parts.append(part)
 
-    def apply_csv(self, csv: "tbcml.CSV"):
+    def apply_csv(self, csv: tbcml.CSV):
         self.metadata.total_parts = len(self.parts)
         self.metadata.apply_csv(csv)
         index = 3
@@ -667,10 +668,10 @@ class Model(tbcml.Modification):
 
     def read_csv(
         self,
-        img: Optional["tbcml.BCImage"],
-        imgcut_csv: Optional["tbcml.CSV"],
-        maanim_csvs: dict[str, "tbcml.CSV"],
-        mamodel_csv: Optional["tbcml.CSV"],
+        img: tbcml.BCImage | None,
+        imgcut_csv: tbcml.CSV | None,
+        maanim_csvs: dict[str, tbcml.CSV],
+        mamodel_csv: tbcml.CSV | None,
     ):
         if imgcut_csv is not None:
             self.texture.read_csv(imgcut_csv)
@@ -686,10 +687,10 @@ class Model(tbcml.Modification):
 
     def apply_csv(
         self,
-        imgcut_csv: "tbcml.CSV",
-        maanim_csvs: dict[str, "tbcml.CSV"],
-        mamodel_csv: "tbcml.CSV",
-        game_data: "tbcml.GamePacks",
+        imgcut_csv: tbcml.CSV,
+        maanim_csvs: dict[str, tbcml.CSV],
+        mamodel_csv: tbcml.CSV,
+        game_data: tbcml.GamePacks,
     ):
         self.texture.apply_csv(imgcut_csv, game_data)
         for anim in self.anims:
@@ -702,7 +703,7 @@ class Model(tbcml.Modification):
 
     def read(
         self,
-        game_data: "tbcml.GamePacks",
+        game_data: tbcml.GamePacks,
         sprite_name: str,
         imgcut_name: str,
         maanim_names: list[str],
@@ -717,7 +718,7 @@ class Model(tbcml.Modification):
 
         mamodel_csv = game_data.get_csv(mamodel_name)
 
-        maanim_csvs: dict[str, "tbcml.CSV"] = {}
+        maanim_csvs: dict[str, tbcml.CSV] = {}
         for maanim_name in maanim_names:
             maanim_csv = game_data.get_csv(maanim_name)
             if maanim_csv is not None:
@@ -729,10 +730,10 @@ class Model(tbcml.Modification):
 
     def read_files(
         self,
-        sprite_path: "tbcml.Path",
-        imgcut_path: "tbcml.Path",
-        maanim_paths: list["tbcml.Path"],
-        mamodel_path: "tbcml.Path",
+        sprite_path: tbcml.Path,
+        imgcut_path: tbcml.Path,
+        maanim_paths: list[tbcml.Path],
+        mamodel_path: tbcml.Path,
     ):
         self.texture.imgcut_name = imgcut_path.basename()
         self.texture.metadata.img_name = sprite_path.basename()
@@ -741,7 +742,7 @@ class Model(tbcml.Modification):
         self.mamodel.mamodel_name = mamodel_path.basename()
         mamodel_csv = tbcml.CSV(mamodel_path.read())
 
-        maanim_csvs: dict[str, "tbcml.CSV"] = {}
+        maanim_csvs: dict[str, tbcml.CSV] = {}
         for path in maanim_paths:
             maanim_csv = tbcml.CSV(path.read())
             maanim_csvs[path.basename()] = maanim_csv
@@ -756,13 +757,13 @@ class Model(tbcml.Modification):
     def read_data(
         self,
         sprite_name: str,
-        sprite_data: "tbcml.Data",
+        sprite_data: tbcml.Data,
         imgcut_name: str,
-        imgcut_data: "tbcml.Data",
+        imgcut_data: tbcml.Data,
         maanim_names: list[str],
-        maanim_datas: list["tbcml.Data"],
+        maanim_datas: list[tbcml.Data],
         mamodel_name: str,
-        mamodel_data: "tbcml.Data",
+        mamodel_data: tbcml.Data,
     ):
         self.texture.imgcut_name = imgcut_name
         self.texture.metadata.img_name = sprite_name
@@ -771,7 +772,7 @@ class Model(tbcml.Modification):
         self.mamodel.mamodel_name = mamodel_name
         mamodel_csv = tbcml.CSV(mamodel_data)
 
-        maanim_csvs: dict[str, "tbcml.CSV"] = {}
+        maanim_csvs: dict[str, tbcml.CSV] = {}
         for name, data in zip(maanim_names, maanim_datas):
             maanim_csv = tbcml.CSV(data)
             maanim_csvs[name] = maanim_csv
@@ -783,7 +784,7 @@ class Model(tbcml.Modification):
             mamodel_csv,
         )
 
-    def apply_game_data(self, game_data: "tbcml.GamePacks"):
+    def apply_game_data(self, game_data: tbcml.GamePacks):
         texture_csv = tbcml.CSV()
         self.texture.apply_csv(texture_csv, game_data)
         game_data.set_csv(self.texture.imgcut_name, texture_csv)
@@ -813,7 +814,7 @@ class Model(tbcml.Modification):
         for anim in self.anims:
             anim.flip()
 
-    def deepcopy(self) -> "Model":
+    def deepcopy(self) -> Model:
         return copy.deepcopy(self)
 
     def set_unit_form(self, id: int, form: str):

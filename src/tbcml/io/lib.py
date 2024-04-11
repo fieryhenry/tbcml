@@ -1,4 +1,6 @@
-from typing import Any, Literal, Optional, Union
+from __future__ import annotations
+
+from typing import Any, Literal
 import tbcml
 
 try:
@@ -6,17 +8,18 @@ try:
 except ImportError:
     lief = None
 
-ARC = Union[
-    Literal["x86"],
-    Literal["x86_64"],
-    Literal["arm64-v8a"],
-    Literal["armeabi-v7a"],
-    Literal["armeabi"],
-    Literal["mips"],
-    Literal["mips64"],
-]
+ARC = (
+    Literal["x86"]
+    | Literal["x86_64"]
+    | Literal["arm64-v8a"]
+    | Literal["armeabi-v7a"]
+    | Literal["armeabi"]
+    | Literal["mips"]
+    | Literal["mips64"]
+)
 
-ARCS = Union[list[ARC], Literal["all"], Literal["32"], Literal["64"]]
+
+ARCS = list[ARC] | Literal["all"] | Literal["32"] | Literal["64"]
 
 
 def is_lief_installed() -> bool:
@@ -27,7 +30,7 @@ class Patch:
     def __init__(self):
         pass
 
-    def apply_patch(self, lib: "Lib"): ...
+    def apply_patch(self, lib: Lib): ...
 
     def serialize(self) -> dict[str, Any]: ...
 
@@ -36,16 +39,14 @@ class Patch:
 
 
 class FuncPatch(Patch):
-    def __init__(
-        self, code: "tbcml.Data", offset: int = 0, func_name: Optional[str] = None
-    ):
+    def __init__(self, code: tbcml.Data, offset: int = 0, func_name: str | None = None):
         self.code = code
         self.offset = offset
         self.func_name = func_name
 
         super().__init__()
 
-    def apply_patch(self, lib: "Lib"):
+    def apply_patch(self, lib: Lib):
         if self.func_name is not None:
             func = lib.get_export_function(self.func_name)
             if func is None:
@@ -66,7 +67,7 @@ class FuncPatch(Patch):
         }
 
     @staticmethod
-    def deserialize(data: dict[str, Any]) -> "FuncPatch":
+    def deserialize(data: dict[str, Any]) -> FuncPatch:
         return FuncPatch(
             tbcml.Data.from_hex(data["code"]),
             data.get("offset", 0),
@@ -82,7 +83,7 @@ class StringReplacePatch(Patch):
 
         super().__init__()
 
-    def apply_patch(self, lib: "Lib"):
+    def apply_patch(self, lib: Lib):
         if len(self.new) > len(self.orig):
             raise ValueError("New string is longer than original string")
         to_add = len(self.orig) - len(self.new)
@@ -99,7 +100,7 @@ class StringReplacePatch(Patch):
         }
 
     @staticmethod
-    def deserialize(data: dict[str, Any]) -> "StringReplacePatch":
+    def deserialize(data: dict[str, Any]) -> StringReplacePatch:
         return StringReplacePatch(
             data.get("orig", ""), data.get("new", ""), data.get("padding", "\x00")
         )
@@ -110,9 +111,9 @@ class LibPatch:
         self,
         name: str,
         architectures: ARCS,
-        patches: Union[list[Patch], Patch],
-        valid_ccs: Optional[list["tbcml.CC"]] = None,
-        valid_game_versions: Optional[list["tbcml.GV"]] = None,
+        patches: list[Patch] | Patch,
+        valid_ccs: list[tbcml.CC] | None = None,
+        valid_game_versions: list[tbcml.GV] | None = None,
     ):
         self.name = name
         self.architectures: ARCS = architectures
@@ -120,8 +121,8 @@ class LibPatch:
             patches = [patches]
         self.patches = patches
 
-        self.valid_ccs: Optional[list[tbcml.CountryCode]] = None
-        self.valid_gvs: Optional[list[tbcml.GameVersion]] = None
+        self.valid_ccs: list[tbcml.CountryCode] | None = None
+        self.valid_gvs: list[tbcml.GameVersion] | None = None
 
         if valid_ccs is not None:
             ccs: list[tbcml.CountryCode] = []
@@ -147,7 +148,7 @@ class LibPatch:
         }
 
     @staticmethod
-    def deserialize(data: dict[str, Any]) -> "LibPatch":
+    def deserialize(data: dict[str, Any]) -> LibPatch:
         return LibPatch(
             data.get("name", ""),
             data.get("architectures", "all"),
@@ -167,7 +168,7 @@ class LibPatch:
                 raise ValueError(f"Invalid patch type '{type}'")
         return patches
 
-    def add_to_zip(self, zip: "tbcml.Zip", index: int):
+    def add_to_zip(self, zip: tbcml.Zip, index: int):
         """Adds the lib patch to a zip file.
 
         Args:
@@ -181,7 +182,7 @@ class LibPatch:
         )
 
     @staticmethod
-    def from_zip(zip: "tbcml.Zip", path: "tbcml.Path") -> "LibPatch":
+    def from_zip(zip: tbcml.Zip, path: tbcml.Path) -> LibPatch:
         """Gets a lib patch from a zip file.
 
         Args:
@@ -198,7 +199,7 @@ class LibPatch:
         return LibPatch.deserialize(json_data)
 
     @staticmethod
-    def get_file_path(index: int) -> "tbcml.Path":
+    def get_file_path(index: int) -> tbcml.Path:
         """Gets the file path for a lib patch.
 
         Args:
@@ -209,7 +210,7 @@ class LibPatch:
         """
         return tbcml.Path(tbcml.ModPath.LIB_PATCHES.value).add(f"{index}.json")
 
-    def is_valid(self, cc: "tbcml.CountryCode", gv: "tbcml.GameVersion") -> bool:
+    def is_valid(self, cc: tbcml.CountryCode, gv: tbcml.GameVersion) -> bool:
         if self.valid_ccs is not None:
             if cc not in self.valid_ccs:
                 return False
@@ -236,18 +237,18 @@ class LibPatches:
     def add_patch(self, lib_patch: LibPatch):
         self.lib_patches.append(lib_patch)
 
-    def add_patches(self, lib_patches: "LibPatches"):
+    def add_patches(self, lib_patches: LibPatches):
         for lib_patch in lib_patches.lib_patches:
             self.add_patch(lib_patch)
 
-    def validate_patches(self, cc: "tbcml.CountryCode", gv: "tbcml.GameVersion"):
+    def validate_patches(self, cc: tbcml.CountryCode, gv: tbcml.GameVersion):
         new_lib_patches: list[LibPatch] = []
         for lib_patch in self.lib_patches:
             if lib_patch.is_valid(cc, gv):
                 new_lib_patches.append(lib_patch)
         self.lib_patches = new_lib_patches
 
-    def add_to_zip(self, zip: "tbcml.Zip"):
+    def add_to_zip(self, zip: tbcml.Zip):
         """Adds the lib patches to a zip file.
 
         Args:
@@ -256,13 +257,13 @@ class LibPatches:
         for i, lib_patch in enumerate(self.lib_patches):
             lib_patch.add_to_zip(zip, i)
 
-    def import_patches(self, other: "LibPatches"):
+    def import_patches(self, other: LibPatches):
         for lib_patch in other.lib_patches:
             self.add_patch(lib_patch)
 
 
 class Lib:
-    def __init__(self, architecture: str, path: "tbcml.Path"):
+    def __init__(self, architecture: str, path: tbcml.Path):
         self.architecture = architecture
         self.path = path
         self.lib = self.parse()
@@ -281,7 +282,7 @@ class Lib:
         self.lib = self.parse()
         self.write()
 
-    def parse(self) -> Optional["lief.ELF.Binary"]:  # type: ignore
+    def parse(self) -> lief.ELF.Binary | None:  # type: ignore
         if lief is None:
             return None
 
@@ -292,7 +293,7 @@ class Lib:
             "Please install the scripting dependencies to use lib patching / frida importing (pip install -r requirements_scripting.txt)"
         )
 
-    def add_library(self, library_path: "tbcml.Path"):
+    def add_library(self, library_path: tbcml.Path):
         if self.lib is None:
             self.not_installed_error()
             return
@@ -304,7 +305,7 @@ class Lib:
             return
         self.lib.write(str(self.path))
 
-    def search(self, search: "tbcml.Data", start: int = 0):
+    def search(self, search: tbcml.Data, start: int = 0):
         return self.data.search(search, start)
 
     def read_int_list(self, start: int, length: int) -> list[int]:
@@ -330,7 +331,7 @@ class Lib:
 
 
 class LibFiles:
-    def __init__(self, apk: "tbcml.Pkg"):
+    def __init__(self, apk: tbcml.Pkg):
         self.apk = apk
         self.so_files = self.get_so_files()
         self.modified_packs = self.get_modified_packs()
@@ -355,12 +356,12 @@ class LibFiles:
         return new
 
     def get_so_files(self):
-        files: dict[str, "tbcml.Data"] = {}
+        files: dict[str, tbcml.Data] = {}
         for arc, path in self.apk.get_lib_paths().items():
             files[arc] = path.read()
         return files
 
-    def get_modified_packs(self) -> list["tbcml.Path"]:
+    def get_modified_packs(self) -> list[tbcml.Path]:
         return self.apk.modified_packs_path.get_files()
 
     def get_all_pack_list_hashes(self):
@@ -415,7 +416,7 @@ class LibFiles:
                 original_hash.to_str(), modified_hash.to_str()
             )
 
-    def get_duplicate_packs_lists(self) -> dict["tbcml.Path", list["tbcml.Path"]]:
+    def get_duplicate_packs_lists(self) -> dict[tbcml.Path, list[tbcml.Path]]:
         """
         Returns a dict where the keys are the modified packs and the values are the duplicate original packs
 
@@ -456,7 +457,7 @@ class LibFiles:
 
         return duplicates
 
-    def get_original_packs_lists(self) -> list["tbcml.Path"]:
+    def get_original_packs_lists(self) -> list[tbcml.Path]:
         return self.get_pack_folder_original().get_files(regex=".*\\.pack|.*\\.list")
 
     def get_pack_folder_original(self):

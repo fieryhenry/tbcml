@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from __future__ import annotations
 
 from PIL import Image, ImageDraw
 
@@ -13,9 +13,7 @@ class BCImage:
     b64: str = ""
 
     def __post_init__(self):
-        self.__image: Optional[Image.Image] = None
-        self.__original_data = tbcml.Data.from_base_64(self.b64)
-        self.__original_img: Optional[Image.Image] = None
+        self.__image: Image.Image | None = None
 
     def save_b64(self):
         self.to_data()
@@ -33,10 +31,6 @@ class BCImage:
                 self.__image = Image.open(
                     tbcml.Data.from_base_64(self.b64).to_bytes_io()
                 )
-            self.__original_img = self.__image.copy()
-            self.__original_data = tbcml.Data.from_base_64(self.b64)
-        if self.__original_img is None:
-            self.__original_img = self.__image.copy()
         return self.__image
 
     def copy(self):
@@ -66,7 +60,7 @@ class BCImage:
         image.save(bytes_io, format="PNG")
         return BCImage(tbcml.Data(bytes_io.getvalue()).to_base_64())
 
-    def crop_rect(self, x1: int, y1: int, x2: int, y2: int) -> "BCImage":
+    def crop_rect(self, x1: int, y1: int, x2: int, y2: int) -> BCImage:
         dt = self.image.crop((x1, y1, x2, y2))
         image_data = tbcml.Data()
         bytes_io = image_data.to_bytes_io()
@@ -78,7 +72,7 @@ class BCImage:
             for y in range(y1, y2):
                 self.putpixel(x, y, (0, 0, 0, 0))
 
-    def get_subimage(self, rect: "tbcml.Rect") -> Optional["BCImage"]:
+    def get_subimage(self, rect: tbcml.Rect) -> BCImage | None:
         if rect.x is None or rect.y is None or rect.w is None or rect.h is None:
             return None
         return self.crop_rect(
@@ -120,10 +114,10 @@ class BCImage:
     def flip_y(self):
         self.__image = self.image.transpose(Image.FLIP_TOP_BOTTOM)
 
-    def add_image(self, image: "BCImage", x: int, y: int):
+    def add_image(self, image: BCImage, x: int, y: int):
         self.image.paste(image.image, (x, y), image.image)
 
-    def save(self, path: "tbcml.PathStr"):
+    def save(self, path: tbcml.PathStr):
         self.image.save(tbcml.Path(path).to_str(), format="PNG")
 
     def to_data(self):
@@ -134,27 +128,27 @@ class BCImage:
         return data
 
     @staticmethod
-    def from_base_64(base_64: str) -> "BCImage":
+    def from_base_64(base_64: str) -> BCImage:
         return BCImage(base_64)
 
     @staticmethod
-    def from_data(data: "tbcml.Data") -> "BCImage":
+    def from_data(data: tbcml.Data) -> BCImage:
         return BCImage(data.to_base_64())
 
     @staticmethod
-    def from_file(path: Union["tbcml.Path", str]):
+    def from_file(path: tbcml.Path | str):
         return BCImage(tbcml.Path(path).read().to_base_64())
 
     def to_base_64(self) -> str:
         return self.to_data().to_base_64()
 
-    def paste(self, image: "BCImage", x: int, y: int):
+    def paste(self, image: BCImage, x: int, y: int):
         self.image.paste(image.image, (x, y), image.image)
 
     def convert_to_rgba(self):
         self.__image = self.image.convert("RGBA")
 
-    def paste_rect(self, image: "BCImage", rect: "tbcml.Rect"):
+    def paste_rect(self, image: BCImage, rect: tbcml.Rect):
         if rect.x is None or rect.y is None or rect.w is None or rect.h is None:
             return
         self.image.paste(
@@ -168,7 +162,7 @@ class BCImage:
             image.image,
         )
 
-    def wipe_rect(self, rect: "tbcml.Rect"):
+    def wipe_rect(self, rect: tbcml.Rect):
         if rect.x is None or rect.y is None or rect.w is None or rect.h is None:
             return
         self.wipe_region(
@@ -200,5 +194,5 @@ class BCImage:
         draw.ellipse((0, 0, self.width, self.height), fill=255)
         self.image.putalpha(mask)
 
-    def get_rect(self, x: int, y: int) -> "tbcml.Rect":
+    def get_rect(self, x: int, y: int) -> tbcml.Rect:
         return tbcml.Rect(x, y, self.width, self.height)

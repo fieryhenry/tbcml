@@ -1,4 +1,5 @@
-from typing import Optional
+from __future__ import annotations
+
 from marshmallow_dataclass import dataclass
 import tbcml
 
@@ -12,9 +13,9 @@ from tbcml.io.csv_fields import (
 @dataclass
 class CharaGroup(tbcml.Modification):
     group_id: int
-    text_id: Optional[str] = None
-    group_type: Optional[int] = None
-    cat_ids: Optional[list[int]] = None
+    text_id: str | None = None
+    group_type: int | None = None
+    cat_ids: list[int] | None = None
 
     def __post_init__(self):
         self._csv__group_id = IntCSVField(col_index=0)
@@ -24,7 +25,7 @@ class CharaGroup(tbcml.Modification):
 
     def import_from_bcu(
         self,
-        bcu_zip: "tbcml.BCUZip",
+        bcu_zip: tbcml.BCUZip,
         bcu_id: int,
         cat_id_map: dict[int, int],
     ) -> bool:
@@ -45,14 +46,14 @@ class CharaGroup(tbcml.Modification):
         return True
 
     @staticmethod
-    def find_index(csv: "tbcml.CSV", index: int):
+    def find_index(csv: tbcml.CSV, index: int):
         for i in range(1, len(csv.lines)):
             csv.index = i
             if csv.get_str(0) == str(index):
                 return csv.index
         return None
 
-    def read_csv(self, csv: "tbcml.CSV") -> bool:
+    def read_csv(self, csv: tbcml.CSV) -> bool:
         index = CharaGroup.find_index(csv, self.group_id)
         if index is None:
             return False
@@ -62,7 +63,7 @@ class CharaGroup(tbcml.Modification):
 
         return True
 
-    def apply_csv(self, csv: "tbcml.CSV"):
+    def apply_csv(self, csv: tbcml.CSV):
         index = CharaGroup.find_index(csv, self.group_id)
         if index is None:
             index = len(csv.lines)
@@ -70,18 +71,18 @@ class CharaGroup(tbcml.Modification):
         tbcml.Modification.apply_csv_fields(self, csv, remove_others=False)
 
     @staticmethod
-    def get_csv(game_data: "tbcml.GamePacks") -> tuple[str, Optional["tbcml.CSV"]]:
+    def get_csv(game_data: tbcml.GamePacks) -> tuple[str, tbcml.CSV | None]:
         filename = "Charagroup.csv"
         csv = game_data.get_csv(filename, remove_comments=False)
         return filename, csv
 
-    def read(self, game_data: "tbcml.GamePacks"):
+    def read(self, game_data: tbcml.GamePacks):
         _, csv = self.get_csv(game_data)
         if csv is None:
             return
         self.read_csv(csv)
 
-    def apply_game_data(self, game_data: "tbcml.GamePacks"):
+    def apply_game_data(self, game_data: tbcml.GamePacks):
         file_name, csv = self.get_csv(game_data)
         if csv is None:
             return

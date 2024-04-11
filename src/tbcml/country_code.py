@@ -1,7 +1,9 @@
 """Country code enum."""
 
+from __future__ import annotations
+
 import enum
-from typing import Literal, Union
+from typing import Literal
 import tbcml
 
 
@@ -14,7 +16,7 @@ class CountryCode(enum.Enum):
     TW = "tw"
 
     @staticmethod
-    def from_cc(cc: "tbcml.CC"):
+    def from_cc(cc: tbcml.CC):
         if isinstance(cc, str):
             return CountryCode.from_code(cc)
         return cc
@@ -44,7 +46,7 @@ class CountryCode(enum.Enum):
         return self.get_code().replace("jp", "ja")
 
     @staticmethod
-    def from_patching_code(code: str) -> "CountryCode":
+    def from_patching_code(code: str) -> CountryCode:
         """Gets the country code from the patching code.
 
         Args:
@@ -58,7 +60,7 @@ class CountryCode(enum.Enum):
         return CountryCode.from_code(code)
 
     @staticmethod
-    def from_code(code: str) -> "CountryCode":
+    def from_code(code: str) -> CountryCode:
         """Gets the country code from the 2 letter lowercase country code.
 
         Args:
@@ -74,7 +76,7 @@ class CountryCode(enum.Enum):
         return CountryCode.JP
 
     @staticmethod
-    def get_all() -> list["CountryCode"]:
+    def get_all() -> list[CountryCode]:
         """Gets all country codes.
 
         Returns:
@@ -116,7 +118,7 @@ class CountryCode(enum.Enum):
         return f"CountryCode.{self.name}"
 
     @staticmethod
-    def from_package_name(package_name: str) -> "CountryCode":
+    def from_package_name(package_name: str) -> CountryCode:
         """Gets the country code from the package name.
 
         Args:
@@ -148,4 +150,4 @@ class CountryCode(enum.Enum):
         return "en"
 
 
-CC = Union[Literal["en"], Literal["jp"], Literal["kr"], Literal["tw"], CountryCode]
+CC = Literal["en"] | Literal["jp"] | Literal["kr"] | Literal["tw"] | CountryCode

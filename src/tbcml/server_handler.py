@@ -1,10 +1,12 @@
 """Module for handling game server stuff"""
 
+from __future__ import annotations
+
 import base64
 import datetime
 import json
 import time
-from typing import Any, Optional, Union
+from typing import Any
 
 import requests
 from cryptography.hazmat.backends import default_backend
@@ -22,7 +24,7 @@ class GameVersionSearchError(Exception):
 class ServerFileHandler:
     """Class for handling downloading game files from the game server"""
 
-    def __init__(self, apk: "tbcml.Pkg", lang: Optional["tbcml.Language"]):
+    def __init__(self, apk: tbcml.Pkg, lang: tbcml.Language | None):
         """Initializes the ServerFileHandler class
 
         Args:
@@ -34,10 +36,10 @@ class ServerFileHandler:
         if lang is not None:
             self.tsv_paths_all = self.apk.get_all_download_tsvs()
         self.game_versions = self.find_game_versions()
-        self.tsvs: dict[int, "tbcml.CSV"] = {}
+        self.tsvs: dict[int, tbcml.CSV] = {}
         self.file_map = self.create_file_map()
 
-    def parse_tsv(self, index: int) -> "tbcml.CSV":
+    def parse_tsv(self, index: int) -> tbcml.CSV:
         """Parses a TSV file from the APK
 
         Args:
@@ -75,7 +77,7 @@ class ServerFileHandler:
                 file_map[name] = i
         return file_map
 
-    def parse_tsvs(self) -> dict[int, "tbcml.CSV"]:
+    def parse_tsvs(self) -> dict[int, tbcml.CSV]:
         """Parses all TSV files from the APK
 
         Returns:
@@ -133,7 +135,7 @@ class ServerFileHandler:
         self,
         index: int,
         display: bool = False,
-    ) -> "tbcml.Zip":
+    ) -> tbcml.Zip:
         """Downloads game files from the server for a given game version
 
         Args:
@@ -198,7 +200,7 @@ class ServerFileHandler:
         return True
 
     @staticmethod
-    def get_server_metadata_path() -> "tbcml.Path":
+    def get_server_metadata_path() -> tbcml.Path:
         return tbcml.Path.get_documents_folder().add("server_latest.json")
 
     @staticmethod
@@ -209,9 +211,9 @@ class ServerFileHandler:
         data = path.read()
         return tbcml.JsonFile(data).get_json()
 
-    def get_latest_local_server_versions(self) -> Optional[list[int]]:
-        v: Optional[Union[list[int], dict[str, list[int]]]] = (
-            self.get_server_metadata().get(self.apk.country_code.get_code())
+    def get_latest_local_server_versions(self) -> list[int] | None:
+        v: list[int] | dict[str, list[int]] | None = self.get_server_metadata().get(
+            self.apk.country_code.get_code()
         )
         if v is None:
             return None
@@ -224,7 +226,7 @@ class ServerFileHandler:
             return None
         return v
 
-    def get_lang_str(self) -> Optional[str]:
+    def get_lang_str(self) -> str | None:
         if self.apk.country_code == tbcml.CountryCode.EN:
             lang = "en" if self.lang is None else self.lang.value
             return lang
@@ -541,8 +543,8 @@ class EventData:
     def __init__(
         self,
         file_name: str,
-        cc: "tbcml.CountryCode",
-        gv: "tbcml.GameVersion",
+        cc: tbcml.CountryCode,
+        gv: tbcml.GameVersion,
         use_old: bool = False,
     ):
         """Initializes the class
@@ -596,7 +598,7 @@ class EventData:
         """
         return datetime.datetime.now(datetime.UTC).strftime("%Y%m%dT%H%M%SZ")
 
-    def get_signing_key(self, amz: str) -> "tbcml.Data":
+    def get_signing_key(self, amz: str) -> tbcml.Data:
         """Gets the signing key for the given amz date
 
         Args:
@@ -616,7 +618,7 @@ class EventData:
         final = self.hmacsha256(signing_key, string_to_sign)
         return final
 
-    def hmacsha256(self, key: "tbcml.Data", message: str) -> "tbcml.Data":
+    def hmacsha256(self, key: tbcml.Data, message: str) -> tbcml.Data:
         """Gets the hmacsha256 of the given key and message
 
         Args:

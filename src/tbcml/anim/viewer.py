@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import tbcml
 
 try:
@@ -8,7 +10,7 @@ import time
 
 
 class AnimViewer(QtWidgets.QOpenGLWidget):
-    def __init__(self, model: "tbcml.Model"):
+    def __init__(self, model: tbcml.Model):
         super().__init__()
         self.model = model
         self.anim = tbcml.Anim(model, 2)
@@ -98,7 +100,7 @@ class AnimViewer(QtWidgets.QOpenGLWidget):
 
 
 class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self, model: "tbcml.Model"):
+    def __init__(self, model: tbcml.Model):
         super().__init__()
         self.model = model
         self.init_ui()

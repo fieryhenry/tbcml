@@ -1,9 +1,11 @@
-from typing import Any, Callable, Optional
+from __future__ import annotations
+
+from typing import Any, Callable
 import tbcml
 
 
 class AdbHandler:
-    def __init__(self, adb_path: Optional["tbcml.Path"] = None):
+    def __init__(self, adb_path: tbcml.Path | None = None):
         if adb_path is None:
             adb_path = tbcml.Path("adb")
         self.adb_path = adb_path
@@ -17,17 +19,17 @@ class AdbHandler:
             != "adbd cannot run as root in production builds"
         )
 
-    def start_server(self) -> "tbcml.CommandResult":
+    def start_server(self) -> tbcml.CommandResult:
         return self.adb_path.run("start-server")
 
-    def kill_server(self) -> "tbcml.CommandResult":
+    def kill_server(self) -> tbcml.CommandResult:
         return self.adb_path.run("kill-server")
 
-    def root(self) -> "tbcml.CommandResult":
+    def root(self) -> tbcml.CommandResult:
         return self.adb_path.run(f"-s {self.get_device()} root")
 
     @staticmethod
-    def get_battlecats_path(package_name: str) -> "tbcml.Path":
+    def get_battlecats_path(package_name: str) -> tbcml.Path:
         return tbcml.Path.get_root().add("data").add("data").add(package_name)
 
     def get_connected_devices(self) -> list[str]:
@@ -55,23 +57,23 @@ class AdbHandler:
     def get_device_name(self) -> str:
         return self.run_shell("getprop ro.product.model").result.strip()
 
-    def run_shell(self, command: str) -> "tbcml.CommandResult":
+    def run_shell(self, command: str) -> tbcml.CommandResult:
         return self.adb_path.run(f'-s {self.get_device()} shell "{command}"')
 
-    def close_game(self) -> "tbcml.CommandResult":
+    def close_game(self) -> tbcml.CommandResult:
         return self.run_shell(f"am force-stop {self.get_package_name()}")
 
-    def run_game(self) -> "tbcml.CommandResult":
+    def run_game(self) -> tbcml.CommandResult:
         return self.run_shell(
             f"monkey -p {self.get_package_name()} -c android.intent.category.LAUNCHER 1"
         )
 
-    def install_apk(self, apk_path: "tbcml.Path") -> "tbcml.CommandResult":
+    def install_apk(self, apk_path: tbcml.Path) -> tbcml.CommandResult:
         return self.adb_path.run(f"-s {self.get_device()} install {apk_path}")
 
     def pull_file(
-        self, device_path: "tbcml.Path", local_path: "tbcml.Path"
-    ) -> "tbcml.CommandResult":
+        self, device_path: tbcml.Path, local_path: tbcml.Path
+    ) -> tbcml.CommandResult:
         if not self.adb_root_success():
             result = self.run_shell(
                 f"su -c 'cp {device_path.to_str_forwards()} /sdcard/ && chmod o+rw /sdcard/{device_path.basename()}'"
@@ -92,8 +94,8 @@ class AdbHandler:
         return result
 
     def push_file(
-        self, local_path: "tbcml.Path", device_path: "tbcml.Path"
-    ) -> "tbcml.CommandResult":
+        self, local_path: tbcml.Path, device_path: tbcml.Path
+    ) -> tbcml.CommandResult:
         orignal_device_path = device_path.copy_object()
         if not self.adb_root_success():
             device_path = tbcml.Path("/sdcard/").add(device_path.basename())
@@ -116,41 +118,41 @@ class AdbHandler:
         return result
 
     def push_files(
-        self, local_paths: list["tbcml.Path"], device_paths: list["tbcml.Path"]
-    ) -> list["tbcml.CommandResult"]:
-        results: list["tbcml.CommandResult"] = []
+        self, local_paths: list[tbcml.Path], device_paths: list[tbcml.Path]
+    ) -> list[tbcml.CommandResult]:
+        results: list[tbcml.CommandResult] = []
         for local_path, device_path in zip(local_paths, device_paths):
             results.append(self.push_file(local_path, device_path))
         return results
 
     def push_file_to_folder(
-        self, local_path: "tbcml.Path", device_folder_path: "tbcml.Path"
-    ) -> "tbcml.CommandResult":
+        self, local_path: tbcml.Path, device_folder_path: tbcml.Path
+    ) -> tbcml.CommandResult:
         return self.push_file(local_path, device_folder_path.add(local_path.basename()))
 
     def push_files_to_folder(
-        self, local_paths: list["tbcml.Path"], device_folder_path: "tbcml.Path"
-    ) -> list["tbcml.CommandResult"]:
-        results: list["tbcml.CommandResult"] = []
+        self, local_paths: list[tbcml.Path], device_folder_path: tbcml.Path
+    ) -> list[tbcml.CommandResult]:
+        results: list[tbcml.CommandResult] = []
         for local_path in local_paths:
             results.append(self.push_file_to_folder(local_path, device_folder_path))
         return results
 
-    def get_apk_path(self) -> "tbcml.Path":
+    def get_apk_path(self) -> tbcml.Path:
         return tbcml.Path(
             self.run_shell(f"pm path {self.get_package_name()}")
             .result.strip()
             .split(":")[1]
         )
 
-    def pull_apk_to_file(self, local_path: "tbcml.Path") -> "tbcml.CommandResult":
+    def pull_apk_to_file(self, local_path: tbcml.Path) -> tbcml.CommandResult:
         return self.pull_file(self.get_apk_path(), local_path)
 
     def pull_apk(
         self,
-        cc_overwrite: Optional["tbcml.CountryCode"] = None,
-        gv_overwrite: Optional["tbcml.GameVersion"] = None,
-    ) -> Optional["tbcml.Apk"]:
+        cc_overwrite: tbcml.CountryCode | None = None,
+        gv_overwrite: tbcml.GameVersion | None = None,
+    ) -> tbcml.Apk | None:
         with tbcml.TempFile() as temp_file:
             result = self.pull_apk_to_file(temp_file)
             if not result.success:
@@ -162,8 +164,8 @@ class AdbHandler:
 class BulkAdbHandler:
     def __init__(
         self,
-        default_package_name: Optional[str] = None,
-        adb_path: Optional["tbcml.Path"] = None,
+        default_package_name: str | None = None,
+        adb_path: tbcml.Path | None = None,
     ):
         self.default_package_name = default_package_name
         if adb_path is None:

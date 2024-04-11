@@ -1,4 +1,6 @@
-from typing import Any, Optional
+from __future__ import annotations
+
+from typing import Any
 import tbcml
 
 
@@ -10,16 +12,16 @@ class BCUForm:
     def __init__(
         self,
         form_data: dict[str, Any],
-        anims: dict[str, "BCUFile"],
+        anims: dict[str, BCUFile],
         cat_id: int,
-        form: "tbcml.CatFormType",
+        form: tbcml.CatFormType,
     ):
         self.form_data = form_data
         self.anims = anims
         self.cat_id = cat_id
         self.form = form
 
-    def get_anim(self) -> Optional["tbcml.Model"]:
+    def get_anim(self) -> tbcml.Model | None:
         sprite = self.anims.get("sprite.png")
         imgcut = self.anims.get("imgcut.txt")
         mamodel = self.anims.get("mamodel.txt")
@@ -39,21 +41,21 @@ class BCUForm:
         )
         return model
 
-    def get_display_icon(self) -> Optional["tbcml.BCImage"]:
+    def get_display_icon(self) -> tbcml.BCImage | None:
         display_file = self.anims.get("icon_display.png")
         if display_file is None:
             return None
 
         return tbcml.BCImage.from_data(display_file.data)
 
-    def get_deploy_icon(self) -> Optional["tbcml.BCImage"]:
+    def get_deploy_icon(self) -> tbcml.BCImage | None:
         deploy_file = self.anims.get("icon_deploy.png")
         if deploy_file is None:
             return None
 
         return tbcml.BCImage.from_data(deploy_file.data)
 
-    def write_to_cat_form(self, form: "tbcml.CatForm"):
+    def write_to_cat_form(self, form: tbcml.CatForm):
         anim = self.get_anim()
         if anim is not None:
             form.anim = anim
@@ -81,7 +83,7 @@ class BCUForm:
         form.set_cat_id(self.cat_id)
         form.set_form(self.form, self.cat_id)
 
-    def to_stats(self) -> "tbcml.FormStats":
+    def to_stats(self) -> tbcml.FormStats:
         stats = tbcml.FormStats()
         base_stats = self.form_data["du"]
         traits = base_stats["traits"]
@@ -293,9 +295,9 @@ class BCUForm:
             )
         return maanim_names
 
-    def get_maanim_data(self) -> list["tbcml.Data"]:
+    def get_maanim_data(self) -> list[tbcml.Data]:
         maanims = self.get_maanim_files()
-        maanim_data: list["tbcml.Data"] = []
+        maanim_data: list[tbcml.Data] = []
         for maanim in maanims:
             maanim_id = tbcml.AnimType.from_bcu_str(maanim.name)
             if maanim_id is None:
@@ -306,14 +308,12 @@ class BCUForm:
 
 class BCUCat:
     def __init__(
-        self, unit_data: dict[str, Any], anims: list[dict[str, "BCUFile"]], cat_id: int
+        self, unit_data: dict[str, Any], anims: list[dict[str, BCUFile]], cat_id: int
     ):
         self.unit_data = unit_data
         self.anims = anims
 
-        forms: Optional[list[dict[str, Any]]] = self.unit_data.get("val", {}).get(
-            "forms"
-        )
+        forms: list[dict[str, Any]] | None = self.unit_data.get("val", {}).get("forms")
         if forms is None:
             return
 
@@ -324,10 +324,10 @@ class BCUCat:
                 BCUForm(form_data, form_anims, cat_id, tbcml.CatFormType.from_index(i))
             )
 
-    def get_val(self, val: str) -> Optional[Any]:
+    def get_val(self, val: str) -> Any | None:
         return self.unit_data.get("val", {}).get(val)
 
-    def write_to_cat(self, cat: "tbcml.Cat"):
+    def write_to_cat(self, cat: tbcml.Cat):
         for i, form in enumerate(self.forms):
             form_real = cat.get_form_create(i)
             form.write_to_cat_form(form_real)
@@ -355,13 +355,13 @@ class BCUCat:
 
 class BCUEnemy:
     def __init__(
-        self, enemy_data: dict[str, Any], anims: dict[str, "BCUFile"], enemy_id: int
+        self, enemy_data: dict[str, Any], anims: dict[str, BCUFile], enemy_id: int
     ):
         self.enemy_data = enemy_data
         self.anims = anims
         self.enemy_id = enemy_id
 
-    def get_val(self, val: str) -> Optional[Any]:
+    def get_val(self, val: str) -> Any | None:
         return self.enemy_data.get("val", {}).get(val)
 
     def get_enemy_id_str(self):
@@ -394,9 +394,9 @@ class BCUEnemy:
             maanim_names.append(f"{self.get_enemy_id_str()}_e{index_str}.maanim")
         return maanim_names
 
-    def get_maanim_data(self) -> list["tbcml.Data"]:
+    def get_maanim_data(self) -> list[tbcml.Data]:
         maanims = self.get_maanim_files()
-        maanim_data: list["tbcml.Data"] = []
+        maanim_data: list[tbcml.Data] = []
         for maanim in maanims:
             maanim_id = tbcml.AnimType.from_bcu_str(maanim.name)
             if maanim_id is None:
@@ -404,7 +404,7 @@ class BCUEnemy:
             maanim_data.append(maanim.data)
         return maanim_data
 
-    def get_anim(self) -> Optional["tbcml.Model"]:
+    def get_anim(self) -> tbcml.Model | None:
         sprite = self.anims.get("sprite.png")
         imgcut = self.anims.get("imgcut.txt")
         mamodel = self.anims.get("mamodel.txt")
@@ -424,7 +424,7 @@ class BCUEnemy:
         )
         return model
 
-    def write_to_enemy(self, enemy: "tbcml.Enemy"):
+    def write_to_enemy(self, enemy: tbcml.Enemy):
         model = self.get_anim()
         if model is not None:
             enemy.anim = model
@@ -445,7 +445,7 @@ class BCUEnemy:
 
         enemy.set_enemy_id(enemy.enemy_id)
 
-    def to_stats(self) -> "tbcml.EnemyStats":
+    def to_stats(self) -> tbcml.EnemyStats:
         stats = tbcml.EnemyStats()
         base_stats = self.enemy_data["de"]
         traits = base_stats["traits"]
@@ -604,12 +604,12 @@ class BCUCharaGroup:
         self.group_data = group_data
         self.cat_id_map = bcu_cat_id_map
 
-    def write_to_chara_group(self, chara_group: "tbcml.CharaGroup"):
+    def write_to_chara_group(self, chara_group: tbcml.CharaGroup):
         val = self.group_data.get("val", {})
         name = val.get("name")
         type = val.get("type")
         set = val.get("set")
-        cat_ids: Optional[list[int]] = None
+        cat_ids: list[int] | None = None
         if set is not None:
             cat_ids = []
             for cat in set:
@@ -618,9 +618,9 @@ class BCUCharaGroup:
                 if id is None:
                     continue
                 id = int(id)
-                if pack == "000000": # game cat
+                if pack == "000000":  # game cat
                     cat_id = id
-                else: # bcu cat
+                else:  # bcu cat
                     cat_id = self.cat_id_map.get(id)
                 if cat_id is None:
                     continue
@@ -637,8 +637,8 @@ class BCUFile:
     def __init__(
         self,
         file_info: dict[str, Any],
-        enc_data: "tbcml.Data",
-        cipher: "tbcml.AesCipher",
+        enc_data: tbcml.Data,
+        cipher: tbcml.AesCipher,
     ):
         path = file_info.get("path")
         if path is None:
@@ -662,27 +662,27 @@ class BCUFile:
 
         self.data = self.decrypt(enc_data, cipher, size)
 
-    def decrypt(self, enc_data: "tbcml.Data", cipher: "tbcml.AesCipher", size: int):
+    def decrypt(self, enc_data: tbcml.Data, cipher: tbcml.AesCipher, size: int):
         data = cipher.decrypt(enc_data)
         return data[:size]
 
-    def extract(self, output_dir: "tbcml.Path"):
+    def extract(self, output_dir: tbcml.Path):
         file_path = output_dir.add(self.path)
         file_path.parent().generate_dirs()
         file_path.write(self.data)
 
 
 class BCUZip:
-    def __init__(self, enc_data: "tbcml.Data"):
+    def __init__(self, enc_data: tbcml.Data):
         self.json, self.files = self.decrypt(enc_data)
         self.pack_json = self.get_pack_json()
 
     @staticmethod
-    def from_file(path: "tbcml.PathStr"):
+    def from_file(path: tbcml.PathStr):
         path = tbcml.Path(path)
         return BCUZip(path.read())
 
-    def get_key_iv(self, enc_data: "tbcml.Data"):
+    def get_key_iv(self, enc_data: tbcml.Data):
         if len(enc_data) < 0x20:
             raise InvalidBCUZipException("BCU Zip file is too small for header info!")
         iv_str = "battlecatsultimate"
@@ -690,7 +690,7 @@ class BCUZip:
         key = enc_data[0x10:0x20]
         return key, iv
 
-    def decrypt(self, enc_data: "tbcml.Data"):
+    def decrypt(self, enc_data: tbcml.Data):
         if len(enc_data) < 0x24:
             raise InvalidBCUZipException("BCU Zip file is too small for header info!")
 
@@ -720,16 +720,17 @@ class BCUZip:
 
         json: dict[str, Any] = json_obj.get_json()
 
-        files_info = json.get("files") or []
+        files_info = json.get("files")
 
         files: list[BCUFile] = []
 
-        for file in files_info:
-            files.append(BCUFile(file, enc_files_data, aes))
+        if files_info is not None:
+            for file in files_info:
+                files.append(BCUFile(file, enc_files_data, aes))
 
         return json_obj, files
 
-    def get_file_by_name(self, name: str) -> Optional[BCUFile]:
+    def get_file_by_name(self, name: str) -> BCUFile | None:
         for file in self.files:
             if file.name == name:
                 return file
@@ -741,17 +742,17 @@ class BCUZip:
             raise InvalidBCUZipException("no pack.json was found!")
         return tbcml.JsonFile.from_data(pack_file.data).get_json()
 
-    def get_bcu_cat(self, cat_id: int, bcu_index: int) -> Optional[BCUCat]:
-        units_data: Optional[list[dict[str, Any]]] = self.pack_json.get(
-            "units", {}
-        ).get("data")
+    def get_bcu_cat(self, cat_id: int, bcu_index: int) -> BCUCat | None:
+        units_data: list[dict[str, Any]] | None = self.pack_json.get("units", {}).get(
+            "data"
+        )
         if units_data is None:
             return
         for unit in units_data:
             if unit.get("val", {}).get("id", {}).get("id") != bcu_index:
                 continue
 
-            forms: Optional[list[dict[str, Any]]] = unit.get("val", {}).get("forms")
+            forms: list[dict[str, Any]] | None = unit.get("val", {}).get("forms")
             if forms is None:
                 continue
 
@@ -770,8 +771,8 @@ class BCUZip:
             return BCUCat(unit, anims, cat_id)
         return None
 
-    def get_bcu_enemy(self, enemy_id: int, bcu_index: int) -> Optional[BCUEnemy]:
-        enemies_data: Optional[list[dict[str, Any]]] = self.pack_json.get(
+    def get_bcu_enemy(self, enemy_id: int, bcu_index: int) -> BCUEnemy | None:
+        enemies_data: list[dict[str, Any]] | None = self.pack_json.get(
             "enemies", {}
         ).get("data")
         if enemies_data is None:
@@ -801,8 +802,8 @@ class BCUZip:
         self,
         game_id: int,
         bcu_index: int,
-    ) -> Optional[tuple["tbcml.AudioFile", "tbcml.SoundSetting"]]:
-        musics: Optional[list[dict[str, Any]]] = self.pack_json.get("musics", {}).get(
+    ) -> tuple[tbcml.AudioFile, tbcml.SoundSetting] | None:
+        musics: list[dict[str, Any]] | None = self.pack_json.get("musics", {}).get(
             "data"
         )
         if musics is None:
@@ -841,14 +842,14 @@ class BCUZip:
             return group_obj
         return None
 
-    def get_files_by_dir(self, dir: "tbcml.Path") -> dict[str, BCUFile]:
+    def get_files_by_dir(self, dir: tbcml.Path) -> dict[str, BCUFile]:
         files: dict[str, BCUFile] = {}
         for file in self.files:
             if file.path.parent().to_str_forwards() == dir.to_str_forwards():
                 files[file.name] = file
         return files
 
-    def extract(self, output_dir: "tbcml.PathStr"):
+    def extract(self, output_dir: tbcml.PathStr):
         output_dir = tbcml.Path(output_dir)
         output_dir.generate_dirs()
         for file in self.files:

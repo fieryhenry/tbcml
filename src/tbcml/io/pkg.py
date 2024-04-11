@@ -1,6 +1,7 @@
+from __future__ import annotations
 import enum
 import filecmp
-from typing import Any, Callable, Optional, Sequence
+from typing import Any, Callable, Sequence
 import tbcml
 
 
@@ -11,17 +12,17 @@ class PkgType(enum.Enum):
 
 class Pkg:
     pkg_extension = ".zip"
-    pkg_type: Optional[PkgType] = None
+    pkg_type: PkgType | None = None
 
     def __init__(
         self,
-        game_version: "tbcml.GV",
-        country_code: "tbcml.CC",
-        pkg_folder: Optional["tbcml.PathStr"] = None,
+        game_version: tbcml.GV,
+        country_code: tbcml.CC,
+        pkg_folder: tbcml.PathStr | None = None,
         allowed_script_mods: bool = True,
         is_modded: bool = False,
         use_pkg_name_for_folder: bool = False,
-        pkg_name: Optional[str] = None,
+        pkg_name: str | None = None,
         create_dirs: bool = True,
     ):
         self.is_modded = is_modded
@@ -30,8 +31,8 @@ class Pkg:
         self.game_version = tbcml.GameVersion.from_gv(game_version)
         self.country_code = tbcml.CountryCode.from_cc(country_code)
 
-        self.__app_name: Optional[str] = None
-        self.__package_name: Optional[str] = pkg_name
+        self.__app_name: str | None = None
+        self.__package_name: str | None = pkg_name
 
         self.use_pkg_name_for_folder = use_pkg_name_for_folder
 
@@ -50,7 +51,7 @@ class Pkg:
         self.key = None
         self.iv = None
 
-        self.libs: Optional[dict[str, tbcml.Lib]] = None
+        self.libs: dict[str, tbcml.Lib] | None = None
 
     def replace_lib_string(self, original: str, new: str, pad: str = "\x00") -> str:
         return tbcml.LibFiles(self).replace_str(original, new, pad)
@@ -58,7 +59,7 @@ class Pkg:
     def get_default_package_name(self) -> str:
         return f"jp.co.ponos.battlecats{self.country_code.get_patching_code()}"
 
-    def get_package_name(self) -> Optional[str]:
+    def get_package_name(self) -> str | None:
         if self.__package_name is not None:
             return self.__package_name
 
@@ -77,7 +78,7 @@ class Pkg:
     def apply_pkg_name(self, package_name: str) -> bool:
         raise NotImplementedError
 
-    def read_pkg_name(self) -> Optional[str]:
+    def read_pkg_name(self) -> str | None:
         raise NotImplementedError
 
     def init_paths(self, create_dirs: bool = True):
@@ -114,20 +115,20 @@ class Pkg:
             self.original_extracted_path.generate_dirs()
 
     @staticmethod
-    def get_defualt_libgadgets_folder() -> "tbcml.Path":
+    def get_defualt_libgadgets_folder() -> tbcml.Path:
         return tbcml.Path.get_documents_folder().add("LibGadgets").generate_dirs()
 
     @staticmethod
-    def get_default_pkg_folder() -> "tbcml.Path":
+    def get_default_pkg_folder() -> tbcml.Path:
         raise NotImplementedError
 
-    def get_lib_paths(self) -> dict[str, "tbcml.Path"]:
+    def get_lib_paths(self) -> dict[str, tbcml.Path]:
         raise NotImplementedError
 
-    def set_key(self, key: Optional[str]):
+    def set_key(self, key: str | None):
         self.key = key
 
-    def set_iv(self, iv: Optional[str]):
+    def set_iv(self, iv: str | None):
         self.iv = iv
 
     def randomize_key(self):
@@ -140,38 +141,38 @@ class Pkg:
         self.set_iv(iv)
         return iv
 
-    def get_assets_folder_path(self) -> "tbcml.Path":
+    def get_assets_folder_path(self) -> tbcml.Path:
         raise NotImplementedError
 
-    def get_original_pack_location(self) -> "tbcml.Path":
+    def get_original_pack_location(self) -> tbcml.Path:
         raise NotImplementedError
 
-    def get_native_lib_path(self, architecture: str) -> Optional["tbcml.Path"]:
+    def get_native_lib_path(self, architecture: str) -> tbcml.Path | None:
         raise NotImplementedError
 
     def has_seperate_packs_lists(self) -> bool:
         return self.game_version <= "6.10.0"
 
-    def get_pack_location(self) -> "tbcml.Path":
+    def get_pack_location(self) -> tbcml.Path:
         raise NotImplementedError
 
     @staticmethod
     def get_server_path_static(
-        cc: "tbcml.CountryCode", pkg_folder: Optional["tbcml.Path"] = None
-    ) -> "tbcml.Path":
+        cc: tbcml.CountryCode, pkg_folder: tbcml.Path | None = None
+    ) -> tbcml.Path:
         if pkg_folder is None:
             pkg_folder = Pkg.get_default_pkg_folder()
         if pkg_folder.parent().basename() == "modded":
             pkg_folder = pkg_folder.parent()
         return pkg_folder.parent().add(f"{cc.get_code()}_server")
 
-    def get_server_path(self) -> "tbcml.Path":
+    def get_server_path(self) -> tbcml.Path:
         return Pkg.get_server_path_static(self.country_code, self.pkg_folder)
 
-    def get_packs_from_dir(self) -> list["tbcml.Path"]:
+    def get_packs_from_dir(self) -> list[tbcml.Path]:
         return self.get_pack_location().get_files() + self.get_server_path().get_files()
 
-    def get_packs_lists(self) -> list[tuple["tbcml.Path", "tbcml.Path"]]:
+    def get_packs_lists(self) -> list[tuple[tbcml.Path, tbcml.Path]]:
         files: list[tuple[tbcml.Path, tbcml.Path]] = []
         for file in self.get_packs_from_dir():
             if file.get_extension() != "pack":
@@ -185,11 +186,11 @@ class Pkg:
                 files.append((file, list_file))
         return files
 
-    def get_packs(self) -> list["tbcml.Path"]:
+    def get_packs(self) -> list[tbcml.Path]:
         packs_list = self.get_packs_lists()
         return [pack[0] for pack in packs_list]
 
-    def get_original_extracted_path(self, extracted_path: "tbcml.Path") -> "tbcml.Path":
+    def get_original_extracted_path(self, extracted_path: tbcml.Path) -> tbcml.Path:
         return self.original_extracted_path.add(
             extracted_path.replace(self.extracted_path.path, "").strip_leading_slash()
         )
@@ -225,7 +226,7 @@ class Pkg:
             file = tbcml.Path(sub_dir).add(dir)
             self.copy_extracted_sub_dir(file.path)
 
-    def get_extracted_path(self, original_extracted_path: "tbcml.Path") -> "tbcml.Path":
+    def get_extracted_path(self, original_extracted_path: tbcml.Path) -> tbcml.Path:
         return self.extracted_path.add(
             original_extracted_path.replace(
                 self.original_extracted_path.path, ""
@@ -234,10 +235,10 @@ class Pkg:
 
     def get_game_packs(
         self,
-        lang: Optional["tbcml.Language"] = None,
+        lang: tbcml.Language | None = None,
         all_langs: bool = False,
-        pack_names: Optional[list[str]] = None,
-    ) -> "tbcml.GamePacks":
+        pack_names: list[str] | None = None,
+    ) -> tbcml.GamePacks:
 
         packs: dict[str, tbcml.PackFile] = {}
 
@@ -274,14 +275,14 @@ class Pkg:
 
     def add_packs_lists(
         self,
-        packs: "tbcml.GamePacks",
+        packs: tbcml.GamePacks,
     ):
         files = packs.to_packs_lists(self.key, self.iv)
         for pack_name, pack_data, list_data in files:
             self.add_pack_list(pack_name, pack_data, list_data)
 
     def add_pack_list(
-        self, pack_name: str, pack_data: "tbcml.Data", list_data: "tbcml.Data"
+        self, pack_name: str, pack_data: tbcml.Data, list_data: tbcml.Data
     ):
         pack_path = self.modified_packs_path.add(pack_name + ".pack")
         list_path = self.modified_packs_path.add(pack_name + ".list")
@@ -301,12 +302,12 @@ class Pkg:
 
     def load_packs_into_game(
         self,
-        packs: "tbcml.GamePacks",
-        copy_path: Optional["tbcml.Path"] = None,
+        packs: tbcml.GamePacks,
+        copy_path: tbcml.Path | None = None,
         save_in_modded_pkgs: bool = False,
-        progress_callback: Optional[
-            Callable[["tbcml.PKGProgressSignal"], Optional[bool]]
-        ] = None,
+        progress_callback: (
+            Callable[[tbcml.PKGProgressSignal], bool | None] | None
+        ) = None,
     ) -> bool:
         raise NotImplementedError
 
@@ -320,17 +321,17 @@ class Pkg:
         )
         self.final_pkg_path.copy(new_pkg.pkg_path)
 
-    def copy_final_pkg(self, path: "tbcml.Path"):
+    def copy_final_pkg(self, path: tbcml.Path):
         if path == self.final_pkg_path:
             return
         self.final_pkg_path.copy(path)
 
     @staticmethod
     def try_get_pkg_from_path_pkg(
-        path: "tbcml.Path",
-        all_pkg_dir: Optional["tbcml.Path"] = None,
-        clzz: Optional[type["Pkg"]] = None,
-    ) -> Optional[Any]:
+        path: tbcml.Path,
+        all_pkg_dir: tbcml.Path | None = None,
+        clzz: type[Pkg] | None = None,
+    ) -> Any | None:
         if clzz is None:
             clzz = Pkg
         if all_pkg_dir is None:
@@ -369,9 +370,9 @@ class Pkg:
 
     @staticmethod
     def get_all_downloaded_pkgs(
-        all_pkg_dir: Optional["tbcml.Path"] = None,
+        clzz: type[Pkg],
+        all_pkg_dir: tbcml.Path | None = None,
         cleanup: bool = False,
-        clzz: Optional[type["Pkg"]] = None,
     ) -> list[Any]:
         """
         Get all downloaded Pkgs
@@ -379,8 +380,6 @@ class Pkg:
         Returns:
             list[Pkg]: List of APKs
         """
-        if clzz is None:
-            clzz = Pkg
         if all_pkg_dir is None:
             all_pkg_dir = clzz.get_default_pkg_folder()
 
@@ -427,16 +426,16 @@ class Pkg:
 
     @staticmethod
     def get_all_pkgs_cc_pkgs(
-        cc: "tbcml.CountryCode",
-        pkg_folder: Optional["tbcml.Path"] = None,
-        clzz: Optional[type["Pkg"]] = None,
+        cc: tbcml.CountryCode,
+        pkg_folder: tbcml.Path | None = None,
+        clzz: type[Pkg] | None = None,
     ) -> list[Any]:
         """
         Get all Pkgs for a country code
 
         Args:
             cc (country_code.CountryCode): Country code
-            pkg_folder (Optional[tbcml.Path], optional): Pkg folder, defaults to default Pkg folder
+            pkg_folder (tbcml.Path | None, optional): Pkg folder, defaults to default Pkg folder
 
         Returns:
             list[Pkg]: List of Pkgs
@@ -444,14 +443,14 @@ class Pkg:
         if clzz is None:
             clzz = Pkg
 
-        pkgs = clzz.get_all_downloaded_pkgs(pkg_folder, clzz=clzz)
+        pkgs = clzz.get_all_downloaded_pkgs(clzz, pkg_folder)
         pkgs_cc: list[Pkg] = []
         for pkg in pkgs:
             if pkg.country_code == cc:
                 pkgs_cc.append(pkg)
         return pkgs_cc
 
-    def create_key(self, key: str, length_override: Optional[int] = None) -> str:
+    def create_key(self, key: str, length_override: int | None = None) -> str:
         if length_override is None:
             if self.game_version < tbcml.GameVersion.from_string("8.9.0"):
                 length_override = 8
@@ -464,9 +463,7 @@ class Pkg:
             .to_hex()
         )
 
-    def create_iv(
-        self, iv: str, length_override: Optional[int] = None
-    ) -> Optional[str]:
+    def create_iv(self, iv: str, length_override: int | None = None) -> str | None:
         if length_override is None:
             if self.game_version < tbcml.GameVersion.from_string("8.9.0"):
                 return None
@@ -491,19 +488,17 @@ class Pkg:
         self,
         display: bool = False,
         force: bool = False,
-        lang: Optional["tbcml.Language"] = None,
+        lang: tbcml.Language | None = None,
     ):
         sfh = tbcml.ServerFileHandler(self, lang=lang)
         sfh.extract_all(display=display, force=force)
 
-    def get_download_tsvs(
-        self, lang: Optional["tbcml.Language"] = None
-    ) -> list["tbcml.Path"]:
+    def get_download_tsvs(self, lang: tbcml.Language | None = None) -> list[tbcml.Path]:
         if lang is None:
             base_name = "download_%s.tsv"
         else:
             base_name = f"download{lang.value}_%s.tsv"
-        files: list["tbcml.Path"] = []
+        files: list[tbcml.Path] = []
         counter = 0
         while True:
             name = base_name % counter
@@ -520,13 +515,13 @@ class Pkg:
             counter += 1
         return files
 
-    def get_asset(self, asset_name: "tbcml.PathStr") -> "tbcml.Path":
+    def get_asset(self, asset_name: tbcml.PathStr) -> tbcml.Path:
         raise NotImplementedError
 
-    def get_all_download_tsvs(self) -> list[list["tbcml.Path"]]:
+    def get_all_download_tsvs(self) -> list[list[tbcml.Path]]:
         langs = tbcml.Language.get_all()
         langs = [None] + langs
-        files: list[list["tbcml.Path"]] = []
+        files: list[list[tbcml.Path]] = []
         for lang in langs:
             files.append(self.get_download_tsvs(lang))
         return files
@@ -559,7 +554,7 @@ class Pkg:
     def get_display_string(self) -> str:
         return f"{self.game_version.format()} ({self.country_code})"
 
-    def parse_native_lib(self, architecture: str) -> Optional["tbcml.Lib"]:
+    def parse_native_lib(self, architecture: str) -> tbcml.Lib | None:
         path = self.get_native_lib_path(architecture)
         if path is None or not path.exists():
             return None
@@ -568,7 +563,7 @@ class Pkg:
     def add_library(
         self,
         architecture: str,
-        library_path: "tbcml.Path",
+        library_path: tbcml.Path,
         inject_native_lib: bool = True,
         inject_smali: bool = False,
     ):
@@ -587,7 +582,7 @@ class Pkg:
     def add_native_library(
         self,
         architecture: str,
-        library_path: "tbcml.Path",
+        library_path: tbcml.Path,
     ):
         libnative = self.get_libs().get(architecture)
         if libnative is None:
@@ -597,13 +592,13 @@ class Pkg:
         libnative.write()
         self.add_to_lib_folder(architecture, library_path)
 
-    def get_lib_path(self, architecture: str) -> "tbcml.Path":
+    def get_lib_path(self, architecture: str) -> tbcml.Path:
         raise NotImplementedError
 
-    def get_libs(self) -> dict[str, "tbcml.Lib"]:
+    def get_libs(self) -> dict[str, tbcml.Lib]:
         if self.libs is not None:
             return self.libs
-        libs: dict[str, "tbcml.Lib"] = {}
+        libs: dict[str, tbcml.Lib] = {}
         for architecture in self.get_architectures():
             libnative = self.parse_native_lib(architecture)
             if libnative is None:
@@ -612,7 +607,7 @@ class Pkg:
         self.libs = libs
         return libs
 
-    def add_patch(self, patch: "tbcml.LibPatch"):
+    def add_patch(self, patch: tbcml.LibPatch):
         arcs = self.get_architectures_subset(patch.architectures)
 
         for arc in arcs:
@@ -622,7 +617,7 @@ class Pkg:
             lib.apply_patch(patch)
             lib.write()
 
-    def get_architectures_subset(self, arcs: "tbcml.ARCS") -> Sequence[str]:
+    def get_architectures_subset(self, arcs: tbcml.ARCS) -> Sequence[str]:
         if arcs == "all":
             return self.get_architectures()
         elif arcs == "32":
@@ -633,7 +628,7 @@ class Pkg:
         all_arcs = self.get_architectures()
         return [arc for arc in arcs if arc in all_arcs]
 
-    def add_patches(self, patches: "tbcml.LibPatches"):
+    def add_patches(self, patches: tbcml.LibPatches):
         for patch in patches.lib_patches:
             self.add_patch(patch)
 
@@ -643,7 +638,7 @@ class Pkg:
     def set_allowed_script_mods(self, allowed: bool):
         self.allowed_script_mods = allowed
 
-    def import_libraries(self, lib_folder: "tbcml.Path"):
+    def import_libraries(self, lib_folder: tbcml.Path):
         for architecture in self.get_architectures():
             libs_path = lib_folder.add(architecture)
             if not libs_path.exists():
@@ -651,10 +646,10 @@ class Pkg:
             for lib in libs_path.get_files():
                 self.add_native_library(architecture, lib)
 
-    def add_to_lib_folder(self, architecture: str, library_path: "tbcml.Path") -> None:
+    def add_to_lib_folder(self, architecture: str, library_path: tbcml.Path) -> None:
         raise NotImplementedError
 
-    def create_libgadget_config(self) -> "tbcml.JsonFile":
+    def create_libgadget_config(self) -> tbcml.JsonFile:
         json_data = {
             "interaction": {
                 "type": "script",
@@ -674,10 +669,10 @@ class Pkg:
             for architecture in used_arcs:
                 self.add_to_lib_folder(architecture, temp_file)
 
-    def get_libgadget_script_path(self) -> "tbcml.Path":
+    def get_libgadget_script_path(self) -> tbcml.Path:
         raise NotImplementedError
 
-    def get_libgadget_config_path(self) -> "tbcml.Path":
+    def get_libgadget_config_path(self) -> tbcml.Path:
         raise NotImplementedError
 
     def add_libgadget_scripts(self, scripts: dict[str, str]):
@@ -690,8 +685,8 @@ class Pkg:
 
     @staticmethod
     def get_libgadgets_path(
-        lib_gadgets_folder: Optional["tbcml.Path"] = None,
-    ) -> "tbcml.Path":
+        lib_gadgets_folder: tbcml.Path | None = None,
+    ) -> tbcml.Path:
         if lib_gadgets_folder is None:
             lib_gadgets_folder = Pkg.get_defualt_libgadgets_folder()
         lib_gadgets_folder.generate_dirs()
@@ -704,11 +699,11 @@ class Pkg:
     def download_libgadgets():
         tbcml.FridaGadgetHelper().download_gadgets()
 
-    def get_libgadgets(self) -> dict[str, "tbcml.Path"]:
+    def get_libgadgets(self) -> dict[str, tbcml.Path]:
         folder = Pkg.get_libgadgets_path(self.lib_gadgets_folder)
         Pkg.download_libgadgets()
         arcs = folder.get_dirs()
-        libgadgets: dict[str, "tbcml.Path"] = {}
+        libgadgets: dict[str, tbcml.Path] = {}
         for arc in arcs:
             so_regex = ".*\\.so"
             files = arc.get_files(regex=so_regex)
@@ -741,7 +736,7 @@ class Pkg:
         self.add_libgadget_scripts(scripts)
         self.add_libgadget_sos(used_arcs, inject_native_lib, inject_smali)
 
-    def add_script_mods(self, bc_mods: list["tbcml.Mod"], add_base_script: bool = True):
+    def add_script_mods(self, bc_mods: list[tbcml.Mod], add_base_script: bool = True):
         if not bc_mods:
             return
         if not self.is_allowed_script_mods():
@@ -767,7 +762,7 @@ class Pkg:
                 scripts, inject_smali=inject_smali, inject_native_lib=not inject_smali
             )
 
-    def add_modded_html(self, mods: list["tbcml.Mod"]):
+    def add_modded_html(self, mods: list[tbcml.Mod]):
         transfer_screen_path = tbcml.Path.get_asset_file_path(
             tbcml.Path("html").add("kisyuhen_01_top_en.html")  # TODO: different locales
         )
@@ -791,25 +786,25 @@ class Pkg:
 
         self.add_asset_data(tbcml.Path("modlist.html"), tbcml.Data(modlist_html))
 
-    def add_asset(self, asset_path: "tbcml.Path"):
+    def add_asset(self, asset_path: tbcml.Path):
         asset_path.copy(self.extracted_path.add("assets").add(asset_path.basename()))
 
-    def add_asset_data(self, asset_path: "tbcml.Path", asset_data: "tbcml.Data"):
+    def add_asset_data(self, asset_path: tbcml.Path, asset_data: tbcml.Data):
         self.extracted_path.add("assets").add(asset_path).write(asset_data)
 
     def remove_arcs(self, arcs: list[str]):
         for arc in arcs:
             self.get_lib_path(arc).remove()
 
-    def remove_asset(self, asset_path: "tbcml.PathStr"):
+    def remove_asset(self, asset_path: tbcml.PathStr):
         asset_path = self.get_asset(asset_path)
         asset_path.remove()
 
-    def add_assets(self, asset_folder: "tbcml.Path"):
+    def add_assets(self, asset_folder: tbcml.Path):
         for asset in asset_folder.get_files():
             self.add_asset(asset)
 
-    def add_assets_from_pack(self, pack: "tbcml.PackFile"):
+    def add_assets_from_pack(self, pack: tbcml.PackFile):
         if pack.is_server_pack(pack.pack_name):
             return
         with tbcml.TempFolder() as temp_dir:
@@ -827,14 +822,14 @@ class Pkg:
         )
         pack.set_modified(True)
 
-    def add_assets_from_game_packs(self, packs: "tbcml.GamePacks"):
+    def add_assets_from_game_packs(self, packs: tbcml.GamePacks):
         for pack in packs.packs.values():
             self.add_assets_from_pack(pack)
 
-    def add_file(self, file_path: "tbcml.Path"):
+    def add_file(self, file_path: tbcml.Path):
         file_path.copy(self.extracted_path)
 
-    def add_patch_mods(self, bc_mods: list["tbcml.Mod"]):
+    def add_patch_mods(self, bc_mods: list[tbcml.Mod]):
         if not bc_mods:
             return
         if not self.is_allowed_script_mods():
@@ -849,7 +844,7 @@ class Pkg:
 
     def add_audio(
         self,
-        audio_file: "tbcml.AudioFile",
+        audio_file: tbcml.AudioFile,
     ):
         filename = audio_file.get_apk_file_name()
         audio_file.caf_to_little_endian().data.to_file(self.get_asset(filename))
@@ -860,8 +855,8 @@ class Pkg:
     def audio_file_startswith_snd(self) -> bool:
         raise NotImplementedError
 
-    def get_all_audio(self) -> dict[int, "tbcml.Path"]:
-        audio_files: dict[int, "tbcml.Path"] = {}
+    def get_all_audio(self) -> dict[int, tbcml.Path]:
+        audio_files: dict[int, tbcml.Path] = {}
         for file in self.get_assets_folder_path().get_files():
             if file.get_extension() not in self.get_audio_extensions():
                 continue
@@ -879,7 +874,7 @@ class Pkg:
         return audio_files
 
     def get_all_server_audio(self):
-        audio_files: dict[int, "tbcml.Path"] = {}
+        audio_files: dict[int, tbcml.Path] = {}
         for file in self.get_server_path().get_files():
             if file.get_extension() not in self.get_audio_extensions():
                 continue
@@ -889,7 +884,7 @@ class Pkg:
             audio_files[int(id_str)] = file
         return audio_files
 
-    def get_free_audio_id(self, all_audio: Optional[dict[int, "tbcml.Path"]] = None):
+    def get_free_audio_id(self, all_audio: dict[int, tbcml.Path] | None = None):
         if all_audio is None:
             all_audio = self.get_all_audio()
 
@@ -899,11 +894,11 @@ class Pkg:
                 return i
             i += 1
 
-    def get_asset_decrypt(self, asset_name: "tbcml.PathStr") -> "tbcml.Data":
+    def get_asset_decrypt(self, asset_name: tbcml.PathStr) -> tbcml.Data:
         path = self.get_asset(asset_name)
         return tbcml.GameFile.decrypt_apk_file(path.read())
 
-    def add_asset_encrypt(self, asset_name: "tbcml.PathStr", data: "tbcml.Data"):
+    def add_asset_encrypt(self, asset_name: tbcml.PathStr, data: tbcml.Data):
         path = self.get_asset(asset_name)
         path.parent().generate_dirs()
         data_enc = tbcml.GameFile.encrypt_apk_file(data)
@@ -914,13 +909,13 @@ class Pkg:
         name: str,
         value: str,
         include_lang: bool,
-        lang: Optional[str] = None,
+        lang: str | None = None,
     ) -> bool:
         raise NotImplementedError
 
     def get_string(
-        self, name: str, include_lang: bool, lang: Optional[str] = None
-    ) -> Optional[str]:
+        self, name: str, include_lang: bool, lang: str | None = None
+    ) -> str | None:
         raise NotImplementedError
 
     def apply_app_name(self, name: str) -> bool:
@@ -932,11 +927,11 @@ class Pkg:
             self.__app_name = name
         return success
 
-    def read_app_name(self) -> Optional[str]:
+    def read_app_name(self) -> str | None:
         app_name = self.get_string("app_name", include_lang=False)
         return app_name
 
-    def get_app_name(self) -> Optional[str]:
+    def get_app_name(self) -> str | None:
         if self.__app_name is not None:
             return self.__app_name
         app_name = self.read_app_name()
@@ -944,28 +939,28 @@ class Pkg:
             self.__app_name = app_name
         return app_name
 
-    def get_mod_html_files(self) -> list["tbcml.Path"]:
+    def get_mod_html_files(self) -> list[tbcml.Path]:
         files = self.get_assets_folder_path().get_files(
             regex=r"kisyuhen_01_top_..\.html"
         )
         return files
 
-    def add_mods_files(self, mods: list["tbcml.Mod"], lang: Optional[str] = None):
+    def add_mods_files(self, mods: list[tbcml.Mod], lang: str | None = None):
         for mod in mods:
             mod.apply_to_pkg(self, lang)
 
     def load_mods(
         self,
-        mods: list["tbcml.Mod"],
-        game_packs: Optional["tbcml.GamePacks"],
-        lang: Optional["tbcml.Language"] = None,
-        key: Optional[str] = None,
-        iv: Optional[str] = None,
+        mods: list[tbcml.Mod],
+        game_packs: tbcml.GamePacks | None,
+        lang: tbcml.Language | None = None,
+        key: str | None = None,
+        iv: str | None = None,
         add_modded_html: bool = True,
         save_in_modded_pkgs: bool = False,
-        progress_callback: Optional[
-            Callable[["tbcml.PKGProgressSignal"], Optional[bool]]
-        ] = None,
+        progress_callback: (
+            Callable[[tbcml.PKGProgressSignal], bool | None] | None
+        ) = None,
         do_final_pkg_actions: bool = True,
     ) -> bool:
         raise NotImplementedError

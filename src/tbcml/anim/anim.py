@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import enum
 import math
-from typing import Optional
 import tbcml
 
 try:
@@ -28,7 +29,7 @@ class AnimModificationType(enum.Enum):
 
 
 class Anim:
-    def __init__(self, model: "tbcml.Model", anim: int):
+    def __init__(self, model: tbcml.Model, anim: int):
         self.model = model
         self.anim: tbcml.UnitAnim
         self.set_anim(anim)
@@ -43,7 +44,7 @@ class Anim:
             raise ValueError("Anim is not in range!")
         self.anim = self.model.anims[anim]
 
-    def get_change_in_value(self, keyframes_obj: "tbcml.KeyFrames") -> Optional[int]:
+    def get_change_in_value(self, keyframes_obj: tbcml.KeyFrames) -> int | None:
         keyframes = keyframes_obj.keyframes
         if not keyframes:
             return None
@@ -142,7 +143,7 @@ class Anim:
         c_change: int,
         local_frame: int,
         c_index: int,
-        keyframes: list["tbcml.KeyFrame"],
+        keyframes: list[tbcml.KeyFrame],
     ) -> float:
         lerp = (local_frame - c_frame) / (n_frame - c_frame)
         if c_ease_mode == 0:  # Linear
@@ -195,7 +196,7 @@ class Anim:
     def apply_change(
         self,
         change: int,
-        part: "tbcml.ModelPart",
+        part: tbcml.ModelPart,
         mod_type: int,
     ):
         mod = AnimModificationType(mod_type)
@@ -302,10 +303,10 @@ class Anim:
 
     def create_change_cache(self):
         c_frame = self.frame
-        self.change_cache: list[list[Optional[int]]] = []
+        self.change_cache: list[list[int | None]] = []
         for frame in range(self.total_frames):
             self.set_frame(frame)
-            changes: list[Optional[int]] = []
+            changes: list[int | None] = []
             for keyframes in self.anim.parts:
                 changes.append(self.get_change_in_value(keyframes))
             self.change_cache.append(changes)
@@ -313,7 +314,7 @@ class Anim:
         self.set_frame(c_frame)
 
     def create_keyframe_map(self):
-        self.keyframes_map: dict[int, list[tuple["tbcml.KeyFrames", int]]] = {}
+        self.keyframes_map: dict[int, list[tuple[tbcml.KeyFrames, int]]] = {}
         for part in self.model.mamodel.parts:
             for i, keyframes in enumerate(self.anim.parts):
                 if part.part_id not in self.keyframes_map:
@@ -322,8 +323,8 @@ class Anim:
                     continue
                 self.keyframes_map[part.part_id].append((keyframes, i))
 
-    def draw_frame(self, painter: "QtGui.QPainter", base_x: float, base_y: float):
-        changes: list[Optional[int]] = []
+    def draw_frame(self, painter: QtGui.QPainter, base_x: float, base_y: float):
+        changes: list[int | None] = []
 
         local_frame = self.frame % self.total_frames
 
@@ -351,8 +352,8 @@ class Anim:
 
     def draw_part(
         self,
-        part: "tbcml.ModelPart",
-        painter: "QtGui.QPainter",
+        part: tbcml.ModelPart,
+        painter: QtGui.QPainter,
         base_x: float,
         base_y: float,
     ):
@@ -413,11 +414,11 @@ class Anim:
 
     def draw_img(
         self,
-        img: "tbcml.BCImage",
+        img: tbcml.BCImage,
         pivot: tuple[float, float],
         size: tuple[float, float],
         alpha: float,
-        painter: "QtGui.QPainter",
+        painter: QtGui.QPainter,
         glow: int,
     ):
         painter.setOpacity(alpha)
@@ -435,7 +436,7 @@ class Anim:
 
     def transform(
         self,
-        part: "tbcml.ModelPart",
+        part: tbcml.ModelPart,
         matrix: list[float],
         sizer_x: float,
         sizer_y: float,
@@ -507,7 +508,7 @@ class Anim:
         return [m0, m1, m2, m3, m4, m5], part_scale_x, part_scale_y
 
     def get_base_size(
-        self, part: "tbcml.ModelPart", parent: bool, int_part_id: int, scale_unit: int
+        self, part: tbcml.ModelPart, parent: bool, int_part_id: int, scale_unit: int
     ) -> tuple[float, float]:
         if part.anim is None:
             raise ValueError("Anim cannot be None")
@@ -532,7 +533,7 @@ class Anim:
 
     def get_recursive_scale(
         self,
-        part: "tbcml.ModelPart",
+        part: tbcml.ModelPart,
         current_scale: tuple[float, float],
     ) -> tuple[float, float]:
         if part.anim is None:
@@ -548,7 +549,7 @@ class Anim:
 
     def get_recursive_alpha(
         self,
-        part: "tbcml.ModelPart",
+        part: tbcml.ModelPart,
         current_alpha: float,
         alpha_unit: int,
     ) -> float:

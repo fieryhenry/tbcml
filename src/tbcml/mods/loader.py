@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import tbcml
-from typing import Callable, List, Optional, Union
+from typing import Callable
 
 from tbcml.io.apk import Apk
 
@@ -38,8 +40,8 @@ class ModLoader:
 
     def __init__(
         self,
-        country_code: "tbcml.CC",
-        game_version: "tbcml.GV",
+        country_code: tbcml.CC,
+        game_version: tbcml.GV,
     ):
         """Initialize ModLoader
 
@@ -60,12 +62,12 @@ class ModLoader:
         else:
             self.game_version = game_version
 
-        self.game_packs: Optional[tbcml.GamePacks] = None
-        self.apk: Optional[tbcml.Apk] = None
-        self.adb_handler: Optional[tbcml.BulkAdbHandler] = None
+        self.game_packs: tbcml.GamePacks | None = None
+        self.apk: tbcml.Apk | None = None
+        self.adb_handler: tbcml.BulkAdbHandler | None = None
 
     @staticmethod
-    def from_apk(apk: "tbcml.Apk"):
+    def from_apk(apk: tbcml.Apk):
         """Create a ModLoader from an existing Apk instance
 
         Args:
@@ -84,12 +86,12 @@ class ModLoader:
         force_extract: bool = False,
         print_errors: bool = True,
         allowed_script_mods: bool = True,
-        custom_apk_folder: Optional["tbcml.Path"] = None,
-        lang: Optional["tbcml.LanguageStr"] = None,
-        pkg_path: Optional["tbcml.PathStr"] = None,
-        download_progress: Optional[
-            Callable[[float, int, int, bool], None]
-        ] = Apk.progress,
+        custom_apk_folder: tbcml.Path | None = None,
+        lang: tbcml.LanguageStr | None = None,
+        pkg_path: tbcml.PathStr | None = None,
+        download_progress: (
+            Callable[[float, int, int, bool], None] | None
+        ) = Apk.progress,
         skip_signature_check: bool = False,
         download_server_files: bool = True,
     ):
@@ -102,10 +104,10 @@ class ModLoader:
             force_extract (bool, optional): Whether to always extract the apk, even if it has already been extracted before.
             print_errors (bool, optional): Whether to show errors if they occur. Defaults to True.
             allowed_script_mods (bool, optional): If custom scripts / code is able to be loaded into the apk. Defaults to True.
-            custom_apk_folder (Optional[tbcml.Path], optional): If you want to specify where the apk is downloaded / extracted to. Defaults to None which means leave as default (Documents/tbcml/APKs).
-            lang (Optional["fr", "it", "de", "es", "th"], optional): If you are using an en apk, change what language should be used. Defaults to None which is the country code
-            apk_path (Optional[tbcml.Path], optional): Path to an apk file if you already have a downloaded apk file. Note that you should probably change the custom_apk_folder if using a non-original tbc apk
-            download_progress (Optional[Callable[[float, int, int, bool], None]], optional): Function to call to show download progress. Defaults to Apk.progress which is a default progress function
+            custom_apk_folder (tbcml.Path | None, optional): If you want to specify where the apk is downloaded / extracted to. Defaults to None which means leave as default (Documents/tbcml/APKs).
+            lang ("fr", "it", "de", "es", "th" | None, optional): If you are using an en apk, change what language should be used. Defaults to None which is the country code
+            apk_path (tbcml.Path | None, optional): Path to an apk file if you already have a downloaded apk file. Note that you should probably change the custom_apk_folder if using a non-original tbc apk
+            download_progress (Callable[[float, int, int, bool], None] | None, optional): Function to call to show download progress. Defaults to Apk.progress which is a default progress function
             skip_signature_check (bool, optional): Whether to skip checking the apk signature. If disabled, this will throw an error if the downloaded apk is not original. Defaults to False
             download_server_files (bool, optional): Whether to download the server files (what the game downloads on first open). Defaults to True
         """
@@ -132,14 +134,14 @@ class ModLoader:
         decode_resources: bool = True,
         use_apktool: bool = True,
         force_extract: bool = False,
-        lang: Optional["tbcml.Language"] = None,
+        lang: tbcml.Language | None = None,
         print_errors: bool = True,
         allowed_script_mods: bool = True,
-        custom_apk_folder: Optional["tbcml.PathStr"] = None,
-        download_progress: Optional[
-            Callable[[float, int, int, bool], None]
-        ] = Apk.progress,
-        apk_path: Optional["tbcml.PathStr"] = None,
+        custom_apk_folder: tbcml.PathStr | None = None,
+        download_progress: (
+            Callable[[float, int, int, bool], None] | None
+        ) = Apk.progress,
+        apk_path: tbcml.PathStr | None = None,
         skip_signature_check: bool = False,
         download_server_files: bool = True,
     ):
@@ -196,7 +198,7 @@ class ModLoader:
 
         self.game_packs = tbcml.GamePacks.from_pkg(self.apk, lang=lang)
 
-    def get_game_packs(self) -> "tbcml.GamePacks":
+    def get_game_packs(self) -> tbcml.GamePacks:
         """Gets the game packs from a ModLoader instance, will never be None, unlike .game_packs attribute
 
         Raises:
@@ -213,31 +215,31 @@ class ModLoader:
 
     def apply(
         self,
-        mods: Union[List["tbcml.Mod"], "tbcml.Mod"],
-        custom_enc_key: Optional[str] = None,
-        custom_enc_iv: Optional[str] = None,
+        mods: list[tbcml.Mod] | tbcml.Mod,
+        custom_enc_key: str | None = None,
+        custom_enc_iv: str | None = None,
         open_path: bool = False,
         add_modded_html: bool = True,
-        use_apktool: Optional[bool] = None,
+        use_apktool: bool | None = None,
         raise_error: bool = True,
         save_in_modded_apks: bool = False,
-        progress_callback: Optional[
-            Callable[["tbcml.PKGProgressSignal"], Optional[bool]]
-        ] = None,
+        progress_callback: (
+            Callable[[tbcml.PKGProgressSignal], bool | None] | None
+        ) = None,
         do_final_pkg_actions: bool = True,
     ):
         """Applies a mod / mods to the apk to create a modded apk.
 
         Args:
-            mods (Union[List[tbcml.Mod], tbcml.Mod]): Mod / mods to apply to the loaded apk
-            custom_enc_key (Optional[str], optional): Custom game pack encryption key. Defaults to None which is default key. Use if you want it to be harder to decrypt your game data. Does not apply to ImageDataLocal + makes applying mods take longer
-            custom_enc_iv (Optional[str], optional): Custom game pack encryption iv, same use case / issues as key as shown above. Defaults to None.
+            mods (ist[tbcml.Mod] | tbcml.Mod): Mod / mods to apply to the loaded apk
+            custom_enc_key (str | None, optional): Custom game pack encryption key. Defaults to None which is default key. Use if you want it to be harder to decrypt your game data. Does not apply to ImageDataLocal + makes applying mods take longer
+            custom_enc_iv (str | None, optional): Custom game pack encryption iv, same use case / issues as key as shown above. Defaults to None.
             open_path (bool, optional): Whether to open the folder containing the final apk after everything has been loaded. Defaults to False.
             add_modded_html (bool, optional): Whether to modify the transfer screen to display your current mods. Defaults to True.
-            use_apktool (Optional[bool], optional): Whether to use apktool to pack the apk, if False resources will not be encoded. If None, it will autodetect the value based on what you did when you extracted the apk
+            use_apktool (bool | None, optional): Whether to use apktool to pack the apk, if False resources will not be encoded. If None, it will autodetect the value based on what you did when you extracted the apk
             raise_error (bool): Whether to raise an error if applying mods fails. Defaults to True
             save_in_modded_apks (bool): Whether to save the modded apk to a separate folder. Defaults to False
-            progress_callback (Optional[Callable[[tbcml.PKGProgressSignal], Optional[bool]]], optional): Callback to get progress of applying mods. If returns False, will stop applying mods. Defaults to None.
+            progress_callback (Callable[[tbcml.PKGProgressSignal], bool | None] | None, optional): Callback to get progress of applying mods. If returns False, will stop applying mods. Defaults to None.
             do_final_pkg_actions (bool): Whether to do final actions such as signing and packaging the apk. Defaults to True
 
         Raises:
@@ -267,7 +269,7 @@ class ModLoader:
         if open_path:
             self.apk.output_path.open()
 
-    def get_apk(self) -> "tbcml.Apk":
+    def get_apk(self) -> tbcml.Apk:
         """Gets the apk from a ModLoader instance. Will never be None
 
         Raises:
@@ -282,7 +284,7 @@ class ModLoader:
             )
         return self.apk
 
-    def get_pkg(self) -> "tbcml.Pkg":
+    def get_pkg(self) -> tbcml.Pkg:
         """Gets the apk from a ModLoader instance. Will never be None
 
         Raises:
@@ -293,11 +295,11 @@ class ModLoader:
         """
         return self.get_apk()
 
-    def initialize_adb(self, device_id: Optional[str] = None):
+    def initialize_adb(self, device_id: str | None = None):
         """Initialize adb handler. Must be called before doing anything with adb
 
         Args:
-            device_id (Optional[str], optional): Device id to use for running commands. Defaults to None which means all connected devices.
+            device_id (str | None, optional): Device id to use for running commands. Defaults to None which means all connected devices.
 
         Raises:
             Exception: If no devices are connected
@@ -314,7 +316,7 @@ class ModLoader:
             if not success:
                 raise Exception("No devices connected.")
 
-    def install_adb(self, run_game: bool = False) -> list[list["tbcml.CommandResult"]]:
+    def install_adb(self, run_game: bool = False) -> list[list[tbcml.CommandResult]]:
         """Install the apk to connected devices
 
         Args:
@@ -337,7 +339,7 @@ class ModLoader:
         """Copies the final apk to the /sdard/Download directory for easier installation"""
         self.get_apk().copy_to_android_download_folder()
 
-    def get_adb_handler(self) -> "tbcml.BulkAdbHandler":
+    def get_adb_handler(self) -> tbcml.BulkAdbHandler:
         """Gets the apk handler. Will never be None
 
         Raises:
@@ -352,7 +354,7 @@ class ModLoader:
             )
         return self.adb_handler
 
-    def run_game_adb(self) -> list["tbcml.CommandResult"]:
+    def run_game_adb(self) -> list[tbcml.CommandResult]:
         """Run the game with adb
 
         Returns:
@@ -362,7 +364,7 @@ class ModLoader:
             tbcml.AdbHandler.run_game
         )
 
-    def close_game_adb(self) -> list["tbcml.CommandResult"]:
+    def close_game_adb(self) -> list[tbcml.CommandResult]:
         """Close the game with adb
 
         Returns:
@@ -372,7 +374,7 @@ class ModLoader:
             tbcml.AdbHandler.close_game
         )
 
-    def push_server_files_adb(self) -> list[list["tbcml.CommandResult"]]:
+    def push_server_files_adb(self) -> list[list[tbcml.CommandResult]]:
         """Pushes the downloaded server files to the game.
         WARNING: this should only be run after you have selected a language,
         otherwise the game may glitch and think there is no storage space and so
@@ -383,7 +385,7 @@ class ModLoader:
         """
         apk = self.get_apk()
         game_packs = self.get_game_packs()
-        paths: list["tbcml.Path"] = []
+        paths: list[tbcml.Path] = []
         for pack_name, pack in game_packs.packs.items():
             if pack.is_server_pack(pack_name):
                 paths.append(apk.get_server_path().add(pack_name + ".pack"))

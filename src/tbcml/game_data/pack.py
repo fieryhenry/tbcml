@@ -1,6 +1,7 @@
 """Module for handling game data."""
 
-from typing import Optional, Union
+from __future__ import annotations
+
 import copy
 
 import tbcml
@@ -9,14 +10,14 @@ import tbcml
 class GameFile:
     def __init__(
         self,
-        enc_data: Optional["tbcml.Data"],
+        enc_data: tbcml.Data | None,
         file_name: str,
         pack_name: str,
-        cc: "tbcml.CountryCode",
-        gv: "tbcml.GameVersion",
-        key: Optional[str] = None,
-        iv: Optional[str] = None,
-        dec_data: Optional["tbcml.Data"] = None,
+        cc: tbcml.CountryCode,
+        gv: tbcml.GameVersion,
+        key: str | None = None,
+        iv: str | None = None,
+        dec_data: tbcml.Data | None = None,
     ):
         self.enc_data = enc_data
         self.file_name = file_name
@@ -25,11 +26,11 @@ class GameFile:
         self.gv = gv
         self.key = key
         self.iv = iv
-        self.__dec_data: Optional["tbcml.Data"] = dec_data
-        self.original_dec_data: Optional["tbcml.Data"] = None
+        self.__dec_data: tbcml.Data | None = dec_data
+        self.original_dec_data: tbcml.Data | None = None
 
     @staticmethod
-    def decrypt_apk_file(enc_data: "tbcml.Data") -> "tbcml.Data":
+    def decrypt_apk_file(enc_data: tbcml.Data) -> tbcml.Data:
         game_file = GameFile(
             enc_data,
             "file",
@@ -40,7 +41,7 @@ class GameFile:
         return game_file.decrypt_data(force_server=True)
 
     @staticmethod
-    def encrypt_apk_file(dec_data: "tbcml.Data") -> "tbcml.Data":
+    def encrypt_apk_file(dec_data: tbcml.Data) -> tbcml.Data:
         game_file = GameFile(
             None,
             "file",
@@ -55,7 +56,7 @@ class GameFile:
     def dec_data(self):
         return self.decrypt_data()
 
-    def decrypt_data(self, force_server: bool = False) -> "tbcml.Data":
+    def decrypt_data(self, force_server: bool = False) -> tbcml.Data:
         if self.__dec_data is not None:
             return self.__dec_data
 
@@ -78,15 +79,15 @@ class GameFile:
         return self.__dec_data
 
     @dec_data.setter
-    def dec_data(self, data: "tbcml.Data"):
+    def dec_data(self, data: tbcml.Data):
         self.__dec_data = data
 
     def encrypt(
         self,
         force_server: bool = False,
-        key: Optional[str] = None,
-        iv: Optional[str] = None,
-    ) -> "tbcml.Data":
+        key: str | None = None,
+        iv: str | None = None,
+    ) -> tbcml.Data:
         """Encrypt the decrypted data.
 
         Returns:
@@ -112,7 +113,7 @@ class GameFile:
         data = self.__dec_data.pad_pkcs7()
         return cipher.encrypt(data)
 
-    def extract(self, path: "tbcml.Path", encrypt: bool = False):
+    def extract(self, path: tbcml.Path, encrypt: bool = False):
         """Extract the decrypted data to a file.
 
         Args:
@@ -145,8 +146,8 @@ class PackFile:
     def __init__(
         self,
         pack_name: str,
-        country_code: "tbcml.CountryCode",
-        gv: "tbcml.GameVersion",
+        country_code: tbcml.CountryCode,
+        gv: tbcml.GameVersion,
     ):
         """Initialize a new PackFile.
 
@@ -161,9 +162,9 @@ class PackFile:
         self.__files: dict[str, GameFile] = {}
         self.loaded = False
         self.modified = False
-        self.enc_path: Optional[tbcml.Path] = None
-        self.key: Optional[str] = None
-        self.iv: Optional[str] = None
+        self.enc_path: tbcml.Path | None = None
+        self.key: str | None = None
+        self.iv: str | None = None
         self.list_map: dict[str, tuple[int, int]] = {}
 
     def check_file(self, file_name: str) -> bool:
@@ -171,7 +172,7 @@ class PackFile:
             return file_name in self.__files
         return file_name in self.list_map
 
-    def get_file(self, file_name: str) -> Optional[GameFile]:
+    def get_file(self, file_name: str) -> GameFile | None:
         if not self.check_file(file_name):
             return None
         self.load_files()
@@ -184,7 +185,7 @@ class PackFile:
         return list(self.__files.values())
 
     @staticmethod
-    def get_lang(pack_name: str) -> Optional["tbcml.Language"]:
+    def get_lang(pack_name: str) -> tbcml.Language | None:
         parts = pack_name.split("_")
         if len(parts) == 1:
             return None
@@ -194,7 +195,7 @@ class PackFile:
 
         return tbcml.Language(lang_str)
 
-    def add_file(self, file: "GameFile"):
+    def add_file(self, file: GameFile):
         """Add a file to the pack.
 
         Args:
@@ -203,7 +204,7 @@ class PackFile:
         self.load_files()
         self.__files[file.file_name] = file
 
-    def add_files(self, files: list["GameFile"]):
+    def add_files(self, files: list[GameFile]):
         """Add multiple files to the pack.
 
         Args:
@@ -212,7 +213,7 @@ class PackFile:
         for file in files:
             self.add_file(file)
 
-    def set_files(self, files: dict[str, "GameFile"]):
+    def set_files(self, files: dict[str, GameFile]):
         """Set the files in the pack.
 
         Args:
@@ -254,7 +255,7 @@ class PackFile:
         return "Server" in pack_name
 
     @staticmethod
-    def get_gv(pack_name: str) -> Optional[int]:
+    def get_gv(pack_name: str) -> int | None:
         parts = pack_name.split("_")
         if len(parts) == 1 and not PackFile.is_server_pack(pack_name):
             return (ord(parts[0][0].upper()) - 65) * 100
@@ -282,13 +283,13 @@ class PackFile:
 
     @staticmethod
     def get_cipher(
-        cc: "tbcml.CountryCode",
+        cc: tbcml.CountryCode,
         pack_name: str,
-        gv: "tbcml.GameVersion",
+        gv: tbcml.GameVersion,
         force_server: bool = False,
-        key: Optional[str] = None,
-        iv: Optional[str] = None,
-    ) -> "tbcml.AesCipher":
+        key: str | None = None,
+        iv: str | None = None,
+    ) -> tbcml.AesCipher:
         """Get the cipher for a pack.
 
         Args:
@@ -303,7 +304,7 @@ class PackFile:
             cc, pack_name, gv, force_server, key, iv
         )
 
-    def set_file(self, file_name: str, file_data: "tbcml.Data") -> Optional[GameFile]:
+    def set_file(self, file_name: str, file_data: tbcml.Data) -> GameFile | None:
         """Set a file in the pack.
 
         Args:
@@ -311,7 +312,7 @@ class PackFile:
             file_data (tbcml.Data): The data of the file.
 
         Returns:
-            Optional[GameFile]: The file if it exists, None otherwise.
+            GameFile | None: The file if it exists, None otherwise.
         """
         file = self.get_file(file_name)
         if file is None:
@@ -364,7 +365,7 @@ class PackFile:
                 break
         return file_name
 
-    def create_list_map(self, list_file: "tbcml.CSV"):
+    def create_list_map(self, list_file: tbcml.CSV):
         total_files = int(list_file.lines[0][0])
         for i in range(total_files):
             line = list_file.lines[i + 1]
@@ -373,14 +374,14 @@ class PackFile:
 
     @staticmethod
     def from_pack_file(
-        enc_list_data: "tbcml.Data",
-        enc_pack_path: "tbcml.Path",
-        country_code: "tbcml.CountryCode",
+        enc_list_data: tbcml.Data,
+        enc_pack_path: tbcml.Path,
+        country_code: tbcml.CountryCode,
         pack_name: str,
-        gv: "tbcml.GameVersion",
-        key: Optional[str] = None,
-        iv: Optional[str] = None,
-    ) -> Optional["PackFile"]:
+        gv: tbcml.GameVersion,
+        key: str | None = None,
+        iv: str | None = None,
+    ) -> PackFile | None:
         """Create a PackFile from a pack file.
 
         Args:
@@ -391,7 +392,7 @@ class PackFile:
             gv (game_version.GameVersion): The game version.
 
         Returns:
-            Optional[PackFile]: The PackFile if it was created successfully, None otherwise.
+            PackFile | None: The PackFile if it was created successfully, None otherwise.
         """
         list_key = b"b484857901742afc"
         ls_dec_data = tbcml.AesCipher(list_key).decrypt(enc_list_data)
@@ -426,9 +427,9 @@ class PackFile:
 
     def to_pack_list_file(
         self,
-        key: Optional[str] = None,
-        iv: Optional[str] = None,
-    ) -> tuple[str, "tbcml.Data", "tbcml.Data"]:
+        key: str | None = None,
+        iv: str | None = None,
+    ) -> tuple[str, tbcml.Data, tbcml.Data]:
         """Convert the pack object to a pack file and a list file.
 
         Returns:
@@ -455,7 +456,7 @@ class PackFile:
         ).encrypt(ls_data)
         return self.pack_name, pack_data, ls_data
 
-    def extract(self, path: "tbcml.Path", encrypt: bool = False) -> "tbcml.Path":
+    def extract(self, path: tbcml.Path, encrypt: bool = False) -> tbcml.Path:
         """Extract the pack as separate files into a directory.
 
         Args:
@@ -477,9 +478,9 @@ class GamePacks:
     def __init__(
         self,
         packs: dict[str, PackFile],
-        country_code: "tbcml.CountryCode",
-        gv: "tbcml.GameVersion",
-        lang: Optional["tbcml.Language"] = None,
+        country_code: tbcml.CountryCode,
+        gv: tbcml.GameVersion,
+        lang: tbcml.Language | None = None,
     ):
         """Create a GamePacks object.
 
@@ -529,29 +530,29 @@ class GamePacks:
     def get_lang(self) -> str:
         return self.localizable.get_lang()
 
-    def get_pack(self, pack_name: str) -> Optional["PackFile"]:
+    def get_pack(self, pack_name: str) -> PackFile | None:
         """Get a pack from the game packs.
 
         Args:
             pack_name (str): The name of the pack.
 
         Returns:
-            Optional[PackFile]: The pack if it exists, None otherwise.
+            PackFile | None: The pack if it exists, None otherwise.
         """
         return self.packs.get(pack_name, None)
 
     def get_csv(
         self,
         file_name: str,
-        delimeter: Optional[Union["tbcml.Delimeter", str]] = ",",
-        country_code: Optional["tbcml.CountryCode"] = None,
+        delimeter: tbcml.Delimeter | str | None = ",",
+        country_code: tbcml.CountryCode | None = None,
         show_error: bool = False,
         use_cache: bool = True,
         update_cache: bool = True,
         remove_padding: bool = True,
         remove_comments: bool = True,
         remove_empty: bool = True,
-    ) -> Optional["tbcml.CSV"]:
+    ) -> tbcml.CSV | None:
         if use_cache:
             csv = self.csv_cache.get(file_name)
             if csv is not None:
@@ -578,9 +579,9 @@ class GamePacks:
     def set_csv(
         self,
         file_name: str,
-        csv: Optional["tbcml.CSV"] = None,
+        csv: tbcml.CSV | None = None,
         update_cache: bool = True,
-    ) -> Optional["GameFile"]:
+    ) -> GameFile | None:
         if csv is None:
             return None
 
@@ -595,17 +596,13 @@ class GamePacks:
         for file_name, csv in self.modified_csv_cache.items():
             self.set_file(file_name, csv.to_data())
 
-    def get_img(
-        self, file_name: str, show_error: bool = False
-    ) -> Optional["tbcml.BCImage"]:
+    def get_img(self, file_name: str, show_error: bool = False) -> tbcml.BCImage | None:
         file = self.find_file(file_name, show_error)
         if file is None:
             return None
         return tbcml.BCImage(file.dec_data.to_base_64())
 
-    def set_img(
-        self, file_name: str, img: Optional["tbcml.BCImage"]
-    ) -> Optional["GameFile"]:
+    def set_img(self, file_name: str, img: tbcml.BCImage | None) -> GameFile | None:
         if img is None:
             return None
         file = self.set_file(file_name, img.to_data())
@@ -615,7 +612,7 @@ class GamePacks:
         self,
         file_name: str,
         show_error: bool = False,
-    ) -> Optional["GameFile"]:
+    ) -> GameFile | None:
         """Find a file in the game packs.
 
         Args:
@@ -623,7 +620,7 @@ class GamePacks:
             show_error (bool, optional): Whether to show an error if the file is not found. Defaults to True.
 
         Returns:
-            Optional[GameFile]: The file if it exists, None otherwise.
+            GameFile | None: The file if it exists, None otherwise.
         """
         file = self.cache.get(file_name)
         if file is not None:
@@ -682,16 +679,16 @@ class GamePacks:
 
     def to_packs_lists(
         self,
-        key: Optional[str] = None,
-        iv: Optional[str] = None,
-    ) -> list[tuple[str, "tbcml.Data", "tbcml.Data"]]:
+        key: str | None = None,
+        iv: str | None = None,
+    ) -> list[tuple[str, tbcml.Data, tbcml.Data]]:
         """Convert the game packs to a list of pack lists.
 
         Returns:
             list[tuple[str, tbcml.Data, tbcml.Data]]: The pack lists. The first element is the pack name, the second is the encrypted pack data, the third is the encrypted list data.
         """
         self.apply_all_csvs()
-        packs_lists: list[tuple[str, "tbcml.Data", "tbcml.Data"]] = []
+        packs_lists: list[tuple[str, tbcml.Data, tbcml.Data]] = []
         should_reencrypt = (
             key is not None or iv is not None
         ) and self.gv >= tbcml.GameVersion.from_string("8.9.0")
@@ -713,20 +710,20 @@ class GamePacks:
         """
         return name.lower() + "1"
 
-    def get_pack_gv(self, pack_name: str) -> Optional["PackFile"]:
+    def get_pack_gv(self, pack_name: str) -> PackFile | None:
         """Get a pack from the game packs.
 
         Args:
             pack_name (str): The name of the pack.
 
         Returns:
-            Optional[PackFile]: The pack if it exists, None otherwise.
+            PackFile | None: The pack if it exists, None otherwise.
         """
         if not pack_name.endswith("1"):
             pack_name = self.to_java_name(pack_name) if self.gv.is_java() else pack_name
         return self.get_pack(pack_name)
 
-    def set_file(self, file_name: str, data: "tbcml.Data") -> Optional["GameFile"]:
+    def set_file(self, file_name: str, data: tbcml.Data) -> GameFile | None:
         """Set a file in the game packs.
 
         Args:
@@ -737,7 +734,7 @@ class GamePacks:
             FileNotFoundError: If the file is not found.
 
         Returns:
-            Optional[GameFile]: The file if it exists, None otherwise.
+            GameFile | None: The file if it exists, None otherwise.
         """
         if not file_name.strip():
             raise FileNotFoundError("File name cannot be empty")
@@ -774,20 +771,20 @@ class GamePacks:
         self.modified_packs[file.pack_name] = True
         return file
 
-    def set_file_from_path(self, file_path: "tbcml.Path") -> Optional["GameFile"]:
+    def set_file_from_path(self, file_path: tbcml.Path) -> GameFile | None:
         """Set a file in the game packs from a path.
 
         Args:
             file_path (tbcml.Path): The path of the file.
 
         Returns:
-            Optional[GameFile]: The file if it exists, None otherwise.
+            GameFile | None: The file if it exists, None otherwise.
         """
         file_name = file_path.get_file_name()
         data = tbcml.Data.from_file(file_path)
         return self.set_file(file_name, data)
 
-    def set_files_from_folder(self, folder_path: "tbcml.Path") -> None:
+    def set_files_from_folder(self, folder_path: tbcml.Path) -> None:
         """Set a file in the game packs from a folder.
 
         Args:
@@ -798,8 +795,8 @@ class GamePacks:
 
     @staticmethod
     def from_pkg(
-        apk: "tbcml.Pkg",
-        lang: Optional["tbcml.Language"] = None,
+        apk: tbcml.Pkg,
+        lang: tbcml.Language | None = None,
         all_langs: bool = False,
     ) -> "GamePacks":
         """Create a GamePacks object from a package.
@@ -814,7 +811,7 @@ class GamePacks:
 
     def extract(
         self,
-        path: "tbcml.PathStr",
+        path: tbcml.PathStr,
         clear: bool = False,
         only_local: bool = False,
     ):
@@ -835,7 +832,7 @@ class GamePacks:
                     continue
             pack.extract(path)
 
-    def apply_mods(self, mods: list["tbcml.Mod"]):
+    def apply_mods(self, mods: list[tbcml.Mod]):
         if not mods:
             return
         for mod in mods:

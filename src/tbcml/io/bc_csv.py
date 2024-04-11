@@ -1,10 +1,11 @@
+from __future__ import annotations
 import enum
-from typing import Any, Optional, Union
+from typing import Any
 
 import tbcml
 
 
-def to_str(item: Optional[Union[str, int, bool]], is_int: bool = True) -> str:
+def to_str(item: str | int | bool | None, is_int: bool = True) -> str:
     item_type = type(item)
     if item_type == int or item_type == str:
         return str(item)
@@ -22,14 +23,14 @@ class DelimeterType(enum.Enum):
 
 
 class Delimeter:
-    def __init__(self, de: Union[DelimeterType, str]):
+    def __init__(self, de: DelimeterType | str):
         if isinstance(de, str):
             self.delimeter = DelimeterType(de)
         else:
             self.delimeter = de
 
     @staticmethod
-    def from_country_code_res(cc: "tbcml.CountryCode") -> "Delimeter":
+    def from_country_code_res(cc: tbcml.CountryCode) -> Delimeter:
         if cc == tbcml.CountryCode.JP:
             return Delimeter(DelimeterType.COMMA)
         else:
@@ -42,12 +43,12 @@ class Delimeter:
 class CSV:
     def __init__(
         self,
-        file_data: Optional["tbcml.Data"] = None,
-        delimeter: Union[Delimeter, str] = Delimeter(DelimeterType.COMMA),
+        file_data: tbcml.Data | None = None,
+        delimeter: Delimeter | str = Delimeter(DelimeterType.COMMA),
         remove_padding: bool = True,
         remove_comments: bool = True,
         remove_empty: bool = True,
-        lines: Optional[list[list[str]]] = None,
+        lines: list[list[str]] | None = None,
     ):
         if file_data is None:
             file_data = tbcml.Data()
@@ -70,7 +71,7 @@ class CSV:
         else:
             self.parse(file_data)
 
-    def parse(self, file_data: "tbcml.Data"):
+    def parse(self, file_data: tbcml.Data):
         lines: list[list[str]] = []
         for line in file_data.to_str().splitlines():
             if self.remove_comments:
@@ -86,8 +87,8 @@ class CSV:
 
     @staticmethod
     def from_file(
-        path: "tbcml.Path", delimeter: Delimeter = Delimeter(DelimeterType.COMMA)
-    ) -> "CSV":
+        path: tbcml.Path, delimeter: Delimeter = Delimeter(DelimeterType.COMMA)
+    ) -> CSV:
         return CSV(path.read(), delimeter)
 
     def reset_index(self):
@@ -103,20 +104,20 @@ class CSV:
             raise StopIteration
         return line
 
-    def read_line(self) -> Optional[list[str]]:
+    def read_line(self) -> list[str] | None:
         if self.index >= len(self.lines):
             return None
         line = self.lines[self.index]
         self.index += 1
         return line
 
-    def get_current_line(self) -> Optional[list[str]]:
+    def get_current_line(self) -> list[str] | None:
         if self.index >= len(self.lines):
             return None
         line = self.lines[self.index]
         return line
 
-    def to_data(self) -> "tbcml.Data":
+    def to_data(self) -> tbcml.Data:
         return tbcml.Data(
             "\n".join(
                 [
@@ -155,9 +156,9 @@ class CSV:
 
     def set_str(
         self,
-        item: Optional[Union[str, int, bool]],
+        item: str | int | bool | None,
         index: int,
-        length: Optional[int] = None,
+        length: int | None = None,
     ):
         if item is None and self.ignore_none:
             return
@@ -196,7 +197,7 @@ class CSV:
     def get_str_list(
         self,
         index: int,
-        length: Optional[int] = None,
+        length: int | None = None,
         default: str = "",
     ) -> list[str]:
         if self.index >= len(self.lines):
@@ -217,7 +218,7 @@ class CSV:
     def get_int_list(
         self,
         index: int,
-        length: Optional[int] = None,
+        length: int | None = None,
         default: int = 0,
     ) -> list[int]:
         str_list = self.get_str_list(index, length)
@@ -229,13 +230,13 @@ class CSV:
                 int_list.append(default)
         return int_list
 
-    def set_list(self, item: Optional[list[Any]], index: int):
+    def set_list(self, item: list[Any] | None, index: int):
         if item is None:
             return
         for i, string in enumerate(item):
             self.set_str(string, index + i)
 
-    def copy(self) -> "tbcml.CSV":
+    def copy(self) -> tbcml.CSV:
         return tbcml.CSV(
             delimeter=self.delimeter,
             remove_padding=self.remove_padding,

@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import threading
-from typing import Any, Callable, Generator, Optional, TypeVar
+from typing import Any, Callable, Generator, TypeVar
 
 T = TypeVar("T")
 
@@ -49,7 +51,7 @@ def create_threads(
 
 
 def run_in_thread(
-    func: Callable[..., Any], args: Optional[tuple[Any, ...]] = None
+    func: Callable[..., Any], args: tuple[Any, ...] | None = None
 ) -> Thread:
     if args is None:
         args = ()
