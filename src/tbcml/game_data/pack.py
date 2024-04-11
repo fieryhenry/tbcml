@@ -167,11 +167,13 @@ class PackFile:
         self.list_map: dict[str, tuple[int, int]] = {}
 
     def check_file(self, file_name: str) -> bool:
-        if not self.list_map or not self.loaded:
+        if not self.list_map or self.loaded:
             return file_name in self.__files
         return file_name in self.list_map
 
     def get_file(self, file_name: str) -> Optional[GameFile]:
+        if not self.check_file(file_name):
+            return None
         self.load_files()
 
         return self.__files.get(file_name)
@@ -514,9 +516,15 @@ class GamePacks:
 
     def init_data(self):
         """Initialize the data objects."""
+        self.__localizable = None
 
-        self.localizable = tbcml.Localizable()
-        self.localizable.read(self)
+    @property
+    def localizable(self):
+        if self.__localizable is not None:
+            return self.__localizable
+        self.__localizable = tbcml.Localizable()
+        self.__localizable.read(self)
+        return self.__localizable
 
     def get_lang(self) -> str:
         return self.localizable.get_lang()
