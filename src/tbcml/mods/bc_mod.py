@@ -409,7 +409,7 @@ class Mod:
 
         self.modifications = new_modifications
 
-    def merge_modifications(self):
+    def merge_modifications(self, type: Optional[ModificationType] = None):
         """Merge modifications in the mod.
 
         Example Usage:
@@ -420,6 +420,8 @@ class Mod:
         """
         new_modifications: list[Modification] = []
         modifs = self.modifications.copy()
+        if type is not None:
+            modifs = [mod for mod in modifs if mod.modification_type == type]
         modifs.reverse()
         for mod in modifs:
             found = False
@@ -831,7 +833,7 @@ class Mod:
 
         self.modifications.append(modification)
         if merge:
-            self.merge_modifications()
+            self.merge_modifications(modification.modification_type)
 
     def add_script(self, script: "tbcml.FridaScript"):
         """Add a frida script to the mod.
