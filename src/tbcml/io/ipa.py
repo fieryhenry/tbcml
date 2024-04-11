@@ -260,14 +260,14 @@ class Ipa(Pkg):
         if game_packs is None:
             game_packs = tbcml.GamePacks.from_pkg(self, lang=lang)
 
+        if progress_callback(tbcml.PKGProgressSignal.APPLY_MODS) is False:
+            return False
+        game_packs.apply_mods(mods)
+
         if key is not None:
             self.set_key(key)
         if iv is not None:
             self.set_iv(iv)
-
-        if progress_callback(tbcml.PKGProgressSignal.APPLY_MODS) is False:
-            return False
-        game_packs.apply_mods(mods)
 
         if do_final_pkg_actions:
             if add_modded_html:

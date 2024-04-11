@@ -15,10 +15,10 @@ class PKGProgressSignal(enum.Enum):
 
     START = 0
     LOAD_GAME_PACKS = 1
-    ADD_SMALI_MODS = 2
-    ADD_SCRIPT_MODS = 3
-    ADD_PATCH_MODS = 4
-    APPLY_MODS = 5
+    APPLY_MODS = 2
+    ADD_SMALI_MODS = 3
+    ADD_SCRIPT_MODS = 4
+    ADD_PATCH_MODS = 5
     SET_MANIFEST_VALUES = 6
     ADD_MODDED_HTML = 7
     ADD_MODDED_FILES = 8
@@ -1233,32 +1233,33 @@ class Apk(Pkg):
         if game_packs is None:
             game_packs = tbcml.GamePacks.from_pkg(self, lang=lang)
 
+        if progress_callback(tbcml.PKGProgressSignal.APPLY_MODS) is False:
+            return False
+        game_packs.apply_mods(mods)
+
         if key is not None:
             self.set_key(key)
         if iv is not None:
             self.set_iv(iv)
 
-        if progress_callback(tbcml.PKGProgressSignal.ADD_SMALI_MODS) is False:
-            return False
-        self.add_smali_mods(mods)
-
-        if progress_callback(tbcml.PKGProgressSignal.ADD_SCRIPT_MODS) is False:
-            return False
-        self.add_script_mods(mods)
-
-        if progress_callback(tbcml.PKGProgressSignal.ADD_PATCH_MODS) is False:
-            return False
-        self.add_patch_mods(mods)
-
-        self.prevent_so_compression()
-
-        if progress_callback(tbcml.PKGProgressSignal.APPLY_MODS) is False:
-            return False
-        game_packs.apply_mods(mods)
-
         if do_final_pkg_actions:
+            if progress_callback(tbcml.PKGProgressSignal.ADD_SMALI_MODS) is False:
+                return False
+            self.add_smali_mods(mods)
+
+            if progress_callback(tbcml.PKGProgressSignal.ADD_SCRIPT_MODS) is False:
+                return False
+            self.add_script_mods(mods)
+
+            if progress_callback(tbcml.PKGProgressSignal.ADD_PATCH_MODS) is False:
+                return False
+            self.add_patch_mods(mods)
+
+            self.prevent_so_compression()
+
             if progress_callback(tbcml.PKGProgressSignal.SET_MANIFEST_VALUES) is False:
                 return False
+
             self.set_allow_backup(True)
             self.set_debuggable(True)
 
