@@ -60,6 +60,8 @@ class Path:
         return Path(self.path.lstrip(os.sep))
 
     def open(self):
+        if not self.is_valid():
+            raise ValueError(f"Invalid path: {self.path}")
         if not self.exists():
             self.generate_dirs()
         if os.name == "nt":
@@ -72,7 +74,7 @@ class Path:
             cmd = f'dbus-send --session --dest=org.freedesktop.FileManager1 --type=method_call /org/freedesktop/FileManager1 org.freedesktop.FileManager1.ShowItems array:string:"file://{path_str}" string:""'
             tbcml.Command(cmd).run_in_thread()
         elif os.name == "mac":
-            tbcml.Command(f"open {self.path}").run()
+            tbcml.Command(f"open '{self.path}'").run()
         else:
             raise OSError("Unknown OS")
 
@@ -80,15 +82,22 @@ class Path:
         if os.name == "nt":
             os.startfile(self.path)
         elif os.name == "posix":
-            cmd = f"xdg-open {self.path}"
+            cmd = f"xdg-open '{self.path}'"
             tbcml.Command(cmd).run_in_thread()
         elif os.name == "mac":
-            tbcml.Command(f"open {self.path}").run()
+            tbcml.Command(f"open '{self.path}'").run()
         else:
             raise OSError("Unknown OS")
 
     def to_str(self) -> str:
         return self.path
+
+    def is_valid(self) -> bool:
+        banned = ["'", '"', "$(", ";"]
+        for ban in banned:
+            if ban in self.path:
+                return False
+        return True
 
     def to_str_forwards(self) -> str:
         return self.path.replace("\\", "/")

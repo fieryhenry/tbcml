@@ -316,10 +316,15 @@ class SmaliHandler:
         Returns:
             Optional[Smali]: The compiled smali code. None if the compilation failed
         """
+        if javac_class_path is not None:
+            if not javac_class_path.is_valid():
+                raise ValueError(f"Class path is invalid: {javac_class_path}")
         with tbcml.TempFolder() as temp_folder:
             java_path = temp_folder.add(*class_name.split(".")[:-1]).add(
                 class_name.split(".")[-1] + ".java"
             )
+            if not java_path.is_valid():
+                raise ValueError(f"Java path is invalid: {java_path}")
 
             java_path.parent().generate_dirs()
             parents = len(class_name.split("."))
@@ -328,9 +333,10 @@ class SmaliHandler:
                 top_level_path = top_level_path.parent()
             top_level_path.copy(temp_folder)
             if javac_class_path is not None:
-                class_path_str = f"--class-path {javac_class_path}"
+                class_path_str = f"--class-path '{javac_class_path}'"
             else:
                 class_path_str = ""
+
             cmd = f"javac --source 8 --target 8 '{java_path}' -d '{temp_folder}' {class_path_str}"
             command = tbcml.Command(
                 cmd,
@@ -348,6 +354,8 @@ class SmaliHandler:
             class_files: list[str] = []
             classes_string = ""
             for class_file in all_class_files:
+                if not class_file.is_valid():
+                    raise ValueError(f"class file is invalid: {class_file}")
                 full_class_name = class_file.path.replace(temp_folder.path, "")[1:]
                 class_files.append(full_class_name)
                 classes_string += f"'{full_class_name}' "
@@ -373,8 +381,10 @@ class SmaliHandler:
             smali_path = temp_folder.add("smali")
 
             baksmali_path = tbcml.Path.get_lib("baksmali.jar")
+            if not baksmali_path.is_valid():
+                raise ValueError(f"Baksmali path is invalid: {baksmali_path}")
             command = tbcml.Command(
-                f"java -jar {baksmali_path} d '{dex_path}' -o '{smali_path}'",
+                f"java -jar '{baksmali_path}' d '{dex_path}' -o '{smali_path}'",
                 cwd=temp_folder,
             )
             result = command.run()
@@ -455,8 +465,12 @@ class SmaliHandler:
         """
         if self.get_dex2jar_classes_jar_path_original().exists():
             return
+        if not self.dex2jar_script_path.is_valid():
+            raise ValueError(
+                f"Dex2jar script path is invalid: {self.dex2jar_script_path}"
+            )
         command = tbcml.Command(
-            f"{self.dex2jar_script_path} -f -o '{self.get_dex2jar_classes_jar_path_original()}' '{self.apk.apk_path}'"
+            f"'{self.dex2jar_script_path}' -f -o '{self.get_dex2jar_classes_jar_path_original()}' '{self.apk.pkg_path}'"
         )
         res = command.run()
         if res.exit_code != 0:
@@ -478,6 +492,9 @@ class SmaliHandler:
             java_code_path (tbcml.Path): The path to the java code
             class_name (str): The name of the class
         """
+        if not android_sdk_path.is_valid():
+            raise ValueError(f"Android SDK path is invalid: {android_sdk_path}")
+
         # find package {package name} in java code
         java_code_str = java_code_path.read().to_str()
         package_name = ""
@@ -491,6 +508,9 @@ class SmaliHandler:
             java_path = temp_folder.add(*package_name.split(".")[:-1]).add(
                 package_name.split(".")[-1] + ".java"
             )
+
+            if not java_path.is_valid():
+                raise ValueError(f"Java path is invalid: {java_path}")
 
             java_path.parent().generate_dirs()
             parents = len(package_name.split("."))

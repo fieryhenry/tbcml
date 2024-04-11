@@ -42,6 +42,9 @@ class Pkg:
         else:
             self.pkg_folder = tbcml.Path(pkg_folder).get_absolute_path()
 
+        if not self.pkg_folder.is_valid():
+            raise ValueError(f"Invalid path: {self.output_path}")
+
         self.init_paths(create_dirs)
 
         self.key = None
@@ -85,6 +88,8 @@ class Pkg:
                 folder_name += f"-{pkg_name}"
 
         self.output_path = self.pkg_folder.add(folder_name)
+        if not self.output_path.is_valid():
+            raise ValueError(f"Invalid path: {self.output_path}")
 
         self.final_pkg_path = self.output_path.add(
             f"{self.get_default_package_name()}-modded{self.pkg_extension}"
