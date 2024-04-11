@@ -220,13 +220,13 @@ used.
 
 The target_country_codes is a list of country codes (e.g "en,jp,kr,tw")
 or you can put a `!` in front of the country code to exclude it (e.g
-`!jp`). You can put a `*`in front of the country code to match any country code.
+`!jp`). You can put a `*` to match any country code.
 
-The target_game_versions is a list of game versions (e.g "11.3.0,12.3.0") or
-you can put a `!` in front of the game version to exclude it (e.g `!11.3.0`).
-You can put a `*`in front of the game version to match any game version. You can
-also use the `>` and `<` operators to match any version greater than or less
-than the specified version (and `>=` and `<=`).
+The target_game_versions is a list of game versions seperated by a comma, (e.g
+"11.3.0,12.3.0") you can put a `!` in front of the game version to exclude it
+(e.g `!11.3.0`). You can put a `*` to match any game version. You can also use
+the `>` and `<` operators to match any version greater than or less than the
+specified version (and `>=` and `<=`).
 
 There is some basic support for iOS ipa files:
   
@@ -288,10 +288,10 @@ may need to uninstall the previous version first.
   pkg install cmake
   ```
 
-  rust and binutils are needed to build the cryptography package btw, the library
-  is not written in it. cmake is used to build leif and so is only needed if you
-  want scripting capabilities. git is not strictly necessary but is needed to
-  instal the library from source.
+  rust and binutils are needed to build the cryptography package btw, the
+  library is not written in it. cmake is used to build leif and so is only
+  needed if you want scripting capabilities. git is not strictly necessary but
+  is needed to instal the library from source.
 
   If you want scripting you may have to manually install lief
   with pip (`pip install lief`) as newer versions of those libraries don't exist
