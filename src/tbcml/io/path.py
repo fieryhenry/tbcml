@@ -71,7 +71,7 @@ class Path:
             if self.is_directory():
                 path_str += "/"
 
-            cmd = f'dbus-send --session --dest=org.freedesktop.FileManager1 --type=method_call /org/freedesktop/FileManager1 org.freedesktop.FileManager1.ShowItems array:string:"file://{path_str}" string:""'
+            cmd = f"dbus-send --session --dest=org.freedesktop.FileManager1 --type=method_call /org/freedesktop/FileManager1 org.freedesktop.FileManager1.ShowItems array:string:'file://{path_str}' string:''"
             tbcml.Command(cmd).run_in_thread()
         elif os.name == "mac":
             tbcml.Command(f"open '{self.path}'").run()

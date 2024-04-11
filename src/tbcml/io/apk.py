@@ -75,7 +75,7 @@ class Apk(Pkg):
         apktool_path = tbcml.Path.get_lib("apktool.jar")
         if not apktool_path.is_valid():
             raise ValueError("Apktool path is not valid")
-        return tbcml.Command(f"java -jar {apktool_path} {command}").run()
+        return tbcml.Command(f"java -jar '{apktool_path}' {command}").run()
 
     @staticmethod
     def check_apktool_installed() -> bool:
@@ -294,7 +294,7 @@ class Apk(Pkg):
             raise ValueError("Key store path is not valid")
         if not key_store_path.exists():
             cmd = tbcml.Command(
-                f'keytool -genkey -v -keystore "{key_store_path}" -alias tbcml -keyalg RSA -keysize 2048 -validity 10000 -storepass "{password}" -keypass "{password}" -dname "CN=, OU=, O=, L=, S=, C="',
+                f"keytool -genkey -v -keystore '{key_store_path}' -alias tbcml -keyalg RSA -keysize 2048 -validity 10000 -storepass '{password}' -keypass '{password}' -dname 'CN=, OU=, O=, L=, S=, C='",
             )
             res = cmd.run()
             if res.exit_code != 0:
@@ -835,7 +835,7 @@ class Apk(Pkg):
     def get_package_name_version_from_apk(apk_path: "tbcml.Path"):
         if not apk_path.is_valid():
             raise ValueError("APK path is not valid")
-        cmd = f'aapt dump badging "{apk_path}"'
+        cmd = f"aapt dump badging '{apk_path}'"
         result = tbcml.Command(cmd).run()
         if not result.success:
             return None, None
