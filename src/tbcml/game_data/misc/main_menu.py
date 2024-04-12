@@ -44,7 +44,7 @@ class MainMenu(tbcml.Modification):
 
     button_texture: tbcml.Texture | None = None
 
-    def get_collab_ids(self) -> list[int]:
+    def get_collab_ids(self) -> list[int]:  # TODO: Find these programmatically
         return [
             31,
             65,
