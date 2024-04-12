@@ -199,4 +199,5 @@ class BCImage:
         return tbcml.Rect(x, y, self.width, self.height)
 
     def grayscale(self):
+        self.convert_to_rgba()
         self.__image = ImageOps.grayscale(self.image)
