@@ -113,7 +113,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
 def main():
     loader = tbcml.ModLoader("en", "13.1.1")
-    loader.initialize()
+    loader.initialize_apk()
 
     form = tbcml.CatForm(tbcml.CatFormType.THIRD)
     form.read_anim(43, loader.get_game_packs())

@@ -23,9 +23,9 @@ apk.set_package_name("jp.co.ponos.battlecatsen.adb")
 
 apk.load_mods([])
 
-print(apk.get_final_apk_path())
+print(apk.final_pkg_path)
 
-adb_handler.install_apk(apk.get_final_apk_path())
+adb_handler.install_apk(apk.final_pkg_path)
 adb_handler.run_game()
 
 # cProfile.run("do()", sort="cumtime")

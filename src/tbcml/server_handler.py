@@ -310,7 +310,7 @@ class ServerFileHandler:
         self,
         force: bool = False,
         display: bool = False,
-    ):
+    ) -> tbcml.Result:
         """Extracts all game versions
 
         Args:
@@ -336,6 +336,8 @@ class ServerFileHandler:
                 )
             self.extract(index, display)
             self.add_latest_local_server_version(index)
+
+        return tbcml.Result(True)
 
     def extract(self, index: int, display: bool = False):
         zipf = self.download(index, display)
@@ -364,9 +366,13 @@ class ServerFileHandler:
                 arc = ac
                 break
         if lib is None:
-            raise GameVersionSearchError("Could not find libnative.so")
+            raise GameVersionSearchError(
+                "Could not find libnative.so. Maybe your game version is too to be supported atm"
+            )
         if arc is None:
-            raise GameVersionSearchError("Could not find architecture")
+            raise GameVersionSearchError(
+                "Could not find architecture. Maybe your game version is too to be supported atm"
+            )
         lib_file = tbcml.Lib(arc, lib)
         if self.apk.country_code == tbcml.CountryCode.JP:
             list_to_search = [5, 5, 5, 7000000]
@@ -377,12 +383,16 @@ class ServerFileHandler:
         elif self.apk.country_code == tbcml.CountryCode.TW:
             list_to_search = [2, 3, 1, 6100000]
         else:
-            raise GameVersionSearchError("Country code not supported")
+            raise GameVersionSearchError(
+                "Country code not supported. Maybe your game version is too to be supported atm"
+            )
         start_index = lib_file.search(
             tbcml.Data.from_int_list(list_to_search, "little")
         )
         if start_index == -1:
-            raise GameVersionSearchError("Could not find game versions")
+            raise GameVersionSearchError(
+                "Could not find game versions. Maybe your game version is too to be supported atm"
+            )
         end_index1 = lib_file.search(
             tbcml.Data.from_int(0xFFFFFFFF, "little"), start=start_index
         )

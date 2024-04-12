@@ -19,7 +19,7 @@ class NewCat(tbcml.Cat):
 
 
 loader = tbcml.ModLoader("en", "12.3.0")  # can be changed for other versions
-loader.initialize()
+loader.initialize_apk()
 
 game_data = loader.get_game_packs()
 apk = loader.get_apk()

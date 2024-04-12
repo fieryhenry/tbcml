@@ -158,7 +158,11 @@ class AdbHandler:
             if not result.success:
                 print(result)
                 return None
-            return tbcml.Apk.from_pkg_path(temp_file, cc_overwrite, gv_overwrite)
+            apk, res = tbcml.Apk.from_pkg_path(temp_file, cc_overwrite, gv_overwrite)
+            if not res:
+                print(res)
+                return None
+            return apk
 
 
 class BulkAdbHandler:

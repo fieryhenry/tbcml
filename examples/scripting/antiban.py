@@ -1,7 +1,7 @@
 import tbcml
 
 loader = tbcml.ModLoader("en", "13.1.1")
-loader.initialize()
+loader.initialize_apk()
 
 mod = tbcml.Mod(
     "Antiban",

@@ -79,69 +79,57 @@ class Apk(Pkg):
         return tbcml.Command(f"java -jar '{apktool_path}' {command}").run()
 
     @staticmethod
-    def check_apktool_installed() -> bool:
+    def is_apktool_installed() -> tbcml.Result:
         res = Apk.run_apktool("-version")
-        return res.exit_code == 0
+        if res.exit_code == 0:
+            return tbcml.Result(True)
+
+        return tbcml.Result.program_not_installed(
+            prog_name="Apktool or java",
+            install_from="ttps://ibotpeaches.github.io/Apktool/install/",
+        )
 
     @staticmethod
-    def check_jarsigner_installed() -> bool:
+    def is_jarsigner_installed() -> tbcml.Result:
         cmd = tbcml.Command("jarsigner")
         res = cmd.run()
-        return res.exit_code == 0
+        if res.exit_code == 0:
+            return tbcml.Result(True)
+
+        return tbcml.Result.program_not_installed(
+            prog_name="Jarsigner or java",
+        )
 
     @staticmethod
-    def check_apksigner_installed() -> bool:
+    def is_apksigner_installed() -> tbcml.Result:
         cmd = tbcml.Command("apksigner")
         res = cmd.run()
-        return res.exit_code == 0
+        if res.exit_code == 0:
+            return tbcml.Result(True)
+
+        return tbcml.Result.program_not_installed(
+            prog_name="apksigner or java",
+        )
 
     @staticmethod
-    def check_zipalign_installed() -> bool:
+    def is_zipalign_installed() -> tbcml.Result:
         cmd = tbcml.Command("zipalign")
         res = cmd.run()
-        return res.exit_code == 2
+        if res.exit_code == 2:
+            return tbcml.Result(True)
+
+        return tbcml.Result.program_not_installed(
+            prog_name="zipalign or android sdk",
+        )
 
     @staticmethod
-    def check_keytool_installed() -> bool:
+    def is_keytool_installed() -> tbcml.Result:
         cmd = tbcml.Command("keytool")
         res = cmd.run()
-        return res.exit_code == 0
+        if res.exit_code == 0:
+            return tbcml.Result(True)
 
-    def check_display_apktool_error(self) -> bool:
-        if self.check_apktool_installed():
-            return True
-        message = "Apktool or java is not installed. Please install it and add it to your PATH. You can download it from https://ibotpeaches.github.io/Apktool/install/"
-        print(message)
-        return False
-
-    def check_display_jarsigner_error(self) -> bool:
-        if self.check_jarsigner_installed():
-            return True
-        message = "Jarsigner or java is not installed. Please install it and add it to your PATH."
-        print(message)
-        return False
-
-    @staticmethod
-    def check_display_apk_signer_error() -> bool:
-        if Apk.check_apksigner_installed():
-            return True
-        message = "Apksigner or android sdk is not installed. Please install it and add it to your PATH."
-        print(message)
-        return False
-
-    def check_display_zipalign_error(self) -> bool:
-        if self.check_zipalign_installed():
-            return True
-        message = "Zipalign or android sdk is not installed. Please install it and add it to your PATH."
-        print(message)
-        return False
-
-    def check_display_keytool_error(self) -> bool:
-        if self.check_keytool_installed():
-            return True
-        message = "Keytool or java is not installed. Please install it and add it to your PATH."
-        print(message)
-        return False
+        return tbcml.Result.program_not_installed(prog_name="keytool or java")
 
     def did_use_apktool(self) -> bool:
         return self.original_extracted_path.add("apktool.yml").exists()
@@ -157,27 +145,28 @@ class Apk(Pkg):
         force: bool = False,
         decode_resources: bool = True,
         use_apktool: bool = True,
-    ) -> bool:
+    ) -> tbcml.Result:
         if self.original_extracted_path.generate_dirs().has_files() and not force:
             if (
                 self.has_decoded_resources() == decode_resources
                 and use_apktool == self.did_use_apktool()
             ):
                 self.copy_extracted()
-                return True
+
+                return tbcml.Result(True)
 
         if not self.pkg_path.exists():
-            print("APK file does not exist")
-            return False
+            return tbcml.Result.file_not_found(self.pkg_path)
 
         if use_apktool:
             return self.extract_apktool(decode_resources)
         else:
             return self.extract_zip()  # TODO: decode resources without apktool
 
-    def extract_zip(self):
+    def extract_zip(self) -> tbcml.Result:
         if not self.pkg_path.exists():
-            return False
+            return tbcml.Result.file_not_found(self.pkg_path)
+
         with tbcml.TempFolder() as path:
             zip_file = tbcml.Zip(self.pkg_path.read())
             zip_file.extract(path)
@@ -185,11 +174,12 @@ class Apk(Pkg):
             path.copy(self.original_extracted_path)
 
         self.copy_extracted(force=True)
-        return True
+        return tbcml.Result(True)
 
-    def extract_apktool(self, decode_resources: bool = True):
-        if not self.check_display_apktool_error():
-            return False
+    def extract_apktool(self, decode_resources: bool = True) -> tbcml.Result:
+        if not (res := self.is_apktool_installed()):
+            return res
+
         decode_resources_str = "-r" if not decode_resources else ""
         with (
             tbcml.TempFolder() as path
@@ -197,30 +187,35 @@ class Apk(Pkg):
             cmd = f"d -f -s {decode_resources_str} '{self.pkg_path}' -o '{path}'"
             res = self.run_apktool(cmd)
             if res.exit_code != 0:
-                print(f"Failed to extract APK: {res.result}. Command: apktool {cmd}")
-                return False
+                return tbcml.Result(
+                    False,
+                    error=f"Failed to extract APK: {res.result}. Command: apktool {cmd}",
+                )
+
             self.original_extracted_path.remove().generate_dirs()
             path.copy(self.original_extracted_path)
         self.copy_extracted(force=True)
-        return True
+        return tbcml.Result(True)
 
     def extract_smali(
         self,
         decode_resources: bool = True,
-    ):
+    ) -> tbcml.Result:
 
-        if not self.check_display_apktool_error():
-            return
+        if not (res := self.is_apktool_installed()):
+            return res
 
         decode_resources_str = "-r" if not decode_resources else ""
 
         with tbcml.TempFolder() as temp_folder:
-            res = self.run_apktool(
-                f"d -f {decode_resources_str} '{self.pkg_path}' -o '{temp_folder}'"
-            )
+            cmd = f"d -f {decode_resources_str} '{self.pkg_path}' -o '{temp_folder}'"
+            res = self.run_apktool(cmd)
             if res.exit_code != 0:
-                print(f"Failed to extract APK: {res.result}")
-                return
+                return tbcml.Result(
+                    False,
+                    error=f"Failed to extract APK: {res.result}. Command: apktool {cmd}",
+                )
+
             folders = temp_folder.glob("smali*")
             for folder in folders:
                 new_folder = self.extracted_path.add(folder.basename())
@@ -232,10 +227,12 @@ class Apk(Pkg):
             for dex_file in dex_files:
                 dex_file.remove()
 
+        return tbcml.Result(True)
+
     def pack(
         self,
         use_apktool: bool | None = None,
-    ):
+    ) -> tbcml.Result:
         if use_apktool is None:
             use_apktool = self.did_use_apktool()
         else:
@@ -252,7 +249,7 @@ class Apk(Pkg):
             return self.pack_apktool()
         return self.pack_zip()
 
-    def pack_zip(self):
+    def pack_zip(self) -> tbcml.Result:
         if self.has_decoded_resources():
             print(
                 "WARNING: The resources for the apk seem to be decoded, this will cause issues as they will not be encoded atm."
@@ -260,47 +257,56 @@ class Apk(Pkg):
         tbcml.Zip.compress_directory(
             self.extracted_path, self.final_pkg_path, extensions_to_store=["so"]
         )
-        return True
+        return tbcml.Result(True)
 
-    def pack_apktool(self):
-        if not self.check_display_apktool_error():
-            return False
-        res = self.run_apktool(f"b '{self.extracted_path}' -o '{self.final_pkg_path}'")
+    def pack_apktool(self) -> tbcml.Result:
+        if not (res := self.is_apktool_installed()):
+            return res
+
+        cmd = f"b '{self.extracted_path}' -o '{self.final_pkg_path}'"
+        res = self.run_apktool(cmd)
         if res.exit_code != 0:
-            print(f"Failed to pack APK: {res.result}")
-            return False
-        return True
+            return tbcml.Result(
+                False, error=f"Failed to pack APK: {res.result}. Command: {cmd}"
+            )
+        return tbcml.Result(True)
 
     def sign(
         self,
         use_jarsigner: bool = False,
         zip_align: bool = True,
         password: str = "TBCML_CUSTOM_APK",
-    ):
+    ) -> tbcml.Result:
         if not tbcml.Path(password).is_valid():
-            raise ValueError("Password is not valid")
+            return tbcml.Result(False, error=f"Password: {password} is not valid")
         if zip_align:
-            self.zip_align()
+            if not (res := self.zip_align()):
+                return res
         if use_jarsigner:
-            if not self.check_display_jarsigner_error():
-                return False
+            if not (res := self.is_jarsigner_installed()):
+                return res
         else:
-            if not self.check_display_apk_signer_error():
-                return False
-        if not self.check_display_keytool_error():
-            return False
+            if not (res := self.is_apksigner_installed()):
+                return res
+        if not (res := self.is_keytool_installed()):
+            return res
+
         key_store_name = "tbcml.keystore"
         key_store_path = tbcml.Path.get_documents_folder().add(key_store_name)
         if not key_store_path.is_valid():
-            raise ValueError("Key store path is not valid")
+            return tbcml.Result(
+                False, error=f"Key store path is not valid: {key_store_path}"
+            )
         if not key_store_path.exists():
             cmd = tbcml.Command(
                 f"keytool -genkey -v -keystore '{key_store_path}' -alias tbcml -keyalg RSA -keysize 2048 -validity 10000 -storepass '{password}' -keypass '{password}' -dname 'CN=, OU=, O=, L=, S=, C='",
             )
             res = cmd.run()
             if res.exit_code != 0:
-                print(f"Failed to generate keystore: {res.result}")
-                return False
+                return tbcml.Result(
+                    False,
+                    error=f"Failed to generate keystore: {res.result}. Command: {cmd.cwd}",
+                )
 
         if use_jarsigner:
             cmd = tbcml.Command(
@@ -313,9 +319,10 @@ class Apk(Pkg):
             )
             res = cmd.run()
         if res.exit_code != 0:
-            print(f"Failed to sign APK: {res.result}")
-            return False
-        return True
+            return tbcml.Result(
+                False, error=f"Failed to sign apk: {res.result}. Command: {cmd.cwd}"
+            )
+        return tbcml.Result(True)
 
     def get_lib_paths(self) -> dict[str, tbcml.Path]:
         paths: dict[str, tbcml.Path] = {}
@@ -325,9 +332,9 @@ class Apk(Pkg):
             paths[arc] = path
         return paths
 
-    def zip_align(self):
-        if not self.check_display_zipalign_error():
-            return
+    def zip_align(self) -> tbcml.Result:
+        if not (res := self.is_zipalign_installed()):
+            return res
         apk_path = self.final_pkg_path.change_name(
             self.final_pkg_path.get_file_name_without_extension() + "-aligned.apk"
         )
@@ -337,6 +344,7 @@ class Apk(Pkg):
         cmd.run()
         apk_path.copy(self.final_pkg_path)
         apk_path.remove()
+        return tbcml.Result(True)
 
     def load_packs_into_game(
         self,
@@ -347,34 +355,36 @@ class Apk(Pkg):
             Callable[[tbcml.PKGProgressSignal], bool | None] | None
         ) = None,
         use_apktool: bool | None = None,
-    ) -> bool:
+    ) -> tbcml.Result:
         if progress_callback is None:
             progress_callback = lambda _: None
 
         if progress_callback(tbcml.PKGProgressSignal.ADD_PACKS_LISTS) is False:
-            return False
+            return tbcml.Result(False)
         self.add_packs_lists(packs)
 
         if progress_callback(tbcml.PKGProgressSignal.PATCH_LIBS) is False:
-            return False
+            return tbcml.Result(False)
         tbcml.LibFiles(self).patch()
 
         if progress_callback(tbcml.PKGProgressSignal.COPY_MODDED_PACKS) is False:
-            return False
+            return tbcml.Result(False)
         self.copy_modded_packs()
 
         if progress_callback(tbcml.PKGProgressSignal.PACK) is False:
-            return False
-        if not self.pack(use_apktool=use_apktool):
-            return False
+            return tbcml.Result(False)
+
+        if not (res := self.pack(use_apktool=use_apktool)):
+            return res
 
         if progress_callback(tbcml.PKGProgressSignal.SIGN) is False:
-            return False
-        if not self.sign():
-            return False
+            return tbcml.Result(False)
+
+        if not (res := self.sign()):
+            return res
 
         if progress_callback(tbcml.PKGProgressSignal.FINISH_UP) is False:
-            return False
+            return tbcml.Result(False)
 
         if copy_path is not None:
             self.copy_final_pkg(copy_path)
@@ -382,8 +392,9 @@ class Apk(Pkg):
             self.save_in_modded_pkgs()
 
         if progress_callback(tbcml.PKGProgressSignal.DONE) is False:
-            return False
-        return True
+            return tbcml.Result(False)
+
+        return tbcml.Result(True)
 
     @staticmethod
     def get_default_pkg_folder() -> tbcml.Path:
@@ -539,22 +550,27 @@ class Apk(Pkg):
         progress: Callable[[float, int, int, bool], bool | None] | None = Pkg.progress,
         force: bool = False,
         apk_list_url: str = "https://raw.githubusercontent.com/fieryhenry/BCData/master/apk_list.json",
-    ) -> bool:
+    ) -> tbcml.Result:
         if self.pkg_path.exists() and not force:
-            return True
+            return tbcml.Result(True)
 
         response = tbcml.RequestHandler(apk_list_url).get()
         json = response.json()
         cc_versions = json.get(self.country_code.get_code())
         if cc_versions is None:
-            return False
+            return tbcml.Result(
+                False,
+                error=f"Could not find apk urls for country code: {self.country_code}",
+            )
         url = cc_versions.get(self.game_version.to_string())
         if url is None:
-            return False
+            return tbcml.Result(
+                False, error=f"Could not find apk download url for {self.game_version}"
+            )
 
         stream = tbcml.RequestHandler(url).get_stream()
         if stream.status_code == 404:
-            return False
+            return tbcml.Result(False, error=f"Download url returned 404: {url}")
         _total_length = int(stream.headers.get("content-length"))  # type: ignore
 
         dl = 0
@@ -566,55 +582,58 @@ class Apk(Pkg):
             if progress is not None:
                 res = progress(dl / _total_length, dl, _total_length, True)
                 if res is not None and not res:
-                    return False
+                    return tbcml.Result(
+                        False, error="Download stopped by download callback"
+                    )
 
         apk = tbcml.Data(b"".join(buffer))
         apk.to_file(self.pkg_path)
-        return True
+        return tbcml.Result(True)
 
     def download(
         self,
         progress: Callable[[float, int, int, bool], bool | None] | None = Pkg.progress,
         force: bool = False,
         skip_signature_check: bool = False,
-    ) -> bool:
+    ) -> tbcml.Result:
         if self.pkg_path.exists() and not force:
-            return True
+            return tbcml.Result(True)
 
-        if not self.check_apksigner_installed():
+        if not self.is_apksigner_installed():
             skip_signature_check = True
 
         sig_failed = False
-        if self.download_v1(progress, force):
+        if res := self.download_v1(progress, force):
             if skip_signature_check:
-                return True
+                return tbcml.Result(True)
             if self.is_original(self.pkg_path):
-                return True
+                return tbcml.Result(True)
             sig_failed = True
 
-        if self.download_v2(progress, force):
+        if res := self.download_v2(progress, force):
             if skip_signature_check:
-                return True
+                return tbcml.Result(True)
             if self.is_original(self.pkg_path):
-                return True
+                return tbcml.Result(True)
             sig_failed = True
 
         if sig_failed and not skip_signature_check:
-            raise ValueError(
-                "APK signature check failed. The downloaded APK is not original. If you are sure that the APK is original, set skip_signature_check to True."
+            return tbcml.Result(
+                False,
+                error="APK signature check failed. The downloaded APK is not original. If you are sure that the APK is original, set skip_signature_check to True.",
             )
 
-        return False
+        return res
 
     def download_v1(
         self,
         progress: Callable[[float, int, int, bool], bool | None] | None = Pkg.progress,
         force: bool = False,
-    ) -> bool:
+    ) -> tbcml.Result:
         if self.pkg_path.exists() and not force:
-            return True
+            return tbcml.Result(True)
         if self.download_v1_all(progress):
-            return True
+            return tbcml.Result(True)
         if (
             self.country_code == tbcml.CountryCode.EN
             or self.country_code == tbcml.CountryCode.JP
@@ -623,12 +642,12 @@ class Apk(Pkg):
                 self.country_code == tbcml.CountryCode.EN,
                 progress,
             )
-        return False
+        return tbcml.Result(False)
 
     def download_v1_all(
         self,
         progress: Callable[[float, int, int, bool], bool | None] | None = Pkg.progress,
-    ) -> bool:
+    ) -> tbcml.Result:
         url = self.get_download_url()
         scraper = cloudscraper.create_scraper()  # type: ignore
         scraper.headers.update(
@@ -646,11 +665,15 @@ class Apk(Pkg):
         #    scraper, url.replace("APK", "XAPK")[:-1] + "1"
         # )
         if stream is None:
-            return False
+            return tbcml.Result(
+                False, error=f"Failed to get download stream for url: {url}"
+            )
 
         content_length = stream.headers.get("content-length")
         if content_length is None:
-            return False
+            return tbcml.Result(
+                False, error=f"Failed to get content-length header for url: {url}"
+            )
 
         _total_length = int(content_length)
 
@@ -663,32 +686,43 @@ class Apk(Pkg):
             if progress is not None:
                 res = progress(dl / _total_length, dl, _total_length, True)
                 if res is not None and not res:
-                    return False
+                    return tbcml.Result(
+                        False, error="Download was stopped by progress callback"
+                    )
 
         apk = tbcml.Data(b"".join(buffer))
         apk.to_file(self.pkg_path)
-        return True
+        return tbcml.Result(True)
 
     def download_apk_en(
         self,
         is_en: bool = True,
         progress: Callable[[float, int, int, bool], bool | None] | None = Pkg.progress,
-    ) -> bool:
-        urls = Apk.get_en_apk_urls("the-battle-cats" if is_en else "the-battle-cats-jp")
+    ) -> tbcml.Result:
+        pkg_name = "the-battle-cats" if is_en else "the-battle-cats-jp"
+        urls = Apk.get_en_apk_urls(pkg_name)
         if not urls:
-            print("Failed to get APK URLs")
-            return False
-        url: str = urls[self.game_version.to_string()]
+            return tbcml.Result(
+                False, error=f"Failed to get APK URLs for package: {pkg_name}"
+            )
+
+        url: str | None = urls.get(self.game_version.to_string())
         if not url:
-            print(f"Failed to get APK URL: {self.game_version.to_string()}")
-            return False
+            return tbcml.Result(
+                False,
+                error=f"The download url for {self.game_version} could not be found.",
+            )
+
         url = url.replace("/android/download/", "/android/post-download/")
 
         response = tbcml.RequestHandler(url, Apk.get_uptdown_headers()).get()
         soup = bs4.BeautifulSoup(response.text, "html.parser")
         post_download_class = soup.find("div", {"class": "post-download"})
         if not isinstance(post_download_class, bs4.element.Tag):
-            return False
+            return tbcml.Result(
+                False,
+                error="Could not locate post-download div when looking for apk download url.",
+            )
         data_url = post_download_class.get_attribute_list("data-url")[0]
         url = "https://dw.uptodown.com/dwn/" + data_url
         headers = {
@@ -709,7 +743,9 @@ class Apk(Pkg):
         stream = tbcml.RequestHandler(url, headers).get_stream()
         content_length = stream.headers.get("content-length")
         if content_length is None:
-            return False
+            return tbcml.Result(
+                False, error="Could not get content-length header when downloading apk"
+            )
         _total_length = int(content_length)
 
         dl = 0
@@ -721,11 +757,13 @@ class Apk(Pkg):
             if progress is not None:
                 res = progress(dl / _total_length, dl, _total_length, True)
                 if res is not None and not res:
-                    return False
+                    return tbcml.Result(
+                        False, error="Download stopped by progress callback"
+                    )
 
         apk = tbcml.Data(b"".join(buffer))
         apk.to_file(self.pkg_path)
-        return True
+        return tbcml.Result(True)
 
     def get_en_apk_url(self, apk_url: str):
         resp = tbcml.RequestHandler(apk_url).get()
@@ -891,13 +929,13 @@ class Apk(Pkg):
         allowed_script_mods: bool = True,
         skip_signature_check: bool = False,
         overwrite_pkg: bool = True,
-    ) -> "Apk":
+    ) -> tuple[Apk | None, tbcml.Result]:
         is_modded = False
 
         if not pkg_path.exists():
-            raise ValueError(f"APK path {pkg_path} does not exist.")
+            return None, tbcml.Result.file_not_found(pkg_path)
 
-        if not Apk.check_apksigner_installed():
+        if not Apk.is_apksigner_installed():
             skip_signature_check = True
             is_modded = False
 
@@ -909,7 +947,9 @@ class Apk(Pkg):
             gv = gv_overwrite
 
         if gv is None or cc is None:
-            raise ValueError("Failed to get cc or gv from apk.")
+            return None, tbcml.Result(
+                False, error="Failed to get country code or game version from apk."
+            )
 
         if not skip_signature_check:
             is_modded = not Apk.is_original(pkg_path)
@@ -924,7 +964,7 @@ class Apk(Pkg):
         if overwrite_pkg:
             pkg_path.copy(apk.pkg_path)
             apk.original_extracted_path.remove_tree().generate_dirs()
-        return apk
+        return apk, tbcml.Result(True)
 
     def get_architectures(self) -> list[str]:
         architectures: list[str] = []
@@ -1185,7 +1225,7 @@ class Apk(Pkg):
     def try_get_pkg_from_path(
         path: tbcml.Path,
         all_pkg_dir: tbcml.Path | None = None,
-    ) -> Apk | None:
+    ) -> tuple[Apk | None, tbcml.Result]:
         return Apk.try_get_pkg_from_path_pkg(path, all_pkg_dir=all_pkg_dir, clzz=Apk)
 
     def add_smali_mods(self, mods: list[tbcml.Mod]):
@@ -1222,21 +1262,21 @@ class Apk(Pkg):
         ) = None,
         do_final_pkg_actions: bool = True,
         use_apktool: bool | None = None,
-    ) -> bool:
+    ) -> tbcml.Result:
         if progress_callback is None:
             progress_callback = lambda x: None
 
         if progress_callback(tbcml.PKGProgressSignal.START) is False:
-            return False
+            return tbcml.Result(False)
 
         if progress_callback(tbcml.PKGProgressSignal.LOAD_GAME_PACKS) is False:
-            return False
+            return tbcml.Result(False)
 
         if game_packs is None:
             game_packs = tbcml.GamePacks.from_pkg(self, lang=lang)
 
         if progress_callback(tbcml.PKGProgressSignal.APPLY_MODS) is False:
-            return False
+            return tbcml.Result(False)
         game_packs.apply_mods(mods)
 
         if key is not None:
@@ -1246,47 +1286,49 @@ class Apk(Pkg):
 
         if do_final_pkg_actions:
             if progress_callback(tbcml.PKGProgressSignal.ADD_SMALI_MODS) is False:
-                return False
+                return tbcml.Result(False)
             self.add_smali_mods(mods)
 
             if progress_callback(tbcml.PKGProgressSignal.ADD_SCRIPT_MODS) is False:
-                return False
+                return tbcml.Result(False)
             self.add_script_mods(mods)
 
             if progress_callback(tbcml.PKGProgressSignal.ADD_PATCH_MODS) is False:
-                return False
+                return tbcml.Result(False)
             self.add_patch_mods(mods)
 
             self.prevent_so_compression()
 
             if progress_callback(tbcml.PKGProgressSignal.SET_MANIFEST_VALUES) is False:
-                return False
+                return tbcml.Result(False)
 
             self.set_allow_backup(True)
             self.set_debuggable(True)
 
             if add_modded_html:
                 if progress_callback(tbcml.PKGProgressSignal.ADD_MODDED_HTML) is False:
-                    return False
+                    return tbcml.Result(False)
                 self.add_modded_html(mods)
 
         if progress_callback(tbcml.PKGProgressSignal.ADD_MODDED_FILES) is False:
-            return False
+            return tbcml.Result(False)
         lang_str = None if lang is None else lang.value
         self.add_mods_files(mods, lang_str)
 
         if do_final_pkg_actions:
             if progress_callback(tbcml.PKGProgressSignal.LOAD_PACKS_INTO_GAME) is False:
-                return False
-            if not self.load_packs_into_game(
-                game_packs,
-                use_apktool=use_apktool,
-                save_in_modded_pkgs=save_in_modded_pkgs,
-                progress_callback=progress_callback,
+                return tbcml.Result(False)
+            if not (
+                res := self.load_packs_into_game(
+                    game_packs,
+                    use_apktool=use_apktool,
+                    save_in_modded_pkgs=save_in_modded_pkgs,
+                    progress_callback=progress_callback,
+                )
             ):
-                return False
+                return res
         else:
             if progress_callback(tbcml.PKGProgressSignal.DONE) is False:
-                return False
+                return tbcml.Result(False)
 
-        return True
+        return tbcml.Result(True)

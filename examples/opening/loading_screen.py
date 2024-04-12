@@ -14,7 +14,7 @@ class CustomLoadingScreen(tbcml.LoadingScreen):
 
 
 loader = tbcml.ModLoader("en", "13.2.0")
-loader.initialize()
+loader.initialize_apk()
 
 mod = tbcml.Mod()
 mod.add_modification(CustomLoadingScreen(loader.get_game_packs(), loader.get_apk()))

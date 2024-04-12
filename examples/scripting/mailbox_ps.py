@@ -9,7 +9,7 @@ from tbcml import (
 )
 
 loader = ModLoader("en", "13.1.1")
-loader.initialize()
+loader.initialize_apk()
 
 mod = Mod(
     name="Private Server Setup",

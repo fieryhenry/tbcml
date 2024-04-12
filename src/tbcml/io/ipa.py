@@ -48,7 +48,7 @@ class Ipa(Pkg):
     def try_get_pkg_from_path(
         path: tbcml.Path,
         all_pkg_dir: tbcml.Path | None = None,
-    ) -> Ipa | None:
+    ) -> tuple[Ipa | None, tbcml.Result]:
         return Ipa.try_get_pkg_from_path_pkg(path, all_pkg_dir=all_pkg_dir, clzz=Ipa)
 
     @staticmethod
@@ -98,9 +98,9 @@ class Ipa(Pkg):
         pkg_folder: tbcml.Path | None = None,
         allowed_script_mods: bool = True,
         overwrite_pkg: bool = True,
-    ) -> "Ipa":
+    ) -> tuple[Ipa | None, tbcml.Result]:
         if not ipa_path.exists():
-            raise ValueError(f"IPA path {ipa_path} does not exist.")
+            return None, tbcml.Result.file_not_found(ipa_path)
         pkg_name, gv = Ipa.get_package_name_version_from_ipa(ipa_path)
         if pkg_name is not None:
             cc = tbcml.CountryCode.from_package_name(pkg_name)
@@ -111,7 +111,9 @@ class Ipa(Pkg):
             gv = gv_overwrite
 
         if gv is None or cc is None:
-            raise ValueError("Failed to get cc or gv from ipa.")
+            return None, tbcml.Result(
+                False, error="Failed to get country code or game version from ipa."
+            )
 
         ipa = Ipa(
             gv, cc, ipa_folder=pkg_folder, allowed_script_mods=allowed_script_mods
@@ -120,21 +122,20 @@ class Ipa(Pkg):
         if overwrite_pkg:
             ipa_path.copy(ipa.pkg_path)
             ipa.original_extracted_path.remove_tree().generate_dirs()
-        return ipa
+        return ipa, tbcml.Result(True)
 
-    def extract(self, force: bool = False):
+    def extract(self, force: bool = False) -> tbcml.Result:
         if self.original_extracted_path.has_files() and not force:
             self.copy_extracted()
-            return True
+            return tbcml.Result(True)
         if not self.pkg_path.exists():
-            print("Ipa file does not exist!")
-            return False
+            return tbcml.Result.file_not_found(self.pkg_path)
 
         return self.extract_zip()
 
-    def extract_zip(self):
+    def extract_zip(self) -> tbcml.Result:
         if not self.pkg_path.exists():
-            return False
+            return tbcml.Result.file_not_found(self.pkg_path)
         with tbcml.TempFolder() as path:
             zip_file = tbcml.Zip(self.pkg_path.read())
             zip_file.extract(path)
@@ -142,7 +143,7 @@ class Ipa(Pkg):
             path.copy(self.original_extracted_path)
 
         self.copy_extracted(force=True)
-        return True
+        return tbcml.Result(True)
 
     def get_assets_folder_path(self) -> tbcml.Path:
         payload_path = self.extracted_path.add("Payload")
@@ -249,21 +250,21 @@ class Ipa(Pkg):
             Callable[[tbcml.PKGProgressSignal], bool | None] | None
         ) = None,
         do_final_pkg_actions: bool = True,
-    ) -> bool:
+    ) -> tbcml.Result:
         if progress_callback is None:
             progress_callback = lambda x: None
 
         if progress_callback(tbcml.PKGProgressSignal.START) is False:
-            return False
+            return tbcml.Result(False)
 
         if progress_callback(tbcml.PKGProgressSignal.LOAD_GAME_PACKS) is False:
-            return False
+            return tbcml.Result(False)
 
         if game_packs is None:
             game_packs = tbcml.GamePacks.from_pkg(self, lang=lang)
 
         if progress_callback(tbcml.PKGProgressSignal.APPLY_MODS) is False:
-            return False
+            return tbcml.Result(False)
         game_packs.apply_mods(mods)
 
         if key is not None:
@@ -277,27 +278,29 @@ class Ipa(Pkg):
                 self.add_modded_html(mods)
 
         if progress_callback(tbcml.PKGProgressSignal.ADD_MODDED_FILES) is False:
-            return False
+            return tbcml.Result(False)
         lang_str = None if lang is None else lang.value
         self.add_mods_files(mods, lang_str)
 
         if do_final_pkg_actions:
             if progress_callback(tbcml.PKGProgressSignal.LOAD_PACKS_INTO_GAME) is False:
-                return False
-            if not self.load_packs_into_game(
-                game_packs,
-                save_in_modded_pkgs=save_in_modded_pkgs,
-                progress_callback=progress_callback,
+                return tbcml.Result(False)
+            if not (
+                res := self.load_packs_into_game(
+                    game_packs,
+                    save_in_modded_pkgs=save_in_modded_pkgs,
+                    progress_callback=progress_callback,
+                )
             ):
-                return False
+                return res
         else:
             if progress_callback(tbcml.PKGProgressSignal.DONE) is False:
-                return False
-        return True
+                return tbcml.Result(False)
+        return tbcml.Result(True)
 
-    def pack(self) -> bool:
+    def pack(self) -> tbcml.Result:
         tbcml.Zip.compress_directory(self.extracted_path, self.final_pkg_path)
-        return True
+        return tbcml.Result(True)
 
     def set_plist_key(self, key: str, val: Any):
         plist = self.get_plist()
@@ -329,10 +332,10 @@ class Ipa(Pkg):
     def read_app_name(self) -> str | None:
         return self.get_plist_val("CFBundleDisplayName")
 
-    def sign(self) -> bool:  # TODO: impliment signing
+    def sign(self) -> tbcml.Result:  # TODO: impliment signing
         # Comment: ipa does not require signing, user must sign the INSTALLATION PROCESS with certificates(enterprise, free apple dev acc, apple dev account)
         # So we dont have to presign the ipa.
-        return True
+        return tbcml.Result(True)
 
     def load_packs_into_game(
         self,
@@ -342,43 +345,43 @@ class Ipa(Pkg):
         progress_callback: (
             Callable[[tbcml.PKGProgressSignal], bool | None] | None
         ) = None,
-    ) -> bool:
+    ) -> tbcml.Result:
         if progress_callback is None:
             progress_callback = lambda x: None
 
         if progress_callback(tbcml.PKGProgressSignal.ADD_PACKS_LISTS) is False:
-            return False
+            return tbcml.Result(False)
         self.add_packs_lists(packs)
 
         if progress_callback(tbcml.PKGProgressSignal.PATCH_LIBS) is False:
-            return False
+            return tbcml.Result(False)
         tbcml.LibFiles(self).patch()
 
         if progress_callback(tbcml.PKGProgressSignal.COPY_MODDED_PACKS) is False:
-            return False
+            return tbcml.Result(False)
         self.copy_modded_packs()
 
         if progress_callback(tbcml.PKGProgressSignal.PACK) is False:
-            return False
-        if not self.pack():
-            return False
+            return tbcml.Result(False)
+        if not (res := self.pack()):
+            return res
 
         if progress_callback(tbcml.PKGProgressSignal.SIGN) is False:
-            return False
-        if not self.sign():
-            return False
+            return tbcml.Result(False)
+        if not (res := self.sign()):
+            return res
 
         if progress_callback(tbcml.PKGProgressSignal.FINISH_UP) is False:
-            return False
+            return tbcml.Result(False)
 
         if copy_path is not None:
             self.copy_final_pkg(copy_path)
         if save_in_modded_pkgs:
             self.save_in_modded_pkgs()
         if progress_callback(tbcml.PKGProgressSignal.DONE) is False:
-            return False
+            return tbcml.Result(False)
 
-        return True
+        return tbcml.Result(True)
 
     def get_lib_paths(self) -> dict[str, tbcml.Path]:
         return {"arm64-v8a": self.get_bc_lib_path()}

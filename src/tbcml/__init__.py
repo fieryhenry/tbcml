@@ -12,7 +12,6 @@ from .mods.bc_mod import (
 from .mods.smali import SmaliHandler, SmaliSet, Smali
 from .mods.frida_script import FridaScript, FridaGadgetHelper
 from .mods.loader import ModLoader
-from .mods.ipaloader import IpaModLoader
 from .mods.compilation import CompilationTarget
 
 from .game_data.cat_base.item_shop import ItemShop
@@ -111,12 +110,11 @@ from .io.temp_file import TempFile, TempFolder
 from .crypto import AesCipher, Hash, HashAlgorithm, Random, Hmac
 from .langs import Language, LanguageStr
 from .request import RequestHandler
+from .result import Result
 from .server_handler import ServerFileHandler, EventData, GameVersionSearchError
 from .game_data.pack import GamePacks, PackFile, GameFile
 from .country_code import CountryCode, CC
 from .game_version import GameVersion, GV
-
-LOADER = ModLoader | IpaModLoader
 
 
 def to_apk(
@@ -143,11 +141,11 @@ def to_ipa(
     path: PathStr,
     cc_overwrite: CountryCode | None = None,
     gv_overwrite: GameVersion | None = None,
-    pkg_folder: Path | None = None,
+    pkg_folder: PathStr | None = None,
     allowed_script_mods: bool = True,
     skip_signature_check: bool = False,
     overwrite_pkg: bool = True,
-) -> Ipa | None:
+) -> tuple[Ipa | None, Result]:
     return to_pkg(
         path,
         cc_overwrite=cc_overwrite,
@@ -163,19 +161,20 @@ def to_pkg(
     path: PathStr,
     cc_overwrite: CountryCode | None = None,
     gv_overwrite: GameVersion | None = None,
-    pkg_folder: Path | None = None,
+    pkg_folder: PathStr | None = None,
     allowed_script_mods: bool = True,
     skip_signature_check: bool = False,
     overwrite_pkg: bool = True,
-) -> Pkg | None:
+) -> tuple[Pkg | None, Result]:
     path = Path(path)
     extension = path.get_extension()
-    pkg = None
+    if pkg_folder is not None:
+        pkg_folder = Path(pkg_folder)
     try:
         if extension == "apk":
-            pkg = Apk.try_get_pkg_from_path(path, all_pkg_dir=pkg_folder)
+            pkg, res = Apk.try_get_pkg_from_path(path, all_pkg_dir=pkg_folder)
             if pkg is None:
-                pkg = Apk.from_pkg_path(
+                pkg, res = Apk.from_pkg_path(
                     path,
                     cc_overwrite=cc_overwrite,
                     gv_overwrite=gv_overwrite,
@@ -185,9 +184,9 @@ def to_pkg(
                     overwrite_pkg=overwrite_pkg,
                 )
         elif extension == "ipa":
-            pkg = Ipa.try_get_pkg_from_path(path, all_pkg_dir=pkg_folder)
+            pkg, res = Ipa.try_get_pkg_from_path(path, all_pkg_dir=pkg_folder)
             if pkg is None:
-                pkg = Ipa.from_pkg_path(
+                pkg, res = Ipa.from_pkg_path(
                     path,
                     cc_overwrite=cc_overwrite,
                     gv_overwrite=gv_overwrite,
@@ -195,9 +194,14 @@ def to_pkg(
                     allowed_script_mods=allowed_script_mods,
                     overwrite_pkg=overwrite_pkg,
                 )
-    except Exception:
-        pass
-    return pkg
+        else:
+            return None, Result(
+                False,
+                error=f"Extension: {extension} from path: {path} is not recognised",
+            )
+    except Exception as e:
+        return None, Result.from_exception(e)
+    return pkg, res
 
 
 """Type alias for a package type, can be a tbcml.Apk or tbcml.Ipa"""
@@ -227,9 +231,11 @@ from . import (
     game_version,
     country_code,
     mods,
+    result,
 )
 
 __all__ = [
+    "result",
     "File",
     "load",
     "ModificationType",
@@ -248,7 +254,6 @@ __all__ = [
     "FridaScript",
     "FridaGadgetHelper",
     "ModLoader",
-    "IpaModLoader",
     "CompilationTarget",
     "ShopItem",
     "ItemShop",
@@ -331,6 +336,7 @@ __all__ = [
     "Language",
     "LanguageStr",
     "RequestHandler",
+    "Result",
     "ServerFileHandler",
     "EventData",
     "GameVersionSearchError",
@@ -340,7 +346,6 @@ __all__ = [
     "CountryCode",
     "CC",
     "GV",
-    "LOADER",
     "GameVersion",
     "AdbHandler",
     "BulkAdbHandler",

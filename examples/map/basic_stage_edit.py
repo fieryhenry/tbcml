@@ -24,7 +24,7 @@ class CustomMap(tbcml.Map):
 
 
 loader = tbcml.ModLoader("en", "12.3.0")
-loader.initialize()
+loader.initialize_apk()
 
 mod = tbcml.Mod(
     "Custom Map",

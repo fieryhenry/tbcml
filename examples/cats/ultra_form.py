@@ -57,7 +57,7 @@ class NewCat(tbcml.Cat):
 
 
 loader = tbcml.ModLoader("en", "13.1.1")
-loader.initialize()
+loader.initialize_apk()
 
 game_packs = loader.get_game_packs()
 

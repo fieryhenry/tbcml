@@ -135,7 +135,7 @@ class BasicCustomCat(tbcml.Cat):
 loader = tbcml.ModLoader(
     "en", "12.3.0"
 )  # these can be changed for the version you want
-loader.initialize()
+loader.initialize_apk()
 
 apk = loader.get_apk()
 
@@ -172,7 +172,7 @@ modify the game data though. In the future, I may add support for decoding and
 encoding resources without apktool.
 
 ```python
-loader.initialize(use_apktool=False)
+loader.initialize_apk(use_apktool=False)
 ```
 
 If you want to modify a different langauge and you are using an en apk, you can
@@ -180,7 +180,7 @@ change the language when you initialize the loader. Valid langs are "fr", "it",
 "de", "es", and "th".
 
 ```python
-loader.initialize(lang="fr")
+loader.initialize_apk(lang="fr")
 ```
 
 If you don't want to use inheritance, then you can structure the code like this:
@@ -200,7 +200,7 @@ need to set `allowed_script_mods` to `False` when creating the apk object /
 initializing the loader
 
 ```python
-loader.initialize(allowed_script_mods=False)
+loader.initialize_apk(allowed_script_mods=False)
 ```
 
 If you have a large mod, you may want to compile the modifications into raw game
@@ -231,10 +231,10 @@ specified version (and `>=` and `<=`).
 There is some basic support for iOS ipa files:
   
 ```python
-loader = tbcml.IpaModLoader("en", "12.3.0")
+loader = tbcml.ModLoader("en", "12.3.0")
 
 # you need to specify the path to the ipa as it can't be downloaded
-loader.initialize(pkg_path="path/to/ipa")
+loader.initialize_ipa(ipa="path/to/ipa")
 
 ipa = loader.get_ipa()
 

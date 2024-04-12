@@ -10,13 +10,13 @@ if not is_lief_installed():
 
 loader = ModLoader("en", "13.2.0")  # change to whatever you want
 print("Initializing mod loader")
-loader.initialize()
+loader.initialize_apk()
 
 # if you are having issues with apktool do this instead:
-# loader.initialize(decode_resources=False)
+# loader.initialize_apk(decode_resources=False)
 
 # and if that still doesn't work do this instead:
-# loader.initialize(decode_resources=False, use_apktool=False)
+# loader.initialize_apk(decode_resources=False, use_apktool=False)
 
 apk = loader.get_apk()
 

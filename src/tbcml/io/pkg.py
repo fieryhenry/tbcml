@@ -264,13 +264,13 @@ class Pkg:
 
         return tbcml.GamePacks(packs, self.country_code, self.game_version, lang=lang)
 
-    def extract(self, force: bool = False) -> bool:
+    def extract(self, force: bool = False) -> tbcml.Result:
         raise NotImplementedError
 
-    def pack(self) -> bool:
+    def pack(self) -> tbcml.Result:
         raise NotImplementedError
 
-    def sign(self) -> bool:
+    def sign(self) -> tbcml.Result:
         raise NotImplementedError
 
     def add_packs_lists(
@@ -308,7 +308,7 @@ class Pkg:
         progress_callback: (
             Callable[[tbcml.PKGProgressSignal], bool | None] | None
         ) = None,
-    ) -> bool:
+    ) -> tbcml.Result:
         raise NotImplementedError
 
     def save_in_modded_pkgs(self):
@@ -331,13 +331,13 @@ class Pkg:
         path: tbcml.Path,
         all_pkg_dir: tbcml.Path | None = None,
         clzz: type[Pkg] | None = None,
-    ) -> Any | None:
+    ) -> tuple[Any | None, tbcml.Result]:
         if clzz is None:
             clzz = Pkg
         if all_pkg_dir is None:
             all_pkg_dir = clzz.get_default_pkg_folder()
         if not path.exists():
-            return None
+            return None, tbcml.Result.file_not_found(path)
         path = path.parent()
 
         is_modded = False
@@ -352,7 +352,10 @@ class Pkg:
         name = path.get_file_name().split("-")[0]
         country_code_str = name[-2:]
         if country_code_str not in tbcml.CountryCode.get_all_str():
-            return None
+            return None, tbcml.Result(
+                False,
+                error=f"{country_code_str} is recognised as a valid country code: { tbcml.CountryCode.get_all_str()}",
+            )
         cc = tbcml.CountryCode.from_code(country_code_str)
         game_version_str = name[:-2]
 
@@ -365,8 +368,8 @@ class Pkg:
             pkg_name=pkg_name,
         )
         if pkg.is_downloaded():
-            return pkg
-        return None
+            return pkg, tbcml.Result(True)
+        return None, tbcml.Result.file_not_found(pkg.pkg_path)
 
     @staticmethod
     def get_all_downloaded_pkgs(
@@ -489,9 +492,12 @@ class Pkg:
         display: bool = False,
         force: bool = False,
         lang: tbcml.Language | None = None,
-    ):
-        sfh = tbcml.ServerFileHandler(self, lang=lang)
-        sfh.extract_all(display=display, force=force)
+    ) -> tbcml.Result:
+        try:
+            sfh = tbcml.ServerFileHandler(self, lang=lang)
+        except tbcml.GameVersionSearchError as e:
+            return tbcml.Result(False, error=str(e))
+        return sfh.extract_all(display=display, force=force)
 
     def get_download_tsvs(self, lang: tbcml.Language | None = None) -> list[tbcml.Path]:
         if lang is None:
@@ -962,7 +968,7 @@ class Pkg:
             Callable[[tbcml.PKGProgressSignal], bool | None] | None
         ) = None,
         do_final_pkg_actions: bool = True,
-    ) -> bool:
+    ) -> tbcml.Result:
         raise NotImplementedError
 
     def is_apk(self) -> bool:
