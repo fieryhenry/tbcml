@@ -93,6 +93,10 @@ class Localizable(tbcml.Modification):
         self.read_strings(game_data)
 
     def apply_game_data(self, game_data: tbcml.GamePacks):
+        if self.strings is None:
+            return
+        if game_data.localizable.strings is not None:
+            game_data.localizable.strings.update(self.strings)
         self.apply_strings(game_data)
 
     def get_custom_html(self) -> str:

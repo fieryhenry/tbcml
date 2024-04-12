@@ -1240,6 +1240,7 @@ class Mod:
         game_packs.set_log_enabled(True)
 
         self.__apply_modifications(game_packs)
+        game_packs.localizable.apply_game_data(game_packs)
 
         if existing_target is None:
             existing_target = tbcml.CompilationTarget(
