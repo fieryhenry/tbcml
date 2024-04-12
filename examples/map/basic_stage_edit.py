@@ -11,8 +11,8 @@ class CustomStage(tbcml.Stage):
         # text name is only used for the Post to SNS feature i'm pretty sure, actual stage names are all stored as images annoyingly
         self.sync(stage_index)  # used to sync data with the original stage
 
-        self.get_story_map_name_img().flip_x()
-        self.get_in_battle_img().flip_y()
+        self.get_story_map_name_img().flip_x_coords()
+        self.get_in_battle_img().flip_y_coords()
 
 
 class CustomMap(tbcml.Map):

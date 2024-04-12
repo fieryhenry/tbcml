@@ -18,8 +18,8 @@ class CustomStage(tbcml.Stage):
         )
         # text name is only used for the Post to SNS feature i'm pretty sure, actual stage names are all stored as images annoyingly
         self.sync(stage_index)  # used to sync data with the original stage
-        self.get_story_map_name_img().flip_x()
-        self.get_in_battle_img().flip_y()
+        self.get_story_map_name_img().flip_x_coords()
+        self.get_in_battle_img().flip_y_coords()
 
         for enemy in self.stage_csv_data.get_stage_enemy_data():
             enemy.spawn_base_percent = 100
@@ -45,7 +45,7 @@ class CustomMap(tbcml.Map):
 
         stage_id = 0
         self.set_stage(stage_id, CustomStage(parent_map=self, stage_index=stage_id))
-        self.get_map_name_img().flip_x()
+        self.get_map_name_img().flip_x_coords()
 
 
 loader = tbcml.ModLoader("en", "13.1.1")

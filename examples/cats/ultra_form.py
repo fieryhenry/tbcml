@@ -26,8 +26,8 @@ class UltraForm(tbcml.CatForm):
         ]
 
         # just an example to see visually obvious changes
-        self.get_deploy_icon().flip_x()
-        self.get_upgrade_icon().flip_y()
+        self.get_deploy_icon().flip_x_coords()
+        self.get_upgrade_icon().flip_y_coords()
 
         self.get_anim().flip_y()
 

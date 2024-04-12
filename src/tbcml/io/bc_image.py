@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageOps
 
 
 import tbcml
@@ -84,8 +84,8 @@ class BCImage:
 
     def scale(self, scale: float):
         if scale < 0:
-            self.flip_x()
-            self.flip_y()
+            self.flip_x_coords()
+            self.flip_y_coords()
             scale *= -1
         self.__image = self.image.resize(
             (int(self.width * scale), int(self.height * scale)),
@@ -94,7 +94,7 @@ class BCImage:
 
     def scale_x(self, scale: float):
         if scale < 0:
-            self.flip_x()
+            self.flip_x_coords()
             scale *= -1
         self.__image = self.image.resize(
             (int(self.width * scale), self.height), resample=Image.BICUBIC
@@ -102,16 +102,16 @@ class BCImage:
 
     def scale_y(self, scale: float):
         if scale < 0:
-            self.flip_y()
+            self.flip_y_coords()
             scale *= -1
         self.__image = self.image.resize(
             (self.width, int(self.height * scale)), resample=Image.BICUBIC
         )
 
-    def flip_x(self):
+    def flip_x_coords(self):
         self.__image = self.image.transpose(Image.FLIP_LEFT_RIGHT)
 
-    def flip_y(self):
+    def flip_y_coords(self):
         self.__image = self.image.transpose(Image.FLIP_TOP_BOTTOM)
 
     def add_image(self, image: BCImage, x: int, y: int):
@@ -163,6 +163,7 @@ class BCImage:
         )
 
     def wipe_rect(self, rect: tbcml.Rect):
+        self.convert_to_rgba()
         if rect.x is None or rect.y is None or rect.w is None or rect.h is None:
             return
         self.wipe_region(
@@ -196,3 +197,6 @@ class BCImage:
 
     def get_rect(self, x: int, y: int) -> tbcml.Rect:
         return tbcml.Rect(x, y, self.width, self.height)
+
+    def grayscale(self):
+        self.__image = ImageOps.grayscale(self.image)
