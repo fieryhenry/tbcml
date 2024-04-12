@@ -177,12 +177,26 @@ class Texture:
             return None
         return rect
 
+    def is_rect_valid(self, rect: Rect) -> bool:
+        if rect.x is None or rect.y is None or rect.w is None or rect.h is None:
+            return False
+        if rect.x < 0 or rect.y < 0 or rect.w <= 0 or rect.h <= 0:
+            return False
+        if self.image is None:
+            return False
+        if rect.x + rect.w > self.image.width or rect.y + rect.h > self.image.height:
+            return False
+
+        return True
+
     def get_cut(self, rect_id: int) -> tbcml.BCImage | None:
         if not self.image:
             return None
 
         rect = self.get_rect(rect_id)
         if rect is None:
+            return None
+        if not self.is_rect_valid(rect):
             return None
 
         return self.image.get_subimage(rect)
@@ -192,6 +206,8 @@ class Texture:
 
     def get_cut_from_rect(self, rect: tbcml.Rect) -> tbcml.BCImage | None:
         if self.image is None:
+            return None
+        if not self.is_rect_valid(rect):
             return None
         return self.image.get_subimage(rect)
 
@@ -251,9 +267,10 @@ class Texture:
         self.read_img(game_data, img_name)
         csv = game_data.get_csv(imgcut_name)
         if csv is None:
-            return
+            return False
         self.read_csv(csv, imgcut_name)
         self.metadata.img_name = img_name
+        return True
 
 
 @dataclass
