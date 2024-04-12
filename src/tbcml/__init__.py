@@ -46,6 +46,7 @@ from .game_data.bcu import BCUZip
 from .game_data.misc.sound_setting import SoundSetting
 from .game_data.misc.loading_screen import LoadingScreen
 from .game_data.misc.logo_screen import LogoScreen
+from .game_data.misc.main_menu import MainMenu
 from .game_data.battle.chara_group import CharaGroup
 
 from .anim.model import (
@@ -364,6 +365,7 @@ __all__ = [
     "PKGProgressSignal",
     "LoadingScreen",
     "LogoScreen",
+    "MainMenu",
     "Pkg",
     "PkgType",
 ]

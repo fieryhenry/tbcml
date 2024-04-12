@@ -17,8 +17,10 @@ class ModificationType(enum.Enum):
     MAP = "map"
     SOUND_SETTING = "sound_setting"
     CHARA_GROUP = "chara_group"
+
     LOADING_SCREEN = "loading_screen"
     LOGO_SCREEN = "logo_screen"
+    MAIN_MENU = "main_menu"
 
     @staticmethod
     def from_str_value(string: str) -> ModificationType | None:
@@ -39,6 +41,7 @@ class ModificationType(enum.Enum):
             ModificationType.CHARA_GROUP: tbcml.CharaGroup,
             ModificationType.LOADING_SCREEN: tbcml.LoadingScreen,
             ModificationType.LOGO_SCREEN: tbcml.LogoScreen,
+            ModificationType.MAIN_MENU: tbcml.MainMenu,
         }
 
     @staticmethod
