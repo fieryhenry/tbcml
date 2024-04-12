@@ -112,7 +112,7 @@ class MainMenu(tbcml.Modification):
             if not game_data.find_file(cut_name):
                 cut_name = f"img011_logo.imgcut"
             logo = tbcml.Texture()
-            print(logo.read_from_game_file_names(game_data, file_name, cut_name))
+            logo.read_from_game_file_names(game_data, file_name, cut_name)
             self.collab_logo_textures.append(logo)
 
     def apply_logos(self, game_data: tbcml.GamePacks):
