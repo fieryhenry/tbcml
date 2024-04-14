@@ -863,6 +863,11 @@ class Pkg:
 
     def get_all_audio(self) -> dict[int, tbcml.Path]:
         audio_files: dict[int, tbcml.Path] = {}
+
+        server_files = self.get_all_server_audio()
+        for id, file in server_files.items():
+            audio_files[id] = file
+
         for file in self.get_assets_folder_path().get_files():
             if file.get_extension() not in self.get_audio_extensions():
                 continue
@@ -874,9 +879,6 @@ class Pkg:
                 continue
             audio_files[int(id_str)] = file
 
-        server_files = self.get_all_server_audio()
-        for id, file in server_files.items():
-            audio_files[id] = file
         return audio_files
 
     def get_all_server_audio(self):
