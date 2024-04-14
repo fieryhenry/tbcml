@@ -51,6 +51,7 @@ from .game_data.battle.chara_group import CharaGroup
 
 from .anim.model import (
     Model,
+    Mamodel,
     Texture,
     Rect,
     AnimModificationType,
@@ -289,6 +290,7 @@ __all__ = [
     "SoundSetting",
     "CharaGroup",
     "Model",
+    "Mamodel",
     "UnitAnim",
     "Texture",
     "Rect",
