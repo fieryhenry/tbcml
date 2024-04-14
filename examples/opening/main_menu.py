@@ -23,10 +23,11 @@ class MainMenu(tbcml.MainMenu):
 
         # Grayscale all textures (just an example)
 
-        grayscale_texture(self.logo_texture)
+        if self.logo_anim is not None:
+            grayscale_texture(self.logo_anim.texture)
 
-        for collab_logo in self.collab_logo_textures or []:
-            grayscale_texture(collab_logo)
+        for collab_logo in self.collab_logo_anims or []:
+            grayscale_texture(collab_logo.texture)
 
         grayscale_texture(self.main_bg)
         grayscale_texture(self.itf_bg)

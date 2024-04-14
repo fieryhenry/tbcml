@@ -25,10 +25,10 @@ class MainMenu(tbcml.Modification):
     inquiry_code_text_6: str | None = None
     """Record and save this number to prevent data loss!"""
 
-    logo_texture: tbcml.Texture | None = None
+    logo_anim: tbcml.Model | None = None
     # cut 1 is the main image and 21 is the cutout of the tail of the cat (used for the tail anim i assume)
 
-    collab_logo_textures: list[tbcml.Texture] | None = None
+    collab_logo_anims: list[tbcml.Model] | None = None
 
     main_bg: tbcml.Texture | None = None
     itf_bg: tbcml.Texture | None = None
@@ -98,30 +98,40 @@ class MainMenu(tbcml.Modification):
         )
 
     def read_logos(self, game_data: tbcml.GamePacks):
-        logo = tbcml.Texture()
-        logo.read_from_game_file_names(
-            game_data, "img011_logo.png", "img011_logo.imgcut"
-        )
-        self.logo_texture = logo
+        mamodel = tbcml.Mamodel()
+        mamodel.read(game_data, "img011_logo_000.mamodel")
 
-        self.collab_logo_textures = []
+        maanims: list[tbcml.UnitAnim] = []
+        for i in range(2):
+            maanim = tbcml.UnitAnim()
+            maanim.read(game_data, f"img011_logo_{i:03}.maanim")
+            maanims.append(maanim)
+
+        self.logo_anim = tbcml.Model(mamodel=mamodel, anims=maanims)
+        self.logo_anim.read_texture(
+            game_data,
+            "img011_logo.png",
+            "img011_logo.imgcut",
+        )
+
+        self.collab_logo_anims = []
         collab_ids = self.get_collab_ids()
         for collab_id in collab_ids:
             file_name = f"img011_logo_C_{collab_id:03}.png"
             cut_name = f"img011_logo_C_{collab_id:03}.imgcut"
             if not game_data.find_file(cut_name):
                 cut_name = f"img011_logo.imgcut"
-            logo = tbcml.Texture()
-            logo.read_from_game_file_names(game_data, file_name, cut_name)
-            self.collab_logo_textures.append(logo)
+            logo = tbcml.Model(mamodel=mamodel, anims=maanims)
+            logo.read_texture(game_data, file_name, cut_name)
+            self.collab_logo_anims.append(logo)
 
     def apply_logos(self, game_data: tbcml.GamePacks):
-        if self.logo_texture is not None:
-            self.logo_texture.apply(game_data)
+        if self.logo_anim is not None:
+            self.logo_anim.apply_game_data(game_data)
 
-        if self.collab_logo_textures is not None:
-            for collab_logo in self.collab_logo_textures:
-                collab_logo.apply(game_data)
+        if self.collab_logo_anims is not None:
+            for collab_logo in self.collab_logo_anims:
+                collab_logo.apply_game_data(game_data)
 
     def read_bgs(self, game_data: tbcml.GamePacks):
         lang = game_data.localizable.get_lang()
