@@ -484,6 +484,13 @@ class Mamodel:
     ints: MamodelIntsInts = field(default_factory=lambda: MamodelIntsInts())
     mamodel_name: str | None = None
 
+    def read(self, game_data: tbcml.GamePacks, mamodel_name: str):
+        self.mamodel_name = mamodel_name
+        mamodel_csv = game_data.get_csv(mamodel_name)
+        if mamodel_csv is None:
+            return
+        self.read_csv(mamodel_csv)
+
     def read_csv(self, csv: tbcml.CSV):
         self.metadata.read_csv(csv)
         self.parts = []
@@ -635,6 +642,13 @@ class UnitAnim:
     parts: list[KeyFrames] = field(default_factory=lambda: [])
     name: str | None = None
 
+    def read(self, game_data: tbcml.GamePacks, name: str):
+        self.name = name
+        maanim_csv = game_data.get_csv(name)
+        if maanim_csv is None:
+            return
+        self.read_csv(maanim_csv)
+
     def read_csv(self, csv: tbcml.CSV):
         self.metadata.read_csv(csv)
         index = 3
@@ -717,6 +731,9 @@ class Model(tbcml.Modification):
             if maanim_csv is not None:
                 anim.apply_csv(maanim_csv)
         self.mamodel.apply_csv(mamodel_csv)
+
+    def read_texture(self, game_data: tbcml.GamePacks, img_name: str, imgcut_name: str):
+        self.texture.read_from_game_file_names(game_data, img_name, imgcut_name)
 
     def read(
         self,
