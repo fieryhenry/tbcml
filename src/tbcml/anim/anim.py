@@ -5,9 +5,12 @@ import math
 import tbcml
 
 try:
-    from PyQt5 import QtGui, QtCore
+    from PySide6 import QtGui, QtCore
 except ImportError:
-    pass
+    try:
+        from PyQt6 import QtGui, QtCore
+    except ImportError:
+        pass
 
 
 class AnimModificationType(enum.Enum):
@@ -31,6 +34,7 @@ class AnimModificationType(enum.Enum):
 class Anim:
     def __init__(self, model: tbcml.Model, anim: int):
         self.model = model
+        self.anim_id = anim
         self.anim: tbcml.UnitAnim
         self.set_anim(anim)
 
@@ -471,9 +475,15 @@ class Anim:
             m2 += (m0 * t_pos_x) + (m1 * t_pos_y)
             m5 += (m3 * t_pos_x) + (m4 * t_pos_y)
         else:
-            ints = self.model.mamodel.ints.ints[0]
+
+            ints_list = self.model.mamodel.ints.ints
+            if ints_list:
+                ints = ints_list[0]
+            else:
+                ints = None
             if (
-                ints.part_id is None
+                ints is None
+                or ints.part_id is None
                 or ints.base_x_size is None
                 or ints.base_y_size is None
             ):
