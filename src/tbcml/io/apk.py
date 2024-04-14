@@ -1040,6 +1040,9 @@ class Apk(Pkg):
     def audio_file_startswith_snd(self) -> bool:
         return True
 
+    def get_assets_folder_path(self) -> tbcml.Path:
+        return self.extracted_path.add("assets")
+
     def get_asset(self, asset_name: tbcml.PathStr) -> tbcml.Path:
         return self.extracted_path.add("assets").add(asset_name)
 
