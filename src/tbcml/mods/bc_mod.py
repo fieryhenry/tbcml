@@ -1,5 +1,4 @@
 from __future__ import annotations
-import dataclasses
 import enum
 import json
 import uuid
@@ -80,21 +79,55 @@ class ModPath(enum.Enum):
 
 
 class Modification:
+    """Modification class to represent a modification
+
+    Use this class as a base class for any custom modification types you create.
+
+    All current modification types are:
+
+    * :class:`tbcml.Cat`
+    * :class:`tbcml.Enemy`
+    * :class:`tbcml.ItemShop`
+    * :class:`tbcml.Localizable`
+    * :class:`tbcml.Map`
+    * :class:`tbcml.SoundSetting`
+    * :class:`tbcml.CharaGroup`
+    * :class:`tbcml.LoadingScreen`
+    * :class:`tbcml.LogoScreen`
+    * :class:`tbcml.MainMenu`
+
+
+    """
+
     def to_json(self) -> str:
+        """Convert the modification to a json string
+
+        Returns:
+            str: The json string of the modification
+        """
         self.pre_to_json()
         modification_type = ModificationType.from_cls(self)
         base_cls = modification_type.get_cls()
         schema = class_schema(clazz=base_cls)
         return schema().dumps(self)  # type: ignore
 
-    def from_json(self, data: str, modification_type: ModificationType) -> Any:
+    def from_json(self, data: str, modification_type: ModificationType) -> Modification:
+        """Create a modification from a json string
+
+        Args:
+            data (str): The json string of the modification
+            modification_type (ModificationType): The modification type of the modification
+
+        Returns:
+            Modification: The modification created from the json string
+        """
         base_cls = modification_type.get_cls()
         schema = class_schema(clazz=base_cls)
         cls = schema().loads(data)  # type: ignore
         cls.post_from_json()  # type: ignore
         return cls  # type: ignore
 
-    def merge(self, other: Any):
+    def merge(self, other: Modification):
         """Merge this modification with another
 
         Note that the implimentation should prioritize itself over the other modification
@@ -105,7 +138,7 @@ class Modification:
         Raises:
             ValueError: If the type of other is not the same as self
         """
-        if not isinstance(other, Modification):
+        if not isinstance(other, Modification):  # type: ignore
             raise ValueError("Cannot merge modification with non modification")
 
         if self.modification_type != other.modification_type:
@@ -113,6 +146,11 @@ class Modification:
 
     @property
     def modification_type(self) -> ModificationType:
+        """The modification type of the modification
+
+        Returns:
+            ModificationType: The modification type of the modification
+        """
         return ModificationType.from_cls(self)
 
     def apply_game_data(self, game_data: tbcml.GamePacks): ...
@@ -194,6 +232,12 @@ class Modification:
     def post_from_json(self) -> None: ...
 
     def get_custom_html(self) -> str:
+        """Get the custom html of the modification to place in the transfer
+        menu mod list.
+
+        Returns:
+            str: The custom html of the modification
+        """
         return ""
 
     @staticmethod
@@ -213,63 +257,19 @@ class Mod:
     """Mod class to represent a mod
 
     Example usage:
-        ```python
-        mod = Mod(
-            name="My Mod",
-            authors="fieryhenry",
-            short_description="My first mod"
-        )
 
-        mod.add_modification(tbcml.Cat(...))
+        .. code-block::
 
-        mod.save("mod.zip")
-        ```
+            mod = Mod(
+                name="My Mod",
+                authors="fieryhenry",
+                short_description="My first mod"
+            )
 
-    Methods:
-        `add_modification(...)`: Add a modification to the mod.
-        `add_script(...)`: Add a frida script to the mod.
-        `add_smali(...)`: Add some smali code to the mod.
-        `add_pkg_asset(...)`: Add a file to be placed in the apk/ipa assets folder when applying the mod
-        `add_encrypted_pkg_asset(...)`: Add an encrypted file to be placed in the apk/ipa assets folder when applying the mod
-        `add_apk_file(...)`: Add a file to be placed in the apk when applying the mod.
-        `add_ipa_file(...)`: Add a file to be placed in the ipa when applying the mod.
-        `add_audio_file(...)`: Add an audio file to the mod.
-        `add_game_file(...)`: Add a game file to the mod.
-        `add_compilation_target(...)`: Add a compilation target to the mod.
-        `add_lib_patch(...)`: Add a lib patch to the mod.
-        `get_asset(...)`: Get an asset from the mod.
-        `to_zip(...)`: Convert the mod to a zip file.
-        `to_file(...)`: Save the mod to a file.
-        `load(...)`: Load a mod from a file.
-        `save(...)`: Save the mod to a file.
-        `compile(...)`: Compile the mod to raw game files.
-        `get_custom_html(...)`: Get the custom html for the mod.
-        `apply_to_game_data(...)`: Apply the mod to the game data.
-        `apply_to_pkg(...)`: Apply the mod to a package (apk/ipa).
-        `remove_duplicate_modifications(...)`: Remove duplicate modifications from the mod.
-        `merge_modifications(...)`: Merge modifications together in the mod.
-        `is_author(...)`: Check if the mod has an author. Note that this is not a secure way to check for authors, as the authors can be easily changed
-        `add_pkg_string(...)`: Add a string to be set in the apk/ipa when applying the mod.
+            mod.add_modification(tbcml.Cat(...))
 
-    Fields:
-        `name`: The name of the mod
-        `authors`: The authors of the mod
-        `short_description`: The short description of the mod. Should be relatively short.
-        `long_description`: The description of the mod. Can be a longer string.
-        `custom_html`: The custom html for the mod. This will be visible in the transfer menu mod list. If you do not provide a custom html, tbcml will create a basic page for you.
-        `id`: The unique id of the mod
-        `modifications`: The modifications to apply to the game data.
-        `scripts`: The frida scripts to apply to the game. Is not supported for ipa files atm.
-        `game_files`: The game files to apply to the game data.
-        `pkg_assets`: The files to place in the assets of the apk/ipa when applying the mod.
-        `encrypted_pkg_assets`: The encrypted files to place in the assets of the apk/ipa when applying the mod.
-        `apk_files`: The files to place in the apk when applying the mod.
-        `ipa_files`: The files to place in the ipa when applying the mod.
-        `audio_files`: The audio files to add to the mod.
-        `pkg_strings`: The strings to set in the apk/ipa when applying the mod.
-        `smali`: The smali code to add to the mod. Is not supported for ipa files.
-        `patches`: The lib patches to add to the mod. Is not supported for ipa files atm.
-        `compilation_targets`: The compilation targets of the mod, which specify the game versions, country codes and languages that the compiled game files should be applied to (if they exist).
+            mod.save("mod.zip")
+
     """
 
     def __init__(
@@ -320,13 +320,13 @@ class Mod:
         self.modifications: list[Modification] = []
         """list[Modification]: The modifications to apply to the game data.
 
-        See tbcml.Modification for more information on modifications."""
+        """
 
         self.scripts: list[tbcml.FridaScript] = []
         """list[tbcml.FridaScript]: The frida scripts to apply to the game. Is
         not supported for ipa files atm.
 
-        See tbcml.FridaScript for more information on frida scripts."""
+        """
 
         self.game_files: dict[str, tbcml.Data] = {}
         """dict[str, tbcml.Data]: The game files to apply to the game data. str
@@ -364,7 +364,7 @@ class Mod:
         is the id that the game uses to reference the audio file,
         tbcml.AudioFile is the audio file / data to add.
         
-        See tbcml.AudioFile for more information on audio files."""
+        """
 
         self.pkg_strings: dict[str, tuple[str, bool]] = {}
         """dict[str, tuple[str, bool]]: The strings to set in the apk/ipa when applying the mod.
@@ -376,30 +376,30 @@ class Mod:
         self.smali: tbcml.SmaliSet = tbcml.SmaliSet.create_empty()
         """tbcml.SmaliSet: The smali code to add to the mod. Is not supported
         for ipa files. Smali code is used to modify the java game code.
-        
-        See tbcml.SmaliSet for more information on smali code."""
+        """
         self.patches: tbcml.LibPatches = tbcml.LibPatches.create_empty()
         """tbcml.LibPatches: The lib patches to add to the mod. Is not
         supported for ipa files atm. Lib patches are used to modify
         small parts of the game code, e.g replacing a string in the game code.
         
-        See tbcml.LibPatches for more information on lib patches."""
+        """
 
         self.compilation_targets: list[tbcml.CompilationTarget] = []
         """list[tbcml.CompilationTarget]: The compilation targets of the
         mod, which specify the game versions, country codes and languages that
         the compiled game files should be applied to (if they exist).
 
-        See tbcml.CompilationTarget for more information on compilation
-        targets."""
+        """
 
     def remove_duplicate_modifications(self):
         """Remove duplicate modifications from the mod.
 
         Example Usage:
-            ```python
-            mod = Mod(...)
-            mod.remove_duplicate_modifications()
+
+            .. code-block::
+
+                mod = Mod(...)
+                mod.remove_duplicate_modifications()
             ```
         """
         new_modifications: list[Modification] = []
@@ -413,10 +413,11 @@ class Mod:
         """Merge modifications in the mod.
 
         Example Usage:
-            ```python
-            mod = Mod(...)
-            mod.merge_modifications()
-            ```
+
+            .. code-block::
+
+                mod = Mod(...)
+                mod.merge_modifications()
         """
         new_modifications: list[Modification] = []
         modifs = self.modifications.copy()
@@ -447,11 +448,12 @@ class Mod:
             bool: Whether the mod has the author or not.
 
         Example Usage:
-            ```python
-            mod = Mod(...)
-            if mod.is_author("fieryhenry"):
-                print("fieryhenry is an author of this mod")
-            ```
+
+            .. code-block::
+
+                mod = Mod(...)
+                if mod.is_author("fieryhenry"):
+                    print("fieryhenry is an author of this mod")
         """
         for auth in self.authors:
             if ignore_case:
@@ -471,17 +473,17 @@ class Mod:
             include_lang (bool): Whether to append the current language after the key
 
         Example Usage:
-            ```python
-            mod = Mod(...)
-            mod.add_pkg_string("app_name", "My Cool App", False)
-            ```
+
+            .. code-block::
+
+                mod = Mod(...)
+                mod.add_pkg_string("app_name", "My Cool App", False)
         """
         self.pkg_strings[key] = (value, include_lang)
 
     def add_compilation_target(self, target: tbcml.CompilationTarget):
         """Add a compilation target to the mod.
 
-        See tbcml.CompilationTarget for more information on compilation targets.
 
         A compilation target specifies the game versions, country codes and
         languages that the compiled game files should be applied to (if they
@@ -492,12 +494,13 @@ class Mod:
             target (tbcml.CompilationTarget): The compilation target to add
 
         Example Usage:
-            ```python
-            mod = Mod(...)
 
-            target = tbcml.CompilationTarget(target_country_codes="!jp", target_game_versions="*")
-            mod.add_compilation_target(target)
-            ```
+            .. code-block::
+
+                mod = Mod(...)
+
+                target = tbcml.CompilationTarget(target_country_codes="!jp", target_game_versions="*")
+                mod.add_compilation_target(target)
 
         """
         self.compilation_targets.append(target)
@@ -514,11 +517,12 @@ class Mod:
             local_f (tbcml.File): The actual decrypted file / data to encrypt and place in that location.
 
         Example Usage:
-            ```python
-            mod = Mod(...)
-            local_path = tbcml.Path("new_ponos_logo.png")
-            mod.add_encrypted_pkg_asset("logo.png", local_path)
-            ```
+
+            .. code-block::
+
+                mod = Mod(...)
+                local_path = tbcml.Path("new_ponos_logo.png")
+                mod.add_encrypted_pkg_asset("logo.png", local_path)
         """
         data = tbcml.load(local_f)
         path = tbcml.Path(asset_path).strip_leading_slash().to_str_forwards()
@@ -540,11 +544,12 @@ class Mod:
             local_f (tbcml.File): The actual file / data to place in that location.
 
         Example Usage:
-            ```python
-            mod = Mod(...)
-            local_path = tbcml.Path("complete_new.png")
-            mod.add_pkg_asset("complete.png", local_path)
-            ```
+
+            .. code-block::
+
+                mod = Mod(...)
+                local_path = tbcml.Path("complete_new.png")
+                mod.add_pkg_asset("complete.png", local_path)
         """
         data = tbcml.load(local_f)
         path = tbcml.Path(asset_path).strip_leading_slash().to_str_forwards()
@@ -565,11 +570,12 @@ class Mod:
             local_f (tbcml.File): The actual file / data to place in that location.
 
         Example Usage:
-            ```python
-            mod = Mod(...)
-            local_path = tbcml.Path("modded_classes.dex")
-            mod.add_apk_file("classes.dex", local_path)
-            ```
+
+            .. code-block::
+
+                mod = Mod(...)
+                local_path = tbcml.Path("modded_classes.dex")
+                mod.add_apk_file("classes.dex", local_path)
         """
         data = tbcml.load(local_f)
         path = tbcml.Path(apk_path).strip_leading_slash().to_str_forwards()
@@ -590,11 +596,12 @@ class Mod:
             local_f (tbcml.File): The actual file / data to place in that location.
 
         Example Usage:
-            ```python
-            mod = Mod(...)
-            local_path = tbcml.Path("cool_framework.dylib")
-            mod.add_ipa_file("Frameworks/cool_framework.dylib", local_path)
-            ```
+
+            .. code-block::
+
+                mod = Mod(...)
+                local_path = tbcml.Path("cool_framework.dylib")
+                mod.add_ipa_file("Frameworks/cool_framework.dylib", local_path)
         """
         data = tbcml.load(local_f)
         path = tbcml.Path(ipa_path).strip_leading_slash().to_str_forwards()
@@ -613,12 +620,13 @@ class Mod:
             tuple[tbcml.Data | None, bool]: The data of the asset if it exists, and whether the asset is from an encrypted asset or not.
 
         Example Usage:
-            ```python
-            mod = Mod(...)
-            asset = mod.get_asset("cool_asset.png", True)
-            if asset is not None:
-                print("Asset exists!")
-            ```
+
+            .. code-block::
+
+                mod = Mod(...)
+                asset = mod.get_asset("cool_asset.png", True)
+                if asset is not None:
+                    print("Asset exists!")
         """
         path = tbcml.Path(asset_name).strip_leading_slash().to_str_forwards()
         if is_apk:
@@ -652,11 +660,12 @@ class Mod:
             priority (int, optional): The priority of the audio file. Defaults to -1 which is used for most background music.
 
         Example Usage:
-            ```python
-            mod = Mod(...)
-            local_path = tbcml.Path("bgm.ogg")
-            mod.add_audio_file(7, local_path, True, True, -1)
-            ```
+
+            .. code-block::
+
+                mod = Mod(...)
+                local_path = tbcml.Path("bgm.ogg")
+                mod.add_audio_file(7, local_path, is_bgm=True, loop=True, priority=-1)
 
         """
         data = tbcml.load(f)
@@ -678,11 +687,12 @@ class Mod:
             f (tbcml.File): The actual file / data to place in that location.
 
         Example Usage:
-            ```python
-            mod = Mod(...)
-            local_path = tbcml.Path("new_localizable.tsv")
-            mod.add_game_file("localizable.tsv", local_path)
-            ```
+
+            .. code-block::
+
+                mod = Mod(...)
+                local_path = tbcml.Path("new_localizable.tsv")
+                mod.add_game_file("localizable.tsv", local_path)
         """
         data = tbcml.load(f)
         self.game_files[game_name] = data
@@ -694,11 +704,12 @@ class Mod:
             tbcml.Data: The data of the zip file.
 
         Example Usage:
-            ```python
-            ...
-            data = mod.to_zip()
-            ...
-            ```
+
+            .. code-block::
+
+                ...
+                data = mod.to_zip()
+                ...
         """
         zipfile = tbcml.Zip()
         metadata_json = self.__metadata_to_json()
@@ -734,12 +745,13 @@ class Mod:
             Mod: The loaded mod.
 
         Example Usage:
-            ```python
-            file = tbcml.Path("mod.zip")
-            mod = Mod.load(file)
-            print(mod.name)
-            ...
-            ```
+
+            .. code-block::
+
+                file = tbcml.Path("mod.zip")
+                mod = Mod.load(file)
+                print(mod.name)
+                ...
         """
         data = tbcml.load(f)
 
@@ -778,10 +790,11 @@ class Mod:
             path (tbcml.PathStr): The path to save the mod to.
 
         Example Usage:
-            ```python
-            mod = Mod(...)
-            mod.save("mod.zip")
-            ```
+
+            .. code-block::
+
+                mod = Mod(...)
+                mod.save("mod.zip")
 
         """
         path = tbcml.Path(path)
@@ -796,21 +809,16 @@ class Mod:
             path (tbcml.PathStr): The path to save the mod to.
 
         Example Usage:
-            ```python
-            mod = Mod(...)
-            mod.save("mod.zip")
-            ```
+
+            .. code-block::
+
+                mod = Mod(...)
+                mod.save("mod.zip")
         """
         self.save(path)
 
     def add_modification(self, modification: Modification, merge: bool = False):
         """Add a modification to the mod.
-
-        See tbcml.ModificationType for the different types of modifications
-        that are currently supported.
-
-        See each modification types respective class for more information on
-        specific modifications.
 
         Args:
             modification (Modification): The modification to add.
@@ -820,13 +828,14 @@ class Mod:
             ValueError: If the modification does not inherit from `Modification` (Invalid modification)
 
         Example Usage:
-            ```python
-            class CustomCat(tbcml.Cat): # Cat inherits from Modification
-                ...
 
-            mod = Mod(...)
-            mod.add_modification(CustomCat(...))
-            ```
+            .. code-block::
+
+                class CustomCat(tbcml.Cat): # Cat inherits from Modification
+                    ...
+
+                mod = Mod(...)
+                mod.add_modification(CustomCat(...))
         """
         if not isinstance(modification, Modification):  # type: ignore
             raise ValueError("modification does not inherit Modification!")
@@ -838,27 +847,25 @@ class Mod:
     def add_script(self, script: tbcml.FridaScript):
         """Add a frida script to the mod.
 
-        See tbcml.FridaScript for more information on frida scripts.
-
         Is not supported for ipa files atm.
 
         Args:
             script (tbcml.FridaScript): The frida script to add.
 
         Example Usage:
-            ```python
-            mod = Mod(...)
-            script_content = "log('Hello World')"
-            script = tbcml.FridaScript(name="Hello World", content=script_content, architectures="all", description="Logs Hello World")
-            mod.add_script(script)
-            ```
+
+            .. code-block::
+
+                mod = Mod(...)
+                script_content = "log('Hello World')"
+                script = tbcml.FridaScript(name="Hello World", content=script_content, architectures="all", description="Logs Hello World")
+                mod.add_script(script)
+
         """
         self.scripts.append(script)
 
     def add_lib_patch(self, lib_patch: tbcml.LibPatch):
         """Add a lib patch to the mod.
-
-        See tbcml.LibPatch for more information on lib patches.
 
         Is not supported for ipa files atm.
 
@@ -866,12 +873,13 @@ class Mod:
             lib_patch (tbcml.LibPatch): The lib patch to add.
 
         Example Usage:
-            ```python
-            mod = Mod(...)
-            patch = tbcml.StringReplacePatch(orig="Hello", new="World")
-            lib_patch = tbcml.LibPatch(name="Hello World", architectures="all", patches=[patch])
-            mod.add_lib_patch(lib_patch)
-            ```
+
+            .. code-block::
+
+                mod = Mod(...)
+                patch = tbcml.StringReplacePatch(orig="Hello", new="World")
+                lib_patch = tbcml.LibPatch(name="Hello World", architectures="all", patches=[patch])
+                mod.add_lib_patch(lib_patch)
         """
         self.patches.add_patch(lib_patch)
 
@@ -880,17 +888,16 @@ class Mod:
 
         Is not supported for ipa files.
 
-        See tbcml.Smali and tbcml.SmaliSet for more information on smali code.
-
         Args:
             smali (tbcml.Smali | tbcml.SmaliSet): The smali code to add.
 
         Example Usage:
-            ```python
-            mod = Mod(...)
-            smali = tbcml.Smali(class_code="...", class_name="com.example.MyClass", function_sig_to_call="...")
-            mod.add_smali(smali)
-            ```
+
+            .. code-block::
+
+                mod = Mod(...)
+                smali = tbcml.Smali(class_code="...", class_name="com.example.MyClass", function_sig_to_call="...")
+                mod.add_smali(smali)
         """
         smalis: list[tbcml.Smali] = []
         if isinstance(smali, tbcml.Smali):
@@ -910,8 +917,6 @@ class Mod:
     ) -> tbcml.CompilationTarget:
         """Compile the mod to raw game files.
 
-        See tbcml.CompilationTarget for more information on compilation targets.
-
         Args:
             game_packs (tbcml.GamePacks): The game packs used to compile the mod.
             existing_target (tbcml.CompilationTarget | None, optional): The existing target to compile to. Defaults to None, which means a new target will be created with country code and game version from the game_packs.
@@ -922,11 +927,12 @@ class Mod:
             tbcml.CompilationTarget: The compilation target that was compiled to.
 
         Example Usage:
-            ```python
-            mod = Mod(...)
-            target = mod.compile(game_packs)
-            mod.save("mod.zip")
-            ```
+
+            .. code-block::
+
+                mod = Mod(...)
+                target = mod.compile(game_packs)
+                mod.save("mod.zip")
         """
         target = self.__compile_modifications(
             game_packs, existing_target, clear_modifications, add_target

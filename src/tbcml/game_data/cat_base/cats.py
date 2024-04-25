@@ -19,12 +19,13 @@ from marshmallow_dataclass import dataclass
 
 class CatFormType(enum.Enum):
     """Represents the different forms a cat has.
-    ```
-    tbcml.CatFormType.FIRST
-    tbcml.CatFormType.SECOND
-    tbcml.CatFormType.THIRD
-    tbcml.CatFormType.FOURTH
-    ```
+
+    .. code-block::
+
+        tbcml.CatFormType.FIRST
+        tbcml.CatFormType.SECOND
+        tbcml.CatFormType.THIRD
+        tbcml.CatFormType.FOURTH
     """
 
     FIRST = "f"
@@ -715,91 +716,71 @@ class CatForm:
 
     Basic Usage:
         Basic, no inheritance method:
-        ```
-        form = CatForm(form_type=tbcml.CatFormType.FIRST)
-        form.name = "Some cool name"
-        ```
 
-        Alternatively, if you want to encapsulate logic and data into your own class you can:
-        ```
-        class CoolCatForm(tbcml.CatForm):
-            def __init__(self):
-                super().__init__(form_type=tbcml.CatFormType.FIRST)
+        .. code-block::
 
-                self.name = "Some cool name"
-        form = CoolCatForm()
-        ```
+            form = CatForm(form_type=tbcml.CatFormType.FIRST)
+            form.name = "Some cool name"
 
-        After creating the form object, it needs to be added to a cat:
-        ```
-        cat.set_form(form)
-        ```
-        where `cat` is a `Cat` instance
+        Alternatively, if you want to encapsulate logic and data into your own class you can
+
+        .. code-block::
+
+            class CoolCatForm(tbcml.CatForm):
+                def __init__(self):
+                    super().__init__(form_type=tbcml.CatFormType.FIRST)
+
+                    self.name = "Some cool name"
+
+            form = CoolCatForm()
+
+
+        After creating the form object, it needs to be added to a cat
+
+        .. code-block::
+
+            cat.set_form(form)
+
+        where cat is a :class:`tbcml.Cat` instance
 
         If you want to do some modifications to the base form data, or just
-        want to read the base game data for the form you can do the following:
-        ```
-        form = CatForm(form_type=tbcml.CatFormType.FIRST)
-        form.read(game_data)
-        print(form.name)
-        form.name += " custom cat ending"
-        ```
-        or
-        ```
-        class CoolCatForm(tbcml.CatForm):
-            def __init__(self, game_data: tbcml.GamePacks):
-                super().__init__(form_type=tbcml.CatFormType.FIRST)
-                self.read(game_data)
+        want to read the base game data for the form you can do the following
 
-                print(self.name)
-                self.name.value += " custom cat ending"
-        ```
-        where `game_data` is a `tbcml.GamePacks` instance, to create this, look at the `GamePacks` documention.
+        .. code-block::
+
+            form = CatForm(form_type=tbcml.CatFormType.FIRST)
+            form.read(game_data)
+            print(form.name)
+            form.name += " custom cat ending"
+
+        or
+
+        .. code-block::
+
+            class CoolCatForm(tbcml.CatForm):
+                def __init__(self, game_data: tbcml.GamePacks):
+                    super().__init__(form_type=tbcml.CatFormType.FIRST)
+                    self.read(game_data)
+
+                    print(self.name)
+                    self.name.value += " custom cat ending"
+
+        where game_data is a :class:`tbcml.GamePacks` instance, to create this, look at the GamePacks documention.
 
         Note that reading from game data will overwrite any previously set data.
 
-
-    Attributes:
-        For more documentation, see each field's definition separately lower down.
-
-        form_type: (CatFormType), what form position the form should apply to:
-        ```
-        tbcml.CatFormType.FIRST
-        tbcml.CatFormType.SECOND
-        tbcml.CatFormType.THIRD
-        tbcml.CatFormType.FOURTH
-        ```
-
-        name: (str), the name of the form
-        description: (list[str]), the description of the form, list of 3 elements, one element for each line
-
-        The following attributes will be `None` if they haven't been read from
-        the game yet, and so if you want to get the object and create a new
-        empty object if it is None, then you should use the getter functions:
-        ```
-        get_stats()
-        get_anim()
-        get_upgrade_icon()
-        get_deploy_icon()
-
-        # e.g
-        form.get_stats().hp = 10
-        ```
-
-        stats: (FormStats, optional), the stats for the form, specifies stuff such as hp, movement speed, attack damage, etc
-        anim: (CustomModel, optional), the animation of the unit
-        upgrade_icon: (BCImage, optional), the icon you see in the upgrade screen for the cat
-        deploy_icon: (BCImage, optional), the icon you see in, battle, the equip screen, and the cat guide
     """
 
     form_type: tbcml.CatFormType = field(metadata={"required": True})
     """What form position the form should apply to:
-    ```
-    tbcml.CatFormType.FIRST
-    tbcml.CatFormType.SECOND
-    tbcml.CatFormType.THIRD
-    tbcml.CatFormType.FOURTH
-    ```
+
+    .. code-block::
+    
+        tbcml.CatFormType.FIRST
+        tbcml.CatFormType.SECOND
+        tbcml.CatFormType.THIRD
+        tbcml.CatFormType.FOURTH
+
     """
     name: str | None = None
     """Name of the form"""
@@ -816,31 +797,46 @@ class CatForm:
     """
     stats: FormStats | None = None
     """Stats of the form.
-    See `FormStats` for more documentation
+    See :class:`tbcml.FormStats` for more documentation
 
     Usage:
-    ```
-    stats = form.get_stats()
-    stats.hp = 1000
+
+    .. code-block::
+    
+        stats = form.get_stats()
+        stats.hp = 1000
     """
     anim: tbcml.Model | None = None
     """Animation for the form
-    See `tbcml.CustomModel` for more documentation.
+    See :class:`tbcml.CustomModel` for more documentation.
 
     Usage:
-    ```
-    anim = form.get_anim()
-    anim.flip_x()
+    ::
+        anim = form.get_anim()
+        anim.flip_x()
+    """
+
+    upgrade_icon: tbcml.BCImage | None = None
+    """Image that appears in the upgrade menu for the form
+    See :class:`tbcml.BCImage` for more documentation.
+    """
+
+    deploy_icon: tbcml.BCImage | None = None
+    """Image that appears in battle and in the equip menu for the form
+    See :class:`tbcml.BCImage` for more documentation.
     """
 
     def __post_init__(self):
         self._csv__name = StringCSVField(col_index=0)
         self._csv__description = StrListCSVField(col_index=1, length=3)
 
-    upgrade_icon: tbcml.BCImage | None = None
-    deploy_icon: tbcml.BCImage | None = None
-
     def sync(self, parent: tbcml.Cat, form_type: tbcml.CatFormType):
+        """Syncs the form with the parent cat
+
+        Args:
+            parent (tbcml.Cat): The parent cat object
+            form_type (tbcml.CatFormType): The form type to sync with
+        """
         original_cat = parent.get_form(form_type)
         if original_cat is not None:
             original_cat = copy.deepcopy(original_cat)
