@@ -1,4 +1,6 @@
 from __future__ import annotations
+import dataclasses
+from typing import Any
 
 __version__ = "2.0.0"
 
@@ -206,6 +208,29 @@ def to_pkg(
     return pkg, res
 
 
+def merge_dataclasses(curr: Any, new: Any):
+    """Sync two dataclasses together
+
+    Args:
+        curr (Any): The current dataclass
+        new (Any): The new dataclass
+    """
+
+    if not dataclasses.is_dataclass(curr) or not dataclasses.is_dataclass(new):
+        return
+    for field in dataclasses.fields(curr):
+        curr_value = getattr(curr, field.name)
+        new_value = getattr(new, field.name)
+        if curr_value is None:
+            setattr(curr, field.name, new_value)
+            continue
+        if isinstance(curr_value, list) and not curr_value:
+            setattr(curr, field.name, new_value)
+            continue
+
+        merge_dataclasses(curr_value, new_value)
+
+
 """Type alias for a package type, can be a tbcml.Apk or tbcml.Ipa"""
 
 File = Path | str | Data | bytes
@@ -370,4 +395,5 @@ __all__ = [
     "MainMenu",
     "Pkg",
     "PkgType",
+    "merge_dataclasses",
 ]

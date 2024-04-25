@@ -198,19 +198,15 @@ class Modification:
 
     @staticmethod
     def sync(curr: Any, new: Any):
-        if not dataclasses.is_dataclass(curr) or not dataclasses.is_dataclass(new):
-            return
-        for field in dataclasses.fields(curr):
-            curr_value = getattr(curr, field.name)
-            new_value = getattr(new, field.name)
-            if curr_value is None:
-                setattr(curr, field.name, new_value)
-                continue
-            if isinstance(curr_value, list) and not curr_value:
-                setattr(curr, field.name, new_value)
-                continue
+        """Sync two modifications. Similar to merge, but only copies the data
+        if the attribute is None for current data.
 
-            Modification.sync(curr_value, new_value)
+        Args:
+            curr (Any): The current modification
+            new (Any): The new modification
+        """
+
+        tbcml.merge_dataclasses(curr, new)
 
 
 class Mod:
