@@ -301,7 +301,7 @@ class ModLoader:
 
     def apply(
         self,
-        mods: list[tbcml.Mod] | tbcml.Mod | None,
+        mods: list[tbcml.Mod] | tbcml.Mod | None = None,
         *,
         custom_enc_key: str | None = None,
         custom_enc_iv: str | None = None,
