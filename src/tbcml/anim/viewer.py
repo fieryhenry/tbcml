@@ -3,13 +3,13 @@ from __future__ import annotations
 import tbcml
 
 try:
-    from PyQt5 import QtWidgets, QtGui, QtCore
+    from PySide6 import QtWidgets, QtGui, QtCore, QtOpenGLWidgets
 except ImportError:
     pass
 import time
 
 
-class AnimViewer(QtWidgets.QOpenGLWidget):
+class AnimViewer(QtOpenGLWidgets.QOpenGLWidget):
     def __init__(self, model: tbcml.Model):
         super().__init__()
         self.model = model
@@ -121,7 +121,7 @@ def main():
 
     app = QtWidgets.QApplication([])
     window = MainWindow(model)
-    app.exec_()
+    app.exec()
 
 
 if __name__ == "__main__":
