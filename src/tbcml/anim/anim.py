@@ -216,7 +216,7 @@ class Anim:
         elif mod == AnimModificationType.SPRITE:
             part.anim.cut_id = change
             part.anim.rect = self.model.texture.get_rect(part.anim.cut_id)
-            part.anim.img = self.model.texture.get_cut(part.anim.cut_id)
+            part.anim.set_img(self.model.texture.get_cut(part.anim.cut_id))
         elif mod == AnimModificationType.Z_ORDER:
             part.anim.z_depth = change * self.total_parts + part.anim.part_id
             self.sorted_parts.sort(
@@ -271,7 +271,7 @@ class Anim:
 
             if anim.cut_id >= 0:
                 anim.rect = self.model.texture.get_rect(anim.cut_id)
-                anim.img = self.model.texture.get_cut(anim.cut_id)
+                anim.set_img(self.model.texture.get_cut(anim.cut_id))
 
             if anim.scale_x != 0:
                 anim.real_scale_x = anim.scale_x / scale_unit
@@ -366,7 +366,7 @@ class Anim:
         anim = part.anim
         if anim is None:
             return
-        if anim.rect is None or anim.img is None:
+        if anim.rect is None or anim.img is None or anim.qimg is None:
             return
         if anim.parent_id < 0 or anim.unit_id < 0:
             return
@@ -403,9 +403,8 @@ class Anim:
             QtGui.QTransform(m0, m3, m1, m4, matrix[2], matrix[5]), True
         )
         alpha = self.get_recursive_alpha(part, 1, self.alpha_unit)
-
         self.draw_img(
-            anim.img, (t_piv_x, t_piv_y), (sc_w, sc_h), alpha, painter, anim.glow
+            anim.qimg, (t_piv_x, t_piv_y), (sc_w, sc_h), alpha, painter, anim.glow
         )
         if (anim.glow >= 1 and anim.glow <= 3) or anim.glow == -1:
             painter.setCompositionMode(
@@ -418,7 +417,7 @@ class Anim:
 
     def draw_img(
         self,
-        img: tbcml.BCImage,
+        img: QtGui.QImage,
         pivot: tuple[float, float],
         size: tuple[float, float],
         alpha: float,
@@ -431,11 +430,8 @@ class Anim:
                 QtGui.QPainter.CompositionMode.CompositionMode_Plus
             )
 
-        data = img.fix_libpng_warning().to_data()
-        q_img = QtGui.QImage()
-        q_img.loadFromData(data.to_bytes())
         painter.drawImage(
-            QtCore.QRectF(-pivot[0], -pivot[1], abs(size[0]), abs(size[1])), q_img
+            QtCore.QRectF(-pivot[0], -pivot[1], abs(size[0]), abs(size[1])), img
         )
 
     def transform(
@@ -481,16 +477,11 @@ class Anim:
                 ints = ints_list[0]
             else:
                 ints = None
-            if (
-                ints is None
-                or ints.part_id is None
-                or ints.base_x_size is None
-                or ints.base_y_size is None
-            ):
+            if ints is None or ints.part_id is None or ints.x is None or ints.y is None:
                 return matrix, siz_x, siz_y
             p0_x, p0_y = self.get_base_size(part, False, ints.part_id, scale_unit)
-            shi_x = ints.base_x_size * p0_x
-            shi_y = ints.base_y_size * p0_y
+            shi_x = ints.x * p0_x
+            shi_y = ints.y * p0_y
             p3_x = shi_x * sizer_x
             p3_y = shi_y * sizer_y
 

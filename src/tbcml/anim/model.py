@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import field
 import enum
+from typing import Any
 import tbcml
 import copy
 
@@ -321,6 +322,22 @@ class ModelPartAnimValues:
         self.real_alpha = 1.0
         self.real_rotation = 0.0
 
+        self.qimg: Any | None = None
+
+    def set_img(self, img: tbcml.BCImage | None):
+        self.img = img
+        if img is None:
+            return
+        data = img.fix_libpng_warning().to_data()
+        try:
+            from PySide6 import QtGui
+
+            qimg = QtGui.QImage()
+            qimg.loadFromData(data.to_bytes())  # type: ignore
+            self.qimg = qimg
+        except ImportError:
+            return
+
 
 @dataclass
 class ModelPart:
@@ -424,19 +441,19 @@ class MamodelUnits:
 @dataclass
 class MamodelInts:
     part_id: int | None = None
-    int_1: int | None = None
-    base_x_size: int | None = None
-    base_y_size: int | None = None
-    int_4: int | None = None
+    group_id: int | None = None
+    x: int | None = None
+    y: int | None = None
+    radius: int | None = None
     int_5: int | None = None
     comment: str | None = None
 
     def __post_init__(self):
         self._csv__part_id = IntCSVField(col_index=0)
-        self._csv__int_1 = IntCSVField(col_index=1)
-        self._csv__base_x_size = IntCSVField(col_index=2)
-        self._csv__base_y_size = IntCSVField(col_index=3)
-        self._csv__int_4 = IntCSVField(col_index=4)
+        self._csv__group_id = IntCSVField(col_index=1)
+        self._csv__x = IntCSVField(col_index=2)
+        self._csv__y = IntCSVField(col_index=3)
+        self._csv__radius = IntCSVField(col_index=4)
         self._csv__int_5 = IntCSVField(col_index=5)
         self._csv__comment = StringCSVField(col_index=6)
 
