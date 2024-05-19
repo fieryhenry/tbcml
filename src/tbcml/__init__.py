@@ -105,7 +105,7 @@ from .io.lib import (
 from .io.json_file import JsonFile
 from .io.file_handler import FileSize
 from .io.xml_parse import XML
-from .io.audio import AudioFile
+from .io.audio import AudioFile, AudioID
 from .io.bc_image import BCImage
 from .io.thread_helper import run_in_threads, run_in_thread
 from .io.zip import Zip
@@ -349,6 +349,7 @@ __all__ = [
     "FileSize",
     "XML",
     "AudioFile",
+    "AudioID",
     "Yaml",
     "BCImage",
     "run_in_threads",

@@ -642,7 +642,7 @@ class Mod:
 
     def add_audio_file(
         self,
-        game_id: int,
+        game_id: int | tbcml.AudioID,
         f: tbcml.File,
         is_bgm: bool,
         loop: bool,
@@ -653,7 +653,7 @@ class Mod:
         Note that this does create a modification for the sound setting, so you do not need to add a sound setting modification yourself.
 
         Args:
-            game_id (int): The id that the game uses to reference the audio file. E.g used when getting stage music.
+            game_id (int | tbcml.AudioID): The id that the game uses to reference the audio file. E.g used when getting stage music.
             f (tbcml.File): The audio file / data to add.
             is_bgm (bool): Whether the audio file is a background music or not (sound effect).
             loop (bool): Whether the audio file should loop. Most background music should loop.
@@ -668,6 +668,9 @@ class Mod:
                 mod.add_audio_file(7, local_path, is_bgm=True, loop=True, priority=-1)
 
         """
+        if isinstance(game_id, tbcml.AudioID):
+            game_id = game_id.value
+
         data = tbcml.load(f)
         audio_file = tbcml.AudioFile(game_id, is_bgm, data)
         sound_setting = tbcml.SoundSetting(
