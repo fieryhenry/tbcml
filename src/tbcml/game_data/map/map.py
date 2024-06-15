@@ -327,8 +327,8 @@ class MapType(enum.Enum):
         map_index_str = str(map_index).zfill(3)
         return f"mapname{map_index_str}_{img_code}_{lang}.png"
 
-    def get_map_texture_imgcut_name(self, lang: str):
-        name = self.get_map_texture_img_name(lang)
+    def get_map_texture_imgcut_name(self, map_index: int, lang: str):
+        name = self.get_map_texture_img_name(map_index, lang)
         if name is None:
             return None
 
@@ -336,6 +336,7 @@ class MapType(enum.Enum):
 
     def get_map_texture_img_name(
         self,
+        map_index: int | None,
         lang: str,
     ) -> str | None:
         if self == MapType.EMPIRE_OF_CATS:
@@ -344,7 +345,12 @@ class MapType(enum.Enum):
             return f"img019_w.png"
         if self == MapType.CATS_OF_THE_COSMOS:
             return f"img019_space.png"
-        return None
+
+        img_code = self.get_map_img_code()
+        if img_code is None:
+            return None
+        map_index_str = str(map_index).zfill(3)
+        return f"mapsn{map_index_str}_{img_code}_{lang}.png"
 
     def get_map_stage_data_csv_file_name(self, map_index: int) -> str | None:
         map_type_str = self.get_map_stage_data_map_code()
@@ -503,15 +509,22 @@ class Map(tbcml.Modification):
         return filename, game_data.get_csv(filename)
 
     def get_map_texture(self, game_data: tbcml.GamePacks) -> tbcml.Texture | None:
-        name = self.map_type.get_map_texture_img_name(game_data.get_lang())
+        name = self.map_type.get_map_texture_img_name(
+            self.map_index, game_data.get_lang()
+        )
         if name is None:
             return None
-        texture_name = self.map_type.get_map_texture_imgcut_name(game_data.get_lang())
+        texture_name = self.map_type.get_map_texture_imgcut_name(
+            self.map_index, game_data.get_lang()
+        )
         if texture_name is None:
             return None
 
         texture = tbcml.Texture()
-        texture.read_from_game_file_names(game_data, name, texture_name)
+        success = texture.read_from_game_file_names(game_data, name, texture_name)
+        if not success:
+            return None
+
         return texture
 
     def get_map_name_png(
