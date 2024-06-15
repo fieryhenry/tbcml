@@ -355,6 +355,7 @@ class Apk(Pkg):
             Callable[[tbcml.PKGProgressSignal], bool | None] | None
         ) = None,
         use_apktool: bool | None = None,
+        sign_password: str | None = None,
     ) -> tbcml.Result:
         if progress_callback is None:
             progress_callback = lambda _: None
@@ -380,8 +381,12 @@ class Apk(Pkg):
         if progress_callback(tbcml.PKGProgressSignal.SIGN) is False:
             return tbcml.Result(False)
 
-        if not (res := self.sign()):
-            return res
+        if sign_password is None:
+            if not (res := self.sign()):
+                return res
+        else:
+            if not (res := self.sign(password=sign_password)):
+                return res
 
         if progress_callback(tbcml.PKGProgressSignal.FINISH_UP) is False:
             return tbcml.Result(False)
@@ -1265,6 +1270,7 @@ class Apk(Pkg):
         ) = None,
         do_final_pkg_actions: bool = True,
         use_apktool: bool | None = None,
+        sign_password: str | None = None,
     ) -> tbcml.Result:
         if progress_callback is None:
             progress_callback = lambda x: None
@@ -1327,6 +1333,7 @@ class Apk(Pkg):
                     use_apktool=use_apktool,
                     save_in_modded_pkgs=save_in_modded_pkgs,
                     progress_callback=progress_callback,
+                    sign_password=sign_password,
                 )
             ):
                 return res

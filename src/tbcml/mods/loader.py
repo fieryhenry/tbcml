@@ -313,6 +313,7 @@ class ModLoader:
         ) = None,
         do_final_pkg_actions: bool = True,
         use_apktool: bool | None = None,
+        signing_password: str | None = None,
     ) -> tbcml.Result:
         """Applies the mods to the package.
 
@@ -326,6 +327,7 @@ class ModLoader:
             progress_callback (Callable[[tbcml.PKGProgressSignal], bool  |  None]  |  None, optional): The progress callback function. Defaults to None.
             do_final_pkg_actions (bool, optional): Whether to do the final package actions. Defaults to True
             use_apktool (bool | None, optional): Whether to use apktool to build the package. Defaults to None. If None, the value used in the initialize_apk function will be used.
+            signing_password (str | None, optional): The password to sign the apk with. Defaults to None which uses the default of TBCML_CUSTOM_APK.
 
         Raises:
             RuntimeError: If an error occurs when loading the mods.
@@ -351,6 +353,7 @@ class ModLoader:
                 progress_callback=progress_callback,
                 do_final_pkg_actions=do_final_pkg_actions,
                 use_apktool=use_apktool,
+                sign_password=signing_password,
             )
         else:
             res = pkg.load_mods(
