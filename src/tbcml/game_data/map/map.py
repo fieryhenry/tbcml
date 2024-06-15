@@ -239,6 +239,8 @@ class MapType(enum.Enum):
             return 27000 + map_index
         if self == MapType.BEHEMOTH:
             return 31000 + map_index
+        if self == MapType.ZERO_LEGENDS:
+            return 34000 + map_index
 
         return None
 
@@ -366,11 +368,11 @@ class MapStageDataInfo:
 
     def __post_init__(self):
         self._csv__map_number = IntCSVField(col_index=0, row_index=0)
-        self._csv__item_reward_stage_id = IntCSVField(col_index=0, row_index=0)
-        self._csv__score_reward_stage_id = IntCSVField(col_index=0, row_index=0)
-        self._csv__display_condition = IntCSVField(col_index=0, row_index=0)
-        self._csv__play_condition = IntCSVField(col_index=0, row_index=0)
-        self._csv__display_user_rank = IntCSVField(col_index=0, row_index=0)
+        self._csv__item_reward_stage_id = IntCSVField(col_index=1, row_index=0)
+        self._csv__score_reward_stage_id = IntCSVField(col_index=2, row_index=0)
+        self._csv__display_condition = IntCSVField(col_index=3, row_index=0)
+        self._csv__play_condition = IntCSVField(col_index=4, row_index=0)
+        self._csv__display_user_rank = IntCSVField(col_index=5, row_index=0)
         self._csv__map_pattern = IntCSVField(col_index=0, row_index=1)
 
     def apply_csv(self, csv: tbcml.CSV):
@@ -469,7 +471,10 @@ class Map(tbcml.Modification):
         return self.map_name_img
 
     def set_stage(self, index: int, stage: tbcml.Stage):
-        self.stages[index] = stage
+        if index >= len(self.stages):
+            self.stages.append(stage)
+        else:
+            self.stages[index] = stage
 
     def get_stage_name_csv(
         self,
@@ -530,7 +535,9 @@ class Map(tbcml.Modification):
             return
 
         for i, stage in enumerate(self.stages):
-            stage.apply_stage_name_csv(csv, self.map_type, self.map_index, i)
+            stage.apply_stage_name_csv(
+                csv, self.map_type, self.map_index, i, is_end=i == len(self.stages) - 1
+            )
 
         return game_data.set_csv(file_name, csv)
 
@@ -540,14 +547,17 @@ class Map(tbcml.Modification):
         file_name, csv = self.get_map_stage_data_csv(game_data)
         if file_name is None or csv is None:
             return
-
         map_stage_data_info = self.get_map_stage_data_info()
         map_stage_data_info.apply_csv(csv)
 
-        for i, stage in enumerate(self.stages):
-            stage.apply_map_stage_data_csv(
-                i + 2, csv, self.get_map_stage_data_info().score_reward_stage_id or -1
+        counter = 2
+
+        for stage in self.stages:
+            did_write = stage.apply_map_stage_data_csv(
+                counter, csv, self.get_map_stage_data_info().score_reward_stage_id or -1
             )
+            if did_write:
+                counter += 1
 
         return game_data.set_csv(file_name, csv)
 
@@ -606,6 +616,15 @@ class Map(tbcml.Modification):
                     continue
             stage.read_stage_name_csv(csv, self.map_type, self.map_index, i)
 
+    def read_stage_name_csv_stage(
+        self, game_data: tbcml.GamePacks, stage: tbcml.Stage, stage_index: int
+    ):
+        _, csv = self.get_stage_name_csv(game_data)
+        if csv is None:
+            return
+
+        stage.read_stage_name_csv(csv, self.map_type, self.map_index, stage_index)
+
     def read_map_stage_data_csv(self, game_data: tbcml.GamePacks):
         _, csv = self.get_map_stage_data_csv(game_data)
         if csv is None:
@@ -620,6 +639,20 @@ class Map(tbcml.Modification):
             stage.read_map_stage_data_csv(
                 i + 2, csv, map_stage_data_info.score_reward_stage_id or -1
             )
+
+    def read_map_stage_data_csv_stage(
+        self, game_data: tbcml.GamePacks, stage: tbcml.Stage, stage_index: int
+    ):
+        _, csv = self.get_map_stage_data_csv(game_data)
+        if csv is None:
+            return
+
+        map_stage_data_info = MapStageDataInfo()
+        map_stage_data_info.read_csv(csv)
+
+        stage.read_map_stage_data_csv(
+            stage_index + 2, csv, map_stage_data_info.score_reward_stage_id or -1
+        )
 
     def get_stage_option_csv(
         self, game_data: tbcml.GamePacks
@@ -769,3 +802,6 @@ class Map(tbcml.Modification):
     def post_from_json(self) -> None:
         for stage in self.stages:
             stage.post_from_json()
+
+    def set_map_index(self, map_index: int):
+        self.map_index = map_index

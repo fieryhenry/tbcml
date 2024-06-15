@@ -189,7 +189,7 @@ class StageCSV:
 
     def apply_csv(self, csv: tbcml.CSV):
         index = 0
-        if len(csv.lines[0]) < 7:
+        if csv.lines and len(csv.lines[0]) < 7:
             if self.non_story_stage_info is None:
                 self.non_story_stage_info = NonStoryStageInfo()
             self.non_story_stage_info.apply_csv(csv)
@@ -438,8 +438,9 @@ class Stage:
         score_reward_stage_id: int,
     ):
         if self.map_stage_data_stage is None:
-            return
+            return False
         self.map_stage_data_stage.apply_csv(index, csv, score_reward_stage_id)
+        return True
 
     def get_original_stage(self, index: int):
         if self.parent_map is None:
@@ -564,6 +565,7 @@ class Stage:
         map_type: tbcml.MapType,
         map_index: int,
         stage_index: int,
+        is_end: bool = False,
     ):
         if self.name is None:
             return
@@ -578,6 +580,10 @@ class Stage:
         csv_name = StringCSVField(col_index=col_index, row_index=row_index)
         csv_name.set(self.name)
         csv_name.write_to_csv(csv)
+
+        if is_end:
+            if csv.lines[row_index][-1] != "＠":
+                csv.lines[row_index].append("＠")
 
     def apply_stage_name_img(
         self,
@@ -668,6 +674,8 @@ class Stage:
 
         success = self.read_stage_csv(game_data, stage_index, map_type, map_index)
         self.read_stage_name_img(game_data, stage_index, map_type, map_index)
+        self.read_map_stage_data_csv_stage(game_data, stage_index)
+        self.read_stage_name_csv_stage(game_data, stage_index)
         return success
 
     def apply_stage_csv(
@@ -679,7 +687,9 @@ class Stage:
     ):
         self.apply_stage_info_vars()
         file_name, csv = self.get_stage_csv(game_data, stage_index, map_type, map_index)
-        if csv is None or file_name is None:
+        if csv is None:
+            csv = tbcml.CSV()
+        if file_name is None:
             return
         self.stage_csv_data.apply_csv(csv)
 
@@ -709,3 +719,17 @@ class Stage:
     def post_from_json(self):
         self.stage_csv_data = self.stage_csv_copy
         self.update_stage_info_vars()
+
+    def read_map_stage_data_csv_stage(
+        self, game_data: tbcml.GamePacks, stage_index: int
+    ):
+        parent_map = self.parent_map
+        if parent_map is None:
+            return
+        parent_map.read_map_stage_data_csv_stage(game_data, self, stage_index)
+
+    def read_stage_name_csv_stage(self, game_data: tbcml.GamePacks, stage_index: int):
+        parent_map = self.parent_map
+        if parent_map is None:
+            return
+        parent_map.read_stage_name_csv_stage(game_data, self, stage_index)
