@@ -86,7 +86,7 @@ class Apk(Pkg):
 
         return tbcml.Result.program_not_installed(
             prog_name="Apktool or java",
-            install_from="ttps://ibotpeaches.github.io/Apktool/install/",
+            install_from="https://ibotpeaches.github.io/Apktool/install/",
         )
 
     @staticmethod
