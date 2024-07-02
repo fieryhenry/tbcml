@@ -367,11 +367,11 @@ class ServerFileHandler:
                 break
         if lib is None:
             raise GameVersionSearchError(
-                "Could not find libnative.so. Maybe your game version is too to be supported atm"
+                "Could not find libnative.so. Maybe your game version is too old to be supported atm"
             )
         if arc is None:
             raise GameVersionSearchError(
-                "Could not find architecture. Maybe your game version is too to be supported atm"
+                "Could not find architecture. Maybe your game version is too old to be supported atm"
             )
         lib_file = tbcml.Lib(arc, lib)
         if self.apk.country_code == tbcml.CountryCode.JP:
@@ -384,14 +384,14 @@ class ServerFileHandler:
             list_to_search = [2, 3, 1, 6100000]
         else:
             raise GameVersionSearchError(
-                "Country code not supported. Maybe your game version is too to be supported atm"
+                "Country code not supported. Maybe your game version is too old to be supported atm"
             )
         start_index = lib_file.search(
             tbcml.Data.from_int_list(list_to_search, "little")
         )
         if start_index == -1:
             raise GameVersionSearchError(
-                "Could not find game versions. Maybe your game version is too to be supported atm"
+                "Could not find game versions. Maybe your game version is too old to be supported atm"
             )
         end_index1 = lib_file.search(
             tbcml.Data.from_int(0xFFFFFFFF, "little"), start=start_index
