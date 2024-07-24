@@ -419,10 +419,13 @@ class Mod:
                 mod = Mod(...)
                 mod.merge_modifications()
         """
+
         new_modifications: list[Modification] = []
         modifs = self.modifications.copy()
+        other: list[Modification] = []
         if type is not None:
             modifs = [mod for mod in modifs if mod.modification_type == type]
+            other = [mod for mod in self.modifications if mod.modification_type != type]
         modifs.reverse()
         for mod in modifs:
             found = False
@@ -434,7 +437,7 @@ class Mod:
             if not found:
                 new_modifications.append(mod)
 
-        self.modifications = new_modifications
+        self.modifications = new_modifications + other
 
     def is_author(self, author: str, ignore_case: bool = False) -> bool:
         """Check if the mod has an author.
