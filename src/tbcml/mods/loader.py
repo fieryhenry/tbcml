@@ -420,9 +420,16 @@ class ModLoader:
         Returns:
             list[list[tbcml.CommandResult]]: The results of the installation and running of the game.
         """
-        results = self.get_adb_handler().run_adb_handler_function(
-            tbcml.AdbHandler.install_apk, self.get_apk().final_pkg_path
-        )
+        if not self.get_apk().is_xapk():
+            results = self.get_adb_handler().run_adb_handler_function(
+                tbcml.AdbHandler.install_apk, self.get_apk().final_pkg_path
+            )
+        else:
+            paths = self.get_apk().output_path.add("split_apks").get_files(r"\.apk$")
+            results = self.get_adb_handler().run_adb_handler_function(
+                tbcml.AdbHandler.install_xapk,
+                paths,
+            )
 
         if run_game:
             return [results, self.run_game_adb()]

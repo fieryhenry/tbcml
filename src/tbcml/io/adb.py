@@ -71,6 +71,32 @@ class AdbHandler:
     def install_apk(self, apk_path: tbcml.Path) -> tbcml.CommandResult:
         return self.adb_path.run(f"-s {self.get_device()} install {apk_path}")
 
+    def install_xapk(self, apk_paths: list[tbcml.Path]) -> tbcml.CommandResult:
+        total_size = sum([path.get_file_size() for path in apk_paths])
+
+        res = self.run_shell(f"pm install-create -S {total_size}")
+        if not res:
+            return res
+        session_id = res.result.strip().split("[")[-1].split("]")[0]
+
+        device_dir = tbcml.Path.get_root().add("data").add("local").add("tmp")
+
+        for file in apk_paths:
+            res = self.basic_push_file(file, device_dir.add(file.basename()))
+            if not res:
+                return res
+
+        for i, path in enumerate(apk_paths):
+            file_size = path.get_file_size()
+            device_path = device_dir.add(path.basename())
+            res = self.run_shell(
+                f"pm install-write -S {file_size} {session_id} {i} {device_path.to_str_forwards()}"
+            )
+            if not res:
+                return res
+
+        return self.run_shell(f"pm install-commit {session_id}")
+
     def pull_file(
         self, device_path: tbcml.Path, local_path: tbcml.Path
     ) -> tbcml.CommandResult:
@@ -94,7 +120,10 @@ class AdbHandler:
         return result
 
     def push_file(
-        self, local_path: tbcml.Path, device_path: tbcml.Path
+        self,
+        local_path: tbcml.Path,
+        device_path: tbcml.Path,
+        use_su: bool = True,
     ) -> tbcml.CommandResult:
         orignal_device_path = device_path.copy_object()
         if not self.adb_root_success():
@@ -106,9 +135,11 @@ class AdbHandler:
         if not result.success:
             return result
         if not self.adb_root_success():
-            result2 = self.run_shell(
-                f"su -c 'cp /sdcard/{device_path.basename()} {orignal_device_path.to_str_forwards()} && chmod o+rw {orignal_device_path.to_str_forwards()}'"
-            )
+            cmd = f"'cp /sdcard/{device_path.basename()} {orignal_device_path.to_str_forwards()} && chmod o+rw {orignal_device_path.to_str_forwards()}'"
+            if use_su:
+                cmd = "su -c " + cmd
+
+            result2 = self.run_shell(cmd)
             result3 = self.run_shell(f"rm /sdcard/{device_path.basename()}")
             if result2.exit_code != 0:
                 return result2
@@ -126,16 +157,33 @@ class AdbHandler:
         return results
 
     def push_file_to_folder(
-        self, local_path: tbcml.Path, device_folder_path: tbcml.Path
+        self,
+        local_path: tbcml.Path,
+        device_folder_path: tbcml.Path,
+        use_su: bool = True,
     ) -> tbcml.CommandResult:
-        return self.push_file(local_path, device_folder_path.add(local_path.basename()))
+        return self.push_file(
+            local_path, device_folder_path.add(local_path.basename()), use_su
+        )
+
+    def basic_push_file(
+        self, local_path: tbcml.Path, device_path: tbcml.Path
+    ) -> tbcml.CommandResult:
+        return self.adb_path.run(
+            f"-s {self.get_device()} push '{local_path}' '{device_path}'"
+        )
 
     def push_files_to_folder(
-        self, local_paths: list[tbcml.Path], device_folder_path: tbcml.Path
+        self,
+        local_paths: list[tbcml.Path],
+        device_folder_path: tbcml.Path,
+        use_su: bool = True,
     ) -> list[tbcml.CommandResult]:
         results: list[tbcml.CommandResult] = []
         for local_path in local_paths:
-            results.append(self.push_file_to_folder(local_path, device_folder_path))
+            results.append(
+                self.push_file_to_folder(local_path, device_folder_path, use_su)
+            )
         return results
 
     def get_apk_path(self) -> tbcml.Path:
