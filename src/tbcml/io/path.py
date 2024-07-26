@@ -216,11 +216,9 @@ class Path:
             raise FileNotFoundError(f"File not found: {self.path}")
 
     def copy_tree(self, target: Path):
-        if target.exists():
-            target.remove_tree()
         target.parent().generate_dirs()
         if self.exists():
-            shutil.copytree(self.path, target.path)
+            shutil.copytree(self.path, target.path, dirs_exist_ok=True)
 
     def read(self, create: bool = False) -> tbcml.Data:
         if self.exists():
