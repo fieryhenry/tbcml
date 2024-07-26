@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
+import difflib
 import copy
 
 import tbcml
+
+from typing import Any
+
+from dataclasses import fields, dataclass, is_dataclass
 
 
 class GameFile:
@@ -28,6 +33,29 @@ class GameFile:
         self.iv = iv
         self.__dec_data: tbcml.Data | None = dec_data
         self.original_dec_data: tbcml.Data | None = None
+
+    def compare_files(self, other: GameFile):
+        if self.dec_data.to_bytes() == other.dec_data.to_bytes():
+            return False
+
+        print()
+        extensions = ["tsv", "csv", "json"]
+        extension = self.file_name.split(".")[-1]
+        from_file = f"{self.file_name} {self.gv} {self.cc}"
+        to_file = f"{other.file_name} {other.gv} {other.cc}"
+        if extension in extensions:
+            for line in difflib.unified_diff(
+                self.dec_data.to_str().splitlines(),
+                other.dec_data.to_str().splitlines(),
+                fromfile=from_file,
+                tofile=to_file,
+                lineterm="",
+            ):
+                print(line, end="\n")
+        else:
+            print(f"Binary files {from_file} and {to_file} differ")
+
+        return True
 
     @staticmethod
     def decrypt_apk_file(enc_data: tbcml.Data) -> tbcml.Data:
@@ -150,7 +178,6 @@ class PackFile:
         gv: tbcml.GameVersion,
     ):
         """Initialize a new PackFile.
-
         Args:
             pack_name (str): The name of the pack.
             country_code (country_code.CountryCode): The country code of the game data.
@@ -505,6 +532,35 @@ class GamePacks:
 
         self.init_data()
 
+    def get_files(self) -> list[GameFile]:
+        files: list[GameFile] = []
+        for pack in self.packs.values():
+            files.extend(pack.get_files())
+
+        return files
+
+    def compare(self, other: GamePacks):
+        files_2 = other.get_files()
+        for file_1 in self.get_files():
+            file_2 = other.find_file(file_1.file_name)
+            if file_2 is None:
+                print(
+                    f"{file_1.file_name} {self.gv} {self.country_code} does not exist in {other.gv} {other.country_code}"
+                )
+                continue
+            try:
+                files_2.remove(file_2)
+            except ValueError:
+                pass
+            file_1.compare_files(file_2)
+
+        for file_2 in files_2:
+            file_1 = self.find_file(file_2.file_name)
+            if file_1 is None:
+                print(
+                    f"{file_2.file_name} {other.gv} {other.country_code} does not exist in {self.gv} {self.country_code}"
+                )
+
     def get_log(self):
         self.apply_all_csvs()
         return self.log
@@ -850,3 +906,55 @@ class GamePacks:
         """
         data = copy.deepcopy(self)
         return data
+
+    @staticmethod
+    def diff_dataclasses(obj1: Any, obj2: Any) -> dict[str, tuple[Any, Any]]:
+        if type(obj1) != type(obj2):
+            raise TypeError("Objects are of different types")
+
+        diff_summary: dict[str, Any] = {}
+
+        for field in fields(obj1):
+            attr = field.name
+            value1 = getattr(obj1, attr)
+            value2 = getattr(obj2, attr)
+
+            if is_dataclass(value1) and is_dataclass(value2):
+                nested_diff = GamePacks.diff_dataclasses(value1, value2)
+                if nested_diff:
+                    diff_summary[attr] = nested_diff
+            elif value1 != value2:
+                diff_summary[attr] = (value1, value2)
+
+        return diff_summary
+
+    def compare_content(self, other: GamePacks, check_anim: bool = False):
+        total_cats_1 = tbcml.Cat.get_total_cats(self)
+        total_cats_2 = tbcml.Cat.get_total_cats(other)
+        if total_cats_1 is None or total_cats_2 is None:
+            return
+
+        str_1 = f"{self.gv} {self.country_code}"
+        str_2 = f"{other.gv} {other.country_code}"
+
+        total_cats = min(total_cats_1, total_cats_2)
+
+        if total_cats_2 > total_cats_1:
+            print(f"+{total_cats_2-total_cats_1} cats in {str_2}")
+        elif total_cats_1 > total_cats_2:
+            print(f"+{total_cats_1 - total_cats_2} cats in {str_1}")
+
+        for cat_id in range(total_cats):
+            cat_1 = tbcml.Cat(cat_id)
+            cat_1.read(self, check_anim)
+
+            cat_2 = tbcml.Cat(cat_id)
+            cat_2.read(other, check_anim)
+
+            if cat_1 == cat_2:
+                continue
+
+            summary = GamePacks.diff_dataclasses(cat_1, cat_2)
+
+            print(f"Cat {cat_id} differs")
+            print(summary)
