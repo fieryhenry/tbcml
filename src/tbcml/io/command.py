@@ -20,6 +20,9 @@ class CommandResult:
     def success(self) -> bool:
         return self.exit_code == 0
 
+    def __bool__(self) -> bool:
+        return self.success
+
 
 class Command:
     def __init__(
