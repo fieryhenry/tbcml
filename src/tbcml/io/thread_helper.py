@@ -63,10 +63,14 @@ def run_in_thread(
 
 
 def run_in_threads(
-    funcs: list[Callable[..., T]], args: list[tuple[Any, ...]], max_threads: int = 8
+    funcs: list[Callable[..., T]],
+    args: list[tuple[Any, ...]],
+    max_threads: int | None = 8,
 ) -> list[T]:
     if len(funcs) != len(args):
         raise ValueError("Total functions and total args must be equal!")
+    if max_threads == -1 or max_threads is None:
+        max_threads = len(funcs)
     chunk_size = len(funcs) // max_threads
     func_chunks = chunks(funcs, chunk_size)
     arg_chunks = chunks(args, chunk_size)
