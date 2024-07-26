@@ -56,6 +56,8 @@ class TempFolder:
                 tbcml.Path.get_documents_folder().add("temp").add(str(uuid.uuid4()))
             )
             path = self.path_dir.add(name).get_absolute_path()
+        else:
+            self.path_dir = path
 
         if not path.is_valid():
             raise Exception(f"Could not create temp folder at {path} (path invalid)")
