@@ -159,8 +159,9 @@ class Ipa(Pkg):
             raise ValueError("No dirs found in ipa!")
         return dirs[0]
 
-    def add_to_lib_folder(self, architecture: str, library_path: tbcml.Path) -> None:
-        pass
+    def add_to_lib_folder(
+        self, architecture: str, library_path: tbcml.Path
+    ) -> tbcml.Result: ...
 
     def get_libgadget_script_path(self) -> tbcml.Path:
         return tbcml.Path("bc_script.js")
