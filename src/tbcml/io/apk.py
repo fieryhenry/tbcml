@@ -1173,6 +1173,8 @@ class Apk(Pkg):
         )
 
         if self.is_xapk():
+            if id == "base":
+                id = self.get_default_package_name()
             return base_path.add(id)
         return base_path
 
