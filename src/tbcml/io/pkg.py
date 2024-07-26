@@ -598,7 +598,7 @@ class Pkg:
         libnative.write()
         self.add_to_lib_folder(architecture, library_path)
 
-    def get_lib_path(self, architecture: str) -> tbcml.Path:
+    def get_lib_path(self, architecture: str) -> tbcml.Path | None:
         raise NotImplementedError
 
     def get_libs(self) -> dict[str, tbcml.Lib]:
@@ -652,7 +652,9 @@ class Pkg:
             for lib in libs_path.get_files():
                 self.add_native_library(architecture, lib)
 
-    def add_to_lib_folder(self, architecture: str, library_path: tbcml.Path) -> None:
+    def add_to_lib_folder(
+        self, architecture: str, library_path: tbcml.Path
+    ) -> tbcml.Result:
         raise NotImplementedError
 
     def create_libgadget_config(self) -> tbcml.JsonFile:
@@ -793,14 +795,16 @@ class Pkg:
         self.add_asset_data(tbcml.Path("modlist.html"), tbcml.Data(modlist_html))
 
     def add_asset(self, asset_path: tbcml.Path):
-        asset_path.copy(self.extracted_path.add("assets").add(asset_path.basename()))
+        asset_path.copy(self.get_asset(asset_path.basename()))
 
     def add_asset_data(self, asset_path: tbcml.Path, asset_data: tbcml.Data):
-        self.extracted_path.add("assets").add(asset_path).write(asset_data)
+        self.get_asset(asset_path).write(asset_data)
 
     def remove_arcs(self, arcs: list[str]):
         for arc in arcs:
-            self.get_lib_path(arc).remove()
+            lib_path = self.get_lib_path(arc)
+            if lib_path is not None:
+                lib_path.remove()
 
     def remove_asset(self, asset_path: tbcml.PathStr):
         asset_path = self.get_asset(asset_path)
