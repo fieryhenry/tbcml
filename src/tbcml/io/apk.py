@@ -753,10 +753,10 @@ class Apk(Pkg):
             sig_failed = True
 
         if sig_failed and not skip_signature_check:
-            return tbcml.Result(
-                False,
-                error="APK signature check failed. The downloaded APK is not original. If you are sure that the APK is original, set skip_signature_check to True.",
+            print(
+                "WARNING: APK signature is not valid. You may have downloaded a non-ponos battle cats apk. To disable this warning pass `skip_signature_check = True` to the download function. If the apk is an xapk, then the signature is not checked at the moment"
             )
+            return tbcml.Result(True)
 
         return res
 
