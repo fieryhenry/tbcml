@@ -314,7 +314,11 @@ class Apk(Pkg):
     def _xapk_pack(
         self, dir: tbcml.Path, apk_path: tbcml.Path, use_apktool: bool | None = None
     ):
-        res = self.pack_apk(use_apktool, dir, apk_path)
+        res = self.pack_apk(
+            use_apktool,
+            dir,
+            apk_path,
+        )
         if not res:
             return res
         res = self.sign(apk_path=apk_path)
@@ -1174,7 +1178,7 @@ class Apk(Pkg):
 
         if self.is_xapk():
             if id == "base":
-                id = self.get_default_package_name()
+                id = self.get_base_xapk_package()
             return base_path.add(id)
         return base_path
 
@@ -1364,7 +1368,7 @@ class Apk(Pkg):
 
     def is_xapk(self) -> bool:
         return (
-            self.extracted_path.add(self.get_default_package_name()).exists()
+            self.extracted_path.add("InstallPack").exists()
             or self.extracted_path.add("unknown").add("InstallPack.apk").exists()
             or self.extracted_path.add("InstallPack.apk").exists()
         )
@@ -1375,6 +1379,16 @@ class Apk(Pkg):
         if base_path.add("unknown").exists():
             return base_path.add("unknown")
         return base_path
+
+    def get_base_xapk_package(self) -> str:
+        for path in self.get_xapk_id_dirs():
+            id = path.basename()
+            if id.startswith("config."):
+                continue
+            if id == "InstallPack":
+                continue
+            return id
+        return "base"
 
     def extract_xapk(
         self, decode_resources: bool = True, use_apktool: bool = True
@@ -1389,11 +1403,25 @@ class Apk(Pkg):
             "xapk_extraction", path=self.output_path.add("xapk_extraction")
         ) as temp:
             extracted_path = temp.add("extracted")
+            funcs: list[Callable[..., Any]] = []
+            args: list[tuple[bool, bool, tbcml.Path, tbcml.Path]] = []
             for apk in self.get_xapk_base_path(
                 self.output_path.add("xapk_original")
             ).get_files(r"\.apk$"):
-                temp_path = extracted_path.add(apk.get_file_name_without_extension())
-                res = self.extract_apk(decode_resources, use_apktool, apk, temp_path)
+                file_name = apk.get_file_name_without_extension()
+                temp_path = extracted_path.add(file_name)
+                funcs.append(self.extract_apk)
+                args.append(
+                    (
+                        decode_resources,
+                        use_apktool,
+                        apk,
+                        temp_path,
+                    )
+                )
+
+            ress = tbcml.run_in_threads(funcs, args)
+            for res in ress:
                 if not res:
                     return res
 
