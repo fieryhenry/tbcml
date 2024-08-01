@@ -10,7 +10,7 @@ the loader and apply the mod:
 import tbcml
 
 loader = tbcml.ModLoader("en", "13.1.1") # Change to your language and version
-loader.intialize()
+loader.intialize_apk()
 
 ...
 # Apply mod
