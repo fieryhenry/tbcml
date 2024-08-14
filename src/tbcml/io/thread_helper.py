@@ -72,6 +72,8 @@ def run_in_threads(
     if max_threads == -1 or max_threads is None:
         max_threads = len(funcs)
     chunk_size = len(funcs) // max_threads
+    if chunk_size == 0:
+        chunk_size = 1
     func_chunks = chunks(funcs, chunk_size)
     arg_chunks = chunks(args, chunk_size)
     threads: list[threading.Thread] = []
