@@ -786,12 +786,12 @@ class Apk(Pkg):
         stream = self.get_download_stream(scraper, url)
         if stream is None:
             stream = self.get_download_stream(scraper, url[:-1] + "1")
-        # if stream is None:
-        #    stream = self.get_download_stream(scraper, url.replace("APK", "XAPK"))
-        # sif stream is None:
-        # stream = self.get_download_stream(
-        #    scraper, url.replace("APK", "XAPK")[:-1] + "1"
-        # )
+        if stream is None:
+            stream = self.get_download_stream(scraper, url.replace("APK", "XAPK"))
+        if stream is None:
+            stream = self.get_download_stream(
+                scraper, url.replace("APK", "XAPK")[:-1] + "1"
+            )
         if stream is None:
             return tbcml.Result(
                 False, error=f"Failed to get download stream for url: {url}"
