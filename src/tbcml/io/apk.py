@@ -945,8 +945,20 @@ class Apk(Pkg):
             urls.append(data["versionURL"])
         return dict(zip(versions, urls))
 
+    def get_apkpure_url(self, xapk: bool = False):
+        apk_str = "XAPK" if xapk else "APK"
+
+        return f"https://d.apkpure.com/b/{apk_str}/jp.co.ponos.battlecats{self.country_code.get_patching_code()}?versionCode={self.game_version.game_version}0"
+
     def get_download_url(self) -> str:
-        return f"https://d.apkpure.com/b/APK/jp.co.ponos.battlecats{self.country_code.get_patching_code()}?versionCode={self.game_version.game_version}0"
+        url_apk = self.get_apkpure_url(False)
+        size_apk = len(requests.head(url_apk, allow_redirects=True).content)
+        url_xapk = self.get_apkpure_url(True)
+        size_xapk = len(requests.head(url_xapk, allow_redirects=True).content)
+
+        if size_apk > size_xapk // 2:  # bias towards apk
+            return url_apk
+        return url_xapk
 
     @staticmethod
     def get_all_versions_uptodown(
