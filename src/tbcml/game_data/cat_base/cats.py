@@ -1495,11 +1495,13 @@ class Cat(tbcml.Modification):
 
         return True
 
-    def set_form(self, form: CatForm, form_type: tbcml.CatFormType | None = None):
+    def set_form(self, form: CatForm, form_type: tbcml.CatFormType | int | None = None):
         if self.forms is None:
             self.forms = {}
 
         if form_type is not None:
+            if isinstance(form_type, int):
+                form_type = tbcml.CatFormType.from_index(form_type)
             form.form_type = form_type
 
         if form_type is None:
