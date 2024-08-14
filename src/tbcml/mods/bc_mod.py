@@ -21,6 +21,8 @@ class ModificationType(enum.Enum):
     LOGO_SCREEN = "logo_screen"
     MAIN_MENU = "main_menu"
 
+    GATYA_ITEM = "gatya_item"
+
     @staticmethod
     def from_str_value(string: str) -> ModificationType | None:
         for type in ModificationType:
@@ -41,6 +43,7 @@ class ModificationType(enum.Enum):
             ModificationType.LOADING_SCREEN: tbcml.LoadingScreen,
             ModificationType.LOGO_SCREEN: tbcml.LogoScreen,
             ModificationType.MAIN_MENU: tbcml.MainMenu,
+            ModificationType.GATYA_ITEM: tbcml.GatyaItem,
         }
 
     @staticmethod

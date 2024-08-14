@@ -49,6 +49,7 @@ from .game_data.misc.sound_setting import SoundSetting
 from .game_data.misc.loading_screen import LoadingScreen
 from .game_data.misc.logo_screen import LogoScreen
 from .game_data.misc.main_menu import MainMenu
+from .game_data.misc.gatyaitem import GatyaItem, Matatabi, GatyaItemBuy
 from .game_data.battle.chara_group import CharaGroup
 
 from .anim.model import (
@@ -394,6 +395,9 @@ __all__ = [
     "LoadingScreen",
     "LogoScreen",
     "MainMenu",
+    "GatyaItem",
+    "GatyaItemBuy",
+    "Matatabi",
     "Pkg",
     "PkgType",
     "merge_dataclasses",
