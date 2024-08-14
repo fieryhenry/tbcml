@@ -456,12 +456,7 @@ class Apk(Pkg):
         for dir1 in to_check:
             for dir in dir1.add("lib").get_dirs():
                 arc = dir.basename()
-                so_1 = dir.add("libnative-lib.so")
-                so_2 = dir.add("libbattlecats-jni.so")
-                if so_1.exists():
-                    paths[arc] = so_1
-                elif so_2.exists():
-                    paths[arc] = so_2
+                paths[arc] = dir
         return paths
 
     def zip_align(self, output_path: tbcml.Path | None = None) -> tbcml.Result:
@@ -1094,7 +1089,13 @@ class Apk(Pkg):
 
     def get_native_lib_path(self, architecture: str) -> tbcml.Path | None:
         arc_path = self.get_lib_path(architecture)
-        return arc_path
+        if arc_path is None:
+            return None
+        bin_1 = arc_path.add("libnative-lib.so")
+        if bin_1.exists():
+            return bin_1
+        else:
+            return arc_path.add("libbattlecats-jni.so")
 
     def is_java(self):
         for arc in self.get_architectures():

@@ -357,8 +357,10 @@ class LibFiles:
 
     def get_so_files(self):
         files: dict[str, tbcml.Data] = {}
-        for arc, path in self.apk.get_lib_paths().items():
-            files[arc] = path.read()
+        for arc in self.apk.get_architectures():
+            path = self.apk.get_native_lib_path(arc)
+            if path is not None:
+                files[arc] = path.read()
         return files
 
     def get_modified_packs(self) -> list[tbcml.Path]:
