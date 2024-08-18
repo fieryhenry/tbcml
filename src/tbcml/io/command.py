@@ -27,8 +27,9 @@ class CommandResult:
 class Command:
     def __init__(
         self,
-        command: str,
+        command: list[str],
         cwd: tbcml.Path | None = None,
+        shell: bool = False,
     ):
         self.command = command
         self.process = None
@@ -38,13 +39,15 @@ class Command:
         else:
             self.cwd = cwd
 
+        self.shell = shell
+
     def run(self, inputData: str = "\n", display: bool = False) -> CommandResult:
         self.process = subprocess.Popen(
             self.command,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             stdin=subprocess.PIPE,
-            shell=True,
+            shell=self.shell,
             universal_newlines=True,
             cwd=self.cwd,
         )

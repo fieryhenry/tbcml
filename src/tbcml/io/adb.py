@@ -20,20 +20,20 @@ class AdbHandler:
         )
 
     def start_server(self) -> tbcml.CommandResult:
-        return self.adb_path.run("start-server")
+        return self.adb_path.run(["start-server"])
 
     def kill_server(self) -> tbcml.CommandResult:
-        return self.adb_path.run("kill-server")
+        return self.adb_path.run(["kill-server"])
 
     def root(self) -> tbcml.CommandResult:
-        return self.adb_path.run(f"-s {self.get_device()} root")
+        return self.run_device(["root"])
 
     @staticmethod
     def get_battlecats_path(package_name: str) -> tbcml.Path:
         return tbcml.Path.get_root().add("data").add("data").add(package_name)
 
     def get_connected_devices(self) -> list[str]:
-        devices = self.adb_path.run("devices").result.split("\n")
+        devices = self.adb_path.run(["devices"]).result.split("\n")
         devices = [device.split("\t")[0] for device in devices[1:-2]]
         return devices
 
@@ -55,26 +55,41 @@ class AdbHandler:
         return self.device_id
 
     def get_device_name(self) -> str:
-        return self.run_shell("getprop ro.product.model").result.strip()
+        return self.run_shell(["getprop", "ro.product.model"]).result.strip()
 
-    def run_shell(self, command: str) -> tbcml.CommandResult:
-        return self.adb_path.run(f'-s {self.get_device()} shell "{command}"')
+    def run_shell(self, command: list[str]) -> tbcml.CommandResult:
+        if not command:
+            command = [""]
+
+        return self.run_device(["shell"] + command)
 
     def close_game(self) -> tbcml.CommandResult:
-        return self.run_shell(f"am force-stop {self.get_package_name()}")
+        return self.run_shell(["am", "force-stop", self.get_package_name()])
 
     def run_game(self) -> tbcml.CommandResult:
         return self.run_shell(
-            f"monkey -p {self.get_package_name()} -c android.intent.category.LAUNCHER 1"
+            [
+                "monkey",
+                "-p",
+                self.get_package_name(),
+                "-c",
+                "android.intent.category.LAUNCHER",
+                "1",
+            ]
         )
 
+    def run_device(self, command: str | list[str]):
+        if isinstance(command, str):
+            command = [command]
+        return self.adb_path.run(["-s", self.get_device()] + command)
+
     def install_apk(self, apk_path: tbcml.Path) -> tbcml.CommandResult:
-        return self.adb_path.run(f"-s {self.get_device()} install {apk_path}")
+        return self.run_device(["install", apk_path.to_str()])
 
     def install_xapk(self, apk_paths: list[tbcml.Path]) -> tbcml.CommandResult:
         total_size = sum([path.get_file_size() for path in apk_paths])
 
-        res = self.run_shell(f"pm install-create -S {total_size}")
+        res = self.run_shell(["pm", "install-create", "-S", str(total_size)])
         if not res:
             return res
         session_id = res.result.strip().split("[")[-1].split("]")[0]
@@ -90,31 +105,52 @@ class AdbHandler:
             file_size = path.get_file_size()
             device_path = device_dir.add(path.basename())
             res = self.run_shell(
-                f"pm install-write -S {file_size} {session_id} {i} {device_path.to_str_forwards()}"
+                [
+                    "pm",
+                    "install-write",
+                    "-S",
+                    str(file_size),
+                    session_id,
+                    str(i),
+                    device_path.to_str_forwards(),
+                ]
             )
             if not res:
                 return res
 
-        return self.run_shell(f"pm install-commit {session_id}")
+        return self.run_shell(["pm", "install-commit", session_id])
 
     def pull_file(
         self, device_path: tbcml.Path, local_path: tbcml.Path
     ) -> tbcml.CommandResult:
         if not self.adb_root_success():
             result = self.run_shell(
-                f"su -c 'cp {device_path.to_str_forwards()} /sdcard/ && chmod o+rw /sdcard/{device_path.basename()}'"
+                [
+                    "su",
+                    "-c",
+                    "'cp",
+                    device_path.to_str_forwards(),
+                    "/sdcard/",
+                    "&&",
+                    "chmod",
+                    "o+rw",
+                    f"/sdcard/{device_path.basename()}'",
+                ]
             )
             if result.exit_code != 0:
                 return result
             device_path = tbcml.Path("/sdcard/").add(device_path.basename())
 
-        result = self.adb_path.run(
-            f'-s {self.get_device()} pull "{device_path.to_str_forwards()}" "{local_path}"',
+        result = self.run_device(
+            ["pull", device_path.to_str_forwards(), local_path.to_str()]
         )
+
         if not result.success:
             return result
         if not self.adb_root_success():
-            result2 = self.run_shell(f"su -c 'rm /sdcard/{device_path.basename()}'")
+            result2 = self.run_shell(
+                ["su", "-c", "'rm", f"/sdcard/{device_path.basename()}'"]
+            )
             if result2.exit_code != 0:
                 return result2
         return result
@@ -129,18 +165,27 @@ class AdbHandler:
         if not self.adb_root_success():
             device_path = tbcml.Path("/sdcard/").add(device_path.basename())
 
-        result = self.adb_path.run(
-            f'-s {self.get_device()} push "{local_path}" "{device_path.to_str_forwards()}"'
+        result = self.run_device(
+            ["push", local_path.to_str(), device_path.to_str_forwards()]
         )
+
         if not result.success:
             return result
         if not self.adb_root_success():
-            cmd = f"'cp /sdcard/{device_path.basename()} {orignal_device_path.to_str_forwards()} && chmod o+rw {orignal_device_path.to_str_forwards()}'"
+            cmd = [
+                "'cp",
+                f"/sdcard/{device_path.basename()}",
+                orignal_device_path.to_str_forwards(),
+                "&&",
+                "chmod",
+                "o+rw",
+                orignal_device_path.to_str_forwards() + "'",
+            ]
             if use_su:
-                cmd = "su -c " + cmd
+                cmd = ["su", "-c"] + cmd
 
             result2 = self.run_shell(cmd)
-            result3 = self.run_shell(f"rm /sdcard/{device_path.basename()}")
+            result3 = self.run_shell(["rm", f"/sdcard/{device_path.basename()}"])
             if result2.exit_code != 0:
                 return result2
             if result3.exit_code != 0:
@@ -169,8 +214,8 @@ class AdbHandler:
     def basic_push_file(
         self, local_path: tbcml.Path, device_path: tbcml.Path
     ) -> tbcml.CommandResult:
-        return self.adb_path.run(
-            f"-s {self.get_device()} push '{local_path}' '{device_path}'"
+        return self.run_device(
+            ["push", local_path.to_str(), device_path.to_str_forwards()]
         )
 
     def push_files_to_folder(
@@ -188,7 +233,7 @@ class AdbHandler:
 
     def get_apk_path(self) -> tbcml.Path:
         return tbcml.Path(
-            self.run_shell(f"pm path {self.get_package_name()}")
+            self.run_shell(["pm", "path", self.get_package_name()])
             .result.strip()
             .split(":")[1]
         )
@@ -243,7 +288,7 @@ class BulkAdbHandler:
             self.add_device(device_id, use_default_package_name)
 
     def add_all_connected_devices(self, use_default_package_name: bool = True) -> bool:
-        devices = self.adb_path.run("devices").result.split("\n")
+        devices = self.adb_path.run(["devices"]).result.split("\n")
         devices = [device.split("\t")[0] for device in devices[1:-2]]
         if len(devices) == 0:
             return False

@@ -60,6 +60,12 @@ class Apk(Pkg):
         )
         self.smali_handler: tbcml.SmaliHandler | None = None
 
+        self.apktool_installed = self.is_apktool_installed()
+        self.jarsigner_installed = self.is_jarsigner_installed()
+        self.apksigner_installed = self.is_apksigner_installed()
+        self.zipalign_installed = self.is_zipalign_installed()
+        self.keytool_installed = self.is_keytool_installed()
+
     def is_apk(self) -> bool:
         return True
 
@@ -72,15 +78,13 @@ class Apk(Pkg):
         self.smali_non_original_path.remove_tree()
 
     @staticmethod
-    def run_apktool(command: str) -> tbcml.CommandResult:
+    def run_apktool(command: list[str]) -> tbcml.CommandResult:
         apktool_path = tbcml.Path.get_lib("apktool.jar")
-        if not apktool_path.is_valid():
-            raise ValueError("Apktool path is not valid")
-        return tbcml.Command(f"java -jar '{apktool_path}' {command}").run()
+        return tbcml.Command(["java", "-jar", apktool_path.to_str()] + command).run()
 
     @staticmethod
     def is_apktool_installed() -> tbcml.Result:
-        res = Apk.run_apktool("-version")
+        res = Apk.run_apktool(["-version"])
         if res.exit_code == 0:
             return tbcml.Result(True)
 
@@ -90,7 +94,7 @@ class Apk(Pkg):
 
     @staticmethod
     def is_jarsigner_installed() -> tbcml.Result:
-        cmd = tbcml.Command("jarsigner")
+        cmd = tbcml.Command(["jarsigner"])
         res = cmd.run()
         if res.exit_code == 0:
             return tbcml.Result(True)
@@ -101,7 +105,7 @@ class Apk(Pkg):
 
     @staticmethod
     def is_apksigner_installed() -> tbcml.Result:
-        cmd = tbcml.Command("apksigner")
+        cmd = tbcml.Command(["apksigner"])
         res = cmd.run()
         if res.exit_code == 0:
             return tbcml.Result(True)
@@ -112,7 +116,7 @@ class Apk(Pkg):
 
     @staticmethod
     def is_zipalign_installed() -> tbcml.Result:
-        cmd = tbcml.Command("zipalign")
+        cmd = tbcml.Command(["zipalign"])
         res = cmd.run()
         if res.exit_code == 2:
             return tbcml.Result(True)
@@ -123,7 +127,7 @@ class Apk(Pkg):
 
     @staticmethod
     def is_keytool_installed() -> tbcml.Result:
-        cmd = tbcml.Command("keytool")
+        cmd = tbcml.Command(["keytool"])
         res = cmd.run()
         if res.exit_code == 0:
             return tbcml.Result(True)
@@ -215,8 +219,8 @@ class Apk(Pkg):
         apk_path: tbcml.Path | None = None,
         output_path: tbcml.Path | None = None,
     ) -> tbcml.Result:
-        if not (res := self.is_apktool_installed()):
-            return res
+        if not self.apktool_installed:
+            return self.apktool_installed
 
         if apk_path is None:
             apk_path = self.pkg_path
@@ -232,7 +236,15 @@ class Apk(Pkg):
         with (
             tbcml.TempFolder() as path
         ):  # extract to temp folder so if user cancels mid-extraction nothing bad happens
-            cmd = f"d -f -s {decode_resources_str} '{apk_path}' -o '{path}'"
+            cmd = [
+                "d",
+                "-f",
+                "-s",
+                decode_resources_str,
+                apk_path.to_str(),
+                "-o",
+                path.to_str(),
+            ]
             res = self.run_apktool(cmd)
             if res.exit_code != 0:
                 return tbcml.Result(
@@ -253,13 +265,20 @@ class Apk(Pkg):
 
         # TODO: support xapk
 
-        if not (res := self.is_apktool_installed()):
-            return res
+        if not self.apktool_installed:
+            return self.apktool_installed
 
         decode_resources_str = "-r" if not decode_resources else ""
 
         with tbcml.TempFolder() as temp_folder:
-            cmd = f"d -f {decode_resources_str} '{self.pkg_path}' -o '{temp_folder}'"
+            cmd = [
+                "d",
+                "-f",
+                decode_resources_str,
+                self.pkg_path.to_str(),
+                "-o",
+                temp_folder.to_str(),
+            ]
             res = self.run_apktool(cmd)
             if res.exit_code != 0:
                 return tbcml.Result(
@@ -367,8 +386,8 @@ class Apk(Pkg):
         extracted_path: tbcml.Path | None = None,
         output_path: tbcml.Path | None = None,
     ) -> tbcml.Result:
-        if not (res := self.is_apktool_installed()):
-            return res
+        if not self.apktool_installed:
+            return self.apktool_installed
 
         if extracted_path is None:
             extracted_path = self.extracted_path
@@ -376,7 +395,7 @@ class Apk(Pkg):
         if output_path is None:
             output_path = self.final_pkg_path
 
-        cmd = f"b '{extracted_path}' -o '{output_path}'"
+        cmd = ["b", extracted_path.to_str(), "-o", output_path.to_str()]
         res = self.run_apktool(cmd)
         if res.exit_code != 0:
             return tbcml.Result(
@@ -394,32 +413,47 @@ class Apk(Pkg):
     ) -> tbcml.Result:
         if is_final_xapk:
             return tbcml.Result(True)
-        if not tbcml.Path(password).is_valid():
-            return tbcml.Result(False, error=f"Password: {password} is not valid")
         if zip_align:
             if not (res := self.zip_align(apk_path)):
                 return res
         if use_jarsigner:
-            if not (res := self.is_jarsigner_installed()):
-                return res
+            if not self.jarsigner_installed:
+                return self.jarsigner_installed
         else:
-            if not (res := self.is_apksigner_installed()):
-                return res
-        if not (res := self.is_keytool_installed()):
-            return res
+            if not self.apksigner_installed:
+                return self.apksigner_installed
+
+        if not self.keytool_installed:
+            return self.keytool_installed
 
         if apk_path is None:
             apk_path = self.final_pkg_path
 
         key_store_name = "tbcml.keystore"
         key_store_path = tbcml.Path.get_documents_folder().add(key_store_name)
-        if not key_store_path.is_valid():
-            return tbcml.Result(
-                False, error=f"Key store path is not valid: {key_store_path}"
-            )
         if not key_store_path.exists():
             cmd = tbcml.Command(
-                f"keytool -genkey -v -keystore '{key_store_path}' -alias tbcml -keyalg RSA -keysize 2048 -validity 10000 -storepass '{password}' -keypass '{password}' -dname 'CN=, OU=, O=, L=, S=, C='",
+                [
+                    "keytool",
+                    "-genkey",
+                    "-v",
+                    "-keystore",
+                    key_store_path.to_str(),
+                    "-alias",
+                    "tbcml",
+                    "-keyalg",
+                    "RSA",
+                    "-keysize",
+                    "2048",
+                    "-validity",
+                    "10000",
+                    "-storepass",
+                    password,
+                    "-keypass",
+                    password,
+                    "-dname",
+                    "CN=, OU=, O=, L=, S=, C=",
+                ],
             )
             res = cmd.run()
             if res.exit_code != 0:
@@ -430,12 +464,34 @@ class Apk(Pkg):
 
         if use_jarsigner:
             cmd = tbcml.Command(
-                f"jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 -keystore '{key_store_path}' '{apk_path}' tbcml",
+                [
+                    "jarsigner",
+                    "-verbose",
+                    "-sigalg",
+                    "SHA256withRSA",
+                    "-digestalg",
+                    "SHA-256",
+                    "-keystore",
+                    key_store_path.to_str(),
+                    apk_path.to_str(),
+                    "tbcml",
+                ],
             )
             res = cmd.run(password)
         else:
-            cmd_txt = f"apksigner sign --ks '{key_store_path}' --ks-key-alias tbcml --ks-pass 'pass:{password}' --key-pass 'pass:{password}'"
-            cmd_txt += f" '{apk_path}'"
+            cmd_txt = [
+                "apksigner",
+                "sign",
+                "--ks",
+                key_store_path.to_str(),
+                "--ks-key-alias",
+                "tbcml",
+                "--ks-pass",
+                f"pass:{password}",
+                "--key-pass",
+                f"pass:{password}",
+                apk_path.to_str(),
+            ]
             cmd = tbcml.Command(cmd_txt)
             res = cmd.run()
         if res.exit_code != 0:
@@ -462,12 +518,14 @@ class Apk(Pkg):
     def zip_align(self, output_path: tbcml.Path | None = None) -> tbcml.Result:
         if output_path is None:
             output_path = self.final_pkg_path
-        if not (res := self.is_zipalign_installed()):
-            return res
+        if not self.zipalign_installed:
+            return self.zipalign_installed
         apk_path = output_path.change_name(
             output_path.get_file_name_without_extension() + "-aligned.apk"
         )
-        cmd = tbcml.Command(f"zipalign -f -p 4 '{output_path}' '{apk_path}'")
+        cmd = tbcml.Command(
+            ["zipalign", "-f", "-p", "4", output_path.to_str(), apk_path.to_str()]
+        )
         cmd.run()
         apk_path.copy(output_path)
         cmd.run()
@@ -733,7 +791,7 @@ class Apk(Pkg):
         if self.pkg_path.exists() and not force:
             return tbcml.Result(True)
 
-        if not self.is_apksigner_installed():
+        if not self.apksigner_installed:
             skip_signature_check = True
 
         sig_failed = False
@@ -992,9 +1050,7 @@ class Apk(Pkg):
 
     @staticmethod
     def get_package_name_version_from_apk(apk_path: tbcml.Path):
-        if not apk_path.is_valid():
-            raise ValueError("APK path is not valid")
-        cmd = f"aapt dump badging '{apk_path}'"
+        cmd = ["aapt", "dump", "badging", apk_path.to_str()]
         result = tbcml.Command(cmd).run()
         if not result.success:
             return None, None
@@ -1016,9 +1072,7 @@ class Apk(Pkg):
     @staticmethod
     def get_sha256_cert_hash(path: tbcml.PathStr) -> str | None:
         path = tbcml.Path(path)
-        if not path.is_valid():
-            raise ValueError("APK path is not valid")
-        cmd = f"apksigner verify --print-certs '{path}'"
+        cmd = ["apksigner", "verify", "--print-certs", path.to_str()]
         result = tbcml.Command(cmd).run()
         if not result.success:
             return None
@@ -1052,7 +1106,7 @@ class Apk(Pkg):
 
     @staticmethod
     def from_pkg_path(
-        pkg_path: tbcml.Path,
+        pkg_path: tbcml.PathStr,
         cc_overwrite: tbcml.CountryCode | None = None,
         gv_overwrite: tbcml.GameVersion | None = None,
         pkg_folder: tbcml.Path | None = None,
@@ -1061,6 +1115,8 @@ class Apk(Pkg):
         overwrite_pkg: bool = True,
     ) -> tuple[Apk | None, tbcml.Result]:
         is_modded = False
+
+        pkg_path = tbcml.Path(pkg_path)
 
         if not pkg_path.exists():
             return None, tbcml.Result.file_not_found(pkg_path)

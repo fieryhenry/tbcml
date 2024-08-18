@@ -27,9 +27,6 @@ class TempFile:
         else:
             self.path_dir = None
 
-        if not path.is_valid():
-            raise Exception(f"Could not create temp file at {path} (path invalid)")
-
         path.parent().generate_dirs()
 
         self.path = path
@@ -59,8 +56,6 @@ class TempFolder:
         else:
             self.path_dir = path
 
-        if not path.is_valid():
-            raise Exception(f"Could not create temp folder at {path} (path invalid)")
         path.generate_dirs()
         self.path = path
 
