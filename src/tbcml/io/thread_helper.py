@@ -11,10 +11,15 @@ class Thread:
         self.func = func
         self.args = args
 
+        self.done = False
+
     def run(self):
         self.retval = self.func(*self.args)
+        self.done = True
 
     def get_return(self):
+        if not self.done:
+            raise ValueError("An error occurred in the thread.")
         return self.retval
 
     def set_thread_obj(self, obj: threading.Thread):
