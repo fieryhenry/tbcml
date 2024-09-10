@@ -314,6 +314,8 @@ class ModLoader:
         do_final_pkg_actions: bool = True,
         use_apktool: bool | None = None,
         signing_password: str | None = None,
+        sign: bool = True,
+        zip_align: bool = True,
     ) -> tbcml.Result:
         """Applies the mods to the package.
 
@@ -328,6 +330,8 @@ class ModLoader:
             do_final_pkg_actions (bool, optional): Whether to do the final package actions. Defaults to True
             use_apktool (bool | None, optional): Whether to use apktool to build the package. Defaults to None. If None, the value used in the initialize_apk function will be used.
             signing_password (str | None, optional): The password to sign the apk with. Defaults to None which uses the default of TBCML_CUSTOM_APK.
+            sign (bool, optional): Whether to sign the apk after packing. Defaults to True
+            zip_align (bool, optional): Whether to zip-align the apk after packing. Defaults to True.
 
         Raises:
             RuntimeError: If an error occurs when loading the mods.
@@ -354,6 +358,8 @@ class ModLoader:
                 do_final_pkg_actions=do_final_pkg_actions,
                 use_apktool=use_apktool,
                 sign_password=signing_password,
+                sign=sign,
+                zip_align=zip_align,
             )
         else:
             res = pkg.load_mods(

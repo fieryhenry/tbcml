@@ -302,6 +302,8 @@ class Apk(Pkg):
     def pack(
         self,
         use_apktool: bool | None = None,
+        sign_xapk: bool = True,
+        zip_align_xapk: bool = True,
     ) -> tbcml.Result:
         if use_apktool is None:
             use_apktool = self.did_use_apktool()
@@ -316,7 +318,7 @@ class Apk(Pkg):
                         "WARNING: apktool was not used when extracting, but you have specified to use it to pack the apk"
                     )
         if self.is_xapk():
-            return self.pack_xapk(use_apktool)
+            return self.pack_xapk(use_apktool, sign_xapk, zip_align_xapk)
         else:
             return self.pack_apk(use_apktool)
 
@@ -331,7 +333,12 @@ class Apk(Pkg):
         return self.pack_zip(extracted_path, output_path)
 
     def _xapk_pack(
-        self, dir: tbcml.Path, apk_path: tbcml.Path, use_apktool: bool | None = None
+        self,
+        dir: tbcml.Path,
+        apk_path: tbcml.Path,
+        use_apktool: bool | None = None,
+        sign: bool = True,
+        zip_align: bool = True,
     ):
         res = self.pack_apk(
             use_apktool,
@@ -340,17 +347,25 @@ class Apk(Pkg):
         )
         if not res:
             return res
-        res = self.sign(apk_path=apk_path)
+        if sign:
+            res = self.sign(apk_path=apk_path, zip_align=zip_align)
         return res
 
-    def pack_xapk(self, use_apktool: bool | None = None):
+    def pack_xapk(
+        self,
+        use_apktool: bool | None = None,
+        sign_xapk: bool = True,
+        zip_align: bool = True,
+    ):
         split_apks_dir = self.output_path.add("split_apks").remove().generate_dirs()
         funcs: list[Callable[..., Any]] = []
-        args: list[tuple[tbcml.Path, tbcml.Path, bool | None]] = []
+        args: list[tuple[tbcml.Path, tbcml.Path, bool | None, bool, bool]] = []
         for path in self.get_xapk_id_dirs():
             file_name = path.basename() + ".apk"
             funcs.append(self._xapk_pack)
-            args.append((path, split_apks_dir.add(file_name), use_apktool))
+            args.append(
+                (path, split_apks_dir.add(file_name), use_apktool, sign_xapk, zip_align)
+            )
 
         ress = tbcml.run_in_threads(funcs, args)
         for res in ress:
@@ -543,6 +558,8 @@ class Apk(Pkg):
         ) = None,
         use_apktool: bool | None = None,
         sign_password: str | None = None,
+        sign: bool = True,
+        zip_align: bool = True,
     ) -> tbcml.Result:
         if progress_callback is None:
             progress_callback = lambda _: None
@@ -562,20 +579,31 @@ class Apk(Pkg):
         if progress_callback(tbcml.PKGProgressSignal.PACK) is False:
             return tbcml.Result(False)
 
-        if not (res := self.pack(use_apktool=use_apktool)):
+        if not (
+            res := self.pack(
+                use_apktool=use_apktool, sign_xapk=sign, zip_align_xapk=zip_align
+            )
+        ):
             return res
 
         if progress_callback(tbcml.PKGProgressSignal.SIGN) is False:
             return tbcml.Result(False)
 
-        if sign_password is None:
-            if not (res := self.sign(is_final_xapk=self.is_xapk())):
-                return res
-        else:
-            if not (
-                res := self.sign(password=sign_password, is_final_xapk=self.is_xapk())
-            ):
-                return res
+        if sign:
+            if sign_password is None:
+                if not (
+                    res := self.sign(is_final_xapk=self.is_xapk(), zip_align=zip_align)
+                ):
+                    return res
+            else:
+                if not (
+                    res := self.sign(
+                        password=sign_password,
+                        is_final_xapk=self.is_xapk(),
+                        zip_align=zip_align,
+                    )
+                ):
+                    return res
 
         if progress_callback(tbcml.PKGProgressSignal.FINISH_UP) is False:
             return tbcml.Result(False)
@@ -1547,6 +1575,8 @@ class Apk(Pkg):
         do_final_pkg_actions: bool = True,
         use_apktool: bool | None = None,
         sign_password: str | None = None,
+        sign: bool = True,
+        zip_align: bool = True,
     ) -> tbcml.Result:
         if progress_callback is None:
             progress_callback = lambda _: None
@@ -1610,6 +1640,8 @@ class Apk(Pkg):
                     save_in_modded_pkgs=save_in_modded_pkgs,
                     progress_callback=progress_callback,
                     sign_password=sign_password,
+                    sign=sign,
+                    zip_align=zip_align,
                 )
             ):
                 return res
