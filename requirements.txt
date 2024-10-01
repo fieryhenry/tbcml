@@ -1,6 +1,6 @@
 beautifulsoup4==4.12.3
 cloudscraper==1.2.71
-cryptography==42.0.5
+cryptography==43.0.1
 ffmpeg_python==0.2.0
 marshmallow_dataclass==8.6.0
 Pillow==10.3.0
