@@ -95,7 +95,12 @@ class Apk(Pkg):
     @staticmethod
     def is_jarsigner_installed() -> tbcml.Result:
         cmd = tbcml.Command(["jarsigner"])
-        res = cmd.run()
+        try:
+            res = cmd.run()
+        except FileNotFoundError:
+            return tbcml.Result.program_not_installed(
+                prog_name="Jarsigner or java",
+            )
         if res.exit_code == 0:
             return tbcml.Result(True)
 
@@ -106,7 +111,12 @@ class Apk(Pkg):
     @staticmethod
     def is_apksigner_installed() -> tbcml.Result:
         cmd = tbcml.Command(["apksigner"])
-        res = cmd.run()
+        try:
+            res = cmd.run()
+        except FileNotFoundError:
+            return tbcml.Result.program_not_installed(
+                prog_name="apksigner or java",
+            )
         if res.exit_code == 0:
             return tbcml.Result(True)
 
@@ -117,7 +127,12 @@ class Apk(Pkg):
     @staticmethod
     def is_zipalign_installed() -> tbcml.Result:
         cmd = tbcml.Command(["zipalign"])
-        res = cmd.run()
+        try:
+            res = cmd.run()
+        except FileNotFoundError:
+            return tbcml.Result.program_not_installed(
+                prog_name="zipalign or android sdk",
+            )
         if res.exit_code == 2:
             return tbcml.Result(True)
 
@@ -128,7 +143,10 @@ class Apk(Pkg):
     @staticmethod
     def is_keytool_installed() -> tbcml.Result:
         cmd = tbcml.Command(["keytool"])
-        res = cmd.run()
+        try:
+            res = cmd.run()
+        except FileNotFoundError:
+            return tbcml.Result.program_not_installed(prog_name="keytool or java")
         if res.exit_code == 0:
             return tbcml.Result(True)
 
@@ -997,7 +1015,7 @@ class Apk(Pkg):
         app_details = soup.find("h1", {"id": "detail-app-name"})
         if not isinstance(app_details, bs4.element.Tag):
             return None
-        app_id = app_details.get_attribute_list("code")[0]
+        app_id = app_details.get_attribute_list("data-code")[0]
         return app_id
 
     @staticmethod
