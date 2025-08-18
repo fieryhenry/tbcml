@@ -1,5 +1,8 @@
 # TBCML
 
+## Please see this repo on Codeberg instead: https://codeberg.org/fieryhenry/tbcml
+## This GitHub repo may be deleted in the future.
+
 The Battle Cats Modding Library (TBCML) is a python library designed to make
 modding The Battle Cats easier, more automated, and more powerful.
 
